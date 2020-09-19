@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2019 A S Lewis
+# Copyright (C) 2011-2020 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -5128,27 +5128,29 @@
             $self->ivPoke('soundCheckTime', ($axmud::CLIENT->clientTime + $self->soundDelayTime));
         }
 
-        # Convert text-to-speech, if required (but don't try to convert an 'undef' or text
-        #   containing no readable characters)
-        if (
-            $axmud::CLIENT->systemAllowTTSFlag
-            && $axmud::CLIENT->ttsSystemFlag
-            && defined $msg
-            && $msg =~ m/\w/
-            # Also, temporarily don't convert system messages if the GA::Session flag is set
-            && ! $self->session->ttsTempDisableFlag
-        ) {
-            # Make sure the received text is visible in the textview(s)...
-            $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->showImproper');
-
-            # ...before converting text to speech
-            $axmud::CLIENT->tts(
-                'System error: improper arguments in function: ' . $func,
-                'error',
-                'error',
-                $self->session,
-            );
-        }
+#        # v1.2.208 Improper args messages are incomprehensible, when converted to speech; so this
+#        #   is now disabled
+#        # Convert text-to-speech, if required (but don't try to convert an 'undef' or text
+#        #   containing no readable characters)
+#        if (
+#            $axmud::CLIENT->systemAllowTTSFlag
+#            && $axmud::CLIENT->ttsSystemFlag
+#            && defined $msg
+#            && $msg =~ m/\w/
+#            # Also, temporarily don't convert system messages if the GA::Session flag is set
+#            && ! $self->session->ttsTempDisableFlag
+#        ) {
+#            # Make sure the received text is visible in the textview(s)...
+#            $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->showImproper');
+#
+#            # ...before converting text to speech
+#            $axmud::CLIENT->tts(
+#                'System error: improper arguments in function: ' . $func,
+#                'error',
+#                'error',
+#                $self->session,
+#            );
+#        }
 
         # This type of system message always requires a return value of 'undef'
         return undef;
@@ -5160,13 +5162,17 @@
         # Inserts an image pixbuf into the textview at the current insertion point
         #
         # Expected arguments
-        #   $pixbuf     - The Gtk3::Gdk::Pixbuf of the image to display
+        #   $pixbuf     - The Gtk3::Gdk::Pixbuf or Gtk3::Gdk::PixbufAnimation of the image to
+        #                   display
         #
         # Optional arguments
         #   $linkObj    - For clickable images, the corresponding GA::Obj::Link object. Can be a an
         #                   incomplete link object created by GA::Session's MXP functions (for
         #                   example), or a completed link object stored in this textview object's
         #                   ->linkObjHash; otherwise 'undef'
+        #   $padWidth, $padHeight
+        #               - Optional padding around the image, in pixels (not the width/height of the
+        #                   image itself; that is only specified by the pixbuf)
         #   @args       - Optional list of arguments, in any order:
         #                   - 'empty' (empties the buffer before writing $text)
         #                   - 'before' (prepends a newline character to $text)
@@ -5184,18 +5190,26 @@
         #   'undef' on improper arguments
         #   1 otherwise
 
-        my ($self, $pixbuf, $linkObj, @args) = @_;
+        my ($self, $pixbuf, $linkObj, $padWidth, $padHeight, @args) = @_;
 
         # Local variables
         my (
-            $emptyFlag, $beforeFlag, $afterFlag, $mark, $iter, $image, $ebox, $anchor, $lineNum,
-            $posn, $newMark, $newIter, $tempInsertFlag,
+            $animFlag, $emptyFlag, $beforeFlag, $afterFlag, $mark, $iter, $image, $packWidget,
+            $ebox, $anchor, $lineNum, $posn, $newMark, $newIter, $tempInsertFlag,
         );
 
         # Check for improper arguments
         if (! defined $pixbuf) {
 
             return $axmud::CLIENT->writeImproper($self->_objClass . '->showImage', @_);
+        }
+
+        # Test whether the $pixbuf is an animated gif, received by this function as a
+        #   Gtk3::Gdk::PixbufAnimation-related object, or an unanimated image (including gifs),
+        #   received by this function as a Gtk3::Gdk::Pixbuf
+        if (ref ($pixbuf) =~ /Anim/) {
+
+            $animFlag = TRUE;
         }
 
         # If the cursor is visible, remove it temporarily (i.e. remove the existing Gtk3::TextTag)
@@ -5253,18 +5267,21 @@
         $lineNum = $iter->get_line();
         $posn = $iter->get_visible_line_offset();
 
-        # Insert the image
-        if (! defined $linkObj) {
+        # Create the image
+        if (! $animFlag) {
 
-            # Image not clickable
-            $self->buffer->insert_pixbuf($iter, $pixbuf);
+            $image = $packWidget = Gtk3::Image->new_from_pixbuf($pixbuf);
 
         } else {
 
-            # Image clickable
-            $image = Gtk3::Image->new_from_pixbuf($pixbuf);
-            $ebox = Gtk3::EventBox->new();
+            $image = $packWidget = Gtk3::Image->new();
+            $image->set_from_animation($pixbuf);
+        }
 
+        # If the image should be clickable, pack it inside an event box
+        if (defined $linkObj) {
+
+            $ebox = Gtk3::EventBox->new();
             $ebox->signal_connect('button-press-event' => sub {
 
                 my ($widget, $event) = @_;
@@ -5305,9 +5322,29 @@
             });
 
             $ebox->add($image);
-            $anchor = $self->buffer->create_child_anchor($iter);
-            $self->textView->add_child_at_anchor($ebox, $anchor);
+            $packWidget = $ebox;
         }
+
+        # Apply padding, if specified
+        if ($padWidth && ! ($padWidth =~ m/\D/)) {
+
+            my $hBox = Gtk3::HBox->new();
+            $hBox->pack_start($packWidget, FALSE, FALSE, $padWidth);
+
+            $packWidget = $hBox;
+        }
+
+        if ($padHeight && ! ($padHeight =~ m/\D/)) {
+
+            my $vBox = Gtk3::VBox->new();
+            $vBox->pack_start($packWidget, FALSE, FALSE, $padHeight);
+
+            $packWidget = $vBox;
+        }
+
+        # Insert the image into the textview
+        $anchor = $self->buffer->create_child_anchor($iter);
+        $self->textView->add_child_at_anchor($packWidget, $anchor);
 
         # Set the new insert iter. The Gtk docs state that the image counts as one character
         $newIter = $self->buffer->get_iter_at_line_offset($lineNum, ($posn + 1));
@@ -5355,6 +5392,9 @@
             # Scroll to the point immediately after the image's insertion point
             $self->scrollToIter($newIter);
         }
+
+        # Animated pixbufs will not be visible reliably without this line
+        $self->winObj->winShowAll($self->_objClass . '->showImage');
 
         return 1;
     }
@@ -6139,7 +6179,7 @@
         }
 
         my $scroll = Gtk3::ScrolledWindow->new(undef, undef);
-        $scroll->set_shadow_type('none');
+        $scroll->set_shadow_type($axmud::CLIENT->constShadowType);
         $scroll->set_policy('automatic', 'automatic');     # But word-wrapping turned on
         $scroll->set_border_width(0);
 
@@ -6194,13 +6234,13 @@
         #   the bottom half of the vpaned
         my $scroll = Gtk3::ScrolledWindow->new(undef, undef);
         $vPaned->pack2($scroll, FALSE, FALSE);
-        $scroll->set_shadow_type('in');
+        $scroll->set_shadow_type($axmud::CLIENT->constShadowType);
         $scroll->set_policy('automatic', 'automatic');      # But word-wrapping turned on
         $scroll->set_border_width(0);
 
         my $scroll2 = Gtk3::ScrolledWindow->new(undef, undef);
         $vPaned->pack1($scroll2, FALSE, TRUE);
-        $scroll2->set_shadow_type('in');
+        $scroll2->set_shadow_type($axmud::CLIENT->constShadowType);
         $scroll2->set_policy('automatic', 'automatic');     # But word-wrapping turned on
         $scroll2->set_border_width(0);
 

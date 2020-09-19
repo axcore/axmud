@@ -18,14 +18,14 @@ PEEKMATCH ARRAY variable-name = axmud-object-property, expression
          the list is empty, the variable is set to -1. 
       PEEKMATCH cannot be used to search a list property for the Perl special
          value, 'undef'.
-
+         
    Examples:
       ! Store the index of the first matching value in an Axbasic global scalar
       ! variable
       PEEKMATCH index = "world.current.doorPatternList", "^You bump into"
 
       ! Store the index of the matching value in an Axbasic global array
-      PEEKMATCH ARRAY data = "world.current.doorPatternList", "^You bump into"
+      PEEKMATCH ARRAY index = "world.current.doorPatternList", "^You bump into"
  
       ! Store the index of the matching value in an Axbasic local scalar 
       ! variable

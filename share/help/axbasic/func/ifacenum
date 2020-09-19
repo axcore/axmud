@@ -6,7 +6,8 @@ Ifacenum ()
 
    Notes:
       The interface notification list contains all the notifications received,
-         and not yet processed, as the result of an earlier SETTRIG statement.
+         and not yet processed, as the result of an earlier SETTRIG, SETALIAS,
+         SETMACRO, SETTIMER or SETHOOK statement.
       Each active interface has a unique number. This function returns the
          number of the interface that caused the current interface notification.
       If the list is empty, -1 is returned.

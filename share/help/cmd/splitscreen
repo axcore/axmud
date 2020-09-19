@@ -1,7 +1,7 @@
-spl / splitscreen             Toggles split screen mode in the 'main' window
+sps / splitscreen             Toggles split screen mode in the 'main' window
  
    Format:
-      ;spl                    Toggles split screen mode
+      ;sps                    Toggles split screen mode
  
    Notes:
       In split screen mode the 'main' window is split into two. When text is 
@@ -19,4 +19,4 @@ spl / splitscreen             Toggles split screen mode in the 'main' window
       See also the help for the ';scrolllock' command.
 
    User commands:
-      spl / split / splitscreen
+      sps / screen / splitscreen

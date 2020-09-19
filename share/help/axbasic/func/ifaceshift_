@@ -1,15 +1,21 @@
 Ifaceshift$ ()
 
    Synopsis:
-      Returns the first substring stored in the current interface notification
-
+      Removes and returns the first item of additional data provided by the
+         interface when it fired   
+      
    Notes:
       The interface notification list contains all the notifications received,
-         and not yet processed, as the result of an earlier SETTRIG statement.
-      This function operates on the current notification (usually the first one
-         see the help for SKIPIFACE).         
-      The group substring is removed from that notification, so you can call
-         Ifaceshift$ () repeatedly until there are no more substrings to remove.
-         When there are no more substrings to remove, Ifaceshift$ () returns an
-         empty string.
-      If there is no current notification, returns an empty string.
+         and not yet processed, as the result of an earlier SETTRIG, SETALIAS,
+         SETMACRO, SETTIMER or SETHOOK statement.
+      This function operates on the current notification (usually the first one;
+         see the help for SKIPIFACE).
+
+      The Ifacetext$ () function returns whatever caused the interface to fire.
+         Some interfaces provide additional data when they fire, but some do
+         not. The help for Ifacedefined () contains more information about this.
+      This function removes the first remaining item of additional data, and
+         returns it. You can call Ifaceshift$ () repeatedly until there is no
+         more additional data to remove.
+      When there is no more additional data to remove, or if the notification
+         list itself is empty, returns an empty string.

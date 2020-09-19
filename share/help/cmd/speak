@@ -11,9 +11,9 @@ spk / speak                   Uses a text-to-speech engine to read out a message
    Notes:
       If you have one or more of the text-to-speech engines installed on your
          system, Axmud can use them to convert text to speech.
-      The engines currently supported on MS Windows are eSpeak, espeak-ng and
-         Swift. The engines supported on Linux are eSpeak, espeak-ng, Flite,
-         Festival and Swift.
+      The engines currently supported on MS Windows are eSpeak, espeak-ng,
+         Festival and Swift. The engines supported on Linux are eSpeak,
+         espeak-ng, Flite, Festival and Swift.
       Axmud also uses a dummy engine, called 'none'. If Axmud tries to convert
          text to speech using the dummy engine, you'll hear nothing.
             
@@ -61,20 +61,19 @@ spk / speak                   Uses a text-to-speech engine to read out a message
                                  10 - 200, default is 150 words per minutes. For
                                  Swift on MS Windows, must be in the range 100 -
                                  400, default is 170
-         -r <rate>            Specifies the word rate (Festival and Swift on
+         -r <rate>            Specifies the word rate (Festival, and Swift on
                                  Linux only) Must be in the range 0.5 - 2,
                                  default is 1
          -p <pitch>           Specifies the word pitch (eSpeak, espeak-ng and
                                  Swift only). For eSpeak, must be in the range
                                  0 - 99, default is 50. For Swift, must be in
                                  the range 0.1 - 5, default is 1
-         -l <volume>          Specifies the volume (espeak-ng and Swift on all
-                                 systems, Festival on Linux only). For
-                                 espeak-ng, must be in the range 0-200, default
-                                 is 100. For Festival and Swift on Linux, must
-                                 be in the range 0.33 - 6, default is 1. For
-                                 Swift on MS Windows, must be in the range
-                                 0 - 100, default 100
+         -l <volume>          Specifies the volume (espeak-ng, Festival and
+                                 Swift only). For espeak-ng, must be in the
+                                 range 0-200, default is 100. For Festival and
+                                 Swift on Linux, must be in the range 0.33 - 6,
+                                 default is 1. For Swift on MS Windows, must be
+                                 in the range 0 - 100, default 100
  
        See also the help for ';speech'.
  

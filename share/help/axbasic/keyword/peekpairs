@@ -16,7 +16,7 @@ PEEKPAIRS ARRAY variable-name = axmud-object-property
          property. If the hash is empty, the size is 0. If 'variable-name' is a 
          string variable (or a string array), a string value such as "3" is 
          used.         
-                  
+                           
    Examples:
       ! Store the number of key-value pairs from a hash property in an Axbasic 
       ! scalar variable

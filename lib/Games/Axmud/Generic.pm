@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2019 A S Lewis
+# Copyright (C) 2011-2020 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -1266,6 +1266,50 @@
                         . $obj->descrip();
 
             return $string;
+        }
+    }
+
+    sub composeBlindHelpLine {
+
+        # Called by GA::Cmd::Help->do
+        # A version of $self->composeHelpLine for use when blind mode is on
+        # Composes a simpler line of text for a client command, showing the standard form command
+        #   and a short description only
+        #
+        # Expected arguments
+        #   $session        - The calling function's GA::Session
+        #   $standardCmd    - The command about which to show help, e.g. 'about'
+        #
+        # Return values
+        #   'undef' on improper arguments or if $standardCmd isn't recognised
+        #   Otherwise, a string in the format:
+        #       '      about : Shows information about Axmud'
+
+        my ($self, $session, $standardCmd, $check) = @_;
+
+        # Local variables
+        my ($obj, $column, $string);
+
+        # Check for improper arguments
+        if (! defined $session || ! defined $standardCmd || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->composeBlindHelpLine', @_);
+        }
+
+        # Check the specified command exists
+        if (! $axmud::CLIENT->ivExists('clientCmdHash', $standardCmd)) {
+
+            return $session->writeError(
+                'Could not find a client command whose standard form matches \'' . $standardCmd
+                . '\'',
+                $self->_objClass . '->composeHelpLine',
+            );
+
+        } else {
+
+            $obj = $axmud::CLIENT->ivShow('clientCmdHash', $standardCmd);
+
+            return '      ' . $standardCmd . ' : ' . $obj->descrip();
         }
     }
 
@@ -7324,9 +7368,9 @@
             resetButton                 => undef,       # Gtk3::Button
             saveButton                  => undef,       # Gtk3::Button
 
-            # The standard table size for the notebook (any 'edit'/'pref' window can use a different
+            # The standard grid size for the notebook (any 'edit'/'pref' window can use a different
             #   size, if it wants)
-            tableSize                   => 12,
+            gridSize                    => 12,
 
             # The object to be edited in the window (for 'edit' windows only; should be 'undef' for
             #   'pref' windows)
@@ -7672,18 +7716,16 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->setupNotebook', @_);
         }
 
-        # Tab setup, using the standard table size
-        my ($vBox, $table) = $self->addTab('_Name', $self->notebook);
+        # Tab setup, using the standard grid size
+        my $grid = $self->addTab('_Name', $self->notebook);
 
         # Set up the rest of the tab
-        $self->nameTab($table);
+        $self->nameTab($grid);
 
         # Set up the remaining tabs
         $self->expandNotebook();
 
         # Tab complete
-        $vBox->pack_start($table, FALSE, FALSE, 0);
-
         return 1;
     }
 
@@ -7767,8 +7809,7 @@
 
     sub addTab {
 
-        # Adds a tab to the notebook, creating a scroller, a vertical packing box and a table, all
-        #   with standardised sizes
+        # Adds a tab to the notebook, creating a scroller and a grid, all with standardised sizes
         #
         # Expected arguments
         #   $tabName    - A mnemonic string, e.g. 'N_ame'
@@ -7780,20 +7821,15 @@
         #                   'undef', the default size is used ($self->spacingPixels)
         #
         # Return values
-        #   An empty list on improper arguments
-        #   Otherwise a list containing two of the Gtk3 objects created:
-        #       (Gtk3::Vbox, Gtk3::Grid)
+        #   'undef' on improper arguments
+        #   Otherwise returns the Gtk3::Grid created
 
         my ($self, $tabName, $notebook, $columnSpaceWidth, $columnSpaceHeight, $check) = @_;
 
-        # Local variables
-        my @emptyList;
-
         # Check for improper arguments
-        if (! defined $tabName || defined $check) {
+        if (! defined $tabName || ! defined $notebook || defined $check) {
 
-            $axmud::CLIENT->writeImproper($self->_objClass . '->addTab', @_);
-            return @emptyList;
+            return $amid::MAIN->writeImproper($self->_objClass . '->addTab', @_);
         }
 
         # Set default sizes
@@ -7808,21 +7844,19 @@
         }
 
         # Tab setup
-        my $vBox = Gtk3::VBox->new(FALSE, 0);
-        $vBox->set_border_width($self->borderPixels);
-
         my $scroller = Gtk3::ScrolledWindow->new();
         $scroller->set_policy('automatic', 'automatic');
-        $scroller->add_with_viewport($vBox);    # Need ->add_with_viewport, not ->add, here
 
         my $tab = Gtk3::Label->new_with_mnemonic($tabName);
         $notebook->append_page($scroller, $tab);
 
-        my $table = Gtk3::Grid->new();
-        $table->set_column_spacing($columnSpaceWidth);
-        $table->set_row_spacing($columnSpaceHeight);
+        my $grid = Gtk3::Grid->new();
+        $scroller->add_with_viewport($grid);
+        $grid->set_border_width($self->spacingPixels);
+        $grid->set_column_spacing($columnSpaceWidth);
+        $grid->set_row_spacing($columnSpaceHeight);
 
-        return ($vBox, $table);
+        return $grid;
     }
 
     sub addInnerNotebookTab {
@@ -7835,36 +7869,27 @@
         #   $notebook   - The Gtk3::Notebook object to which this tab will be added
         #
         # Return values
-        #   An empty list on improper arguments
-        #   Otherwise a list containing two of the Gtk3 objects created:
-        #       (Gtk3::Vbox, Gtk3::Notebook)
+        #   'undef' on improper arguments
+        #   Otherwise returns the Gtk3::Notebook created
 
         my ($self, $tabName, $notebook, $check) = @_;
-
-        # Local variables
-        my @emptyList;
 
         # Check for improper arguments
         if (defined $check) {
 
-            $axmud::CLIENT->writeImproper($self->_objClass . '->addInnerNotebookTab', @_);
-            return @emptyList;
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->addInnerNotebookTab', @_);
         }
 
         # Tab setup
-        my $vBox = Gtk3::VBox->new(FALSE, 0);
-        $vBox->set_border_width(0);
-
         my $innerNotebook = Gtk3::Notebook->new();
-        $vBox->pack_start($innerNotebook, TRUE, TRUE, 0);
         $innerNotebook->set_scrollable(TRUE);
         $innerNotebook->popup_enable();
 
         my $tab = Gtk3::Label->new_with_mnemonic($tabName);
-        $notebook->append_page($vBox, $tab);
+        $notebook->append_page($innerNotebook, $tab);
 
         # Tab complete
-        return ($vBox, $innerNotebook);
+        return $innerNotebook;
     }
 
     sub addLabel {
@@ -7872,17 +7897,17 @@
         # Adds a Gtk3::Label at the specified position in the tab's Gtk3::Grid
         #
         # Example calls:
-        #   my $label = $self->addLabel($table, 'Some plain text',
+        #   my $label = $self->addLabel($grid, 'Some plain text',
         #       0, 6, 0, 1);
-        #   my $label = $self->addLabel($table, '<b>Some pango markup text</b>',
+        #   my $label = $self->addLabel($grid, '<b>Some pango markup text</b>',
         #       0, 6, 0, 1,
         #       0, 0.5);
         #
         # Expected arguments
-        #   $table      - The tab's Gtk3::Grid object
+        #   $grid      - The tab's Gtk3::Grid object
         #   $text       - The text to display (plain text or pango markup text)
         #   $leftAttach, $rightAttach, $topAttach, $bottomAttach
-        #               - The position of the label in the table
+        #               - The position of the label in the grid
         #
         # Optional arguments
         #   $alignLeft, $alignRight
@@ -7894,19 +7919,19 @@
         #   Otherwise the Gtk3::Label created
 
         my (
-            $self, $table, $text, $leftAttach, $rightAttach, $topAttach, $bottomAttach, $alignLeft,
+            $self, $grid, $text, $leftAttach, $rightAttach, $topAttach, $bottomAttach, $alignLeft,
             $alignRight, $check
         ) = @_;
 
         # Check for improper arguments
         if (
-            ! defined $table || ! defined $text || ! defined $leftAttach || ! defined $rightAttach
+            ! defined $grid || ! defined $text || ! defined $leftAttach || ! defined $rightAttach
             || ! defined $topAttach || ! defined $bottomAttach || defined $check
         ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->addLabel', @_);
         }
 
-        # Check that the position in the table makes sense
+        # Check that the position in the grid makes sense
         if (! $self->checkPosn($leftAttach, $rightAttach, $topAttach, $bottomAttach)) {
 
             return undef;
@@ -7930,10 +7955,10 @@
         # Set its alignment
         $label->set_alignment($alignLeft, $alignRight);
 
-        # Add the label to the table
+        # Add the label to the grid
         $label->set_hexpand(TRUE);
         $label->set_vexpand(FALSE);
-        $table->attach(
+        $grid->attach(
             $label,
             $leftAttach,
             $topAttach,
@@ -7950,17 +7975,17 @@
         #   specified position in the tab's Gtk3::Grid
         #
         # Example calls:
-        #   my $label = $self->addLabel($table, 'Some plain text',
+        #   my $label = $self->addLabel($grid, 'Some plain text',
         #       0, 6, 0, 1);
-        #   my $label = $self->addLabel($table, '<b>Some pango markup text</b>',
+        #   my $label = $self->addLabel($grid, '<b>Some pango markup text</b>',
         #       0, 6, 0, 1,
         #       0, 0.5);
         #
         # Expected arguments
-        #   $table      - The tab's Gtk3::Grid object
+        #   $grid       - The tab's Gtk3::Grid object
         #   $text       - The text to display (plain text or pango markup text)
         #   $leftAttach, $rightAttach, $topAttach, $bottomAttach
-        #               - The position of the label in the table
+        #               - The position of the label in the grid
         #
         # Optional arguments
         #   $alignLeft, $alignRight
@@ -7974,7 +7999,7 @@
         #       (gtk_frame, gtk_label)
 
         my (
-            $self, $table, $text, $leftAttach, $rightAttach, $topAttach, $bottomAttach, $alignLeft,
+            $self, $grid, $text, $leftAttach, $rightAttach, $topAttach, $bottomAttach, $alignLeft,
             $alignRight, $check
         ) = @_;
 
@@ -7983,14 +8008,14 @@
 
         # Check for improper arguments
         if (
-            ! defined $table || ! defined $text || ! defined $leftAttach || ! defined $rightAttach
+            ! defined $grid || ! defined $text || ! defined $leftAttach || ! defined $rightAttach
             || ! defined $topAttach || ! defined $bottomAttach || defined $check
         ) {
             $axmud::CLIENT->writeImproper($self->_objClass . '->addLabel', @_);
             return @emptyList;
         }
 
-        # Check that the position in the table makes sense
+        # Check that the position in the grid makes sense
         if (! $self->checkPosn($leftAttach, $rightAttach, $topAttach, $bottomAttach)) {
 
             return @emptyList;
@@ -8019,10 +8044,10 @@
         # Set its alignment
         $label->set_alignment($alignLeft, $alignRight);
 
-        # Add the frame to the table
+        # Add the frame to the grid
         $frame->set_hexpand(TRUE);
         $frame->set_vexpand(FALSE);
-        $table->attach(
+        $grid->attach(
             $frame,
             $leftAttach,
             $topAttach,
@@ -8038,24 +8063,24 @@
         # Adds a Gtk3::Button at the specified position in the tab's Gtk3::Grid
         #
         # Example calls:
-        #   my $button = $self->addButton($table, 'button_name', 'tooltips', \&buttonClicked,
+        #   my $button = $self->addButton($grid, 'button_name', 'tooltips', \&buttonClicked,
         #       0, 6, 0, 1);
-        #   my $button = $self->addButton($table, 'button_name', 'tooltips', undef,
+        #   my $button = $self->addButton($grid, 'button_name', 'tooltips', undef,
         #       0, 6, 0, 1);
-        #   my $button = $self->addButton($table, 'button_name', '', \&buttonClicked,
+        #   my $button = $self->addButton($grid, 'button_name', '', \&buttonClicked,
         #       0, 6, 0, 1);
         #
         # The referenced function (if specified) receives an argument list in the form:
         #   ($self, button_widget)
         #
         # Expected arguments
-        #   $table      - The tab's Gtk3::Grid object
+        #   $grid       - The tab's Gtk3::Grid object
         #   $name       - The name displayed on the button
         #   $tooltips   - Tooltips to use for the button; empty strings are not used
         #   $funcRef    - Reference to the function to call when the button is clicked. If 'undef',
         #                   it's up to the calling function to create a ->signal_connect method
         #   $leftAttach, $rightAttach, $topAttach, $bottomAttach
-        #               - The position of the button in the table
+        #               - The position of the button in the grid
         #
         # Optional arguments
         #   $flag       - If set to TRUE, the button is marked with an image (namely
@@ -8067,7 +8092,7 @@
         #   Otherwise the Gtk3::Button created
 
         my (
-            $self, $table, $name, $tooltips, $funcRef, $leftAttach, $rightAttach, $topAttach,
+            $self, $grid, $name, $tooltips, $funcRef, $leftAttach, $rightAttach, $topAttach,
             $bottomAttach, $flag, $check
         ) = @_;
 
@@ -8076,14 +8101,14 @@
 
         # Check for improper arguments
         if (
-            ! defined $table || ! defined $name || ! defined $tooltips || ! defined $leftAttach
+            ! defined $grid || ! defined $name || ! defined $tooltips || ! defined $leftAttach
             || ! defined $rightAttach || ! defined $topAttach || ! defined $bottomAttach
             || defined $check
         ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->addButton', @_);
         }
 
-        # Check that the position in the table makes sense
+        # Check that the position in the grid makes sense
         if (! $self->checkPosn($leftAttach, $rightAttach, $topAttach, $bottomAttach)) {
 
             return undef;
@@ -8124,10 +8149,10 @@
             $button->set_image($image);
         }
 
-        # Add the button to the table
+        # Add the button to the grid
         $button->set_hexpand(TRUE);
         $button->set_vexpand(FALSE);
-        $table->attach(
+        $grid->attach(
             $button,
             $leftAttach,
             $topAttach,
@@ -8144,13 +8169,13 @@
         #   window's Gtk3::Grid
         #
         # Example calls:
-        #   my $checkButton = $self->addCheckButton($table, 'Click me', 'some_IV', TRUE,
+        #   my $checkButton = $self->addCheckButton($grid, 'Click me', 'some_IV', TRUE,
         #       0, 6, 0, 1);
-        #   my $checkButton = $self->addCheckButton($table, undef, 'some_IV', TRUE,
+        #   my $checkButton = $self->addCheckButton($grid, undef, 'some_IV', TRUE,
         #       0, 6, 0, 1);
         #
         # Expected arguments
-        #   $table      - The tab's Gtk3::Grid object
+        #   $grid       - The tab's Gtk3::Grid object
         #   $name       - A 'name' for the checkbutton (displayed next to the button); if 'undef',
         #                   no name is displayed
         #   $iv         - A string naming the IV set when the check button is toggled. If 'undef',
@@ -8159,27 +8184,27 @@
         #   $stateFlag  - Flag set to FALSE if the checkbutton's state should be 'insensitive',
         #                   TRUE if it should be 'normal'
         #   $leftAttach, $rightAttach, $topAttach, $bottomAttach
-        #               - The position of the checkbutton in the table
+        #               - The position of the checkbutton in the grid
         #
         # Return values
         #   'undef' on improper arguments or if the widget's position in the Gtk3::Grid is invalid
         #   Otherwise the Gtk3::CheckButton created
 
         my (
-            $self, $table, $name, $iv, $stateFlag, $leftAttach, $rightAttach, $topAttach,
+            $self, $grid, $name, $iv, $stateFlag, $leftAttach, $rightAttach, $topAttach,
             $bottomAttach, $check
         ) = @_;
 
         # Check for improper arguments
         if (
-            ! defined $table || ! defined $stateFlag || ! defined $leftAttach
+            ! defined $grid || ! defined $stateFlag || ! defined $leftAttach
             || ! defined $rightAttach || ! defined $topAttach || ! defined $bottomAttach
             || defined $check
         ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->addCheckButton', @_);
         }
 
-        # Check that the position in the table makes sense
+        # Check that the position in the grid makes sense
         if (! $self->checkPosn($leftAttach, $rightAttach, $topAttach, $bottomAttach)) {
 
             return undef;
@@ -8210,10 +8235,10 @@
             $checkButton->set_state('insensitive');
         }
 
-        # Add the checkbutton to the table
+        # Add the checkbutton to the grid
         $checkButton->set_hexpand(TRUE);
         $checkButton->set_vexpand(FALSE);
-        $table->attach(
+        $grid->attach(
             $checkButton,
             $leftAttach,
             $topAttach,
@@ -8230,14 +8255,14 @@
         #
         # Example calls:
         #   my ($group, $button) = $self->addRadioButton(
-        #       $table, undef, $name, 'some_IV', $value, TRUE,
+        #       $grid, undef, $name, 'some_IV', $value, TRUE,
         #       0, 6, 0, 1);
         #   my ($group2, $button2) = $self->addRadioButton(
-        #       $table, $group, $name, 'some_IV', $value, TRUE,
+        #       $grid, $group, $name, 'some_IV', $value, TRUE,
         #       0, 6, 0, 1, 0, 0.5);
         #
         # Expected arguments
-        #   $table      - The tab's Gtk3::Grid object
+        #   $grid       - The tab's Gtk3::Grid object
         #   $group      - Reference to the radio button group created, when the first button in the
         #                   group was added (if set to 'undef', this is the first button, and a
         #                   group will be created for it)
@@ -8251,7 +8276,7 @@
         #   $stateFlag  - Flag set to FALSE if the radiobutton's state should be 'insensitive',
         #                   TRUE if it should be 'normal'
         #   $leftAttach, $rightAttach, $topAttach, $bottomAttach
-        #               - The position of the radiobutton in the table
+        #               - The position of the radiobutton in the grid
         #
         # Optional arguments
         #   $alignLeft, $alignRight
@@ -8265,7 +8290,7 @@
         #       Gtk3::RadioButton created
 
         my (
-            $self, $table, $group, $name, $iv, $value, $stateFlag, $leftAttach, $rightAttach,
+            $self, $grid, $group, $name, $iv, $value, $stateFlag, $leftAttach, $rightAttach,
             $topAttach, $bottomAttach, $alignLeft, $alignRight, $check
         ) = @_;
 
@@ -8274,7 +8299,7 @@
 
         # Check for improper arguments
         if (
-            ! defined $table || ! defined $stateFlag || ! defined $leftAttach
+            ! defined $grid || ! defined $stateFlag || ! defined $leftAttach
             || ! defined $rightAttach || ! defined $topAttach || ! defined $bottomAttach
             || defined $check
         ) {
@@ -8282,7 +8307,7 @@
             return @emptyList;
         }
 
-        # Check that the position in the table makes sense
+        # Check that the position in the grid makes sense
         if (! $self->checkPosn($leftAttach, $rightAttach, $topAttach, $bottomAttach)) {
 
             return @emptyList;
@@ -8344,10 +8369,10 @@
         # Set radio button's alignment
         $radioButton->set_alignment($alignLeft, $alignRight);
 
-        # Add the radio button to the table
+        # Add the radio button to the grid
         $radioButton->set_hexpand(FALSE);
         $radioButton->set_vexpand(FALSE);
-        $table->attach(
+        $grid->attach(
             $radioButton,
             $leftAttach,
             $topAttach,
@@ -8363,22 +8388,22 @@
         # Adds a Gtk3::Entry at the specified position in the tab's Gtk3::Grid
         #
         # Example calls:
-        #   my $entry = $self->addEntry($table, 'some_IV', TRUE,
+        #   my $entry = $self->addEntry($grid, 'some_IV', TRUE,
         #       0, 6, 0, 1);
-        #   my $entry = $self->addEntry($table, 'some_IV', FALSE,
+        #   my $entry = $self->addEntry($grid, 'some_IV', FALSE,
         #       0, 6, 0, 1, 16, 16);
-        #   my $entry = $self->addEntry($table, undef, TRUE,
+        #   my $entry = $self->addEntry($grid, undef, TRUE,
         #       0, 6, 0, 1);
         #
         # Expected arguments
-        #   $table      - The tab's Gtk3::Grid object
+        #   $grid       - The tab's Gtk3::Grid object
         #   $iv         - A string naming the IV set when the user modifies the text in the entry
         #                   box. If 'undef', nothing happens when the user modifies the text; it's
         #                   up to the calling function to check the entry box's state
         #   $stateFlag  - Flag set to FALSE if the entry box's state should be 'insensitive', TRUE
         #                   if it should be 'normal'
         #   $leftAttach, $rightAttach, $topAttach, $bottomAttach
-        #               - The position of the entry box in the table
+        #               - The position of the entry box in the grid
         #
         # Optional arguments
         #   $widthChars - The width of the box, in chars ('undef' if maximum not needed)
@@ -8389,20 +8414,20 @@
         #   Otherwise the Gtk3::Entry created
 
         my (
-            $self, $table, $iv, $stateFlag, $leftAttach, $rightAttach, $topAttach, $bottomAttach,
+            $self, $grid, $iv, $stateFlag, $leftAttach, $rightAttach, $topAttach, $bottomAttach,
             $widthChars, $maxChars, $check
         ) = @_;
 
         # Check for improper arguments
         if (
-            ! defined $table || ! defined $stateFlag || ! defined $leftAttach
+            ! defined $grid || ! defined $stateFlag || ! defined $leftAttach
             || ! defined $rightAttach || ! defined $topAttach || ! defined $bottomAttach
             || defined $check
         ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->addEntry', @_);
         }
 
-        # Check that the position in the table makes sense
+        # Check that the position in the grid makes sense
         if (! $self->checkPosn($leftAttach, $rightAttach, $topAttach, $bottomAttach)) {
 
             return undef;
@@ -8446,9 +8471,10 @@
             $entry->set_state('insensitive');
         }
 
-        # Add the entry to the table
+        # Add the entry to the grid
         $entry->set_hexpand(TRUE);
-        $table->attach(
+        $entry->set_vexpand(FALSE);
+        $grid->attach(
             $entry,
             $leftAttach,
             $topAttach,
@@ -8466,19 +8492,19 @@
         #   and allows the user to set the IV to 'undef'
         #
         # Example calls:
-        #   my $entry = $self->addEntryWithButton($table, 'some_IV', TRUE,
+        #   my $entry = $self->addEntryWithButton($grid, 'some_IV', TRUE,
         #       0, 6, 0, 1);
-        #   my $entry = $self->addEntryWithButton($table, 'some_IV', FALSE,
+        #   my $entry = $self->addEntryWithButton($grid, 'some_IV', FALSE,
         #       0, 6, 0, 1, 16, 16);
         #
         # Expected arguments
-        #   $table      - The tab's Gtk3::Grid object
+        #   $grid      - The tab's Gtk3::Grid object
         #   $iv         - A string naming the IV set when the user modifies the text in the entry
         #                   box. Unlike most of these functions, the $iv must be specified
         #   $stateFlag  - Flag set to FALSE if the entry box's state should be 'insensitive', TRUE
         #                   if it should be 'normal'
         #   $leftAttach, $rightAttach, $topAttach, $bottomAttach
-        #               - The position of the entry in the table
+        #               - The position of the entry in the grid
         #
         # Optional arguments
         #   $widthChars - The width of the box, in chars ('undef' if maximum not needed)
@@ -8489,29 +8515,29 @@
         #   Otherwise the Gtk3::Entry created
 
         my (
-            $self, $table, $iv, $stateFlag, $leftAttach, $rightAttach, $topAttach, $bottomAttach,
+            $self, $grid, $iv, $stateFlag, $leftAttach, $rightAttach, $topAttach, $bottomAttach,
             $widthChars, $maxChars, $check
         ) = @_;
 
         # Check for improper arguments
         if (
-            ! defined $table || ! defined $iv || ! defined $stateFlag || ! defined $leftAttach
+            ! defined $grid || ! defined $iv || ! defined $stateFlag || ! defined $leftAttach
             || ! defined $rightAttach || ! defined $topAttach || ! defined $bottomAttach
             || defined $check
         ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->addEntryWithButton', @_);
         }
 
-        # Check that the position in the table makes sense
+        # Check that the position in the grid makes sense
         if (! $self->checkPosn($leftAttach, $rightAttach, $topAttach, $bottomAttach)) {
 
             return undef;
         }
-        # Call $self->addEntry to create the entry as normal, reserving one square in the table for
+        # Call $self->addEntry to create the entry as normal, reserving one square in the grid for
         #   the button (we don't pass $iv to $self->addEntry because we're going to create our own
         #   ->signal_connect)
         my $entry = $self->addEntry(
-            $table, undef, $stateFlag, $leftAttach, ($rightAttach - 1), $topAttach, $bottomAttach,
+            $grid, undef, $stateFlag, $leftAttach, ($rightAttach - 1), $topAttach, $bottomAttach,
             $widthChars, $maxChars,
         );
 
@@ -8574,11 +8600,11 @@
             $button->set_tooltip_text('Click to set this IV to \'undef\'');
         });
 
-        # Add the button to the table (the entry has already been added)
+        # Add the button to the grid (the entry has already been added)
         $button->set_hexpand(FALSE);
         $button->set_vexpand(FALSE);
         $leftAttach = $rightAttach - 1;
-        $table->attach(
+        $grid->attach(
             $button,
             $leftAttach,
             $topAttach,
@@ -8597,26 +8623,26 @@
         #   forbidden value)
         #
         # Example calls:
-        #   my $entry = $self->addEntryWithIcon($table, 'some_IV', 'int', 0, 1000,
+        #   my $entry = $self->addEntryWithIcon($grid, 'some_IV', 'int', 0, 1000,
         #       0, 6, 0, 1);
-        #   my $entry = $self->addEntryWithIcon($table, 'some_IV', 'odd', 1, 1001,
+        #   my $entry = $self->addEntryWithIcon($grid, 'some_IV', 'odd', 1, 1001,
         #       0, 6, 0, 1);
-        #   my $entry = $self->addEntryWithIcon($table, 'some_IV', 'even', 0, 1000,
+        #   my $entry = $self->addEntryWithIcon($grid, 'some_IV', 'even', 0, 1000,
         #       0, 6, 0, 1);
-        #   my $entry = $self->addEntryWithIcon($table, 'some_IV', 'float', 0, 1000000,
+        #   my $entry = $self->addEntryWithIcon($grid, 'some_IV', 'float', 0, 1000000,
         #       0, 6, 0, 1);
-        #   my $entry = $self->addEntryWithIcon($table, 'some_IV', 'string', 3, 16,
+        #   my $entry = $self->addEntryWithIcon($grid, 'some_IV', 'string', 3, 16,
         #       0, 6, 0, 1);
-        #   my $entry = $self->addEntryWithIcon($table, 'some_IV', 'regex', 1, undef,
+        #   my $entry = $self->addEntryWithIcon($grid, 'some_IV', 'regex', 1, undef,
         #       0, 6, 0, 1);
-        #   my $entry = $self->addEntryWithIcon($table, 'some_IV', \&checkFunction, undef, undef,
+        #   my $entry = $self->addEntryWithIcon($grid, 'some_IV', \&checkFunction, undef, undef,
         #       0, 6, 0, 1);
         #
-        #   my $entry = $self->addEntryWithIcon($table, 'some_IV', 'int', 0, 1000,
+        #   my $entry = $self->addEntryWithIcon($grid, 'some_IV', 'int', 0, 1000,
         #       0, 6, 0, 1, 16, 16);
         #
         # Expected arguments
-        #   $table      - The tab's Gtk3::Grid object
+        #   $grid       - The tab's Gtk3::Grid object
         #   $iv         - A string naming the IV set when the user modifies the text in the entry
         #                   box. If 'undef', nothing happens when the user modifies the text (except
         #                   that the icon is updated); it's up to the calling function to check the
@@ -8639,7 +8665,7 @@
         #                   If $min is 'undef', there is no minimum; if $max is 'undef', there is no
         #                   maximum
         #   $leftAttach, $rightAttach, $topAttach, $bottomAttach
-        #               - The position of the entry in the table
+        #               - The position of the entry in the grid
         #
         # Optional arguments
         #   $widthChars - The width of the box, in chars ('undef' if maximum not needed)
@@ -8650,7 +8676,7 @@
         #   Otherwise the Gtk3::Entry created
 
         my (
-            $self, $table, $iv, $mode, $min, $max, $leftAttach, $rightAttach, $topAttach,
+            $self, $grid, $iv, $mode, $min, $max, $leftAttach, $rightAttach, $topAttach,
             $bottomAttach, $widthChars, $maxChars, $check
         ) = @_;
 
@@ -8659,13 +8685,13 @@
 
         # Check for improper arguments
         if (
-            ! defined $table || ! defined $mode || ! defined $leftAttach || ! defined $rightAttach
+            ! defined $grid || ! defined $mode || ! defined $leftAttach || ! defined $rightAttach
             || ! defined $topAttach || ! defined $bottomAttach || defined $check
         ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->addEntryWithIcon', @_);
         }
 
-        # Check that the position in the table makes sense
+        # Check that the position in the grid makes sense
         if (! $self->checkPosn($leftAttach, $rightAttach, $topAttach, $bottomAttach)) {
 
             return undef;
@@ -8775,10 +8801,10 @@
             $entry->set_max_length($maxChars);
         }
 
-        # Add the entry to the table
+        # Add the entry to the grid
         $entry->set_hexpand(TRUE);
         $entry->set_vexpand(FALSE);
-        $table->attach(
+        $grid->attach(
             $entry,
             $leftAttach,
             $topAttach,
@@ -8796,7 +8822,7 @@
         # An IV value of 'undef' counts as acceptable, in addition to the usual conditions
         #
         # Expected arguments
-        #   $table      - The tab's Gtk3::Grid object
+        #   $grid       - The tab's Gtk3::Grid object
         #   $iv         - A string naming the IV set when the user modifies the text in the entry
         #                   box. Unlike most of these functions, the $iv must be specified
         #   $mode       - Set to 'int', 'odd', 'even', 'float', 'string' or a reference to a
@@ -8817,7 +8843,7 @@
         #                   If $min is 'undef', there is no minimum; if $max is 'undef', there is no
         #                   maximum
         #   $leftAttach, $rightAttach, $topAttach, $bottomAttach
-        #               - The position of the entry in the table
+        #               - The position of the entry in the grid
         #
         # Optional arguments
         #   $widthChars - The width of the box, in chars ('undef' if maximum not needed)
@@ -8828,7 +8854,7 @@
         #   Otherwise the Gtk3::Entry created
 
         my (
-            $self, $table, $iv, $mode, $min, $max, $leftAttach, $rightAttach, $topAttach,
+            $self, $grid, $iv, $mode, $min, $max, $leftAttach, $rightAttach, $topAttach,
             $bottomAttach, $widthChars, $maxChars, $check
         ) = @_;
 
@@ -8837,24 +8863,24 @@
 
         # Check for improper arguments
         if (
-            ! defined $table || ! defined $iv || ! defined $mode || ! defined $leftAttach
+            ! defined $grid || ! defined $iv || ! defined $mode || ! defined $leftAttach
             || ! defined $rightAttach || ! defined $topAttach || ! defined $bottomAttach
             || defined $check
         ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->addEntryWithIconButton', @_);
         }
 
-        # Check that the position in the table makes sense
+        # Check that the position in the grid makes sense
         if (! $self->checkPosn($leftAttach, $rightAttach, $topAttach, $bottomAttach)) {
 
             return undef;
         }
 
         # Call $self->addEntryWithIcon to create the entry as normal, reserving one square in the
-        #   table for the button (we don't pass $iv to $self->addEntryWithIcon because we're going
+        #   grid for the button (we don't pass $iv to $self->addEntryWithIcon because we're going
         #   to create our own ->signal_connect)
         my $entry = $self->addEntryWithIcon(
-            $table, undef, $mode, $min, $max, $leftAttach, ($rightAttach - 1), $topAttach,
+            $grid, undef, $mode, $min, $max, $leftAttach, ($rightAttach - 1), $topAttach,
             $bottomAttach, $widthChars, $maxChars,
         );
 
@@ -8931,11 +8957,11 @@
             $button->set_tooltip_text('Click to set this IV to \'undef\'');
         });
 
-        # Add the button to the table (the entry has already been added)
+        # Add the button to the grid (the entry has already been added)
         $button->set_hexpand(FALSE);
         $button->set_vexpand(FALSE);
         $leftAttach = $rightAttach - 1;
-        $table->attach(
+        $grid->attach(
             $button,
             $leftAttach,
             $topAttach,
@@ -8951,13 +8977,13 @@
         # Adds a Gtk3::ComboBox at the specified position in the window's Gtk3::Grid
         #
         # Example calls:
-        #   my $comboBox = $self->addComboBox($table, 'some_IV', \@comboList, 'some_title', TRUE,
+        #   my $comboBox = $self->addComboBox($grid, 'some_IV', \@comboList, 'some_title', TRUE,
         #       0, 6, 0, 1);
-        #   my $comboBox = $self->addComboBox($table, 'some_IV', \@comboList, '', FALSE,
+        #   my $comboBox = $self->addComboBox($grid, 'some_IV', \@comboList, '', FALSE,
         #       0, 6, 0, 1);
         #
         # Expected arguments
-        #   $table          - The tab's Gtk3::Grid object
+        #   $grid           - The tab's Gtk3::Grid object
         #   $iv             - A string naming the IV set when the user chooses an item in the combo
         #                       box. If 'undef', nothing happens when the user chooses an item in
         #                       the box; it's up to the calling function to check the box's state
@@ -8969,7 +8995,7 @@
         #                       $listRef. If set to FALSE (or 'undef'), the first item in the combo
         #                       is an empty value used to set the IV to 'undef'
         #   $leftAttach, $rightAttach, $topAttach, $bottomAttach
-        #                   - The position of the combo box in the table
+        #                   - The position of the combo box in the grid
         #
         # Optional arguments
         #
@@ -8978,20 +9004,20 @@
         #   Otherwise the Gtk3::ComboBox created
 
         my (
-            $self, $table, $iv, $listRef, $title, $noUndefFlag, $leftAttach, $rightAttach,
+            $self, $grid, $iv, $listRef, $title, $noUndefFlag, $leftAttach, $rightAttach,
             $topAttach, $bottomAttach, $check
         ) = @_;
 
         # Check for improper arguments
         if (
-            ! defined $table || ! defined $listRef || ! defined $title || ! defined $leftAttach
+            ! defined $grid || ! defined $listRef || ! defined $title || ! defined $leftAttach
             || ! defined $rightAttach || ! defined $topAttach || ! defined $bottomAttach
             || defined $check
         ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->addComboBox', @_);
         }
 
-        # Check that the position in the table makes sense
+        # Check that the position in the grid makes sense
         if (! $self->checkPosn($leftAttach, $rightAttach, $topAttach, $bottomAttach)) {
 
             return undef;
@@ -9087,10 +9113,10 @@
             });
         }
 
-        # Add the combobox to the table
+        # Add the combobox to the grid
         $comboBox->set_hexpand(TRUE);
         $comboBox->set_vexpand(FALSE);
-        $table->attach(
+        $grid->attach(
             $comboBox,
             $leftAttach,
             $topAttach,
@@ -9106,15 +9132,15 @@
         # Adds a Gtk3::TextView at the specified position in the window's Gtk3::Grid
         #
         # Example calls:
-        #   my $textView = $self->addTextView($table, 'some_IV', TRUE,
+        #   my $textView = $self->addTextView($grid, 'some_IV', TRUE,
         #       0, 6, 0, 1);
-        #   my $textView = $self->addTextView($table, 'some_IV', FALSE,
+        #   my $textView = $self->addTextView($grid, 'some_IV', FALSE,
         #       0, 6, 0, 1,
         #       TRUE, FALSE, TRUE,
         #       -1, 120);
         #
         # Expected arguments
-        #   $table      - The tab's Gtk3::Grid object
+        #   $grid       - The tab's Gtk3::Grid object
         #   $iv         - A string naming the IV set when the user modifies the contents of the
         #                   textview. If 'undef', nothing happens when the user modifies the
         #                   contents; it's up to the calling function to check the textview's state
@@ -9122,7 +9148,7 @@
         #               - Flag set to TRUE if the textView should be editable, FALSE if it shouldn't
         #                   be editable
         #   $leftAttach, $rightAttach, $topAttach, $bottomAttach
-        #               - The position of the textview in the table
+        #               - The position of the textview in the grid
         #
         # Optional arguments
         #   $listFlag   - Flag set to TRUE if the contents of the textview should be treated as a
@@ -9143,28 +9169,26 @@
         #   $width, $height
         #               - The width and height (in pixels) of the frame containing the list. If
         #                   specified, values of -1 mean 'don't set this value'. The default values
-        #                   are (-1, 120) - we use a fixed height, because Gtk3 on some operating
-        #                   systems will draw a textview barely one line high (in a vertical
-        #                   packing box)
+        #                   are (-1, -1)
         #
         # Return values
         #   'undef' on improper arguments or if the widget's position in the Gtk3::Grid is invalid
         #   Otherwise the Gtk3::TextView created (inside a Gtk::ScrolledWindow)
 
         my (
-            $self, $table, $iv, $editableFlag, $leftAttach, $rightAttach, $topAttach, $bottomAttach,
+            $self, $grid, $iv, $editableFlag, $leftAttach, $rightAttach, $topAttach, $bottomAttach,
             $listFlag, $removeEmptyFlag, $removeSpaceFlag, $noScrollFlag, $width, $height, $check
         ) = @_;
 
         # Check for improper arguments
         if (
-            ! defined $table || ! defined $editableFlag || ! defined $leftAttach
+            ! defined $grid || ! defined $editableFlag || ! defined $leftAttach
             || ! defined $rightAttach || ! defined $topAttach || defined $check
         ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->addTextView', @_);
         }
 
-        # Check that the position in the table makes sense
+        # Check that the position in the grid makes sense
         if (! $self->checkPosn($leftAttach, $rightAttach, $topAttach, $bottomAttach)) {
 
             return undef;
@@ -9193,15 +9217,15 @@
 
         if (! defined $height) {
 
-            $height = 120;
+            $height = -1;   # Let Gtk3 set the height
         }
 
         # Creating a containing Gtk3::Frame and Gtk3::ScrolledWindow
         my $scroll = Gtk3::ScrolledWindow->new(undef, undef);
-        $scroll->set_shadow_type('etched-out');
+        $scroll->set_shadow_type($axmud::CLIENT->constShadowType);
         $scroll->set_policy('automatic', 'automatic');
         $scroll->set_size_request($width, $height);
-        $scroll->set_border_width($self->spacingPixels);
+#        $scroll->set_border_width($self->spacingPixels);
 
         # Create a textview with default colours/fonts
         my $textView = Gtk3::TextView->new();
@@ -9276,9 +9300,10 @@
         # Make the textview editable or not editable
         $textView->set_editable($editableFlag);
 
-        # Add the textview to the table (for textviews, calls to ->set_vexpand have no effect)
+        # Add the textview to the grid
         $scroll->set_hexpand(TRUE);
-        $table->attach(
+        $scroll->set_vexpand(TRUE);
+        $grid->attach(
             $scroll,
             $leftAttach,
             $topAttach,
@@ -9294,11 +9319,11 @@
         # Adds a GA::Obj::SimpleList at the specified position in the window's Gtk3::Grid
         #
         # Example calls:
-        #   my $slWidget = $self->addSimpleList($table, 'some_IV', \@columnList,
+        #   my $slWidget = $self->addSimpleList($grid, 'some_IV', \@columnList,
         #       0, 6, 0, 1);
         #
         # Expected arguments
-        #   $table          - The tab's Gtk3::Grid object
+        #   $grid           - The tab's Gtk3::Grid object
         #   $iv             - The IV in $self->editObj containing the data being edited. If 'undef',
         #                       the list is not populated with data; it's up to the calling function
         #                       to do it
@@ -9307,19 +9332,19 @@
         #                   - 'column_type' is one of the column types specified by
         #                       GA::Obj::SimpleList, e.g. 'scalar', 'int'
         #   $leftAttach, $rightAttach, $topAttach, $bottomAttach
-        #                   - The position of the simple list in the table
+        #                   - The position of the simple list in the grid
         #
         # Optional arguments
         #   $width, $height - The width and height (in pixels) of the scroller containing the list.
         #                       If specified, values of -1 mean 'don't set this value'. The default
-        #                       values are (-1, 180)
+        #                       values are (-1, -1)
         #
         # Return values
         #   'undef' on improper arguments
         #   Otherwise the GA::Obj::SimpleList created
 
         my (
-            $self, $table, $iv, $columnListRef, $leftAttach, $rightAttach, $topAttach,
+            $self, $grid, $iv, $columnListRef, $leftAttach, $rightAttach, $topAttach,
             $bottomAttach, $width, $height, $check,
         ) = @_;
 
@@ -9331,14 +9356,14 @@
 
         # Check for improper arguments
         if (
-            ! defined $table || ! defined $columnListRef || ! defined $leftAttach
+            ! defined $grid || ! defined $columnListRef || ! defined $leftAttach
             || ! defined $rightAttach || ! defined $topAttach || ! defined $bottomAttach
             || defined $check
         ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->addSimpleList', @_);
         }
 
-        # Check that the position in the table makes sense
+        # Check that the position in the grid makes sense
         if (! $self->checkPosn($leftAttach, $rightAttach, $topAttach, $bottomAttach)) {
 
             return undef;
@@ -9352,7 +9377,7 @@
 
         if (! defined $height) {
 
-            $height = 180;
+            $height = -1;   # Let Gtk3 set the height
         }
 
         # Dereference the list of columns
@@ -9364,7 +9389,7 @@
 
         my $scroller = Gtk3::ScrolledWindow->new();
         $frame->add($scroller);
-        $scroller->set_shadow_type('none');
+        $scroller->set_shadow_type($axmud::CLIENT->constShadowType);
         $scroller->set_policy('automatic', 'automatic');
         $scroller->set_border_width(0);
         $scroller->set_size_request($width, $height);
@@ -9410,9 +9435,10 @@
 
         } until (! @columnList);
 
-        # Add the simple list to the table (for simple lists, calls to ->set_vexpand have no effect)
+        # Add the simple list to the grid
         $frame->set_hexpand(TRUE);
-        $table->attach(
+        $frame->set_vexpand(TRUE);
+        $grid->attach(
             $frame,
             $leftAttach,
             $topAttach,
@@ -9430,11 +9456,11 @@
         #   result
         #
         # Example calls:
-        #   my $button = $self->addRegexButton($table, $listRef,
+        #   my $button = $self->addRegexButton($grid, $listRef,
         #       0, 6, 0, 1);
         #
         # Expected arguments
-        #   $table      - The tab's Gtk3::Grid object
+        #   $grid       - The tab's Gtk3::Grid object
         #   $listRef    - Reference to a list in groups of 2, in the form (type, iv, type, iv...)
         #                   where 'type' is 'scalar' to test a pattern stored in a scalar IV, 'list'
         #                   to test the patterns stored in a list IV, 'keys' or 'values' to test
@@ -9444,26 +9470,26 @@
         #                   any 'type' is not recognised, patterns in the IV are not tested (but
         #                   other IVs are still tested)
         #   $leftAttach, $rightAttach, $topAttach, $bottomAttach
-        #               - The position of the button in the table
+        #               - The position of the button in the grid
         #
         # Return values
         #   'undef' on improper arguments or if the widget's position in the Gtk3::Grid is invalid
         #   Otherwise the Gtk3::Button created
 
         my (
-            $self, $table, $listRef, $leftAttach, $rightAttach, $topAttach, $bottomAttach, $check,
+            $self, $grid, $listRef, $leftAttach, $rightAttach, $topAttach, $bottomAttach, $check,
         ) = @_;
 
         # Check for improper arguments
         if (
-            ! defined $table || ! defined $listRef || ! defined $leftAttach
+            ! defined $grid || ! defined $listRef || ! defined $leftAttach
             || ! defined $rightAttach || ! defined $topAttach || ! defined $bottomAttach
             || defined $check
         ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->addRegexButton', @_);
         }
 
-        # Check that the position in the table makes sense
+        # Check that the position in the grid makes sense
         if (! $self->checkPosn($leftAttach, $rightAttach, $topAttach, $bottomAttach)) {
 
             return undef;
@@ -9632,10 +9658,10 @@
             });
         }
 
-        # Add the button to the table
+        # Add the button to the grid
         $button->set_hexpand(TRUE);
         $button->set_vexpand(FALSE);
-        $table->attach(
+        $grid->attach(
             $button,
             $leftAttach,
             $topAttach,
@@ -9657,13 +9683,13 @@
         #   in $self->attribHash
         #
         # Example calls:
-        #   my $checkButton = $self->useCheckButton($table, 'Click me', 'some_attribute', TRUE,
+        #   my $checkButton = $self->useCheckButton($grid, 'Click me', 'some_attribute', TRUE,
         #       0, 6, 0, 1);
-        #   my $checkButton = $self->useCheckButton($table, undef, 'some_attribute', TRUE,
+        #   my $checkButton = $self->useCheckButton($grid, undef, 'some_attribute', TRUE,
         #       0, 6, 0, 1);
         #
         # Expected arguments
-        #   $table      - The tab's Gtk3::Grid object
+        #   $grid       - The tab's Gtk3::Grid object
         #   $name       - A 'name' for the checkbutton (displayed next to the button); if 'undef',
         #                   no name is displayed
         #   $attrib     - The name of the attribute set when the check button is toggled (matches
@@ -9671,7 +9697,7 @@
         #   $stateFlag  - Flag set to FALSE if the checkbutton's state should be 'insensitive',
         #                   TRUE if it should be 'normal'
         #   $leftAttach, $rightAttach, $topAttach, $bottomAttach
-        #               - The position of the checkbutton in the table
+        #               - The position of the checkbutton in the grid
         #
         # Optional arguments
         #   $alignX, $alignY
@@ -9683,20 +9709,20 @@
         #   Otherwise the Gtk3::CheckButton created
 
         my (
-            $self, $table, $name, $attrib, $stateFlag, $leftAttach, $rightAttach, $topAttach,
+            $self, $grid, $name, $attrib, $stateFlag, $leftAttach, $rightAttach, $topAttach,
             $bottomAttach, $check
         ) = @_;
 
         # Check for improper arguments
         if (
-            ! defined $table || ! defined $attrib || ! defined $stateFlag || ! defined $leftAttach
+            ! defined $grid || ! defined $attrib || ! defined $stateFlag || ! defined $leftAttach
             || ! defined $rightAttach || ! defined $topAttach || ! defined $bottomAttach
             || defined $check
         ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->useCheckButton', @_);
         }
 
-        # Check that the position in the table makes sense
+        # Check that the position in the grid makes sense
         if (! $self->checkPosn($leftAttach, $rightAttach, $topAttach, $bottomAttach)) {
 
             return undef;
@@ -9722,10 +9748,10 @@
             $checkButton->set_state('insensitive');
         }
 
-        # Add the checkbutton to the table
+        # Add the checkbutton to the grid
         $checkButton->set_hexpand(TRUE);
         $checkButton->set_vexpand(FALSE);
-        $table->attach(
+        $grid->attach(
             $checkButton,
             $leftAttach,
             $topAttach,
@@ -9744,14 +9770,14 @@
         #
         # Example calls:
         #   my ($group, $button) = $self->useRadioButton(
-        #       $table, undef, $name, 'some_attribute', $value, TRUE,
+        #       $grid, undef, $name, 'some_attribute', $value, TRUE,
         #       0, 6, 0, 1);
         #   my ($group2, $button2) = $self->useRadioButton(
-        #       $table, $group, $name, 'some_attribute', $value, TRUE,
+        #       $grid, $group, $name, 'some_attribute', $value, TRUE,
         #       0, 6, 0, 1, 0, 0.5);
         #
         # Expected arguments
-        #   $table      - The tab's Gtk3::Grid object
+        #   $grid       - The tab's Gtk3::Grid object
         #   $group      - Reference to the radio button group created, when the first button in the
         #                   group was added (if set to 'undef', this is the first button, and a
         #                   group will be created for it)
@@ -9763,7 +9789,7 @@
         #   $stateFlag  - Flag set to FALSE if the radiobutton's state should be 'insensitive',
         #                   TRUE if it should be 'normal'
         #   $leftAttach, $rightAttach, $topAttach, $bottomAttach
-        #               - The position of the radiobutton in the table
+        #               - The position of the radiobutton in the grid
         #
         # Optional arguments
         #   $alignLeft, $alignRight
@@ -9777,7 +9803,7 @@
         #       Gtk3::RadioButton created
 
         my (
-            $self, $table, $group, $name, $attrib, $value, $stateFlag, $leftAttach, $rightAttach,
+            $self, $grid, $group, $name, $attrib, $value, $stateFlag, $leftAttach, $rightAttach,
             $topAttach, $bottomAttach, $alignLeft, $alignRight, $check
         ) = @_;
 
@@ -9786,7 +9812,7 @@
 
         # Check for improper arguments
         if (
-            ! defined $table || ! defined $attrib || ! defined $stateFlag || ! defined $leftAttach
+            ! defined $grid || ! defined $attrib || ! defined $stateFlag || ! defined $leftAttach
             || ! defined $rightAttach || ! defined $topAttach || ! defined $bottomAttach
             || defined $check
         ) {
@@ -9794,7 +9820,7 @@
             return @emptyList;
         }
 
-        # Check that the position in the table makes sense
+        # Check that the position in the grid makes sense
         if (! $self->checkPosn($leftAttach, $rightAttach, $topAttach, $bottomAttach)) {
 
             return @emptyList;
@@ -9850,10 +9876,10 @@
         # Set radio button's alignment
         $radioButton->set_alignment($alignLeft, $alignRight);
 
-        # Add the radio button to the table
+        # Add the radio button to the grid
         $radioButton->set_hexpand(FALSE);
         $radioButton->set_vexpand(FALSE);
-        $table->attach(
+        $grid->attach(
             $radioButton,
             $leftAttach,
             $topAttach,
@@ -9874,27 +9900,27 @@
         # Instead of setting an IV in $self->editHash, sets a key-value pair in $self->attribHash
         #
         # Example calls:
-        #   my $entry = $self->useEntryWithIcon($table, 'some_attribute', 'int', 0, 1000,
+        #   my $entry = $self->useEntryWithIcon($grid, 'some_attribute', 'int', 0, 1000,
         #       0, 6, 0, 1);
-        #   my $entry = $self->useEntryWithIcon($table, 'some_attribute', 'odd', 1, 1001,
+        #   my $entry = $self->useEntryWithIcon($grid, 'some_attribute', 'odd', 1, 1001,
         #       0, 6, 0, 1);
-        #   my $entry = $self->useEntryWithIcon($table, 'some_attribute', 'even', 0, 1000,
+        #   my $entry = $self->useEntryWithIcon($grid, 'some_attribute', 'even', 0, 1000,
         #       0, 6, 0, 1);
-        #   my $entry = $self->useEntryWithIcon($table, 'some_attribute', 'float', 0, 1000000,
+        #   my $entry = $self->useEntryWithIcon($grid, 'some_attribute', 'float', 0, 1000000,
         #       0, 6, 0, 1);
-        #   my $entry = $self->useEntryWithIcon($table, 'some_attribute', 'string', 3, 16,
+        #   my $entry = $self->useEntryWithIcon($grid, 'some_attribute', 'string', 3, 16,
         #       0, 6, 0, 1);
-        #   my $entry = $self->useEntryWithIcon($table, 'some_attribute', 'regex', 1, undef,
+        #   my $entry = $self->useEntryWithIcon($grid, 'some_attribute', 'regex', 1, undef,
         #       0, 6, 0, 1);
         #   my $entry = $self->useEntryWithIcon(
-        #       $table, 'some_attribute', \&checkFunction, undef, undef,
+        #       $grid, 'some_attribute', \&checkFunction, undef, undef,
         #       0, 6, 0, 1);
         #
-        #   my $entry = $self->useEntryWithIcon($table, 'some_attribute', 'int', 0, 1000,
+        #   my $entry = $self->useEntryWithIcon($grid, 'some_attribute', 'int', 0, 1000,
         #       0, 6, 0, 1, 16, 16);
         #
         # Expected arguments
-        #   $table      - The tab's Gtk3::Grid object
+        #   $grid       - The tab's Gtk3::Grid object
         #   $attrib     - The name of the attribute set when the user modifies the text in the entry
         #                   box
         #   $mode       - Set to 'int', 'odd', 'even', 'float', 'string' or a reference to a
@@ -9915,7 +9941,7 @@
         #                   If $min is 'undef', there is no minimum; if $max is 'undef', there is no
         #                   maximum
         #   $leftAttach, $rightAttach, $topAttach, $bottomAttach
-        #               - The position of the entry in the table
+        #               - The position of the entry in the grid
         #
         # Optional arguments
         #   $widthChars - The width of the box, in chars ('undef' if maximum not needed)
@@ -9926,7 +9952,7 @@
         #   Otherwise the Gtk3::Entry created
 
         my (
-            $self, $table, $attrib, $mode, $min, $max, $leftAttach, $rightAttach, $topAttach,
+            $self, $grid, $attrib, $mode, $min, $max, $leftAttach, $rightAttach, $topAttach,
             $bottomAttach, $widthChars, $maxChars, $check
         ) = @_;
 
@@ -9935,14 +9961,14 @@
 
         # Check for improper arguments
         if (
-            ! defined $table || ! defined $attrib || ! defined $mode || ! defined $leftAttach
+            ! defined $grid || ! defined $attrib || ! defined $mode || ! defined $leftAttach
             || ! defined $rightAttach || ! defined $topAttach || ! defined $bottomAttach
             || defined $check
         ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->useEntryWithIcon', @_);
         }
 
-        # Check that the position in the table makes sense
+        # Check that the position in the grid makes sense
         if (! $self->checkPosn($leftAttach, $rightAttach, $topAttach, $bottomAttach)) {
 
             return undef;
@@ -10037,10 +10063,10 @@
             $entry->set_max_length($maxChars);
         }
 
-        # Add the entry to the table
+        # Add the entry to the grid
         $entry->set_hexpand(TRUE);
         $entry->set_vexpand(FALSE);
-        $table->attach(
+        $grid->attach(
             $entry,
             $leftAttach,
             $topAttach,
@@ -10053,18 +10079,18 @@
 
     sub useComboBox {
 
-        # Adapted from $self->addComboBoxs
+        # Adapted from $self->addComboBox
         # Adds a Gtk3::ComboBox at the specified position in the window's Gtk3::Grid. Instead of
         #   setting an IV in $self->editHash, sets a key-value pair in $self->attribHash
         #
         # Example calls:
-        #   my $comboBox = $self->useComboBox($table, 'some_attribute', \@comboList, 'some_title',
+        #   my $comboBox = $self->useComboBox($grid, 'some_attribute', \@comboList, 'some_title',
         #       0, 6, 0, 1);
-        #   my $comboBox = $self->useComboBox($table, 'some_attribute', \@comboList, '',
+        #   my $comboBox = $self->useComboBox($grid, 'some_attribute', \@comboList, '',
         #       0, 6, 0, 1);
         #
         # Expected arguments
-        #   $table      - The tab's Gtk3::Grid object
+        #   $grid      - The tab's Gtk3::Grid object
         #   $attrib     - The name of the attribute set when the check button is toggled (matches
         #                   a key in $self->attribHash and GA::Interface::Trigger->attribHash)
         #   $listRef    - Reference to a list with initial values (can be an empty list)
@@ -10072,14 +10098,14 @@
         #                   empty string, the item at the top of the combobox list is the current
         #                   value of the attribute
         #   $leftAttach, $rightAttach, $topAttach, $bottomAttach
-        #               - The position of the combo box in the table
+        #               - The position of the combo box in the grid
         #
         # Return values
         #   'undef' on improper arguments or if the widget's position in the Gtk3::Grid is invalid
         #   Otherwise the Gtk3::ComboBox created
 
         my (
-            $self, $table, $attrib, $listRef, $title, $leftAttach, $rightAttach, $topAttach,
+            $self, $grid, $attrib, $listRef, $title, $leftAttach, $rightAttach, $topAttach,
             $bottomAttach, $check
         ) = @_;
 
@@ -10088,14 +10114,14 @@
 
         # Check for improper arguments
         if (
-            ! defined $table || ! defined $attrib || ! defined $listRef || ! defined $title
+            ! defined $grid || ! defined $attrib || ! defined $listRef || ! defined $title
             || ! defined $leftAttach || ! defined $rightAttach || ! defined $topAttach
             || ! defined $bottomAttach || defined $check
         ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->useComboBox', @_);
         }
 
-        # Check that the position in the table makes sense
+        # Check that the position in the grid makes sense
         if (! $self->checkPosn($leftAttach, $rightAttach, $topAttach, $bottomAttach)) {
 
             return undef;
@@ -10153,10 +10179,10 @@
             }
         });
 
-        # Add the combobox to the table
+        # Add the combobox to the grid
         $comboBox->set_hexpand(TRUE);
         $comboBox->set_vexpand(FALSE);
-        $table->attach(
+        $grid->attach(
             $comboBox,
             $leftAttach,
             $topAttach,
@@ -10460,13 +10486,13 @@
         #   function
         #
         # Example calls:
-        #   my $addButton = $self->addSimpleListButtons_listIV($table, $slWidget, 'some_IV', 10);
+        #   my $addButton = $self->addSimpleListButtons_listIV($grid, $slWidget, 'some_IV', 10);
         #
         # Expected arguments
-        #   $table      - The tab's Gtk3::Grid object
+        #   $grid       - The tab's Gtk3::Grid object
         #   $slWidget   - The GA::Obj::SimpleList object on which the buttons will act
         #   $iv         - The list IV in $self->editObj storing the data being edited
-        #   $rowNumber  - On the current tab's table, the row on which the buttons are put
+        #   $rowNumber  - On the current tab's grid, the row on which the buttons are put
         #   $columns    - The number of columns. For a straightforward list, 1, but many IVs
         #                   (particularly in profiles) have list IVs with data in groups of two,
         #                   three or more
@@ -10481,11 +10507,11 @@
         #   Otherwise returns the Gtk::Button labelled 'Add', so the calling function can add a
         #       ->signal_connect to it
 
-        my ($self, $table, $slWidget, $iv, $rowNumber, $columns, @widgetList) = @_;
+        my ($self, $grid, $slWidget, $iv, $rowNumber, $columns, @widgetList) = @_;
 
         # Check for improper arguments
         if (
-            ! defined $table || ! defined $slWidget || ! defined $iv || ! defined $rowNumber
+            ! defined $grid || ! defined $slWidget || ! defined $iv || ! defined $rowNumber
             || ! defined $columns
         ) {
             return $axmud::CLIENT->writeImproper(
@@ -10497,7 +10523,7 @@
         # 'Add' button
         my $button = Gtk3::Button->new('Add');
         $button->set_tooltip_text('Add new value(s)');
-        $table->attach($button, 1, $rowNumber, 2, 1);
+        $grid->attach($button, 1, $rowNumber, 2, 1);
 
         # NB The signal_connect method for the 'Add' button must be specified by the callling
         #   function. Here is some example code:
@@ -10545,7 +10571,7 @@
             }
         });
         $button2->set_tooltip_text('Delete the selected value(s)');
-        $table->attach($button2, 6, $rowNumber, 2, 1);
+        $grid->attach($button2, 6, $rowNumber, 2, 1);
 
         # 'Reset' button
         my $button3 = Gtk3::Button->new('Reset');
@@ -10559,7 +10585,7 @@
             $self->resetEntryBoxes(@widgetList);
         });
         $button3->set_tooltip_text('Reset the list');
-        $table->attach($button3, 8, $rowNumber, 2, 1);
+        $grid->attach($button3, 8, $rowNumber, 2, 1);
 
         # 'Clear' button
         my $button4 = Gtk3::Button->new('Clear');
@@ -10573,7 +10599,7 @@
             $self->resetEntryBoxes(@widgetList);
         });
         $button4->set_tooltip_text('Clear the list of values');
-        $table->attach($button4, 10, $rowNumber, 2, 1);
+        $grid->attach($button4, 10, $rowNumber, 2, 1);
 
         return $button;
     }
@@ -10586,13 +10612,13 @@
         #   function
         #
         # Example calls:
-        #   my $addButton = $self->addSimpleListButton_hashIV($table, $slWidget, 'someIV', 10);
+        #   my $addButton = $self->addSimpleListButton_hashIV($grid, $slWidget, 'someIV', 10);
         #
         # Expected arguments
-        #   $table      - The tab's Gtk3::Grid object
+        #   $grid       - The tab's Gtk3::Grid object
         #   $slWidget   - The GA::Obj::SimpleList object on which the buttons will act
         #   $iv         - The hash IV in $self->editObj storing the data being edited
-        #   $rowNumber  - On the current tab's table, the row on which the buttons are put
+        #   $rowNumber  - On the current tab's grid, the row on which the buttons are put
         #
         # Optional arguments
         #   @widgetList - List of Gtk3 widgets (entry boxes or combos) that are reset when the
@@ -10604,10 +10630,10 @@
         #   Otherwise the Gtk::Button labelled 'Add', so the calling function can add a
         #       ->signal_connect to it
 
-        my ($self, $table, $slWidget, $iv, $rowNumber, @widgetList) = @_;
+        my ($self, $grid, $slWidget, $iv, $rowNumber, @widgetList) = @_;
 
         # Check for improper arguments
-        if (! defined $table || ! defined $slWidget || ! defined $iv || ! defined $rowNumber) {
+        if (! defined $grid || ! defined $slWidget || ! defined $iv || ! defined $rowNumber) {
 
             return $axmud::CLIENT->writeImproper(
                 $self->_objClass . '->addSimpleListButtons_hashIV',
@@ -10618,7 +10644,7 @@
         # 'Add' button
         my $button = Gtk3::Button->new('Add');
         $button->set_tooltip_text('Add a new key/value pair');
-        $table->attach($button, 1, $rowNumber, 2, 1);
+        $grid->attach($button, 1, $rowNumber, 2, 1);
 
         # NB The signal_connect method for the 'Add' button must be specified by the callling
         #   function. Here is some example code:
@@ -10656,7 +10682,7 @@
             }
         });
         $button2->set_tooltip_text('Delete the selected key/value pair');
-        $table->attach($button2, 6, $rowNumber, 2, 1);
+        $grid->attach($button2, 6, $rowNumber, 2, 1);
 
         # 'Reset' button
         my $button3 = Gtk3::Button->new('Reset');
@@ -10670,7 +10696,7 @@
             $self->resetEntryBoxes(@widgetList);
         });
         $button3->set_tooltip_text('Reset the hash of key/value pairs');
-        $table->attach($button3, 8, $rowNumber, 2, 1);
+        $grid->attach($button3, 8, $rowNumber, 2, 1);
 
         # 'Clear' button
         my $button4 = Gtk3::Button->new('Clear');
@@ -10684,7 +10710,7 @@
             $self->resetEntryBoxes(@widgetList);
         });
         $button4->set_tooltip_text('Clear the hash of key/value pairs');
-        $table->attach($button4, 10, $rowNumber, 2, 1);
+        $grid->attach($button4, 10, $rowNumber, 2, 1);
 
         return $button;
     }
@@ -10877,157 +10903,6 @@
     }
 
     # Data accessors
-
-    sub resetListData {
-
-        # Replaces the data stored in a GA::Obj::SimpleList with the data stored in the specified
-        #   list
-        #
-        # Expected arguments
-        #   $slWidget   - Reference to a GA::Obj::SimpleList
-        #   $listRef    - Reference to a list which contains the replacement data
-        #   $number     - The list is split into groups (e.g. the elements of
-        #                   GA::Profile::World->barPatternList are split into groups of 6); $number
-        #                   is the size of the group (6 in that example)
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $slWidget, $listRef, $number, $check) = @_;
-
-        # Local variables
-        my @dataList;
-
-        # Check for improper arguments
-        if (! defined $slWidget || ! defined $listRef || ! defined $number || defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->resetListData_listIV', @_);
-        }
-
-        if (@$listRef) {
-
-            # Insert the replacement data
-            do {
-
-                my @groupList;
-
-                for (my $count = 0; $count < $number; $count++) {
-
-                    push (@groupList, shift @$listRef);
-                }
-
-                push (@dataList, \@groupList);
-
-            } until (! @$listRef);
-
-            @{$slWidget->{data}} = @dataList;
-
-        } else {
-
-            # Replacement data list is empty
-            @{$slWidget->{data}} = ();
-        }
-
-        return 1;
-    }
-
-    sub resetSortListData {
-
-        # Replaces the data stored in a GA::Obj::SimpleList with the data stored in the specified
-        #   list which we assume represents a hash in the form (key, value, key, value...)
-        #
-        # Expected arguments
-        #   $slWidget   - Reference to a GA::Obj::SimpleList
-        #   $listRef    - Reference to a list which contains the replacement data
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $slWidget, $listRef, $check) = @_;
-
-        # Local variables
-        my (
-            @dataList,
-            %hash,
-        );
-
-        # Check for improper arguments
-        if (! defined $slWidget || ! defined $listRef || defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->resetSortListData', @_);
-        }
-
-        if (@$listRef) {
-
-            # Assuming the contents of the list reference contains a hash flattened into a list,
-            #   convert that data to a hash
-            %hash = @$listRef;
-
-            # Insert the replacement data
-            foreach my $key (sort {lc($a) cmp lc($b)} (keys %hash)) {
-
-                push (@dataList, [$key, $hash{$key}]);
-            }
-
-            @{$slWidget->{data}} = @dataList;
-
-        } else {
-
-            # Replacement data list is empty
-            @{$slWidget->{data}} = ();
-        }
-
-        return 1;
-    }
-
-    sub getSimpleListData {
-
-        # Get items of data from specified cells in the currently selected row of a simple list
-        #
-        # Expected arguments
-        #   $slWidget   - The GA::Obj::SimpleList
-        #   @columnList - A list of column numbers on the simple list, e.g. the list (0, 2, 3)
-        #                   represents the first, third and fourth columns.
-        #
-        # Return values
-        #   An empty list on improper arguments or if no row in the simple list is currently
-        #       selected
-        #   Otherwise, returns a list containing the items of data on the selected row, in the
-        #       specified columns
-
-        my ($self, $slWidget, @columnList) = @_;
-
-        # Local variables
-        my (
-            $index, $rowRef,
-            @emptyList, @dataList,
-        );
-
-        # Check for improper arguments
-        if (! defined $slWidget || ! @columnList) {
-
-            $axmud::CLIENT->writeImproper($self->_objClass . '->getSimpleListData', @_);
-            return @emptyList;
-        }
-
-        # Get the currently selected row's number (if any)
-        ($index) = $slWidget->get_selected_indices();
-        if (defined $index) {
-
-            # Get the selected row itself
-            $rowRef = ${$slWidget->{data}}[$index];
-
-            # Get items of data from this row
-            foreach my $column (@columnList) {
-
-                push (@dataList, $$rowRef[$column]);
-            }
-        }
-
-        return @dataList;
-    }
 
     sub getEditHash_scalarIV {
 
@@ -11626,12 +11501,12 @@
         }
 
         # Tab setup
-        my ($vBox, $table) = $self->addTab($tabName, $self->notebook);
+        my $grid = $self->addTab($tabName, $self->notebook);
 
         # Private settings hash
-        $self->addLabel($table, '<b>' . $titleLabel . '</b>',
+        $self->addLabel($grid, '<b>' . $titleLabel . '</b>',
             0, 12, 0, 1);
-        $self->addLabel($table, '<i>' . $minorLabel . '</i>',
+        $self->addLabel($grid, '<i>' . $minorLabel . '</i>',
             1, 12, 1, 2);
 
         # Add a simple list
@@ -11641,25 +11516,24 @@
             'Value(s)', 'text',
         );
 
-        my $slWidget = $self->addSimpleList($table, undef, \@columnList,
-            1, 12, 2, 10,
-            -1, 280);      # Fixed height
+        my $slWidget = $self->addSimpleList($grid, undef, \@columnList,
+            1, 12, 2, 10);
 
         # Initialise the simple list
         $self->privateDataTab_refreshList($slWidget, scalar (@columnList / 2), $hashIV);
 
         # Add an entry for adding new data to the private hash
-        $self->addLabel($table, 'Key',
+        $self->addLabel($grid, 'Key',
             1, 3, 10, 11);
         # Show an icon for when something is entered; however the icon isn't checked (as would
         #   normally happen)
-        my $entry = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
+        my $entry = $self->addEntryWithIcon($grid, undef, 'string', 1, undef,
             3, 6, 10, 11);
 
         # The $key's corresponding value is either a scalar, a reference to a list or a reference to
         #   a hash
         # Add three buttons to allow the user to add one of these three types of value
-        my $button = $self->addButton($table, 'Add scalar...', 'Add a scalar value', undef,
+        my $button = $self->addButton($grid, 'Add scalar...', 'Add a scalar value', undef,
             6, 8, 10, 11);
         $button->signal_connect('clicked' => sub {
 
@@ -11692,7 +11566,7 @@
             }
         });
 
-        my $button2 = $self->addButton($table, 'Add list...', 'Add a list value', undef,
+        my $button2 = $self->addButton($grid, 'Add list...', 'Add a list value', undef,
             8, 10, 10, 11);
         $button2->signal_connect('clicked' => sub {
 
@@ -11724,7 +11598,7 @@
             }
         });
 
-        my $button3 = $self->addButton($table, 'Add hash...', 'Add a hash value', undef,
+        my $button3 = $self->addButton($grid, 'Add hash...', 'Add a hash value', undef,
             10, 12, 10, 11);
         $button3->signal_connect('clicked' => sub {
 
@@ -11816,7 +11690,7 @@
             }
         });
         $button4->set_tooltip_text('Edit the selected key');
-        $table->attach($button4, 1, 11, 3, 1);
+        $grid->attach($button4, 1, 11, 3, 1);
 
         my $button5 = Gtk3::Button->new('Delete');
         $button5->signal_connect('clicked' => sub {
@@ -11832,7 +11706,7 @@
             }
         });
         $button5->set_tooltip_text('Delete the selected key');
-        $table->attach($button5, 6, 11, 2, 1);
+        $grid->attach($button5, 6, 11, 2, 1);
 
         my $button6 = Gtk3::Button->new('Reset');
         $button6->signal_connect('clicked' => sub {
@@ -11844,7 +11718,7 @@
             $self->privateDataTab_refreshList($slWidget, scalar (@columnList / 2), $hashIV);
         });
         $button6->set_tooltip_text('Reset the list of keys');
-        $table->attach($button6, 8, 11, 2, 1);
+        $grid->attach($button6, 8, 11, 2, 1);
 
         my $button7 = Gtk3::Button->new('Clear');
         $button7->signal_connect('clicked' => sub {
@@ -11856,11 +11730,9 @@
             $self->privateDataTab_refreshList($slWidget, scalar (@columnList / 2), $hashIV);
         });
         $button7->set_tooltip_text('Clear the list of keys');
-        $table->attach($button7, 10, 11, 2, 1);
+        $grid->attach($button7, 10, 11, 2, 1);
 
         # Tab complete
-        $vBox->pack_start($table, FALSE, FALSE, 0);
-
         return 1;
     }
 
@@ -12001,7 +11873,7 @@
             $page = 'Page _1';
         }
 
-        my ($vBox, $table) = $self->addTab($page, $innerNotebook);
+        my $grid = $self->addTab($page, $innerNotebook);
 
         # Decide which character profile we're using
         if ($self->_objClass eq 'Games::Axmud::EditWin::Task') {
@@ -12011,9 +11883,9 @@
         }
 
         # Protected objects
-        $self->addLabel($table, '<b>Protected objects</b>',
+        $self->addLabel($grid, '<b>Protected objects</b>',
             0, 12, 0, 1);
-        $self->addLabel($table,
+        $self->addLabel($grid,
             '<i>List of objects which enjoy semi-protection against being sold and dropped</i>',
             1, 12, 1, 2);
 
@@ -12027,9 +11899,8 @@
             'Unknowns', 'text',         # ->unknownWordList
         );
 
-        my $slWidget = $self->addSimpleList($table, undef, \@columnList,
-            1, 12, 2, 9,
-            -1, 220);       # Fixed height
+        my $slWidget = $self->addSimpleList($grid, undef, \@columnList,
+            1, 12, 2, 9);
 
         # Create a hash to link lines in the simple list to objects in the protected objects list,
         #   in the form
@@ -12038,7 +11909,7 @@
         %objHash = $self->objects1Tab_refreshList($slWidget, scalar (@columnList / 2), $charObj);
 
         # Add buttons
-        my $button = $self->addButton($table,
+        my $button = $self->addButton($grid,
             'Unprotect',
             'Delete the selected protected object',
             undef,
@@ -12088,7 +11959,7 @@
             }
         });
 
-        my $button2 = $self->addButton($table, 'Edit...', 'Edit the protected object', undef,
+        my $button2 = $self->addButton($grid, 'Edit...', 'Edit the protected object', undef,
             3, 5, 9, 10);
         $button2->signal_connect('clicked' => sub {
 
@@ -12121,7 +11992,7 @@
             }
         });
 
-        my $button3 = $self->addButton($table,
+        my $button3 = $self->addButton($grid,
             'Dump list',
             'Display the list of protected objects in the \'main\' window',
             undef,
@@ -12134,7 +12005,7 @@
                 = $self->objects1Tab_refreshList($slWidget, scalar (@columnList / 2), $charObj);
         });
 
-        my $button4 = $self->addButton($table,
+        my $button4 = $self->addButton($grid,
             'Refresh list',
             'Refresh the list of protected objects',
             undef,
@@ -12154,13 +12025,13 @@
             }
         });
 
-        my $button5 = $self->addButton($table,
+        my $button5 = $self->addButton($grid,
             'Protect objects matching words:',
             'Protect objects matching this list of words',
             undef,
             1, 5, 10, 11,
             TRUE);              # Irreversible
-        my $entry = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
+        my $entry = $self->addEntryWithIcon($grid, undef, 'string', 1, undef,
             5, 12, 10, 11);
         $button5->signal_connect('clicked' => sub {
 
@@ -12184,13 +12055,13 @@
             }
         });
 
-        my $button6 = $self->addButton($table,
+        my $button6 = $self->addButton($grid,
             'Monitor objects matching words:',
             'Monitor objects matching this list of words',
             undef,
             1, 5, 11, 12,
             TRUE);              # Irreversible
-        my $entry2 = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
+        my $entry2 = $self->addEntryWithIcon($grid, undef, 'string', 1, undef,
             5, 12, 11, 12);
         $button6->signal_connect('clicked' => sub {
 
@@ -12228,8 +12099,6 @@
         }
 
         # Tab complete
-        $vBox->pack_start($table, FALSE, FALSE, 0);
-
         return 1;
     }
 
@@ -12339,7 +12208,7 @@
             $page = 'Page _2';
         }
 
-        my ($vBox, $table) = $self->addTab($page, $innerNotebook);
+        my $grid = $self->addTab($page, $innerNotebook);
 
         # Decide which character profile we're using
         if ($self->_objClass eq 'Games::Axmud::EditWin::Task') {
@@ -12349,9 +12218,9 @@
         }
 
         # Monitored objects
-        $self->addLabel($table, '<b>Monitored objects</b>',
+        $self->addLabel($grid, '<b>Monitored objects</b>',
             0, 12, 0, 1);
-        $self->addLabel($table,
+        $self->addLabel($grid,
             '<i>List of objects whose condition is monitored by the Condition task</i>',
             1, 12, 1, 2);
 
@@ -12365,9 +12234,8 @@
             'Unknowns', 'text',         # ->unknownWordList
         );
 
-        my $slWidget = $self->addSimpleList($table, undef, \@columnList,
-            1, 12, 2, 9,
-            -1, 220);       # Fixed height
+        my $slWidget = $self->addSimpleList($grid, undef, \@columnList,
+            1, 12, 2, 9);
 
         # Create a hash to link lines in the simple list to objects in the monitored objects list,
         #   in the form
@@ -12376,7 +12244,7 @@
         %objHash = $self->objects2Tab_refreshList($slWidget, scalar (@columnList / 2), $charObj);
 
         # Add buttons
-        my $button = $self->addButton($table,
+        my $button = $self->addButton($grid,
             'Unmonitor',
             'Delete the selected monitored object',
             undef,
@@ -12426,7 +12294,7 @@
             }
         });
 
-        my $button2 = $self->addButton($table, 'Edit...', 'Edit the monitored object', undef,
+        my $button2 = $self->addButton($grid, 'Edit...', 'Edit the monitored object', undef,
             3, 5, 9, 10);
         $button2->signal_connect('clicked' => sub {
 
@@ -12460,7 +12328,7 @@
             }
         });
 
-        my $button3 = $self->addButton($table,
+        my $button3 = $self->addButton($grid,
             'Dump list',
             'Display the list of monitored objects in the \'main\' window',
             undef,
@@ -12473,7 +12341,7 @@
                 = $self->objects2Tab_refreshList($slWidget, scalar (@columnList / 2), $charObj);
         });
 
-        my $button4 = $self->addButton($table,
+        my $button4 = $self->addButton($grid,
             'Refresh list',
             'Refresh the list of monitored objects',
             undef,
@@ -12493,14 +12361,14 @@
             }
         });
 
-        my $button5 = $self->addButton($table,
+        my $button5 = $self->addButton($grid,
             'Protect objects matching words:',
             'Protect objects matching this list of words',
             undef,
             1, 5, 10, 11,
             TRUE);              # Irreversible
 
-        my $entry = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
+        my $entry = $self->addEntryWithIcon($grid, undef, 'string', 1, undef,
             5, 12, 10, 11);
 
         $button5->signal_connect('clicked' => sub {
@@ -12526,13 +12394,13 @@
             }
         });
 
-        my $button6 = $self->addButton($table,
+        my $button6 = $self->addButton($grid,
             'Monitor objects matching words:',
             'Monitor objects matching this list of words',
             undef,
             1, 5, 11, 12,
             TRUE);              # Irreversible
-        my $entry2 = $self->addEntryWithIcon($table, undef, 'string', 1, undef,
+        my $entry2 = $self->addEntryWithIcon($grid, undef, 'string', 1, undef,
             5, 12, 11, 12);
         $button6->signal_connect('clicked' => sub {
 
@@ -12571,8 +12439,6 @@
         }
 
         # Tab complete
-        $vBox->pack_start($table, FALSE, FALSE, 0);
-
         return 1;
     }
 
@@ -12719,7 +12585,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my ($vBox, $innerNotebook) = $self->addInnerNotebookTab('_Attributes', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTab('_Attributes', $self->notebook);
 
         # Add tabs to the inner notebook
         $self->triggerAttributes1Tab($innerNotebook);
@@ -12748,43 +12614,43 @@
         }
 
         # Tab setup
-        my ($vBox, $table) = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab('Page _1', $innerNotebook);
 
         # Trigger attributes
-        $self->addLabel($table, '<b>Trigger attributes</b>',
+        $self->addLabel($grid, '<b>Trigger attributes</b>',
             0, 12, 0, 1);
 
         # Left column
         $self->useCheckButton(
-            $table,
+            $grid,
             'Ignore the trigger response (e.g. just apply a style)',
             'ignore_response',
             TRUE,
             1, 6, 1, 2);
-        $self->useCheckButton($table, 'Ignore case', 'ignore_case', TRUE,
+        $self->useCheckButton($grid, 'Ignore case', 'ignore_case', TRUE,
             1, 6, 2, 3);
-        $self->useCheckButton($table, 'Keep checking triggers after a match', 'keep_checking', TRUE,
+        $self->useCheckButton($grid, 'Keep checking triggers after a match', 'keep_checking', TRUE,
             1, 6, 3, 4);
-        $self->useCheckButton($table, 'Splitter trigger', 'splitter', TRUE,
+        $self->useCheckButton($grid, 'Splitter trigger', 'splitter', TRUE,
             1, 6, 4, 5);
         $self->useCheckButton(
-            $table, 'Split after matching pattern, not before', 'split_after', TRUE,
+            $grid, 'Split after matching pattern, not before', 'split_after', TRUE,
             1, 6, 5, 6);
         $self->useCheckButton(
-            $table, 'Split line multiple times, if multiple matches', 'keep_splitting', TRUE,
+            $grid, 'Split line multiple times, if multiple matches', 'keep_splitting', TRUE,
             1, 6, 6, 7);
-        $self->useCheckButton($table, 'Rewriter trigger', 'rewriter', TRUE,
+        $self->useCheckButton($grid, 'Rewriter trigger', 'rewriter', TRUE,
             1, 6, 7, 8);
-        $self->useCheckButton($table, 'Rewrite every matching part of line', 'rewrite_global', TRUE,
+        $self->useCheckButton($grid, 'Rewrite every matching part of line', 'rewrite_global', TRUE,
             1, 6, 8, 9);
 
         # Right column
         my $checkButton = $self->useCheckButton(
-            $table, 'Only fire in session\'s default pane', 'default_pane', TRUE,
+            $grid, 'Only fire in session\'s default pane', 'default_pane', TRUE,
             7, 12, 1, 2);
-        $self->addLabel($table, 'Fire in named pane',
+        $self->addLabel($grid, 'Fire in named pane',
             7, 9, 2, 3);
-        my $entry = $self->addEntry($table, undef, TRUE,
+        my $entry = $self->addEntry($grid, undef, TRUE,
             9, 12, 2, 3,
             8, 8);
         $entry->set_text($self->editObj->ivShow('attribHash', 'pane_name'));
@@ -12812,25 +12678,23 @@
             }
         });
 
-        $self->useCheckButton($table, 'Require a prompt to fire', 'need_prompt', TRUE,
+        $self->useCheckButton($grid, 'Require a prompt to fire', 'need_prompt', TRUE,
             7, 12, 3, 4);
-        $self->useCheckButton($table, 'Require a login to fire', 'need_login', TRUE,
+        $self->useCheckButton($grid, 'Require a login to fire', 'need_login', TRUE,
             7, 12, 4, 5);
-        $self->useCheckButton($table, 'Omit (gag) from output', 'gag', TRUE,
+        $self->useCheckButton($grid, 'Omit (gag) from output', 'gag', TRUE,
             7, 12, 5, 6);
-        $self->useCheckButton($table, 'Omit (gag) from logfile', 'gag_log', TRUE,
+        $self->useCheckButton($grid, 'Omit (gag) from logfile', 'gag_log', TRUE,
             7, 12, 6, 7);
-        $self->useCheckButton($table, 'Temporary trigger', 'temporary', TRUE,
+        $self->useCheckButton($grid, 'Temporary trigger', 'temporary', TRUE,
             7, 12, 7, 8);
-        $self->addLabel($table, 'Cooldown (in seconds)',
+        $self->addLabel($grid, 'Cooldown (in seconds)',
             7, 9, 8, 9);
-        $self->useEntryWithIcon($table, 'cooldown', 'float', 0, undef,
+        $self->useEntryWithIcon($grid, 'cooldown', 'float', 0, undef,
             9, 12, 8, 9,
             8, 8);
 
         # Tab complete
-        $vBox->pack_start($table, FALSE, FALSE, 0);
-
         return 1;
     }
 
@@ -12857,52 +12721,52 @@
         }
 
         # Tab setup
-        my ($vBox, $table) = $self->addTab('Page _2', $innerNotebook);
+        my $grid = $self->addTab('Page _2', $innerNotebook);
 
         # (Need just a little extra space to make everything fit)
-        $table->set_column_spacing($self->spacingPixels - 1);
-        $table->set_row_spacing($self->spacingPixels - 1);
+        $grid->set_column_spacing($self->spacingPixels - 1);
+        $grid->set_row_spacing($self->spacingPixels - 1);
 
         # Trigger styles
-        $self->addLabel($table, '<b>Trigger attributes (cont.)</b>',
+        $self->addLabel($grid, '<b>Trigger attributes (cont.)</b>',
             0, 12, 0, 1);
 
         # Top left
         my ($group, $radioButton) = $self->useRadioButton(
-            $table, undef,
+            $grid, undef,
             'Mode 0',               # Radio button name
             'style_mode',           # Attribute to set
             0,                      # Attribute set to this value when toggled
             TRUE,                   # Sensitive widget
             1, 2, 1, 2);
-        $self->addLabel($table, 'Don\'t apply styles',
-            2, 4, 1, 2);
+        $self->addLabel($grid, 'Don\'t apply styles',
+            2, 5, 1, 2);
 
         ($group, $radioButton) = $self->useRadioButton(
-            $table, $group, 'Mode -1', 'style_mode', -1, TRUE,
+            $grid, $group, 'Mode -1', 'style_mode', -1, TRUE,
             1, 2, 2, 3);
-        $self->addLabel($table, 'Apply style to whole line',
-            2, 4, 2, 3);
+        $self->addLabel($grid, 'Apply style to whole line',
+            2, 5, 2, 3);
 
         # Top right
         ($group, $radioButton) = $self->useRadioButton(
-            $table, $group, 'Mode -2', 'style_mode', -2, TRUE,
-            4, 5, 1, 2);
-        $self->addLabel($table, 'Apply style to matched text',
-            5, 10, 1, 2);
+            $grid, $group, 'Mode -2', 'style_mode', -2, TRUE,
+            5, 7, 1, 2);
+        $self->addLabel($grid, 'Apply style to matched text',
+            7, 10, 1, 2);
 
         my ($group2, $radioButton2) = $self->useRadioButton(
-            $table, $group,
+            $grid, $group,
             'Mode n',
             'style_mode',
             -3,                 # Non-standard value; set to correct value by $self->saveChanges
             TRUE,
-            4, 5, 2, 3);
-        $self->addLabel($table, 'Apply style to matched substring #:',
-            5, 10, 2, 3);
+            5, 7, 2, 3);
+        $self->addLabel($grid, 'Apply style to matched substring #:',
+            7, 10, 2, 3);
         @grpNumList = (1, 2, 3, 4, 5, 6, 7, 8, 9);
         my $combo = $self->useComboBox(
-            $table,
+            $grid,
             '_substr_num',
             \@grpNumList,
             'Select:',
@@ -12918,9 +12782,17 @@
         }
 
         # Bottom left
-        $self->addLabel($table, '<u>Trigger style to apply:</u>',
+        $self->addLabel($grid, '<u>Trigger style to apply:</u>',
             1, 12, 3, 4);
 
+        $self->triggerAttributesTab_addRadioButtons($grid, 'Italics:', 'style_italics', 4);
+        $self->triggerAttributesTab_addRadioButtons($grid, 'Underline:', 'style_underline', 5);
+        $self->triggerAttributesTab_addRadioButtons($grid, 'Slow blink:', 'style_blink_slow', 6);
+        $self->triggerAttributesTab_addRadioButtons($grid, 'Fast blink:', 'style_blink_fast', 7);
+        $self->triggerAttributesTab_addRadioButtons($grid, 'Strike-through:', 'style_strike', 8);
+        $self->triggerAttributesTab_addRadioButtons($grid, 'Link:', 'style_link', 9);
+
+        # Bottom right
         push (@comboList, '');
         push (@comboList2, '');
         foreach my $tag ($axmud::CLIENT->constColourTagList) {
@@ -12936,31 +12808,69 @@
         }
 
         $self->triggerAttributesTab_setColours(
-            $table,
+            $grid,
             'Text colour',
             'style_text',
             \@comboList,
-            4,
+            3,
         );
 
         $self->triggerAttributesTab_setColours(
-            $table,
+            $grid,
             'Underlay colour',
             'style_underlay',
             \@comboList2,
-            8,
+            7,
         );
 
-        # Right column
-        $self->triggerAttributesTab_addRadioButtons($table, 'Italics:', 'style_italics', 4);
-        $self->triggerAttributesTab_addRadioButtons($table, 'Underline:', 'style_underline', 5);
-        $self->triggerAttributesTab_addRadioButtons($table, 'Slow blink:', 'style_blink_slow', 6);
-        $self->triggerAttributesTab_addRadioButtons($table, 'Fast blink:', 'style_blink_fast', 7);
-        $self->triggerAttributesTab_addRadioButtons($table, 'Strike-through:', 'style_strike', 8);
-        $self->triggerAttributesTab_addRadioButtons($table, 'Link:', 'style_link', 9);
-
         # Tab complete
-        $vBox->pack_start($table, FALSE, FALSE, 0);
+        return 1;
+    }
+
+    sub triggerAttributesTab_addRadioButtons {
+
+        # Called by $self->triggerAttributes2Tab to add radio buttons for setting an attribute
+        #
+        # Expected arguments
+        #   $grid       - The Gtk3::Grid
+        #   $labelText  - The label text to use (e.g. 'Italics')
+        #   $attrib     - The attibute to set (e.g. 'style_italics')
+        #   $row        - The Gtk3::Grid row on which the radio buttons are drawn
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $grid, $labelText, $attrib, $row, $check) = @_;
+
+        # Check for improper arguments
+        if (
+            ! defined $grid || ! defined $labelText || ! defined $attrib || ! defined $row
+            || defined $check
+        ) {
+            return $axmud::CLIENT->writeImproper(
+                $self->_objClass . '->triggerAttributesTab_addRadioButtons',
+                @_,
+            );
+        }
+
+        $self->addLabel($grid, $labelText,
+            1, 2, $row, ($row + 1));
+        my ($group, $radioButton) = $self->useRadioButton(
+            $grid, undef,
+            'Do not change',        # Radio button name
+            $attrib,                # Attribute to set
+            0,                      # Attribute set to this value when toggled
+            TRUE,                   # Sensitive widget
+            2, 4, $row, ($row + 1));
+
+        ($group, $radioButton) = $self->useRadioButton(
+            $grid, $group, 'Yes', $attrib, 1, TRUE,
+            4, 5, $row, ($row + 1));
+
+        ($group, $radioButton) = $self->useRadioButton(
+            $grid, $group, 'No', $attrib, 2, TRUE,
+            5, 6, $row, ($row + 1));
 
         return 1;
     }
@@ -12970,7 +12880,7 @@
         # Called by $self->triggerAttributes2Tab to add radio buttons for setting a colour attribute
         #
         # Expected arguments
-        #   $table          - The Gtk3::Grid
+        #   $grid           - The Gtk3::Grid
         #   $labelText      - The label text to use (e.g. 'Text colour')
         #   $attrib         - The attibute to set (e.g. 'style_text')
         #   $comboListRef   - Reference to a list of standard colour tags to display in a combobox
@@ -12980,11 +12890,11 @@
         #   'undef' on improper arguments
         #   1 otherwise
 
-        my ($self, $table, $labelText, $attrib, $comboListRef, $row, $check) = @_;
+        my ($self, $grid, $labelText, $attrib, $comboListRef, $row, $check) = @_;
 
         # Check for improper arguments
         if (
-            ! defined $table || ! defined $labelText || ! defined $attrib || ! defined $row
+            ! defined $grid || ! defined $labelText || ! defined $attrib || ! defined $row
             || defined $check
         ) {
             return $axmud::CLIENT->writeImproper(
@@ -12993,22 +12903,22 @@
             );
         }
 
-        $self->addLabel($table, $labelText,
-            1, 3, $row, ($row + 1));
-        my $entry = $self->addEntry($table, undef, FALSE,
-            3, 6, $row, ($row + 1));
+        $self->addLabel($grid, $labelText,
+            7, 9, $row, ($row + 1));
+        my $entry = $self->addEntry($grid, undef, FALSE,
+            9, 12, $row, ($row + 1));
         $entry->set_text($self->editObj->ivShow('attribHash', $attrib));
 
-        my $comboBox = $self->addComboBox($table, undef, $comboListRef, '',
+        my $comboBox = $self->addComboBox($grid, undef, $comboListRef, '',
             TRUE,               # No 'undef' value used
-            1, 4, ($row + 1), ($row + 2));
+            7, 10, ($row + 1), ($row + 2));
 
         my $button = $self->addButton(
-            $table,
+            $grid,
             'Set',
             'Set this standard colour tag as the ' . lc($labelText),
             undef,
-            4, 6, ($row + 1), ($row + 2));
+            10, 12, ($row + 1), ($row + 2));
         $button->signal_connect('clicked' => sub {
 
             my $text = $comboBox->get_active_text();
@@ -13029,17 +12939,17 @@
             $entry->set_text($self->ivShow('attribHash', $attrib));
         });
 
-        $self->addLabel($table, 'xterm tag',
-            1, 2, ($row + 2), ($row + 3));
-        my $entry2 = $self->addEntryWithIcon($table, undef, \&triggerAttributesTab_checkXTerm, 0, 0,
-            2, 4, ($row + 2), ($row + 3));
+        $self->addLabel($grid, 'xterm tag',
+            7, 8, ($row + 2), ($row + 3));
+        my $entry2 = $self->addEntryWithIcon($grid, undef, \&triggerAttributesTab_checkXTerm, 0, 0,
+            8, 10, ($row + 2), ($row + 3));
         $entry2->set_icon_from_stock('secondary', 'gtk-yes');   # (Empty box is valid)
         my $button2 = $self->addButton(
-            $table,
+            $grid,
             'Set',
             'Set this xterm tag as the ' . lc($labelText),
             undef,
-            4, 6, ($row + 2), ($row + 3));
+            10, 12, ($row + 2), ($row + 3));
         $button2->signal_connect('clicked' => sub {
 
             my $text;
@@ -13064,17 +12974,17 @@
             }
         });
 
-        $self->addLabel($table, 'RGB tag',
-            1, 2, ($row + 3), ($row + 4));
-        my $entry3 = $self->addEntryWithIcon($table, undef, \&triggerAttributesTab_checkRGB, 0, 0,
-            2, 4, ($row + 3), ($row + 4));
+        $self->addLabel($grid, 'RGB tag',
+            7, 8, ($row + 3), ($row + 4));
+        my $entry3 = $self->addEntryWithIcon($grid, undef, \&triggerAttributesTab_checkRGB, 0, 0,
+            8, 10, ($row + 3), ($row + 4));
         $entry3->set_icon_from_stock('secondary', 'gtk-yes');   # (Empty box is valid)
         my $button3 = $self->addButton(
-            $table,
+            $grid,
             'Set',
             'Set this RGB tag as the ' . lc($labelText),
             undef,
-            4, 6, ($row + 3), ($row + 4));
+            10, 12, ($row + 3), ($row + 4));
         $button3->signal_connect('clicked' => sub {
 
             my $text;
@@ -13185,54 +13095,6 @@
         }
     }
 
-    sub triggerAttributesTab_addRadioButtons {
-
-        # Called by $self->triggerAttributes2Tab to add radio buttons for setting an attribute
-        #
-        # Expected arguments
-        #   $table      - The Gtk3::Grid
-        #   $labelText  - The label text to use (e.g. 'Italics')
-        #   $attrib     - The attibute to set (e.g. 'style_italics')
-        #   $row        - The Gtk3::Grid row on which the radio buttons are drawn
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $table, $labelText, $attrib, $row, $check) = @_;
-
-        # Check for improper arguments
-        if (
-            ! defined $table || ! defined $labelText || ! defined $attrib || ! defined $row
-            || defined $check
-        ) {
-            return $axmud::CLIENT->writeImproper(
-                $self->_objClass . '->triggerAttributesTab_addRadioButtons',
-                @_,
-            );
-        }
-
-        $self->addLabel($table, $labelText,
-            7, 8, $row, ($row + 1));
-        my ($group, $radioButton) = $self->useRadioButton(
-            $table, undef,
-            'Do not change',        # Radio button name
-            $attrib,                # Attribute to set
-            0,                      # Attribute set to this value when toggled
-            TRUE,                   # Sensitive widget
-            8, 10, $row, ($row + 1));
-
-        ($group, $radioButton) = $self->useRadioButton(
-            $table, $group, 'Yes', $attrib, 1, TRUE,
-            10, 11, $row, ($row + 1));
-
-        ($group, $radioButton) = $self->useRadioButton(
-            $table, $group, 'No', $attrib, 2, TRUE,
-            11, 12, $row, ($row + 1));
-
-        return 1;
-    }
-
     sub aliasAttributesTab {
 
         # AliasAttributes tab
@@ -13253,30 +13115,28 @@
         }
 
         # Tab setup
-        my ($vBox, $table) = $self->addTab('_Attributes', $self->notebook);
+        my $grid = $self->addTab('_Attributes', $self->notebook);
 
         # Alias attributes
-        $self->addLabel($table, '<b>Alias attributes</b>',
+        $self->addLabel($grid, '<b>Alias attributes</b>',
             0, 12, 0, 1);
 
         # Left column
-        $self->useCheckButton($table, 'Ignore case', 'ignore_case', TRUE,
+        $self->useCheckButton($grid, 'Ignore case', 'ignore_case', TRUE,
             1, 6, 1, 2);
-        $self->useCheckButton($table, 'Keep checking aliases after a match', 'keep_checking', TRUE,
+        $self->useCheckButton($grid, 'Keep checking aliases after a match', 'keep_checking', TRUE,
             1, 6, 2, 3);
 
         # Right column
-        $self->useCheckButton($table, 'Temporary alias', 'temporary', TRUE,
+        $self->useCheckButton($grid, 'Temporary alias', 'temporary', TRUE,
             7, 12, 1, 2);
-        $self->addLabel($table, 'Cooldown (in seconds)',
+        $self->addLabel($grid, 'Cooldown (in seconds)',
             7, 9, 2, 3);
-        $self->useEntryWithIcon($table, 'cooldown', 'float', 0, undef,
+        $self->useEntryWithIcon($grid, 'cooldown', 'float', 0, undef,
             9, 12, 2, 3,
             8, 8);
 
         # Tab complete
-        $vBox->pack_start($table, FALSE, FALSE, 0);
-
         return 1;
     }
 
@@ -13300,26 +13160,24 @@
         }
 
         # Tab setup
-        my ($vBox, $table) = $self->addTab('_Attributes', $self->notebook);
+        my $grid = $self->addTab('_Attributes', $self->notebook);
 
         # Macro attributes
-        $self->addLabel($table, '<b>Macro attributes</b>',
+        $self->addLabel($grid, '<b>Macro attributes</b>',
             0, 12, 0, 1);
 
         # Left column
-        $self->useCheckButton($table, 'Temporary macro', 'temporary', TRUE,
+        $self->useCheckButton($grid, 'Temporary macro', 'temporary', TRUE,
             1, 6, 1, 2);
 
         # Right column
-        $self->addLabel($table, 'Cooldown (in seconds)',
+        $self->addLabel($grid, 'Cooldown (in seconds)',
             7, 9, 1, 2);
-        $self->useEntryWithIcon($table, 'cooldown', 'float', 0, undef,
+        $self->useEntryWithIcon($grid, 'cooldown', 'float', 0, undef,
             9, 12, 1, 2,
             8, 8);
 
         # Tab complete
-        $vBox->pack_start($table, FALSE, FALSE, 0);
-
         return 1;
     }
 
@@ -13343,37 +13201,35 @@
         }
 
         # Tab setup
-        my ($vBox, $table) = $self->addTab('_Timers', $self->notebook);
+        my $grid = $self->addTab('_Timers', $self->notebook);
 
         # Timer attributes
-        $self->addLabel($table, '<b>Timer attributes</b>',
+        $self->addLabel($grid, '<b>Timer attributes</b>',
             0, 12, 0, 1);
 
         # Left column
-        $self->addLabel($table, 'Repeat count (-1 unlimited)',
+        $self->addLabel($grid, 'Repeat count (-1 unlimited)',
             1, 4, 1, 2);
-        $self->useEntryWithIcon($table, 'count', 'int', -1, undef,
+        $self->useEntryWithIcon($grid, 'count', 'int', -1, undef,
             4, 6, 1, 2);
-        $self->addLabel($table, 'Initial delay (0 for no delay)',
+        $self->addLabel($grid, 'Initial delay (0 for no delay)',
             1, 4, 2, 3);
-        $self->useEntryWithIcon($table, 'initial_delay', 'float', 0, undef,
+        $self->useEntryWithIcon($grid, 'initial_delay', 'float', 0, undef,
             4, 6, 2, 3);
-        $self->useCheckButton($table, 'Random delays', 'random_delay', TRUE,
+        $self->useCheckButton($grid, 'Random delays', 'random_delay', TRUE,
             1, 6, 3, 4);
 
         # Right column
-        $self->addLabel($table, 'Minimum random delay',
+        $self->addLabel($grid, 'Minimum random delay',
             7, 10, 1, 2);
-        $self->useEntryWithIcon($table, 'random_min', 'float', 0, undef,
+        $self->useEntryWithIcon($grid, 'random_min', 'float', 0, undef,
             10, 12, 1, 2);
-        $self->useCheckButton($table, 'Start after login', 'wait_login', TRUE,
+        $self->useCheckButton($grid, 'Start after login', 'wait_login', TRUE,
             7, 12, 2, 3);
-        $self->useCheckButton($table, 'Temporary timer', 'temporary', TRUE,
+        $self->useCheckButton($grid, 'Temporary timer', 'temporary', TRUE,
             7, 12, 3, 4);
 
         # Tab complete
-        $vBox->pack_start($table, FALSE, FALSE, 0);
-
         return 1;
     }
 
@@ -13397,26 +13253,24 @@
         }
 
         # Tab setup
-        my ($vBox, $table) = $self->addTab('_Attributes', $self->notebook);
+        my $grid = $self->addTab('_Attributes', $self->notebook);
 
         # Hook attributes
-        $self->addLabel($table, '<b>Hook attributes</b>',
+        $self->addLabel($grid, '<b>Hook attributes</b>',
             0, 12, 0, 1);
 
         # Left column
-        $self->useCheckButton($table, 'Temporary hook', 'temporary', TRUE,
+        $self->useCheckButton($grid, 'Temporary hook', 'temporary', TRUE,
             1, 6, 1, 2);
 
         # Right column
-        $self->addLabel($table, 'Cooldown (in seconds)',
+        $self->addLabel($grid, 'Cooldown (in seconds)',
             7, 9, 1, 2);
-        $self->useEntryWithIcon($table, 'cooldown', 'float', 0, undef,
+        $self->useEntryWithIcon($grid, 'cooldown', 'float', 0, undef,
             9, 12, 1, 2,
             8, 8);
 
         # Tab complete
-        $vBox->pack_start($table, FALSE, FALSE, 0);
-
         return 1;
     }
 
@@ -13878,7 +13732,7 @@
         # Create a textview, in which the user supplies a list of values
         my $scroll = Gtk3::ScrolledWindow->new(undef, undef);
         $vBox2->pack_start($scroll, TRUE, TRUE, $self->spacingPixels);
-        $scroll->set_shadow_type('etched-out');
+        $scroll->set_shadow_type($axmud::CLIENT->constShadowType);
         $scroll->set_policy('automatic', 'automatic');
         $scroll->set_size_request(200, 150);            # Minimum size
         $scroll->set_border_width($self->spacingPixels);
@@ -14166,30 +14020,30 @@
         # If the hash is editable, we have a lot more widgets to add
         if (! $readOnlyFlag) {
 
-            # Add a table containing entry boxes for new key-value pairs. The table ensures that
+            # Add a grid containing entry boxes for new key-value pairs. The grid ensures that
             #   the two entry boxes are aligned with each other
-            my $table = Gtk3::Grid->new();
-            $vBox2->pack_start($table, TRUE, TRUE, $self->spacingPixels);
+            my $grid = Gtk3::Grid->new();
+            $vBox2->pack_start($grid, TRUE, TRUE, $self->spacingPixels);
 
             my $label2 = Gtk3::Label->new();
             $label2->set_alignment(0, 0.5);
             $label2->set_markup('Key');
             $label2->set_hexpand(TRUE);
-            $table->attach($label2, 0, 0, 1, 1);
+            $grid->attach($label2, 0, 0, 1, 1);
 
             my $entry = Gtk3::Entry->new();
             $entry->set_hexpand(TRUE);
-            $table->attach($entry, 1, 0, 1, 1);
+            $grid->attach($entry, 1, 0, 1, 1);
 
             my $label3 = Gtk3::Label->new();
             $label3->set_alignment(0, 0.5);
             $label3->set_markup('Value');
             $label3->set_hexpand(TRUE);
-            $table->attach($label3, 0, 1, 1, 1);
+            $grid->attach($label3, 0, 1, 1, 1);
 
             my $entry2 = Gtk3::Entry->new();
             $entry2->set_hexpand(TRUE);
-            $table->attach($entry2, 1, 1, 1, 1);
+            $grid->attach($entry2, 1, 1, 1, 1);
 
             # Add a button strip containing editing buttons
             my $hBox = Gtk3::HBox->new(FALSE, 0);
@@ -14729,8 +14583,8 @@
     sub saveButton
         { $_[0]->{saveButton} }
 
-    sub tableSize
-        { $_[0]->{tableSize} }
+    sub gridSize
+        { $_[0]->{gridSize} }
 
     sub editObj
         { $_[0]->{editObj} }
@@ -15823,11 +15677,14 @@
 
             # Must check it's a valid hook event. Get the hook interface model
             $modelObj = $axmud::CLIENT->ivShow('interfaceModelHash', 'hook');
-            # Check the hook event exists
-            if (! $modelObj->ivExists('hookEventHash', $value)) {
-
+            # Check the hook event exists in the hash or, if not, check that it's a valid name for
+            #   a custom hook event
+            if (
+                ! $modelObj->ivExists('hookEventHash', $value)
+                && ! ($value =~ m/^\_[A-Za-z0-9]/)
+            ) {
                 return $session->writeWarning(
-                    'Invalid attribute value for \'' . $attrib . '\' (not a hook event)',
+                    'Invalid attribute value for \'' . $attrib . '\' (not a valid hook event)',
                     $self->_objClass . '->checkAttribValue',
                 );
 
@@ -20878,14 +20735,12 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->addTab', @_);
         }
 
-        # Check the window is actually open
-        if (! $self->winObj) {
-
-            return undef;
-        }
-
         # Find the pane object (GA::Table::Pane), if one was created
-        $paneObj = $self->winObj->findTableObj('pane');
+        if (! $self->winObj) {
+            $paneObj = $self->tableObj;
+        } else {
+            $paneObj = $self->winObj->findTableObj('pane');
+        }
 
         # The type of tab created depends on the value of $self->tabMode
         if (
@@ -20983,8 +20838,14 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->setupEntry', @_);
         }
 
-        # Check the task window is actually open
+        # Find the pane object (GA::Table::Pane), if one was created
         if (! $self->winObj) {
+            $paneObj = $self->tableObj;
+        } else {
+            $paneObj = $self->winObj->findTableObj('pane');
+        }
+
+        if (! $paneObj) {
 
             return undef;
         }
@@ -21024,7 +20885,7 @@
 
     sub setupEntry {
 
-        # Called by $self->openGridWin, ->openPaneWin and ->openPseudoWin (only)
+        # Called by $self->openGridWin and ->openPseudoWin (only)
         # Sets up the task window's entry box, if it exists
         #
         # Expected arguments
@@ -22992,7 +22853,7 @@
             my $frame = Gtk3::Frame->new(undef);
             $vBox2->pack_start($frame, FALSE, FALSE, $spacing);
             $frame->set_size_request(64, 64);
-            $frame->set_shadow_type('etched-in');
+            $frame->set_shadow_type($axmud::CLIENT->constShadowType);
 
             if (! $path || ! -e $path) {
 
@@ -23182,8 +23043,9 @@
 
         if ($axmud::CLIENT->systemAllowTTSFlag && $axmud::CLIENT->ttsDialogueFlag) {
 
-            $axmud::CLIENT->tts($title, 'dialogue', 'dialogue', undef);
-            $axmud::CLIENT->tts($text, 'dialogue', 'dialogue', undef);
+            # Perform TTS for this window
+            $axmud::CLIENT->ttsAddUrgentJob($title, 'dialogue');
+            $axmud::CLIENT->ttsAddUrgentJob($text, 'dialogue');
 
             foreach my $response (keys %buttonHash) {
 
@@ -23191,32 +23053,37 @@
 
                 if (defined $button) {
 
-                    # Handy of responses that are available in this dialogue
-                    push (@list, 'button ' . $response);
+                    # Handy list of responses that are available in this dialogue
+                    push (@list, $response);
 
                     $button->signal_connect('grab-focus' => sub {
 
                         my $label = $button->get_label();
 
                         # $label is in the form 'gtk-yes', 'gtk-no' etc
-                        $axmud::CLIENT->tts(
-                            'Button: ' . substr($label, 4),
+                        $axmud::CLIENT->ttsAddUrgentJob(
+                            substr($label, 4) . ' button',
                             'dialogue',
-                            'dialogue',
-                            undef,
+                            # Override other TTS urgent jobs, such as the $title and $text above
+                            TRUE,
                         );
                     });
                 }
             }
 
             # (No need to read this message, if there's only one button)
-            if (scalar @list > 1) {
+            if (@list == 1) {
 
-                $axmud::CLIENT->tts(
+                $axmud::CLIENT->ttsAddUrgentJob(
+                    $list[0] . ' button selected',
+                    'dialogue',
+                );
+
+            } else {
+
+                $axmud::CLIENT->ttsAddUrgentJob(
                     'Select ' . join (', or, ', @list),
                     'dialogue',
-                    'dialogue',
-                    undef,
                 );
             }
         }
@@ -23224,6 +23091,25 @@
 
         # Get the response
         $response = $dialogueWin->run();
+        if ($axmud::CLIENT->systemAllowTTSFlag && $axmud::CLIENT->ttsDialogueFlag) {
+
+            if ($response && exists $buttonHash{$response}) {
+
+                $axmud::CLIENT->ttsAddUrgentJob(
+                    $response . ' selected',
+                    'dialogue',
+                    TRUE,
+                );
+
+            } else {
+
+                $axmud::CLIENT->ttsAddUrgentJob(
+                    'Cancelled',
+                    'dialogue',
+                    TRUE,
+                );
+            }
+        }
 
         # Destroy the window and return the response
         $dialogueWin->destroy();
@@ -23232,30 +23118,6 @@
         # (In case TTS is being used and another 'dialogue' window is about to open, make sure the
         #   window is visibly closed)
         $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->showMsgDialogue');
-
-        # Use TTS to announce the decision, if TTS enabled
-        if ($axmud::CLIENT->systemAllowTTSFlag && $axmud::CLIENT->ttsDialogueFlag) {
-
-            if ($response && exists $buttonHash{$response}) {
-
-                $axmud::CLIENT->tts(
-                    'Selected button: ' . $response,
-                    'dialogue',
-                    'dialogue',
-                    undef,
-                );
-
-            } else {
-
-                # $response is 'undef' or 'delete-event'
-                $axmud::CLIENT->tts(
-                    'Cancelled',
-                    'dialogue',
-                    'dialogue',
-                    undef,
-                );
-            }
-        }
 
         return $response;
     }
@@ -23400,7 +23262,8 @@
         #   $maxChars       - The maximum number of chars allowed in the entry box (if 'undef', no
         #                       maximum)
         #   $entryText      - The initial text to put in the entry box (if 'undef', no initial text)
-        #   $obscureMode    - If set to TRUE, text in the entry box is obscured. If set to FALSE (or
+        #   $obscureModeFlag
+        #                   - If set to TRUE, text in the entry box is obscured. If set to FALSE (or
         #                       'undef'), text is visible
         #   $noSplitFlag    - If TRUE, the message $text is not automatically split into shorter
         #                       lines (because the calling function has already added newline
@@ -23416,8 +23279,8 @@
         #   Otherwise returns the user response (the contents of the entry box)
 
         my (
-            $self, $title, $text, $maxChars, $entryText, $obscureMode, $noSplitFlag, $singleFlag,
-            $check
+            $self, $title, $text, $maxChars, $entryText, $obscureModeFlag, $noSplitFlag,
+            $singleFlag, $check
         ) = @_;
 
         # Local variables
@@ -23513,7 +23376,7 @@
             $entry->set_max_length($maxChars);
         }
 
-        if ($obscureMode) {
+        if ($obscureModeFlag) {
 
             $entry->set_visibility(FALSE);
 
@@ -23537,7 +23400,7 @@
 
         } elsif ($entryText) {
 
-            # $obscureMode is not set, so display $entryText
+            # $obscureModeFlag is not set, so display $entryText
             $entry->set_text($entryText);
         }
 
@@ -23547,7 +23410,7 @@
             #   box itself, in which case this event occurs (and we need to empty the box), or by
             #   tabbing focus through widgets, until the focus falls onto the box, in which case
             #   the box is emptied and replaced with the first keypress
-            if ($obscureMode && defined $starText) {
+            if ($obscureModeFlag && defined $starText) {
 
                 $entry->set_text('');
                 # When this function returns a value (below), we need to know whether the
@@ -23589,8 +23452,9 @@
 
         if ($axmud::CLIENT->systemAllowTTSFlag && $axmud::CLIENT->ttsDialogueFlag) {
 
-            $axmud::CLIENT->tts($title, 'dialogue', 'dialogue', undef);
-            $axmud::CLIENT->tts($text, 'dialogue', 'dialogue', undef);
+            # Perform TTS for this window
+            $axmud::CLIENT->ttsAddUrgentJob($title, 'dialogue');
+            $axmud::CLIENT->ttsAddUrgentJob($text, 'dialogue');
 
             # Read out buttons, when in focus
             foreach my $response (keys %buttonHash) {
@@ -23603,12 +23467,12 @@
 
                     if (! defined $lastThing || $lastThing ne $button) {
 
-                        $axmud::CLIENT->tts(
+                        $axmud::CLIENT->ttsAddUrgentJob(
                             # ($label is in the form 'gtk-yes', 'gtk-no' etc)
-                            'Button: ' . substr($label, 4),
+                            substr($label, 4) . ' button',
                             'dialogue',
-                            'dialogue',
-                            undef,
+                            # Override other TTS urgent jobs, such as the $title and $text above
+                            TRUE,
                         );
                     }
 
@@ -23625,20 +23489,18 @@
 
                     if (! $entry->get_text()) {
 
-                        $axmud::CLIENT->tts(
+                        $axmud::CLIENT->ttsAddUrgentJob(
                             'Type something here',
                             'dialogue',
-                            'dialogue',
-                            undef,
+                            TRUE,
                         );
 
                     } else {
 
-                        $axmud::CLIENT->tts(
+                        $axmud::CLIENT->ttsAddUrgentJob(
                             'Entered: ' . $entry->get_text(),
                             'dialogue',
-                            'dialogue',
-                            undef,
+                            TRUE,
                         );
                     }
                 }
@@ -23660,17 +23522,21 @@
             }
 
             if ($axmud::CLIENT->systemAllowTTSFlag && $axmud::CLIENT->ttsDialogueFlag) {
-                if ($obscureMode) {
 
-                    $axmud::CLIENT->tts('Text accepted', 'dialogue', 'dialogue', undef);
+                if ($obscureModeFlag) {
+
+                    $axmud::CLIENT->ttsAddUrgentJob(
+                        'Text accepted',
+                        'dialogue',
+                        TRUE,
+                    );
 
                 } else {
 
-                    $axmud::CLIENT->tts(
+                    $axmud::CLIENT->ttsAddUrgentJob(
                         'Entered: ' . $responseText,
                         'dialogue',
-                        'dialogue',
-                        undef,
+                        TRUE,
                     );
                 }
             }
@@ -23679,7 +23545,7 @@
 
             if ($axmud::CLIENT->systemAllowTTSFlag && $axmud::CLIENT->ttsDialogueFlag) {
 
-                $axmud::CLIENT->tts('Cancelled', 'dialogue', 'dialogue', undef);
+                $axmud::CLIENT->ttsAddUrgentJob('Cancelled', 'dialogue', TRUE);
             }
         }
 
@@ -23692,7 +23558,7 @@
         $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->showEntryDialogue');
 
         # Return the response
-        if ($obscureMode && defined $starText) {
+        if ($obscureModeFlag && defined $starText) {
 
             # The obscured '********' text has not been modified, so we can return the original
             #   unmodified $entryText
@@ -24294,8 +24160,9 @@
 
         if ($axmud::CLIENT->systemAllowTTSFlag && $axmud::CLIENT->ttsDialogueFlag) {
 
-            $axmud::CLIENT->tts($title, 'dialogue', 'dialogue', undef);
-            $axmud::CLIENT->tts($text, 'dialogue', 'dialogue', undef);
+            # Perform TTS for this window
+            $axmud::CLIENT->ttsAddUrgentJob($title, 'dialogue');
+            $axmud::CLIENT->ttsAddUrgentJob($text, 'dialogue');
 
             # Read out buttons, when in focus
             foreach my $response (keys %buttonHash) {
@@ -24308,12 +24175,12 @@
 
                     if (! defined $lastThing || $lastThing ne $button) {
 
-                        $axmud::CLIENT->tts(
+                        $axmud::CLIENT->ttsAddUrgentJob(
                             # ($label is in the form 'gtk-yes', 'gtk-no' etc)
-                            'Button: ' . substr($label, 4),
+                            substr($label, 4) . ' button',
                             'dialogue',
-                            'dialogue',
-                            undef,
+                            # Override other TTS urgent jobs, such as the $title and $text above
+                            TRUE,
                         );
                     }
 
@@ -24321,6 +24188,53 @@
                     $lastThing = $button;
                 });
             }
+
+            # Intercept page up/page down, and make it skip 10 lines, rather than going to the
+            #   top/bottom
+            $comboBox->signal_connect('key-press-event' => sub {
+
+                my ($widget, $event) = @_;
+
+                # Local variables
+                my ($keycode, $standard, $index);
+
+                # Get the system keycode for this keypress
+                $keycode = Gtk3::Gdk::keyval_name($event->keyval);
+                # Translate it into a standard Axmud keycode
+                $standard = $axmud::CLIENT->reverseKeycode($keycode);
+
+                if ($standard eq 'page_up' || $standard eq 'page_down') {
+
+                    $index = $comboBox->get_active();
+                    if ($index > -1) {
+
+                        if ($standard eq 'page_up') {
+
+                            $index -= 10;
+                            if ($index < 0) {
+
+                                $index = 0;
+                            }
+
+                        } else {
+
+                            $index += 10;
+                            if ($index >= (scalar @$listRef)) {
+
+                                $index = (scalar @$listRef) - 1;
+                            }
+                        }
+
+                        $comboBox->set_active($index);
+
+                        # Return 1 to show that we have interfered with this keypress
+                        return 1;
+                    }
+                }
+
+                # Return 'undef' to show that we haven't interfered with this keypress
+                return undef;
+            });
 
             # Read out selected items
             $comboBox->signal_connect('key-release-event' => sub {
@@ -24330,11 +24244,10 @@
                 # (Use tab/cursor keys to nagivate the widgets)
                 if (! defined $lastThing || $lastThing ne $text) {
 
-                    $axmud::CLIENT->tts(
-                        'Selected: ' . $text,
+                    $axmud::CLIENT->ttsAddUrgentJob(
+                        $text . ' selected',
                         'dialogue',
-                        'dialogue',
-                        undef,
+                        TRUE,
                     );
                 }
 
@@ -24351,11 +24264,10 @@
                 # (Use the mouse to focus on the combobox)
                 if (! defined $lastThing || $lastThing ne $text) {
 
-                    $axmud::CLIENT->tts(
-                        'Selected: ' . $text,
+                    $axmud::CLIENT->ttsAddUrgentJob(
+                        $text . ' selected',
                         'dialogue',
-                        'dialogue',
-                        undef,
+                        TRUE,
                     );
                 }
 
@@ -24370,20 +24282,16 @@
 
                 if (@$listRef) {
 
-                    $axmud::CLIENT->tts(
-                        'Selected: ' . $$listRef[0],
+                    $axmud::CLIENT->ttsAddUrgentJob(
+                        $$listRef[0] . ' selected',
                         'dialogue',
-                        'dialogue',
-                        undef,
                     );
 
                 } else {
 
-                    $axmud::CLIENT->tts(
+                    $axmud::CLIENT->ttsAddUrgentJob(
                         'There is nothing to select',
                         'dialogue',
-                        'dialogue',
-                        undef,
                     );
                 }
             }
@@ -24403,11 +24311,10 @@
 
             if ($axmud::CLIENT->systemAllowTTSFlag && $axmud::CLIENT->ttsDialogueFlag) {
 
-                $axmud::CLIENT->tts(
-                    'Entered: ' . $responseText,
+                $axmud::CLIENT->ttsAddUrgentJob(
+                    $responseText . ' entered',
                     'dialogue',
-                    'dialogue',
-                    undef,
+                    TRUE,
                 );
             }
 
@@ -24415,7 +24322,7 @@
 
             if ($axmud::CLIENT->systemAllowTTSFlag && $axmud::CLIENT->ttsDialogueFlag) {
 
-                $axmud::CLIENT->tts('Cancelled', 'dialogue', 'dialogue', undef);
+                $axmud::CLIENT->ttsAddUrgentJob('Cancelled', 'dialogue', TRUE);
             }
         }
 
@@ -25100,59 +25007,59 @@
         #   Gtk3::VBox on the right, into which we put everything
         my $vBox2 = $self->addDialogueIcon($vBox);
 
-        # Need a table as it's the quicket way to draw the room flag colour
-        my $table = Gtk3::Grid->new();
-        $vBox2->pack_start($table, TRUE, TRUE, $axmud::CLIENT->constFreeSpacingPixels);
-        $table->set_column_spacing($axmud::CLIENT->constFreeSpacingPixels);
-        $table->set_row_spacing($axmud::CLIENT->constFreeSpacingPixels);
+        # Need a grid as it's the quicket way to draw the room flag colour
+        my $grid = Gtk3::Grid->new();
+        $vBox2->pack_start($grid, TRUE, TRUE, $axmud::CLIENT->constFreeSpacingPixels);
+        $grid->set_column_spacing($axmud::CLIENT->constFreeSpacingPixels);
+        $grid->set_row_spacing($axmud::CLIENT->constFreeSpacingPixels);
 
         # Name
         my $label = Gtk3::Label->new();
-        $table->attach($label, 0, 0, 3, 1);
+        $grid->attach($label, 0, 0, 3, 1);
         $label->set_alignment(0, 0);
         $label->set_markup('Room flag name (max 16 chars)');
 
         my $entry = Gtk3::Entry->new();
-        $table->attach($entry, 0, 1, 3, 1);
+        $grid->attach($entry, 0, 1, 3, 1);
         $entry->set_width_chars(16);
         $entry->set_max_length(16);
 
         # Short name
         my $label2 = Gtk3::Label->new();
-        $table->attach($label2, 0, 2, 3, 1);
+        $grid->attach($label2, 0, 2, 3, 1);
         $label2->set_alignment(0, 0);
         $label2->set_markup('Short name (max 2 chars)');
 
         my $entry2 = Gtk3::Entry->new();
-        $table->attach($entry2, 0, 3, 3, 1);
+        $grid->attach($entry2, 0, 3, 3, 1);
         $entry2->set_width_chars(2);
         $entry2->set_max_length(2);
 
         # Description
         my $label3 = Gtk3::Label->new();
-        $table->attach($label3, 0, 4, 3, 1);
+        $grid->attach($label3, 0, 4, 3, 1);
         $label3->set_alignment(0, 0);
         $label3->set_markup('Description');
 
         my $entry3 = Gtk3::Entry->new();
-        $table->attach($entry3, 0, 5, 3, 1);
+        $grid->attach($entry3, 0, 5, 3, 1);
 
         # Colour
         $colour = '#FFFFFF';            # Default new colour is white
 
         my $label4 = Gtk3::Label->new();
-        $table->attach($label4, 0, 6, 1, 1);
+        $grid->attach($label4, 0, 6, 1, 1);
         $label4->set_markup('Use colour');
         $label4->set_alignment(0, 0.5);
 
-        my ($frame, $canvas, $canvasObj) = $self->addSimpleCanvas($table,
+        my ($frame, $canvas, $canvasObj) = $self->addSimpleCanvas($grid,
             $colour,
             undef,                  # No neutral colour
             1, 2, 6, 7,
         );
 
         my $button = Gtk3::Button->new('Set');
-        $table->attach($button, 2, 6, 1, 1);
+        $grid->attach($button, 2, 6, 1, 1);
         $button->signal_connect('clicked' => sub {
 
             my $choice = $self->showColourSelectionDialogue(
@@ -25388,14 +25295,14 @@
         # Adds a Gtk3::Label at the specified position in a Gtk3::Grid
         #
         # Example calls:
-        #   my $label = $self->addLabel($table, 'Some plain text',
+        #   my $label = $self->addLabel($grid, 'Some plain text',
         #       0, 6, 0, 1);
-        #   my $label = $self->addLabel($table, '<b>Some pango markup text</b>',
+        #   my $label = $self->addLabel($grid, '<b>Some pango markup text</b>',
         #       0, 6, 0, 1,
         #       0, 0.5);
         #
         # Expected arguments
-        #   $table      - The Gtk3::Grid itself
+        #   $grid       - The Gtk3::Grid itself
         #   $text       - The text to display (plain text or pango markup text)
         #   $leftAttach, $rightAttach, $topAttach, $bottomAttach
         #               - The position of the label in the table
@@ -25410,13 +25317,13 @@
         #   Otherwise the Gtk3::Label created
 
         my (
-            $self, $table, $text, $leftAttach, $rightAttach, $topAttach, $bottomAttach, $alignLeft,
+            $self, $grid, $text, $leftAttach, $rightAttach, $topAttach, $bottomAttach, $alignLeft,
             $alignRight, $check
         ) = @_;
 
         # Check for improper arguments
         if (
-            ! defined $table || ! defined $text || ! defined $leftAttach || ! defined $rightAttach
+            ! defined $grid || ! defined $text || ! defined $leftAttach || ! defined $rightAttach
             || ! defined $topAttach || ! defined $bottomAttach || defined $check
         ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->addLabel', @_);
@@ -25446,10 +25353,10 @@
         # Set its alignment
         $label->set_alignment($alignLeft, $alignRight);
 
-        # Add the label to the table
+        # Add the label to the grid
         $label->set_hexpand(TRUE);
         $label->set_vexpand(FALSE);
-        $table->attach(
+        $grid->attach(
             $label,
             $leftAttach,
             $topAttach,
@@ -25467,18 +25374,18 @@
         #   specify its own one
         #
         # Example calls:
-        #   my $button = $self->addButton($table, \&buttonClicked, 'button_label', 'tooltips',
+        #   my $button = $self->addButton($grid, \&buttonClicked, 'button_label', 'tooltips',
         #       0, 6, 0, 1);
-        #   my $button = $self->addButton($table, undef, 'button_label', 'tooltips',
+        #   my $button = $self->addButton($grid, undef, 'button_label', 'tooltips',
         #       0, 6, 0, 1);
-        #   my $button = $self->addButton($table, \&buttonClicked, 'button_label', '',
+        #   my $button = $self->addButton($grid, \&buttonClicked, 'button_label', '',
         #       0, 6, 0, 1);
         #
         # The referenced function (if specified) receives an argument list in the form:
         #   ($self, button_widget)
         #
         # Expected arguments
-        #   $table      - The Gtk3::Grid itself
+        #   $grid       - The Gtk3::Grid itself
         #   $funcRef    - Reference to the function to call when the button is clicked. If 'undef',
         #                   it's up to the calling function to create a ->signal_connect method
         #   $label      - The label text displayed on the button
@@ -25491,7 +25398,7 @@
         #   Otherwise the Gtk3::Button created
 
         my (
-            $self, $table, $funcRef, $label, $tooltips, $leftAttach, $rightAttach, $topAttach,
+            $self, $grid, $funcRef, $label, $tooltips, $leftAttach, $rightAttach, $topAttach,
             $bottomAttach, $check,
         ) = @_;
 
@@ -25500,7 +25407,7 @@
 
         # Check for improper arguments
         if (
-            ! defined $table || ! defined $label || ! defined $tooltips || ! defined $leftAttach
+            ! defined $grid || ! defined $label || ! defined $tooltips || ! defined $leftAttach
             || ! defined $rightAttach || ! defined $topAttach || ! defined $bottomAttach
             || defined $check
         ) {
@@ -25531,10 +25438,10 @@
             });
         }
 
-        # Add the button to the table
+        # Add the button to the grid
         $button->set_hexpand(TRUE);
         $button->set_vexpand(FALSE);
-        $table->attach(
+        $grid->attach(
             $button,
             $leftAttach,
             $topAttach,
@@ -25553,16 +25460,16 @@
         #   specify its own one
         #
         # Example calls:
-        #   my $checkButton = $self->addCheckButton($table, 'Click me', \&buttonClicked, TRUE, TRUE,
+        #   my $checkButton = $self->addCheckButton($grid, 'Click me', \&buttonClicked, TRUE, TRUE,
         #       0, 6, 0, 1);
-        #   my $checkButton = $self->addCheckButton($table, undef, \&buttonClicked, TRUE, TRUE,
+        #   my $checkButton = $self->addCheckButton($grid, undef, \&buttonClicked, TRUE, TRUE,
         #       0, 6, 0, 1);
         #
         # The referenced function (if specified) receives an argument list in the form:
         #   ($self, button_widget, button_selected_flag)
         #
         # Expected arguments
-        #   $table      - The Gtk3::Grid itself
+        #   $grid       - The Gtk3::Grid itself
         #   $name       - A 'name' for the checkbutton (displayed next to the button); if 'undef',
         #                   no name is displayed
         #   $funcRef    - Reference to the function to call when the button is toggled. If 'undef',
@@ -25579,13 +25486,13 @@
         #   Otherwise the Gtk3::CheckButton created
 
         my (
-            $self, $table, $name, $funcRef, $selectFlag, $stateFlag, $leftAttach, $rightAttach,
+            $self, $grid, $name, $funcRef, $selectFlag, $stateFlag, $leftAttach, $rightAttach,
             $topAttach, $bottomAttach, $check,
         ) = @_;
 
         # Check for improper arguments
         if (
-            ! defined $table || ! defined $selectFlag || ! defined $stateFlag
+            ! defined $grid || ! defined $selectFlag || ! defined $stateFlag
             || ! defined $leftAttach || ! defined $rightAttach || ! defined $topAttach
             || ! defined $bottomAttach || defined $check
         ) {
@@ -25624,10 +25531,10 @@
             });
         }
 
-        # Add the check button to the table
+        # Add the check button to the grid
         $checkButton->set_hexpand(TRUE);
         $checkButton->set_vexpand(FALSE);
-        $table->attach(
+        $grid->attach(
             $checkButton,
             $leftAttach,
             $topAttach,
@@ -25646,11 +25553,11 @@
         #
         # Example calls:
         #   my ($group, $button) = $self->addRadioButton(
-        #       $table, \&buttonClicked, undef, $name,
+        #       $grid, \&buttonClicked, undef, $name,
         #       TRUE, TRUE,
         #       0, 6, 0, 1);
         #   my ($group2, $button2) = $self->addRadioButton(
-        #       $table, undef, $group, $name,
+        #       $grid, undef, $group, $name,
         #       FALSE, TRUE,
         #       0, 6, 0, 1, 0, 0.5);
         #
@@ -25658,7 +25565,7 @@
         #   ($self, button_widget)
         #
         # Expected arguments
-        #   $table      - The Gtk3::Grid itself
+        #   $grid       - The Gtk3::Grid itself
         #   $funcRef    - Reference to the function to call when the button becomes active
         #                   (selected). If 'undef', it's up to the calling function to create a
         #                   ->signal_connect method
@@ -25686,7 +25593,7 @@
         #       Gtk3::RadioButton created
 
         my (
-            $self, $table, $funcRef, $group, $name, $selectFlag, $stateFlag, $leftAttach,
+            $self, $grid, $funcRef, $group, $name, $selectFlag, $stateFlag, $leftAttach,
             $rightAttach, $topAttach, $bottomAttach, $alignLeft, $alignRight, $check,
         ) = @_;
 
@@ -25695,7 +25602,7 @@
 
         # Check for improper arguments
         if (
-            ! defined $table || ! defined $selectFlag || ! defined $stateFlag
+            ! defined $grid || ! defined $selectFlag || ! defined $stateFlag
             || ! defined $leftAttach || ! defined $rightAttach || ! defined $topAttach
             || ! defined $bottomAttach || defined $check
         ) {
@@ -25758,10 +25665,10 @@
             });
         }
 
-        # Add the radio button to the table
+        # Add the radio button to the grid
         $radioButton->set_hexpand(FALSE);
         $radioButton->set_vexpand(FALSE);
-        $table->attach(
+        $grid->attach(
             $radioButton,
             $leftAttach,
             $topAttach,
@@ -25779,16 +25686,16 @@
         #   specify its own one
         #
         # Example calls:
-        #   my $entry = $self->addEntry($table, \&returnPressed, $value, TRUE,
+        #   my $entry = $self->addEntry($grid, \&returnPressed, $value, TRUE,
         #       0, 6, 0, 1);
-        #   my $entry = $self->addEntry($table, undef, $value, FALSE,
+        #   my $entry = $self->addEntry($grid, undef, $value, FALSE,
         #       0, 6, 0, 1, 16, 16);
         #
         # The referenced function (if specified) receives an argument list in the form:
         #   ($self, entry_widget, entry_text)
         #
         # Expected arguments
-        #   $table      - The Gtk3::Grid itself
+        #   $grid       - The Gtk3::Grid itself
         #   $funcRef    - Reference to the function to call when the user types something in the
         #                   entry and presses 'return'. If 'undef', it's up to the calling function
         #                   to create a ->signal_connect method
@@ -25808,13 +25715,13 @@
         #   Otherwise the Gtk3::Entry created
 
         my (
-            $self, $table, $funcRef, $value, $stateFlag, $leftAttach, $rightAttach, $topAttach,
+            $self, $grid, $funcRef, $value, $stateFlag, $leftAttach, $rightAttach, $topAttach,
             $bottomAttach, $widthChars, $maxChars, $check,
         ) = @_;
 
         # Check for improper arguments
         if (
-            ! defined $table || ! defined $stateFlag || ! defined $leftAttach
+            ! defined $grid || ! defined $stateFlag || ! defined $leftAttach
             || ! defined $rightAttach || ! defined $topAttach || ! defined $bottomAttach
             || defined $check
         ) {
@@ -25863,10 +25770,10 @@
             });
         }
 
-        # Add the entry to the table
+        # Add the entry to the grid
         $entry->set_hexpand(TRUE);
         $entry->set_vexpand(FALSE);
-        $table->attach(
+        $grid->attach(
             $entry,
             $leftAttach,
             $topAttach,
@@ -25885,17 +25792,17 @@
         #
         # Example calls:
         #   my $comboBox = $self->addComboBox(
-        #       $table, \&itemSelected, \@comboList, 'some_title', TRUE,
+        #       $grid, \&itemSelected, \@comboList, 'some_title', TRUE,
         #       0, 6, 0, 1);
         #   my $comboBox = $self->addComboBox(
-        #       $table, undef, \@comboList, '', FALSE,
+        #       $grid, undef, \@comboList, '', FALSE,
         #       0, 6, 0, 1);
         #
         # The referenced function (if specified) receives an argument list in the form:
         #   ($self, combo_box_widget, selected_text)
         #
         # Expected arguments
-        #   $table          - The Gtk3::Grid itself
+        #   $grid           - The Gtk3::Grid itself
         #   $funcRef        - Reference to the function to call when the user selects something in
         #                       the combobox. If 'undef', it's up to the calling function to create
         #                       a ->signal_connect method
@@ -25911,13 +25818,13 @@
         #   Otherwise the Gtk3::ComboBox created
 
         my (
-            $self, $table, $funcRef, $listRef, $title, $leftAttach, $rightAttach, $topAttach,
+            $self, $grid, $funcRef, $listRef, $title, $leftAttach, $rightAttach, $topAttach,
             $bottomAttach, $check,
         ) = @_;
 
         # Check for improper arguments
         if (
-            ! defined $table || ! defined $listRef || ! defined $leftAttach
+            ! defined $grid || ! defined $listRef || ! defined $leftAttach
             || ! defined $rightAttach || ! defined $topAttach || ! defined $bottomAttach
             || defined $check
         ) {
@@ -25962,10 +25869,10 @@
             });
         }
 
-        # Add the combobox to the table
+        # Add the combobox to the grid
         $comboBox->set_hexpand(TRUE);
         $comboBox->set_vexpand(FALSE);
-        $table->attach(
+        $grid->attach(
             $comboBox,
             $leftAttach,
             $topAttach,
@@ -25983,9 +25890,9 @@
         #   specify its own one
         #
         # Example calls:
-        #   my $textView = $self->addTextView($table, $self->winType, undef, undef, TRUE,
+        #   my $textView = $self->addTextView($grid, $self->winType, undef, undef, TRUE,
         #       0, 6, 0, 1);
-        #   my $textView = $self->addTextView($table, undef, undef, "Hello\nworld", FALSE,
+        #   my $textView = $self->addTextView($grid, undef, undef, "Hello\nworld", FALSE,
         #       0, 6, 0, 1,
         #       -1, 120);
         #
@@ -25995,7 +25902,7 @@
         #   characters
         #
         # Expected arguments
-        #   $table          - The Gtk3::Grid itself
+        #   $grid           - The Gtk3::Grid itself
         #   $colourScheme   - The name of the colour scheme to use (matches a key in
         #                       GA::Client->colourSchemeHash; you should normally use the window
         #                       type, as in the example above). If 'undef', the system's
@@ -26006,8 +25913,7 @@
         #                       a ->signal_connect method
         #   $string         - String composed of one or lines separated by newline characters. If
         #                       'undef', the textview is initially empty
-        #   $editableFlag
-        #                   - Flag set to TRUE if the textView should be editable, FALSE if it
+        #   $editableFlag   - Flag set to TRUE if the textView should be editable, FALSE if it
         #                       shouldn't be editable
         #   $leftAttach, $rightAttach, $topAttach, $bottomAttach
         #                   - The position of the textview in the table
@@ -26016,22 +25922,20 @@
         #   $width, $height
         #               - The width and height (in pixels) of the frame containing the list. If
         #                   specified, values of -1 mean 'don't set this value'. The default values
-        #                   are (-1, 120) - we use a fixed height, because Gtk3 on some operating
-        #                   systems will draw a textview barely one line high (in a vertical
-        #                   packing box)
+        #                   are (-1, -1)
         #
         # Return values
         #   'undef' on improper arguments or if the widget's position in the Gtk3::Grid is invalid
         #   Otherwise the Gtk3::TextView created (inside a Gtk::ScrolledWindow)
 
         my (
-            $self, $table, $colourScheme, $funcRef, $string, $editableFlag, $leftAttach,
+            $self, $grid, $colourScheme, $funcRef, $string, $editableFlag, $leftAttach,
             $rightAttach, $topAttach, $bottomAttach, $width, $height, $check,
         ) = @_;
 
         # Check for improper arguments
         if (
-            ! defined $table || ! defined $editableFlag || ! defined $leftAttach
+            ! defined $grid || ! defined $editableFlag || ! defined $leftAttach
             || ! defined $rightAttach || ! defined $topAttach || ! defined $bottomAttach
             || defined $check
         ) {
@@ -26052,15 +25956,15 @@
 
         if (! defined $height) {
 
-            $height = 120;
+            $height = -1;   # Let Gtk3 set the height
         }
 
         # Creating a containing Gtk3::ScrolledWindow
         my $scroll = Gtk3::ScrolledWindow->new(undef, undef);
-        $scroll->set_shadow_type('etched-out');
+        $scroll->set_shadow_type($axmud::CLIENT->constShadowType);
         $scroll->set_policy('automatic', 'automatic');
         $scroll->set_size_request($width, $height);
-        $scroll->set_border_width($self->spacingPixels);
+#        $scroll->set_border_width($self->spacingPixels);
 
         # Create a textview and apply a CSS style
         my $textView = Gtk3::TextView->new();
@@ -26098,9 +26002,10 @@
             });
         }
 
-        # Add the textview to the table (for textviews, calls to ->set_vexpand have no effect)
+        # Add the textview to the grid
         $scroll->set_hexpand(TRUE);
-        $table->attach(
+        $scroll->set_vexpand(TRUE);
+        $grid->attach(
             $scroll,
             $leftAttach,
             $topAttach,
@@ -26111,21 +26016,163 @@
         return $textView;
     }
 
+    sub addSimpleList {
+
+        # Adds a GA::Obj::SimpleList at the specified position in a Gtk3::Grid
+        # NB This function does not contain a ->signal_connect method - the calling function must
+        #   specify its own one
+        #
+        # Example calls:
+        #   my $slWidget = $self->addSimpleList($grid, \@columnList, $dataRef, TRUE,
+        #       0, 6, 0, 1);
+        #   my $slWidget = $self->addSimpleList($grid, \@columnList, undef, FALSE,
+        #       0, 6, 0, 1,
+        #       -1, 120);
+        #
+        # Expected arguments
+        #   $grid           - The Gtk3::Grid itself
+        #   $columnListRef  - Reference to a list of column headings and types, in the form
+        #                       ('heading', 'column_type', 'heading', 'column_type'...)
+        #                   - 'column_type' is one of the column types specified by
+        #                       GA::Obj::SimpleList, e.g. 'scalar', 'int'
+        #   $dataRef        - Reference to a list of values, used to fill the simple list. If
+        #                       'undef', it's up to the calling function to add data
+        #   $editableFlag   - Flag set to TRUE if columns containing boolean values should be
+        #                       editable, FALSE if not
+        #   $leftAttach, $rightAttach, $topAttach, $bottomAttach
+        #                   - The position of the simple list in the table
+        #
+        # Optional arguments
+        #   $width, $height - The width and height (in pixels) of the scroller containing the list.
+        #                       If specified, values of -1 mean 'don't set this value'. The default
+        #                       values are (-1, -1)
+        #
+        # Return values
+        #   'undef' on improper arguments or if the widget's position in the Gtk3::Grid is invalid
+        #   Otherwise the GA::Obj::SimpleList created
+
+        my (
+            $self, $grid, $columnListRef, $dataRef, $editableFlag, $leftAttach, $rightAttach,
+            $topAttach, $bottomAttach, $width, $height, $check,
+        ) = @_;
+
+        # Local variables
+        my (
+            $refType, $count,
+            @columnList,
+        );
+
+        # Check for improper arguments
+        if (
+            ! defined $grid || ! defined $columnListRef || ! defined $editableFlag
+            || ! defined $leftAttach || ! defined $rightAttach || ! defined $topAttach
+            || ! defined $bottomAttach || defined $check
+        ) {
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->addSimpleList', @_);
+        }
+
+        # Check that the position in the table makes sense
+        if (! $self->checkPosn($leftAttach, $rightAttach, $topAttach, $bottomAttach)) {
+
+            return undef;
+        }
+
+        # Set defaults
+        if (! defined $width) {
+
+            $width = -1;    # Let Gtk3 set the width
+        }
+
+        if (! defined $height) {
+
+            $height = -1;   # Let Gtk3 set the height
+        }
+
+        # Dereference the list of columns
+        @columnList = @$columnListRef;
+
+        # Add a simple list
+        my $frame = Gtk3::Frame->new(undef);
+        $frame->set_border_width(0);
+
+        my $scroller = Gtk3::ScrolledWindow->new();
+        $frame->add($scroller);
+        $scroller->set_shadow_type($axmud::CLIENT->constShadowType);
+        $scroller->set_policy('automatic', 'automatic');
+        $scroller->set_border_width(0);
+        $scroller->set_size_request($width, $height);
+
+        my $slWidget = Games::Axmud::Obj::SimpleList->new(@columnList);
+        $scroller->add($slWidget);
+
+        # No interactive searches required
+        $slWidget->set_enable_search(FALSE);
+
+        # Fill the columns with data (if any was provided)
+        if (defined $dataRef) {
+
+            if (ref($dataRef) eq 'HASH') {
+
+                # Sort the hash by key, before adding it to the simple list
+                $self->resetSortListData($slWidget, $dataRef);
+
+            } else {
+
+                # Assume that the list/hash IV can be displayed in its current order
+                $self->resetListData($slWidget, $dataRef, (scalar @columnList / 2));
+            }
+        }
+
+        # Make all columns of type 'bool' (which are composed of checkbuttons) non-activatable, so
+        #   that the user can't click them on and off (if specified)
+        if (! $editableFlag) {
+
+            $count = -1;
+            do {
+
+                my $title = shift @columnList;
+                my $type = shift @columnList;
+
+                $count++;
+
+                if ($type eq 'bool') {
+
+                    my ($cellRenderer) = $slWidget->get_column($count)->get_cells();
+                    $cellRenderer->set(activatable => FALSE);
+                }
+
+            } until (! @columnList);
+        }
+
+        # Add the simple list to the grid
+        $frame->set_hexpand(TRUE);
+        $frame->set_vexpand(TRUE);
+        $grid->attach(
+            $frame,
+            $leftAttach,
+            $topAttach,
+            ($rightAttach - $leftAttach),
+            ($bottomAttach - $topAttach),
+        );
+
+        return $slWidget;
+    }
+
     sub addImage {
 
         # Adds a Gtk3::Image from a specified file, inside a frame (optionally using scrollbars) at
         #   the specified position in a Gtk3::Grid
         #
         # Example calls:
-        #   my ($image, $frame, $viewPort) = $self->addImage($table, $filePath, $pixBuffer, TRUE,
+        #   my ($image, $frame, $viewPort) = $self->addImage($grid, $filePath, $pixBuffer, TRUE,
         #       128, 128,
         #       0, 12, 1, 12);
-        #   my ($image, $frame) = $self->addImage($table, undef, undef, FALSE,
+        #   my ($image, $frame) = $self->addImage($grid, undef, undef, FALSE,
         #       128, 128,
         #       0, 12, 1, 12);
         #
         # Expected arguments
-        #   $table      - The Gtk3::Grid itself
+        #   $grid           - The Gtk3::Grid itself
         #   $filePath       - Full path to the file containing the image to be displayed (or 'undef'
         #                       if not using a file)
         #   $pixBuffer      - A Gtk3::Gdk::Pixbuf  containing the image to be displayed (or 'undef'
@@ -26145,7 +26192,7 @@
         #   NB If $scrollFlag is FALSE, the 'Gtk3_viewport' return value will be set to 'undef'
 
         my (
-            $self, $table, $filePath, $pixBuffer, $scrollFlag, $width, $height, $leftAttach,
+            $self, $grid, $filePath, $pixBuffer, $scrollFlag, $width, $height, $leftAttach,
             $rightAttach, $topAttach, $bottomAttach, $check,
         ) = @_;
 
@@ -26154,7 +26201,7 @@
 
         # Check for improper arguments
         if (
-            ! defined $table || ! defined $scrollFlag || ! defined $width || ! defined $height
+            ! defined $grid || ! defined $scrollFlag || ! defined $width || ! defined $height
             || ! defined $leftAttach || ! defined $rightAttach || ! defined $topAttach
             || ! defined $bottomAttach || defined $check
         ) {
@@ -26216,7 +26263,7 @@
         # Add the frame to the table (even if a Gtk3::Image wasn't created)
         $frame->set_hexpand(FALSE);
         $frame->set_vexpand(FALSE);
-        $table->attach(
+        $grid->attach(
             $frame,
             $leftAttach,
             $topAttach,
@@ -26308,13 +26355,13 @@
         #   not inside a frame: call ->addImage to do that)
         #
         # Example calls:
-        #   my $image = $self->addImage($table, $filePath, $pixBuffer,
+        #   my $image = $self->addImage($grid, $filePath, $pixBuffer,
         #       0, 12, 1, 12);
-        #   my $image = $self->addImage($table, undef, undef,
+        #   my $image = $self->addImage($grid, undef, undef,
         #       0, 12, 1, 12);
         #
         # Expected arguments
-        #   $table          - The Gtk3::Grid itself
+        #   $grid           - The Gtk3::Grid itself
         #   $filePath       - Full path to the file containing the image to be displayed (or 'undef'
         #                       if not using a file)
         #   $pixBuffer      - A Gtk3::Gdk::Pixbuf  containing the image to be displayed (or 'undef'
@@ -26327,13 +26374,13 @@
         #   Otherwise the Gtk3::Image created
 
         my (
-            $self, $table, $filePath, $pixBuffer, $leftAttach, $rightAttach, $topAttach,
+            $self, $grid, $filePath, $pixBuffer, $leftAttach, $rightAttach, $topAttach,
             $bottomAttach, $check,
         ) = @_;
 
         # Check for improper arguments
         if (
-            ! defined $table || ! defined $leftAttach || ! defined $rightAttach
+            ! defined $grid || ! defined $leftAttach || ! defined $rightAttach
             || ! defined $topAttach || ! defined $bottomAttach || defined $check
         ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->addSimpleImage', @_);
@@ -26357,10 +26404,10 @@
 
         if ($image) {
 
-            # Add the image to the table
+            # Add the image to the grid
             $image->set_hexpand(FALSE);
             $image->set_vexpand(FALSE);
-            $table->attach(
+            $grid->attach(
                 $image,
                 $leftAttach,
                 $topAttach,
@@ -26379,14 +26426,14 @@
         #   complex drawing operations
         #
         # Example calls:
-        #   my ($frame, $canvas, $canvasObj) = $self->addSimpleCanvas($table, '#FF0000', '#FFFFFF',
+        #   my ($frame, $canvas, $canvasObj) = $self->addSimpleCanvas($grid, '#FF0000', '#FFFFFF',
         #       6, 7, 6, 7,
         #       50, 50);
-        #   my ($frame, $canvas, $canvasObj) = $self->addSimpleCanvas($table, 'red', undef,
+        #   my ($frame, $canvas, $canvasObj) = $self->addSimpleCanvas($grid, 'red', undef,
         #       6, 7, 6, 7);
         #
         # Expected arguments
-        #   $table          - The Gtk3::Grid displayed in the current tab
+        #   $grid           - The Gtk3::Grid displayed in the current tab
         #   $colour         - The initial colour of the canvas. Can be any valid Axmud colour tag
         #                       (e.g. 'red', 'x255', '#FF0000')
         #   $noColour       - If $colour is not specified or if it is invalid, this colour is used.
@@ -26407,7 +26454,7 @@
         #   ...where the last value will be 'undef' if no colour was drawn
 
         my (
-            $self, $table, $colour, $noColour, $leftAttach, $rightAttach, $topAttach, $bottomAttach,
+            $self, $grid, $colour, $noColour, $leftAttach, $rightAttach, $topAttach, $bottomAttach,
             $width, $height, $check
         ) = @_;
 
@@ -26419,7 +26466,7 @@
 
         # Check for improper arguments
         if (
-            ! defined $table || ! defined $leftAttach || ! defined $rightAttach
+            ! defined $grid || ! defined $leftAttach || ! defined $rightAttach
             || ! defined $topAttach || ! defined $bottomAttach || defined $check
         ) {
             $axmud::CLIENT->writeImproper($self->_objClass . '->addSimpleCanvas', @_);
@@ -26475,21 +26522,40 @@
             $height = 30;
         }
 
-        # Create a frame
-        my $frame = Gtk3::Frame->new(undef);
-        $frame->set_border_width(0);
-        $frame->set_size_request($width, $height);
+#        # Create a frame
+#        my $frame = Gtk3::Frame->new(undef);
+#        $frame->set_border_width(0);
+#        $frame->set_size_request($width, $height);
+#
+#        # Create the canvas
+#        my $canvas = GooCanvas2::Canvas->new();
+#        $frame->add($canvas);
+#        $canvas->set_size_request($width, $height);
+#        $canvas->set_bounds(0, 0, $width, $height);
 
         # Create the canvas
         my $canvas = GooCanvas2::Canvas->new();
-        $frame->add($canvas);
         $canvas->set_size_request($width, $height);
         $canvas->set_bounds(0, 0, $width, $height);
+
+        # An ugly hack to make sure the canvas is centred in its frame - put the canvas inside an
+        #   HBox and a VBox
+        my $hBox =Gtk3::HBox->new();
+        $hBox->pack_start($canvas, TRUE, FALSE, 0);
+
+        my $vBox = Gtk3::VBox->new();
+        $vBox->pack_start($hBox, TRUE, FALSE, 0);
+
+        # Create a frame
+        my $frame = Gtk3::Frame->new(undef);
+        $frame->add($vBox);
+        $frame->set_border_width(0);
+        $frame->set_size_request($width, $height);
 
         # Add the frame to the table
         $frame->set_hexpand(FALSE);
         $frame->set_vexpand(FALSE);
-        $table->attach(
+        $grid->attach(
             $frame,
             $leftAttach,
             $topAttach,
@@ -26621,18 +26687,18 @@
         #   canvas as a single colour, use $self->addSimpleCanvas instead
         #
         # Example calls:
-        #   $self->addDrawingCanvas($table,
+        #   $self->addDrawingCanvas($grid,
         #       undef, undef,
         #       FALSE, FALSE,
         #       0, 12, 1, 12);
-        #   $self->addDrawingCanvas($table,
+        #   $self->addDrawingCanvas($grid,
         #       'motionFunc', 'clickFunc',
         #       TRUE, TRUE,
         #       0, 12, 1, 12,
         #       500, 500);
         #
         # Expected arguments
-        #   $table          - The tab's Gtk3::Grid object
+        #   $grid           - The tab's Gtk3::Grid object
         #   $clickFunc      - A function to call whenever the user clicks on the canvas (which emits
         #                       the 'button-press-event' signal). If 'undef', the signal is ignored
         #                       ignored
@@ -26654,13 +26720,13 @@
         #   Otherwise returns the GooCanvas2::Canvas created
 
         my (
-            $self, $table, $clickFunc, $motionFunc, $scrollHorizFlag, $scrollVertFlag, $leftAttach,
+            $self, $grid, $clickFunc, $motionFunc, $scrollHorizFlag, $scrollVertFlag, $leftAttach,
             $rightAttach, $topAttach, $bottomAttach, $width, $height, $check
         ) = @_;
 
         # Check for improper arguments
         if (
-            ! defined $table || ! defined $leftAttach || ! defined $rightAttach
+            ! defined $grid || ! defined $leftAttach || ! defined $rightAttach
             || ! defined $topAttach || ! defined $bottomAttach || defined $check
         ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->addDrawingCanvas', @_);
@@ -26685,7 +26751,7 @@
 
         # Create a frame containing a scrolled window
         my $frame = Gtk3::Frame->new(undef);
-        $frame->set_shadow_type('etched-in');
+        $frame->set_shadow_type($axmud::CLIENT->constShadowType);
 
         my $scrolledWin = Gtk3::ScrolledWindow->new();
         $frame->add($scrolledWin);
@@ -26709,7 +26775,7 @@
         # Add the frame to the table
         $frame->set_hexpand(FALSE);
         $frame->set_vexpand(FALSE);
-        $table->attach(
+        $grid->attach(
             $frame,
             $leftAttach,
             $topAttach,
@@ -26806,6 +26872,159 @@
 
             return 1;
         }
+    }
+
+    # Data accessors
+
+    sub resetListData {
+
+        # Replaces the data stored in a GA::Obj::SimpleList with the data stored in the specified
+        #   list
+        #
+        # Expected arguments
+        #   $slWidget   - Reference to a GA::Obj::SimpleList
+        #   $listRef    - Reference to a list which contains the replacement data
+        #   $number     - The list is split into groups (e.g. the elements of
+        #                   GA::Profile::World->barPatternList are split into groups of 6); $number
+        #                   is the size of the group (6 in that example)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $slWidget, $listRef, $number, $check) = @_;
+
+        # Local variables
+        my @dataList;
+
+        # Check for improper arguments
+        if (! defined $slWidget || ! defined $listRef || ! defined $number || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->resetListData_listIV', @_);
+        }
+
+        if (@$listRef) {
+
+            # Insert the replacement data
+            do {
+
+                my @groupList;
+
+                for (my $count = 0; $count < $number; $count++) {
+
+                    push (@groupList, shift @$listRef);
+                }
+
+                push (@dataList, \@groupList);
+
+            } until (! @$listRef);
+
+            @{$slWidget->{data}} = @dataList;
+
+        } else {
+
+            # Replacement data list is empty
+            @{$slWidget->{data}} = ();
+        }
+
+        return 1;
+    }
+
+    sub resetSortListData {
+
+        # Replaces the data stored in a GA::Obj::SimpleList with the data stored in the specified
+        #   list which we assume represents a hash in the form (key, value, key, value...)
+        #
+        # Expected arguments
+        #   $slWidget   - Reference to a GA::Obj::SimpleList
+        #   $listRef    - Reference to a list which contains the replacement data
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $slWidget, $listRef, $check) = @_;
+
+        # Local variables
+        my (
+            @dataList,
+            %hash,
+        );
+
+        # Check for improper arguments
+        if (! defined $slWidget || ! defined $listRef || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->resetSortListData', @_);
+        }
+
+        if (@$listRef) {
+
+            # Assuming the contents of the list reference contains a hash flattened into a list,
+            #   convert that data to a hash
+            %hash = @$listRef;
+
+            # Insert the replacement data
+            foreach my $key (sort {lc($a) cmp lc($b)} (keys %hash)) {
+
+                push (@dataList, [$key, $hash{$key}]);
+            }
+
+            @{$slWidget->{data}} = @dataList;
+
+        } else {
+
+            # Replacement data list is empty
+            @{$slWidget->{data}} = ();
+        }
+
+        return 1;
+    }
+
+    sub getSimpleListData {
+
+        # Get items of data from specified cells in the currently selected row of a simple list
+        #
+        # Expected arguments
+        #   $slWidget   - The GA::Obj::SimpleList
+        #   @columnList - A list of column numbers on the simple list, e.g. the list (0, 2, 3)
+        #                   represents the first, third and fourth columns.
+        #
+        # Return values
+        #   An empty list on improper arguments or if no row in the simple list is currently
+        #       selected
+        #   Otherwise, returns a list containing the items of data on the selected row, in the
+        #       specified columns
+
+        my ($self, $slWidget, @columnList) = @_;
+
+        # Local variables
+        my (
+            $index, $rowRef,
+            @emptyList, @dataList,
+        );
+
+        # Check for improper arguments
+        if (! defined $slWidget || ! @columnList) {
+
+            $axmud::CLIENT->writeImproper($self->_objClass . '->getSimpleListData', @_);
+            return @emptyList;
+        }
+
+        # Get the currently selected row's number (if any)
+        ($index) = $slWidget->get_selected_indices();
+        if (defined $index) {
+
+            # Get the selected row itself
+            $rowRef = ${$slWidget->{data}}[$index];
+
+            # Get items of data from this row
+            foreach my $column (@columnList) {
+
+                push (@dataList, $$rowRef[$column]);
+            }
+        }
+
+        return @dataList;
     }
 
     ##################
@@ -27218,7 +27437,7 @@
             scroller                    => undef,       # Gtk3::ScrolledWindow
             hAdjustment                 => undef,       # Gtk3::Adjustment
             vAdjustment                 => undef,       # Gtk3::Adjustment
-            table                       => undef,       # Gtk3::Grid
+            grid                        => undef,       # Gtk3::Grid
             hBox                        => undef,       # Gtk3::HBox
             nextButton                  => undef,       # Gtk3::Button
             previousButton              => undef,       # Gtk3::Button
@@ -27393,7 +27612,7 @@
         $self->winBox->add($packingBox);
         $packingBox->set_border_width(0);
 
-        # Add a table (inside a scrolled window) in the higher area
+        # Add a grid (inside a scrolled window) in the higher area
         my $frame = Gtk3::Frame->new(undef);
         $packingBox->pack_start($frame, TRUE, TRUE, 0);
         $frame->set_border_width($self->spacingPixels);
@@ -27403,11 +27622,11 @@
         $scroller->set_policy('automatic', 'automatic');
         $scroller->set_border_width(0);
 
-        my $table = Gtk3::Grid->new();
-        $scroller->add_with_viewport($table);
-        $table->set_column_spacing($self->spacingPixels);
-        $table->set_row_spacing($self->spacingPixels);
-        $table->set_border_width($self->borderPixels);
+        my $grid = Gtk3::Grid->new();
+        $scroller->add_with_viewport($grid);
+        $grid->set_column_spacing($self->spacingPixels);
+        $grid->set_row_spacing($self->spacingPixels);
+        $grid->set_border_width($self->borderPixels);
 
         # Add a button strip at the bottom, in a horizontal packing box
         my $hBox = Gtk3::HBox->new(FALSE, 0);
@@ -27421,14 +27640,14 @@
         $self->ivPoke('scroller', $scroller);
         $self->ivPoke('hAdjustment', $scroller->get_hadjustment());
         $self->ivPoke('vAdjustment', $scroller->get_vadjustment());
-        $self->ivPoke('table', $table);
+        $self->ivPoke('grid', $grid);
         $self->ivPoke('hBox', $hBox);
         $self->ivPoke('nextButton', $nextButton);
         $self->ivPoke('previousButton', $previousButton);
         $self->ivPoke('cancelButton', $cancelButton);
 
-        # Set up the table with its initial contents
-        $self->setupTable();
+        # Set up the grid with its initial contents
+        $self->setupGrid();
 
         return 1;
     }
@@ -27502,7 +27721,7 @@
         return ($nextButton, $prevButton, $cancelButton);
     }
 
-    sub setupTable {
+    sub setupGrid {
 
         # Called by $self->winEnable
         # Creates the first page for the wizard (not really necessary to have a whole function
@@ -27524,7 +27743,7 @@
         # Check for improper arguments
         if (defined $check) {
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->setupTable', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->setupGrid', @_);
         }
 
         # Get the name of the function for the first page
@@ -27535,7 +27754,7 @@
         return 1;
     }
 
-    sub updateTable {
+    sub updateGrid {
 
         # Called by $self->buttonPrevious and ->buttonNext
         # Changes the page currently visible in the 'wiz' window
@@ -27555,13 +27774,13 @@
         # Check for improper arguments
         if (defined $check) {
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->updateTable', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->updateGrid', @_);
         }
 
-        # Empty the table used for the existing page
-        foreach my $widget ($self->table->get_children()) {
+        # Empty the grid used for the existing page
+        foreach my $widget ($self->grid->get_children()) {
 
-            $axmud::CLIENT->desktopObj->removeWidget($self->table, $widget);
+            $axmud::CLIENT->desktopObj->removeWidget($self->grid, $widget);
         }
 
         # Get the name of the function for the new current page
@@ -27630,7 +27849,7 @@
         $self->vAdjustment->set_value(0);
 
         # Make the page visible
-        $self->winShowAll($self->_objClass . '->updateTable');
+        $self->winShowAll($self->_objClass . '->updateGrid');
 
         return 1;
     }
@@ -27756,7 +27975,7 @@
         $self->ivEmpty('specialPreviousButtonHash');
 
         # Display the page
-        $self->updateTable();
+        $self->updateGrid();
 
         return 1;
     }
@@ -27812,7 +28031,7 @@
             $self->ivEmpty('specialPreviousButtonHash');
 
             # Display the page
-            $self->updateTable();
+            $self->updateGrid();
         }
 
         return 1;
@@ -27830,8 +28049,8 @@
         { $_[0]->{hAdjustment} }
     sub vAdjustment
         { $_[0]->{vAdjustment} }
-    sub table
-        { $_[0]->{table} }
+    sub grid
+        { $_[0]->{grid} }
     sub hBox
         { $_[0]->{hBox} }
     sub nextButton

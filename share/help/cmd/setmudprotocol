@@ -18,6 +18,7 @@ spt / setmudprotocol          Enables/disables MUD protocols
       ;spt -g                 Enables/disables GMCP (Generic MUD Communication
                                  Protocol) 
       ;spt -t                 Enables/disables MTTS (Mud Terminal Type Standard)
+      ;spt -N                 Enables/disables MNES (MUD NEW-ENVIRON Standard)
       ;spt -m                 Enables/disables MCP (Mud Client Protocol)
  
    Notes:
@@ -38,7 +39,8 @@ spt / setmudprotocol          Enables/disables MUD protocols
       MSP, MXP, Pueblo, ZMP, AARD102 and MCP all serve to enhance the game
          experience in worlds that implement those protocols.
       MTTS exchanges some information about the enhanced features Axmud 
-         supports.
+         supports. MNES exchanges a smaller set of information about Axmud
+         support for various features.
 
       In Axmud, all MUD protocols are enabled by default. You can use this 
          command to disable them. The action applies to every existing 

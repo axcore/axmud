@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2019 A S Lewis
+# Copyright (C) 2011-2020 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -296,6 +296,7 @@
                 'atcp'                  => undef,
                 'gmcp'                  => undef,
                 'mtts'                  => undef,
+                'mnes'                  => undef,
                 'mcp'                   => undef,
             },
 
@@ -686,6 +687,14 @@
             # Flag set to TRUE if the user should be prompted for a confirmation if they try to
             #   close a tab by clicking on its 'X' widget, and the session is connected to a world
             confirmCloseTabFlag         => TRUE,        # [config]
+            # Equivalent flag set to TRUE if the user should be prompted for a confirmation if they
+            #   try to stop the session by clicking the main window menu, and the session is
+            #   connected to a world
+            confirmCloseMenuFlag  => TRUE,              # [config]
+            # Equivalent flag set to TRUE if the user should be prompted for a confirmation if they
+            #   try to stop the session by clicking the main window toolbutton, and the session is
+            #   connected to a world
+            confirmCloseToolButtonFlag  => TRUE,        # [config]
 
             # The default character set to use. Must be one of the character sets available with the
             #   Perl Encode module
@@ -741,6 +750,7 @@
                     'Quit', 'Qquit', 'QuitAll', 'Exit', 'Xxit', 'ExitAll',
                         'AbortSelfDestruct', 'StopSession', 'StopClient', 'Panic',
                     'AwayFromKeys', 'SetReminder', 'SetCountdown', 'SetCountup',
+                    'SetLookup', 'ResetLookup', 'ForceLookup', 'ListLookup',
                     'SetCharSet',
                     'SetCustomMonth', 'SetCustomWeek', 'SetCommifyMode',
                     'SetApplication', 'ResetApplication', 'SetPromptDelay',
@@ -767,15 +777,18 @@
                     'AddInitialPlugin', 'DeleteInitialPlugin', 'ListInitialPlugin',
                     'SetTelnetOption', 'SetMUDProtocol', 'SetTermType', 'ConfigureTerminal',
                     'MSDP', 'MSSP', 'MXP', 'MSP', 'ZMP', 'SendZMP', 'InputZMP', 'Aardwolf', 'ATCP',
-                        'SendATCP', 'GMCP', 'SendGMCP', 'MCP',
+                        'SendATCP', 'GMCP', 'SendGMCP', 'MNES', 'MCP',
                     'Log',
                 '@Sound and text-to-speech',
                     'Sound', 'ASCIIBell',
                     'AddSoundEffect', 'PlaySoundEffect', 'QuickSoundEffect', 'Beep',
                         'DeleteSoundEffect', 'ResetSoundEffect', 'ListSoundEffect',
-                    'Speech', 'Speak', 'Read', 'PermRead', 'Switch', 'PermSwitch', 'Alert',
-                        'PermAlert', 'ListAttribute', 'AddConfig', 'CloneConfig', 'EditConfig',
-                        'ModifyConfig', 'DeleteConfig', 'ListConfig',
+                    'Speech', 'Speak',
+                    'Split', 'Skip', 'Unskip', 'First', 'Last', 'Resume', 'Shutup', 'Prompt',
+                        'FreeKeys', 'HijackKeys',
+                    'Read',  'PermRead', 'Switch', 'PermSwitch', 'Alert', 'PermAlert',
+                        'ListAttribute', 'AddConfig', 'CloneConfig', 'EditConfig', 'ModifyConfig',
+                        'DeleteConfig', 'ListConfig',
                 '@Other windows',
                     'OpenObjectViewer', 'CloseObjectViewer',
                     'OpenAutomapper', 'CloseAutomapper', 'ToggleAutomapper',
@@ -942,6 +955,8 @@
                         'DeleteRoom', 'DeleteModelObject', 'ListModel', 'ListOrphan', 'DumpModel',
                         'SplitModel', 'EditModel', 'MergeModel', 'UpdateModel', 'CompressModel',
                         'ModelReport', 'ListSourceCode',
+                    'AddRegionScheme', 'EditRegionScheme', 'RenameRegionScheme',
+                        'DeleteRegionScheme', 'ListRegionScheme',
                     'AddLabelStyle', 'EditLabelStyle', 'RenameLabelStyle', 'DeleteLabelStyle',
                         'ListLabelStyle',
                     'QuickLabelDelete',
@@ -1345,9 +1360,9 @@
                 'coffeemud'         => '1.1.0',   # CoffeeMud / coffeemud.net 23
                 'cryosphere'        => '1.0.376', # Cryosphere / cryosphere.org 6666
                 'cyberassault'      => '1.1.050', # CyberASSAULT / cyberassault.org 11111
-                'darkrealms'        => '1.1.0',   # Dark Realms: City of Syne / 173.244.70.250 1138
+                'darkrealms'        => '1.1.0',   # Dark Realms: City of Syne / 64.227.89.30 1138
                 'dartmud'           => '1.1.0',   # DartMUD / dartmud.com 2525
-                'dawn'              => '1.1.0',   # Dawn / 23.241.198.57 3000
+                'dawn'              => '1.1.0',   # Dawn / dawnmud.com 3000
                 'discworld'         => '1.0.140', # Discworld MUD / discworld.starturtle.net 23
                 'dragonstone'       => '1.1.138', # DragonStone / dragonstone.mudmagic.com 2345
                 'dsdev'             => '1.0.0',   # Dead Souls development mud / dead-souls.net 8000
@@ -1358,21 +1373,23 @@
                 'dswords'           => '1.1.270', # Dragon Swords / dragonswordsmud.com 1234
                 'dunemud'           => '1.1.0',   # DuneMUD / dunemud.net 6789
                 'duris'             => '1.0.0',   # Duris: Land of BloodLust / mud.durismud.com 7777
-                'edmud'             => '1.1.138', # Eternal Darkness / edmud.net 9700
+                'edmud'             => '1.1.138', # Eternal Darkness / eternaldarkness.net 9700
                 'elephantmud'       => '1.1.0',   # Elephant MUD / elephant.org 23
                 'elysium'           => '1.1.050', # Elysium RPG / elysium-rpg.com 7777
                 'empire'            => '1.1.0',   # EmpireMUD 2.0 / empiremud.net 4000
                 'eotl'              => '1.1.0',   # End of the Line / eotl.org 2010
-                'fkingdoms'         => '1.1.270', # Forgotten Kingdoms / forgottenkingdoms.org 23
+                'fkingdoms'         => '1.1.270', # Forgotten Kingdoms / forgottenkingdoms.org 4000
                 'fourdims'          => '1.0.050', # 4Dimensions / 4dimensions.org 6000
-                'forestsedge'       => '1.1.270', # Forest's Edge / theforestsedge.com 23
+                'forestsedge'       => '1.1.270', # Forest's Edge / mud.theforestsedge.com 4000
                 'genesis'           => '1.0.0',   # Genesis / mud.genesismud.org 3011
                 'greatermud'        => '1.1.270', # GreaterMUD / greatermud.com 23
+                'gwapoc'            => '1.3.0',   # Godwars: Rebirth of Apocalypse
+                                                  #     / apoc.godwars.net 6660
                 'hellmoo'           => '1.1.050', # HellMOO / hellmoo.org 7777
                 'hexonyx'           => '1.1.138', # HexOnyx / mud.hexonyx.com 7777
                 'holyquest'         => '1.1.0',   # HolyQuest / holyquest.org 8080
                 'iberia'            => '1.0.0',   # Iberia MUD / iberiamud.com 5900
-                'icesus'            => '1.1.0',   # Icesus / icesus.org 23
+                'icesus'            => '1.1.0',   # Icesus / naga.icesus.org 4000
                 'ifmud'             => '1.0.275', # ifMUD / ifmud.port4000.com 4000
                 'imperian'          => '1.0.376', # Imperian: Sundered Heavens / imperian.com 23
                 'islands'           => '1.1.0',   # Islands / play.islands-game.live 3000
@@ -1380,6 +1397,7 @@
                 'lambda'            => '1.1.0',   # LambdaMOO / lambda.moo.mud.org 8888
                 'legendmud'         => '1.0.275', # LegendMUD / mud.legendmud.org 9999
                 'lostsouls'         => '1.1.0',   # Lost Souls / lostsouls.org 23
+                'lowlands'          => '1.3.0',   # Lowlands / lolamud.net 6969
                 'luminari'          => '1.1.0',   # Luminari MUD / luminarimud.com 4100
                 'lusternia'         => '1.0.0',   # Lusternia / lusternia.com 23
                 'magica'            => '1.0.140', # Materia Magica / materiamagica.com 4000
@@ -1406,6 +1424,7 @@
                 'retromud'          => '1.1.0',   # RetroMUD / retromud.org 3000
                 'rodespair'         => '1.1.0',   # Realms of Despair / realmsofdespair.com 23
                 'roninmud'          => '1.1.050', # RoninMUD / game.roninmud.org 5000
+                'rowonder'          => '1.3.0',   # Realms of Wonder / mud.killerpcs.com 8888
                 'rupert'            => '1.0.275', # Rupert / rupert.twyst.org 9040
                 'slothmud'          => '1.0.140', # SlothMUD III / slothmud.org 6101
                 'stickmud'          => '1.1.270', # StickMUD / stickmud.com 7680
@@ -1438,13 +1457,20 @@
                 'achaea'            => '1.2.041',
                 'aetolia'           => '1.2.041',
                 'alteraeon'         => '1.1.270',
+                'archipelago'       => '1.3.0',
                 'avalonrpg'         => '1.1.012',
+                'darkrealms'        => '1.3.0',
+                'dawn'              => '1.3.0',
                 'discworld'         => '1.1.343',
                 'dsdev'             => '1.1.270',
                 'dslocal'           => '1.1.270',
                 'dsprime'           => '1.1.270',
                 'dunemud'           => '1.2.0',
+                'edmud'             => '1.3.0',
+                'fkingdoms'         => '1.3.0',
+                'forestsedge'       => '1.3.0',
                 'imperian'          => '1.2.041',
+                'icesus'            => '1.3.0',
                 'islands'           => '1.2.0',
                 'kallisti'          => '1.2.041',
                 'luminari'          => '1.1.270',
@@ -2068,6 +2094,153 @@
                 'mortal_danger'         => undef,
                 'dummy_room'            => undef,
             },
+            # Constant registry hash of room flags for which exits should be drawn, when
+            #   GA::Obj::WorldModel->obscuredExitFlag is TRUE
+            constRoomNoObscuredHash     => {
+                'blocked_room'          => undef,
+                'avoid_room'            => undef,
+                'mortal_danger'         => undef,
+                'danger'                => undef,
+                'world_centre'          => undef,
+                'world_start'           => undef,
+                'meet_point'            => undef,
+                'main_route'            => undef,
+                'minor_route'           => undef,
+                'cross_route'           => undef,
+                'arrow_route'           => undef,
+                'wrong_route'           => undef,
+                'portal'                => undef,
+                'sign_post'             => undef,
+            },
+
+            # Constant hash of valid model object types (all of which inherit from
+            #   GA::Generic::ModelObj; the type matches the object's ->category IV). Hash in the
+            #   form
+            #   $constModelTypeHash{type} = undef;
+            constModelTypeHash          => {
+                'region'                => undef,
+                'room'                  => undef,
+                'weapon'                => undef,
+                'armour'                => undef,
+                'garment'               => undef,
+                'char'                  => undef,
+                'minion'                => undef,
+                'sentient'              => undef,
+                'creature'              => undef,
+                'portable'              => undef,
+                'decoration'            => undef,
+                'custom'                => undef,
+            },
+            # Constant list of standard primary directions, in a fixed order
+            constPrimaryDirList         => [
+                'north',
+                'northnortheast',
+                'northeast',
+                'eastnortheast',
+                'east',
+                'eastsoutheast',
+                'southeast',
+                'southsoutheast',
+                'south',
+                'southsouthwest',
+                'southwest',
+                'westsouthwest',
+                'west',
+                'westnorthwest',
+                'northwest',
+                'northnorthwest',
+                'up',
+                'down',
+            ],
+            # Constant list of standard primary directions, but with the secondary-intercardinal
+            #   directions removed
+            constShortPrimaryDirList    => [
+                'north',
+                'northeast',
+                'east',
+                'southeast',
+                'south',
+                'southwest',
+                'west',
+                'northwest',
+                'up',
+                'down',
+            ],
+            # Constant hash of standard primary directions, but with the secondary-intercardinal
+            #   directions removed
+            constShortPrimaryDirHash    => {
+                'north'                 => undef,
+                'northeast'             => undef,
+                'east'                  => undef,
+                'southeast'             => undef,
+                'south'                 => undef,
+                'southwest'             => undef,
+                'west'                  => undef,
+                'northwest'             => undef,
+                'up'                    => undef,
+                'down'                  => undef,
+            },
+            # Constant hash of standard primary directions and their opposites (used mostly by the
+            #   automapper functions). Hash in the form
+            #   $constOppDirHash{standard_direction} = opposite_standard_direction
+            constOppDirHash             => {
+                'north'                 => 'south',
+                'northnortheast'        => 'southsouthwest',
+                'northeast'             => 'southwest',
+                'eastnortheast'         => 'westsouthwest',
+                'east'                  => 'west',
+                'eastsoutheast'         => 'westnorthwest',
+                'southeast'             => 'northwest',
+                'southsoutheast'        => 'northnorthwest',
+                'south'                 => 'north',
+                'southsouthwest'        => 'northnortheast',
+                'southwest'             => 'northeast',
+                'westsouthwest'         => 'eastnortheast',
+                'west'                  => 'east',
+                'westnorthwest'         => 'eastsoutheast',
+                'northwest'             => 'southeast',
+                'northnorthwest'        => 'southsoutheast',
+                'up'                    => 'down',
+                'down'                  => 'up',
+            },
+            # Constant registry list of room statement component types (matching
+            #   GA::Obj::Component->type)
+            constComponentTypeList      => [
+                'anchor',
+                'verb_title', 'verb_descrip', 'verb_exit', 'verb_content', 'verb_special',
+                'brief_title', 'brief_exit', 'brief_title_exit', 'brief_exit_title',
+                'brief_content',
+                'room_cmd',
+                'mudlib_path',
+                'weather',
+                'ignore_line',
+                'custom',
+            ],
+            # Constant hash of exit states (acceptable values for GA::Obj::Exit->exitState)
+            # NB This hash doesn't include 'ignore', or any custom strings specified by
+            #   GA::Profile::World->exitStateTagHash
+            # NB For an explanation of what each value means, see the comments in GA::Obj::Exit->new
+            constExitStateHash          => {
+                'normal'                => undef,
+                'open'                  => undef,
+                'closed'                => undef,
+                'locked'                => undef,
+                'secret'                => undef,
+                'secret_open'           => undef,
+                'secret_closed'         => undef,
+                'secret_locked'         => undef,
+                'impass'                => undef,
+                'dark'                  => undef,
+                'danger'                => undef,
+                'emphasis'              => undef,
+                'other'                 => undef,
+#               'ignore'                => undef,
+            },
+            # Object parsing sanity check (in case someone creates a room containing a billion
+            #   hobbits) - maximum number of world model objects created in response by
+            #   GA::Obj::WorldModel->parseObj()
+            # (The 999 value communicates to the user that the number has been reduced)
+            constParseObjMax            => 999,
 
             # Cages
             # -----
@@ -2548,138 +2721,6 @@
             #   $self->initScriptHash
             initScriptOrderList         => [],      # [scripts]
 
-            # World model
-            # -----------
-
-            # Constant hash of valid model object types (all of which inherit from
-            #   GA::Generic::ModelObj; the type matches the object's ->category IV). Hash in the
-            #   form
-            #   $constModelTypeHash{type} = undef;
-            constModelTypeHash          => {
-                'region'                => undef,
-                'room'                  => undef,
-                'weapon'                => undef,
-                'armour'                => undef,
-                'garment'               => undef,
-                'char'                  => undef,
-                'minion'                => undef,
-                'sentient'              => undef,
-                'creature'              => undef,
-                'portable'              => undef,
-                'decoration'            => undef,
-                'custom'                => undef,
-            },
-            # Constant list of standard primary directions, in a fixed order
-            constPrimaryDirList         => [
-                'north',
-                'northnortheast',
-                'northeast',
-                'eastnortheast',
-                'east',
-                'eastsoutheast',
-                'southeast',
-                'southsoutheast',
-                'south',
-                'southsouthwest',
-                'southwest',
-                'westsouthwest',
-                'west',
-                'westnorthwest',
-                'northwest',
-                'northnorthwest',
-                'up',
-                'down',
-            ],
-            # Constant list of standard primary directions, but with the secondary-intercardinal
-            #   directions removed
-            constShortPrimaryDirList    => [
-                'north',
-                'northeast',
-                'east',
-                'southeast',
-                'south',
-                'southwest',
-                'west',
-                'northwest',
-                'up',
-                'down',
-            ],
-            # Constant hash of standard primary directions, but with the secondary-intercardinal
-            #   directions removed
-            constShortPrimaryDirHash    => {
-                'north'                 => undef,
-                'northeast'             => undef,
-                'east'                  => undef,
-                'southeast'             => undef,
-                'south'                 => undef,
-                'southwest'             => undef,
-                'west'                  => undef,
-                'northwest'             => undef,
-                'up'                    => undef,
-                'down'                  => undef,
-            },
-            # Constant hash of standard primary directions and their opposites (used mostly by the
-            #   automapper functions). Hash in the form
-            #   $constOppDirHash{standard_direction} = opposite_standard_direction
-            constOppDirHash             => {
-                'north'                 => 'south',
-                'northnortheast'        => 'southsouthwest',
-                'northeast'             => 'southwest',
-                'eastnortheast'         => 'westsouthwest',
-                'east'                  => 'west',
-                'eastsoutheast'         => 'westnorthwest',
-                'southeast'             => 'northwest',
-                'southsoutheast'        => 'northnorthwest',
-                'south'                 => 'north',
-                'southsouthwest'        => 'northnortheast',
-                'southwest'             => 'northeast',
-                'westsouthwest'         => 'eastnortheast',
-                'west'                  => 'east',
-                'westnorthwest'         => 'eastsoutheast',
-                'northwest'             => 'southeast',
-                'northnorthwest'        => 'southsoutheast',
-                'up'                    => 'down',
-                'down'                  => 'up',
-            },
-            # Constant registry list of room statement component types (matching
-            #   GA::Obj::Component->type)
-            constComponentTypeList      => [
-                'anchor',
-                'verb_title', 'verb_descrip', 'verb_exit', 'verb_content', 'verb_special',
-                'brief_title', 'brief_exit', 'brief_title_exit', 'brief_exit_title',
-                'brief_content',
-                'room_cmd',
-                'mudlib_path',
-                'weather',
-                'ignore_line',
-                'custom',
-            ],
-            # Constant hash of exit states (acceptable values for GA::Obj::Exit->exitState)
-            # NB This hash doesn't include 'ignore', or any custom strings specified by
-            #   GA::Profile::World->exitStateTagHash
-            # NB For an explanation of what each value means, see the comments in GA::Obj::Exit->new
-            constExitStateHash          => {
-                'normal'                => undef,
-                'open'                  => undef,
-                'closed'                => undef,
-                'locked'                => undef,
-                'secret'                => undef,
-                'secret_open'           => undef,
-                'secret_closed'         => undef,
-                'secret_locked'         => undef,
-                'impass'                => undef,
-                'dark'                  => undef,
-                'danger'                => undef,
-                'emphasis'              => undef,
-                'other'                 => undef,
-#               'ignore'                => undef,
-            },
-            # Object parsing sanity check (in case someone creates a room containing a billion
-            #   hobbits) - maximum number of world model objects created in response by
-            #   GA::Obj::WorldModel->parseObj()
-            # (The 999 value communicates to the user that the number has been reduced)
-            constParseObjMax            => 999,
-
             # Logging
             # -------
 
@@ -2950,7 +2991,7 @@
             # Colour tags
             # -----------
 
-            # Axmud Colour tags - a standard colour scheme which allows Axmud's textvies to use the
+            # Axmud Colour tags - a standard colour scheme which allows Axmud's textviews to use the
             #   same colour set as other telnet clients
             #
             # Axmud uses three sets of colour tags:
@@ -3644,6 +3685,8 @@
             useGmcpFlag                 => TRUE,        # [config]
             # Use MTTS (Mud Terminal Type Standard - http://tintin.sourceforge.io/mtts/)
             useMttsFlag                 => TRUE,        # [config]
+            # Use MNES (MUD NEW-ENVIRON STANDARD) - https://tintin.mudhalla.net/protocols/mnes/
+            useMnesFlag                 => TRUE,        # [config]
             # Use MCP (Mud Client Protocol - http://www.moo.mud.org/mcp/). Only MCP version 2.1 is
             #   supported. Axmud provides the MCP packages 'mcp-negotiate', 'mcp-cord' and
             #   'dns-org-mud-moo-simpleedit'
@@ -4248,6 +4291,21 @@
             #   plugin that created and then restart Axmud, instead
             zmpPackageHash              => {},
 
+            # Constant list of recognised MNES values for CHARSET
+            # The value used in IVs like $self->charSet, GA::Session->worldCharset and
+            #   GA::Profile::World->worldCharSet is generally provided by the system, and might be
+            #   longer than the values described here (for example, 'koi8-r' instead of the MNES
+            #   value, 'KOI-8')
+            # Therefore, GA::Session->processNewEnvironData tries to find a close match, rather than
+            #   an exact match, with one of these values. If no match can be found, 'ASCII' is used
+            #   as the default
+            constMnesCharsetList        => [
+                'ASCII', 'BIG-5', 'ISO-8859-1', 'ISO-8859-2', 'FANSI', 'GB-18030', 'KOI-8', 'UTF-8',
+            ],
+            # Flag set to TRUE if MNES should be able to send the user's real IP address (any proxy
+            #   notwithstanding)
+            allowMnesSendIPFlag         => FALSE,       # [config]
+
             # Constant list of MCP packages supported by Axmud by default, and the package versions
             #   that are supported. List in groups of 4, in the form
             #       (mcp_package_name, perl_package_name, minimum_version, maximum_version, ...)
@@ -4282,10 +4340,12 @@
             #   list also serves as the 'default' terminal type, if it is needed. The last item in
             #   the list must be 'unknown', and is sent to the server during telnet option
             #   negotiations, if the server doesn't recognise anything else
-            # NB Axmud does not do full xterm-emulation; it merely recognises xterm-256 colours
-            #   used by some MUDs (as well as OSC colour palette support)
+            # Axmud supports xterm trucolor (https://tintin.mudhalla.net/info/truecolor/), so the
+            #   'xterm-truecolor' item communicates this support to the server
+            # For the 'xterm' item, Axmud does not do full xterm-emulation; it merely recognises
+            #   xterm-256 colours used by some MUDs (as well as OSC colour palette support)
             constTermTypeList           => [
-                'ansi', 'vt100', 'xterm', 'dumb', 'unknown',
+                'ansi', 'vt100', 'xterm-truecolor', 'xterm', 'dumb', 'unknown',
             ],
             # Which information is sent to the server during TTYPE option negotiations (when
             #   $self->useMttsFlag is FALSE):
@@ -4308,7 +4368,7 @@
             #   name, followed by either the world profile's ->termType (if set) or 'xterm'
             #   (if not set), followed by the MTTS message
             # NB This IV, as well as ->customClientName and ->customClientVersion, are also used by
-            #   MXP and ZMP
+            #   MXP, ZMP and MNES.
             termTypeMode                => 'send_client',   # [config]
             # In mode 'send_custom_client' (or when $self->useMttsFlag is TRUE), the customised
             #   client name to send (if 'undef' or an empty string, it is not sent, instead the
@@ -4334,6 +4394,9 @@
             #   otherwise
             # In addition, when TRUE and a session's special echo mode is enabled, world commands
             #   are sent to the world immediately, each character sent as soon as it's typed
+            # NB In Axmud blind mode, the escape and cursor keys are hijacked for use with TTS.
+            #   Users can use the ';freekeys' command to temporarily release them for use as direct
+            #   keys (or for any other reason)
             useDirectKeysFlag           => FALSE,       # [config]
             # Keycodes available in numeric keypad alternate mode (GA::Session->ctrlKeypadMode is
             #   'alternate') and cursor key application mode (GA::Session->ctrlCursorMode is
@@ -4987,14 +5050,9 @@
             # Constant list of icon sizes (these values never change; in pixels)
             constIconSizeList           => [16, 32, 48, 64, 128],
 
-            # If you want to extend the object viewer window for this session with your own 'edit'
-            #   window - using code you've written in your own plugin - this flag gets set to TRUE;
-            #   the custom 'edit' window defined by the plugin can then be called by the object
-            #   viewer window's menu
-            guiPrivateFlag              => FALSE,
-            # If you want, in addition, the GUI menu to have its 'Private' column for code you've
-            #   written yourself, set this flag to TRUE
-            guiPrivateMenuFlag          => FALSE,
+            # Standard shadow type for Gtk3::Frame and Gtk3::ScrolledWindows (possible values are
+            #   'in', 'out', 'etched-in', 'etched-out' or 'none')
+            constShadowType             => 'in',
 
             # 'Internal' windows
             # ------------------
@@ -5220,6 +5278,12 @@
                     ';openaboutwindow -h',
                     FALSE,                      # Always available
                     FALSE,                      # Doesn't require connection to world
+                'quit',
+                    'Stop session or client',
+                    'quit.png',
+                    ';stopsession',
+                    FALSE,                      # Always available
+                    FALSE,                      # Doesn't require connection to world
             ],
             # Registry hash of toolbar button objects which exist, in the form
             #   $toolbarHash{unique_name} = blessed_reference_to_toolbar_button_object
@@ -5349,11 +5413,6 @@
             # Text-to-speech (TTS)
             # --------------------
 
-            # NB Perl modules for handling TTS don't work for us, so we haven't used them at all;
-            #   instead, we are using direct system calls to one of three commonly-used TTS engines.
-            #   The call will only work if that engine has been installed correctly on the user's
-            #   system
-
             # There are two flags that turn TTS on and off
             # The user can toggle the first one on or off at any time (using the ;speech command),
             #   and is saved in the config file
@@ -5367,7 +5426,7 @@
             #   the value of ->customAllowTTSFlag
             # (Thus, a single installation of Axmud can be used by two users, one with a visual
             #   impairment and one without)
-            systemAllowTTSFlag          => FALSE,                   # [config]
+            systemAllowTTSFlag          => FALSE,
             # If the user specifies a TTS engine from the command line (e.g. by running
             #   './axmud.pl festival'  or './baxmud.pl deathmud.com 5000 festival'), that engine
             #   is used exclusively while Axmud is running. This IV stores the engine, if specified
@@ -5380,14 +5439,82 @@
             ],
             # Constant list of TTS engines that Axmud supports on this operating system
             constTTSCompatList          => [],                      # Set below
-            # On MS Windows, the path to the eSpeak engine (if installed) depends on the age of the
-            #   system. This IV is set by $self->start to the correct path for the user's system, or
-            #   left as 'undef' if eSpeak is not installed on it
-            eSpeakPath                  => undef,
             # Allow TTS smoothing, which inserts an artificial full stop at the end of lines which
             #   don't end with one, if the next line begins with a capital letter (makes the voice
             #   sound more natural)
             ttsSmoothFlag               => TRUE,                    # [config]
+
+            # Any part of the code can perform TTS by calling $self->tts. That function produces
+            #   a TTS job (a GA::Obj::TtsJob object). The job stores a single piece of text to
+            #   convert to speech, the engine to use, and any optional parameters
+            # A list of TTS job objects, usually performed in sequence
+            ttsJobList                  => [],
+            # The maximum size of $self->ttsJobList. When the list is full, we remove the oldest
+            #   job (the first one in the list) to make way for a new job (added to the end of the
+            #   list)
+            ttsJobMax                   => 1000,
+            # A second list of jobs, used for any system messages which are urgent (for example, the
+            #   confirmation message from the ';split' command, when TTS is enabled)
+            # $self->ttsPerformJobs performs all jobs on this list immediately, before checking
+            #   ->ttsJobList. This list has no maximum size (jobs are removed from the list, as
+            #   soon as they are performed)
+            ttsUrgentJobList            => [],
+            # The job mode, which defines what happens when ;skip and ;unskip (etc) are used. Set
+            #   to 'default' to read aloud all the text for the job, 'sentence' to read aloud one
+            #   sentence at a time, or 'word' to read aloud one word at a time
+            ttsJobMode                  => 'default',
+            # A pointer, set to an index in $self->ttsJobList. The pointer tells us which job is
+            #   the current one (i.e. the next piece of text to be converted to speech)
+            # When $self->ttsJobList is empty, set to 0. When every job in $self->ttsJobList has
+            #   been performed, set to -1 (to represent a pointer a the end of the list)
+            ttsJobPointer               => 0,
+            # A mini-pointer, pointing at a position in a job's ->text string (the first character
+            #   in the string is 0). Set to 0 when ->ttsJobMode is 'default'. When ->ttsJobMode is
+            #   'sentence' or 'word', points at the character at the beginning of a sentence/word
+            ttsJobMiniPointer           => 0,
+            # A flag set to TRUE if each job in the list should be performed as soon as the previous
+            #   job has finished, FALSE if not
+            ttsJobAutoFlag              => TRUE,
+            # A flag set to TRUE if the current job (marked by $self->ttsJobPointer) should be
+            #   performed once, FALSE if it shouldn't be performed right now (ignored when
+            #   $self->ttsJobAutoFlag is TRUE)
+            ttsJobOnceFlag              => TRUE,
+            # Flag set to TRUE when $self->ttsJobMode changes, and set back to FALSE when any job is
+            #   performed, or when the ';skip' command is used. When TRUE, the ';skip' command
+            #   doesn't advance $self->ttsJobMiniPointer, as it ordinarily would. Thus, the user
+            #   can type ';first' and then ';skip', in order to hear the first sentence or word in
+            #   a job (rather the second
+            ttsChangeModeFlag           => FALSE,
+            # The IPC::Run harness handling the system process, in which text is currently being
+            #   converted to speech. Reset back to 'undef' as soon as we detect that the system
+            #   process has finished
+            ttsCurrentHarness           => undef,
+
+            # When blind mode is enabled, we can hijack the escape and cursor keys for navigating
+            #   the TTS job list
+            # Hash of affected keycodes, in the form
+            #   $ttsHijackKeycodeHash{keycode} = client_command_to_call
+            ttsHijackKeycodeHash        => {
+                'home'                  => 'split',
+                'end'                   => 'prompt',
+                'right'                 => 'skip',
+                'left'                  => 'unskip',
+                'page_down'             => 'skip more',
+                'page_up'               => 'unskip more',
+                'up'                    => 'first',
+                'down'                  => 'last',
+                'tab'                   => 'resume',
+                'escape'                => 'shutup',
+            },
+            # Flag set to TRUE when the keys are hijacked, and FALSE when they are not hijacked.
+            #   This setting is toggled with the ;freekeys command (and is ignored when not in
+            #   blind mode)
+            ttsHijackFlag               => TRUE,            # [config]
+            # Corresponding flag for when blind mode is not enabled
+            # Flag set to TRUE when the keys are hijacked, and FALSE when they are not hijacked.
+            #   This setting is toggled with the ;hijackkeys command (and is ignored when in blind
+            #   mode)
+            ttsForceHijackFlag          => FALSE,           # [config]
 
             # Constant lists of default TTS settings, used for initialising TTS configuration
             #   objects, in the form
@@ -5433,6 +5560,10 @@
             # Constant hash of TTS configuration objects to be created at startup, in the form
             #   $constTtsObjHash{unique_name} = which_tts_engine_to_use_by_default
             # ...where 'unique_name' is max 16 chars, no reserved names
+            # For most values, we use 'undef' rather than an engine name. The call to
+            #   $self->ttsCreateStandard then chooses which engine to use: on Linux, 'espeak', and
+            #   on MS Windows, either 'espeak', 'sng' or 'festival', depending on which engines
+            #   are actually installed on the system
             constTtsObjHash             => {
                 # Default TTS settings
                 'espeak'                => 'espeak',    # Default for each TTS engine
@@ -5441,23 +5572,23 @@
                 'festival'              => 'festival',
                 'swift'                 => 'swift',
                 'none'                  => 'espeak',    # The 'void' engine - doesn't read anything
-                'task'                  => 'espeak',    # Default for tasks
-                'script'                => 'espeak',    # Default for Axbasic scripts
-                'default'               => 'espeak',    # Default for everything else
+                'task'                  => undef,       # Default for tasks
+                'script'                => undef,       # Default for Axbasic scripts
+                'default'               => undef,       # Default for everything else
                 # Default TTS settings for various parts of Axmud
-                'receive'               => 'espeak',    # Text received from world
-                'system'                => 'espeak',    # System messages, i.e. ->writeText
-                'error'                 => 'espeak',    # System error/warning/debug/improper msgs
-                'command'               => 'espeak',    # World commands
-                'dialogue'              => 'espeak',    # 'Dialogue' windows
+                'receive'               => undef,       # Text received from world
+                'system'                => undef,       # System messages, i.e. ->writeText
+                'error'                 => undef,       # System error/warning/debug/improper msgs
+                'command'               => undef,       # World commands
+                'dialogue'              => undef,       # 'Dialogue' windows
                 # Default TTS settings for various built-in tasks
-                'attack'                => 'espeak',
-                'chat'                  => 'espeak',
-                'channels'              => 'espeak',
-                'divert'                => 'espeak',
-                'locator'               => 'espeak',
-                'status'                => 'espeak',
-                'watch'                 => 'espeak',
+                'attack'                => undef,
+                'chat'                  => undef,
+                'channels'              => undef,
+                'divert'                => undef,
+                'locator'               => undef,
+                'status'                => undef,
+                'watch'                 => undef,
             },
             # Constant hash of TTS configuration objects which cannot be removed
             constTtsPermObjHash         => {
@@ -5613,6 +5744,9 @@
             # Don't convert text received from the world before a login is processed (except for
             #   prompts)
             ttsLoginFlag                => TRUE,                    # [config]
+            # Don't convert text received from the world that matches
+            #   GA::Profile::World->cmdPromptPatternList (after a login)
+            ttsPromptFlag               => TRUE,                    # [config]
             # Convert system messages
             ttsSystemFlag               => TRUE,                    # [config]
             # Convert system error messages (including warning and debug messages)
@@ -5624,29 +5758,61 @@
             # Convert (some) text displayed in (some) task windows
             ttsTaskFlag                 => FALSE,                   # [config]
 
-            # Special IVs for interacting with the Festival server. The first time some part of the
-            #   code calls $self->tts to read out some text with the Festival engine, Axmud attempts
-            #   to contact the Festival server using this port
-            # The Festival server default port, in case the user wants to reset it
+            # Regardless of whether $self->ttsPromptFlag is set or not, and whether login has been
+            #   completed or not, $self->tts checks received text against
+            #   GA::Profile::World->cmdPromptPatternList, and stores the most recent matching prompt
+            #   here (so it can be replayed using the ';prompt' command)
+            ttsLastPrompt               => undef,
+
+            # Paths to the binaries for various speech engines on MS Windows (ignored on other
+            #   operating systems). Not that there are two possible paths for eSpeak
+            msWinPathESpeak             => "C:\\Program Files\\espeak\\command_line\\espeak.exe",
+            msWinAltPathESpeak
+                => "C:\\Program Files (x86)\\espeak\\command_line\\espeak.exe",
+            msWinPathESNG               => "C:\\Program Files\\eSpeak NG\\espeak-ng.exe",
+            msWinPathFestival           => "C:\\festival\\src\\main\\festival.exe",
+            msWinPathSwift              => "C:\\Program Files\\Cepstral\\bin\\swift.exe",
+
+            # Special IVs for interacting with the Festival server (on MS Windows, we never use the
+            #   server engine, only the command-line engine)
+            # The default Festival server port
             constTtsFestivalServerPort  => 1314,
-            # The port the server is using, in case the user has changed it. If changed to 0, an
-            #   empty string or 'undef', Axmud won't try to connect to the Festival server
-            ttsFestivalServerPort       => undef,                   # [config] # set below
-            # If the server is running, the IO::Socket::INET object is stored here
-            ttsFestivalServer           => undef,
-            # If this flag is set to TRUE, Axmud should attempt to start the server, before
-            #   connecting to it
-            ttsStartServerFlag          => TRUE,                    # [config]
-            # When Axmud starts the Festival server, the value of this IV is set to 1. Whenever it
-            #   is time to do some TTS with the Festival engine, $self->tts will try connecting to
-            #   the server (which does not start instantaneously). If the connection fails, TTS is
-            #   done using the command-line Festival engine. Eventually, the connection succeeds,
-            #   this IV is set to 2, and TTS is done with the Festival server
-            # On the other hand, if $self->ttsStartServerFlag is FALSE, Axmud attempts to connect
-            #   to the server just once. If the connection fails, TTS is done using the command-line
-            #   Festival engine. If the connection succeeds, TTS is done using the Festival server.
-            #   In either case, this IV is set to 2 immediately.
-            ttsFestivalServerMode       => 'waiting',
+            # The actual server port to use, when required. If 'undef' (or an empty string), the
+            #   command-line Festival engine is used
+            ttsFestivalServerPort       => undef,
+            # Flag set to TRUE, the first time that $self->tts is called to use the Festival engine.
+            #   On that occasion, if $self->ttsFestivalServerPort is set, we try to start the
+            #   Festival server
+            ttsFestivalFirstFlag        => FALSE,
+            # Festival server mode: 'cmd_line' to send text to the command-line engine, 'server' to
+            #   send it to the server engine
+            ttsFestivalServerMode       => 'cmd_line',
+            # Festival server connection mode: 'cmd_line' when $self->ttsFestivalMode is 'cmd_line'.
+            #   Otherwise, set to 'waiting' when no connection is established, 'connecting' when
+            #   trying to establish a connection, and 'connected' when a connection has been
+            #   established
+            ttsFestivalConnectMode      => 'cmd_line',
+            # The IO::Socket::INET object for the connection to the Festival server
+            ttsFestivalSocket           => undef,
+            # When dealing with the Festival server, we may have to perform several actions, one
+            #   after the other, waiting for one to finish before starting the next
+            # A list of requested actions. $self->ttsPerformJobs performs them one at a time
+            # Valid requested actions are 'start', 'connect' and 'disconnect'
+            ttsFestivalRequestList      => [],
+            # After the requested action 'start', we must give time for the server to initialise,
+            #   before we can give up trying to connect to it. The time (matches $self->clientTime)
+            #   at which we should stop trying to connect to the server. If the value is 'undef',
+            #   we give up after the first failed attempt
+            ttsFestivalCheckTime        => undef,
+            # The period (in seconds) to wait
+            ttsFestivalStopTime         => 3,
+            # Axmud must not try to start the server again, if the first attempt fails (unless
+            #   $self->ttsFestivalServerPort has changed). Flag set to TRUE if we could not start
+            #   the server, and set back to FALSE when the port is changed
+            ttsFestivalFailFlag         => FALSE,
+            # Axmud must not try to start the server again, if a previous attempt succeeded (even if
+            #   the port has changed). Flag set to TRUE if we succeeded in starting the server
+            ttsFestivalSuccessFlag      => FALSE,
 
             # Other IVs
             # ---------
@@ -5683,13 +5849,26 @@
                 'CM'    => 900,
             },
 
-            # List of websites that provide the user's IP address
+            # Constant list of IP lookup servers that provide the user's IP address (tested
+            #   September 2020)
             constIPLookupList           => [
-                'https://canihazip.com/s',
-                'http://icanhazip.com/',
-                'http://myip.dnsomatic.com/',
                 'http://ifconfig.me/ip',
+                'https://ifconfig.co/ip',
+                'https://api.ipify.org',
+                'http://icanhazip.com/',
+                'https://ip.protenus.com/ip',
             ],
+            # Customisable list (in case, in the far future, none of them are available)
+            ipLookupList                => [],          # [config] Set below
+            # The user's current IP address. To prevent unnecessary delays, the user's IP address is
+            #   only detected when required (for example, by the Chat task, or by
+            #   GA::Session->processNewEnvironData). When $self->ipv4Get is called and the user's
+            #   IP address is successfully retrieved, it is stored here. Subsequent calls to to
+            #   ->ipv4Get return this value
+            # The value is not stored in the config file, so if the user switches to a different IP
+            #   address while Axmud is running, the old IP address continues to be used (unless the
+            #   user invokes the ;forcelookup command)
+            currentIP                   => undef,
 
             # Lines in help files should be longer than 80 characters long
             constHelpCharLimit          => 80,          # [config]
@@ -5979,23 +6158,19 @@
         $self->{customSoundHash}        = {%soundHash};
 
         if ($^O eq 'MSWin32') {
-
-            $self->{constTTSCompatList} = ['espeak', 'esng', 'swift', 'none'];
-
+            $self->{constTTSCompatList} = ['espeak', 'esng', 'festival', 'swift', 'none'];
         } else {
-
-            # Not sure what TTS engines are available on (all) BSDs, if any, so just use the Linux
-            #   list
             $self->{constTTSCompatList} = [$self->constTTSList];
         }
 
         $self->{ttsAttribHash}          = {$self->constTtsAttribHash};
         $self->{ttsFlagAttribHash}      = {$self->constTtsFlagAttribHash};
         $self->{ttsAlertAttribHash}     = {$self->constTtsAlertAttribHash};
-        $self->{ttsFestivalServerPort}  = $self->constTtsFestivalServerPort;
 
         $self->{customMonthList}        = [$self->constMonthList];
         $self->{customDayList}          = [$self->constDayList];
+
+        $self->{ipLookupList}           = [$self->constIPLookupList];
 
         $self->{promptWaitTime}         = $self->constPromptWaitTime;
         $self->{loginWarningTime}       = $self->constLoginWarningTime;
@@ -6369,26 +6544,16 @@
         $self->ivPoke('startClockString', $self->localClockString());
         $self->ivPoke('startDateString', $self->localDateString());
 
+        # In Axmud test mode, blind mode is always disabled
+        if ($axmud::TEST_MODE_FLAG) {
+
+            $axmud::BLIND_MODE_FLAG = FALSE;
+        }
+
         # In Axmud blind mode, TTS is always enabled
         if ($axmud::BLIND_MODE_FLAG) {
 
             $self->ivPoke('systemAllowTTSFlag', TRUE);
-        }
-
-        # On MS Windows, see if an eSpeak engine is installed, and set the IV
-        if ($^O eq 'MSWin32') {
-
-            if (-e "C:\\Program Files\\espeak\\command_line\\espeak.exe") {
-
-                $self->ivPoke('eSpeakPath', "C:\\Program Files\\espeak\\command_line\\espeak");
-
-            } elsif (-e "C:\\Program Files (x86)\\espeak\\command_line\\espeak.exe") {
-
-                $self->ivPoke(
-                    'eSpeakPath',
-                    "C:\\Program Files (x86)\\espeak\\command_line\\espeak",
-                );
-            }
         }
 
         # Load the basic mudlist, and store the data in GA::Obj::BasicWorld objects. The data
@@ -6745,6 +6910,9 @@
                 # Open the setup window. When it closes, it will open the Connections window for us
                 $self->mainWin->quickFreeWin('Games::Axmud::WizWin::Setup');
 
+                # Disable most main window toolbar/menu items, while the window is open
+                $self->desktopObj->restrictWidgets();
+
                 # Don't show the setup window twice
                 $self->set_showSetupWizWinFlag(FALSE);
 
@@ -7010,6 +7178,9 @@
 
             $self->ivPoke('terminatingFlag', TRUE);
         }
+
+        # If any text is being convertd to speech right now, interrupt it
+        $self->ttsInterruptJob();
 
         # Perform an auto-backup of Axmud's data directory, if required
         if (
@@ -9336,17 +9507,11 @@
             push (@comboList, $nameHash{$worldObj->name});
         }
 
-        # Open the 'dialogue' window. Don't use the welcome message more than once
-        if (! $self->sessionCount) {
-            $title = 'Welcome to ' . $axmud::SCRIPT;
-        } else {
-            $title = 'Connect to a world';
-        }
-
+        # Open the 'dialogue' window
         $choice = $self->mainWin->showComboDialogue(
-            $title,
-            'Please use your cursor keys to select a world, and your tab and enter keys to click'
-            . ' OK',
+            'Welcome to ' . $axmud::SCRIPT,
+            'Please use your cursor or arrow keys to select a world, and your tab and enter keys'
+            . ' to click OK',
             \@comboList,
             TRUE,                       # Show only a single OK button
         );
@@ -9455,8 +9620,10 @@
                     $connectPwd = $self->mainWin->showEntryDialogue(
                         'Password',
                         'Enter a password and press RETURN',
-                        16,
-                        undef, undef, undef,
+                        undef,                  # No maximum password length
+                        undef,
+                        TRUE,                   # Obscure password text
+                        undef,
                         TRUE,                   # Show only a single OK button
                     );
                 }
@@ -9526,8 +9693,10 @@
                     $connectPwd = $self->mainWin->showEntryDialogue(
                         'Password',
                         'Enter a password and press RETURN',
-                        16,
-                        undef, undef, undef,
+                        undef,                  # No maximum password length
+                        undef,
+                        TRUE,                   # Obscure password text
+                        undef,
                         TRUE,                   # Show only a single OK button
                     );
                 }
@@ -9535,6 +9704,11 @@
                 ($connectHost, $connectPort) = $connectWorldObj->getConnectDetails();
             }
         }
+
+        # The TTS job list has almost certainly been interrupted. Reset some iVs, so that the we
+        #   can start performing TTS jobs immediately (start reading aloud the session's text
+        #   immediately)
+        $self->ttsRestart();
 
         # Start the session
         if (
@@ -9942,6 +10116,9 @@
         # Restore the border size of any pane objects whose border size has been briefly increased
         $self->paneRestoreBorder();
 
+        # Perform text-to-speech (TTS) requests and jobs
+        $self->ttsPerformJobs();
+
         return 1;
     }
 
@@ -9992,10 +10169,20 @@
             . ' often correct them by opening an \'edit\' window and by replacing the'
             . ' invalid pattern with a valid one or by deleting it altogether.',
             ' ',
-            'If the error was caused by a faulty plugin, the plugin can be disabled with'
-            . ' the \';disableplugin\' command. Errors with the ' . $axmud::SCRIPT . ' code'
-            . ' itself should be reported to the authors.',
-            ' ',
+        );
+
+        if ($self->pluginHash) {
+
+            push (@list,
+                'If the error was caused by a faulty plugin, the plugin can be disabled with'
+                . ' the \';disableplugin\' command. Errors with the ' . $axmud::SCRIPT . ' code'
+                . ' itself should be reported to the authors.',
+                ' ',
+            );
+
+        }
+
+        push (@list,
             'When you are ready, you can use the \';restart\' command to return '
             . $axmud::SCRIPT . ' to a more-or-less functional state.',
             ' ',
@@ -12783,7 +12970,10 @@
         my ($self, $session, $standardflag, $text, $beforeFlag, $afterFlag, @fileTypeList) = @_;
 
         # Local variables
-        my ($prefix, $preamble);
+        my (
+            $prefix, $preamble,
+            @argList,
+        );
 
         # Check for improper arguments
         if (
@@ -12792,7 +12982,16 @@
         ) {
             # Can't call $self->showImproper, or we'll get an infinite loop, so write something to
             #   the terminal
-            print "IMPROPER ARGUMENTSS: " . $self->_objClass . "->writeLog() " . join (" ", @_)
+            # Protect against Perl errors if any of the arguments are undefined
+            foreach my $arg (@_) {
+                if (defined $arg) {
+                    push(@argList, $arg);
+                } else {
+                    push(@argList, '<<undef>>');
+                }
+            }
+
+            print "IMPROPER ARGUMENTS: " . $self->_objClass . "->writeLog() " . join (" ", @argList)
                         . "\n";
             return undef;
         }
@@ -13564,7 +13763,12 @@
         # Can be called by anything
         # Converts a string to audible speech, using one of the supported TTS engines. Never tries
         #   to convert a string if it contains no alphanumeric characters (because if we send
-        #   unreadable text to the engine, there will be a delay)
+        #   unreadable text to the engine, there will be an unwelcome delay)
+        #
+        # This function processes its arguments into a standard list, then calls
+        #   $self->ttsAddJob to create a new TTS job. The job is added to a list, and jobs are
+        #   performed in sequence until the user interrupts that sequence (for example, with the
+        #   ';skip' command)
         #
         # Expected arguments
         #   (none besides self)
@@ -13594,18 +13798,19 @@
         #               to 'undef' are ignored). For $speed, $rate, $pitch and $volume, the values
         #               (if defined) are in the range 0-100
         #   $exclFlag
-        #           - Set to TRUE when called by GA::Cmd::Speak->do (or by anything else), meaning
-        #               that the TTS configuration's exclusive/excluded patterns should not be
-        #               checked. Set to FALSE (or 'undef') if they should be checked as normal
+        #           - Set to TRUE when called by GA::Cmd::Speak->do (or by any similar code),
+        #               meaning that the TTS configuration's exclusive/excluded patterns and the
+        #               world profile's command prompt patterns should not be checked. Set to FALSE
+        #               (or 'undef') if they should be checked as normal
         #   $overrideFlag
         #           - Set to TRUE when called by GA::Cmd::Speak->do (or by anything else), meaning
         #               that the text should be converted even if GA::Client->systemAllowTTSFlag
         #               is set to FALSE (subject to other checks)
         #
         # Return values
-        #   'undef' on improper arguments, if $text is an empty string (or 'undef'), if TTS is
-        #       disabled generally or if the text-to-speech conversion can't be done for any other
-        #       reason
+        #   'undef' on improper arguments, if $text contains no alphanumeric characters (or is
+        #       'undef'), if TTS is disabled generally or if the text-to-speech conversion can't be
+        #       done for any other reason
         #   1 otherwise
 
         my (
@@ -13615,19 +13820,21 @@
 
         # Local variables
         my (
-            $cmd, $begin, $end, $rateFlag, $pitchFlag, $volumeFlag, $ttsObj, $param,
-            @lineList, @modList, @finalList, @msWinList,
+            $ttsObj, $cmd, $param, $begin, $end, $rateFlag, $pitchFlag, $volumeFlag, $string,
+            @lineList, @modList, @finalList, @cmdList, @altCmdList, @promptList,
         );
 
         # Check for improper arguments
-        if (! defined $type || defined $check) {
+        if (defined $check) {
 
             return $axmud::CLIENT->writeImproper($self->_objClass . '->tts', @_);
         }
 
         # If no $text was specified or if TTS is disabled generally, there's nothing to convert
+        # (We check for alphanumeric characters below)
         if (
-            ! $text
+            ! defined $text
+            || $text eq ''
             || (! $self->systemAllowTTSFlag && ! $overrideFlag)
         ) {
             return undef;
@@ -13649,8 +13856,8 @@
             $configuration = $self->forceTTSEngine;
         }
 
-        # The system commands use " to contain the text portion, so if $text contains any double
-        #   quotes, replace them with single quotes
+        # The TTS engine's system commands use " to contain the text portion, so if $text contains
+        #   any double quotes, replace them with single quotes
         $text =~ s/\"/\'/g;
 
         # Set the TTS configuration object (GA::Obj::Tts) to use, which specifies the TTS engine,
@@ -13681,13 +13888,42 @@
             $type = 'command';
         }
 
-        # Set the engine, voice, speed, rate, pitch and volume to use (overriding the TTS
-        #   configuration object, if necessary)
+        # Set the engine (overriding the TTS configuration object, if necessary)
         if (! $engine) {
 
             $engine = $ttsObj->engine;
         }
 
+        # Don't try to do text to speech with the dummy engine 'none', or with an unrecognisd
+        #   engine
+        if (! $engine || $engine eq 'none' || ! defined $self->ivFind('constTTSList', $engine)) {
+
+            return undef;
+        }
+
+        # Not all engines are supported all operating systems
+        if ($^O eq 'MSWin32' && $engine eq 'flite') {
+
+            return undef;
+        }
+
+        # The first time the Festival engine is specified, try to start the Festival server (but not
+        #   on MS Windows, for which we only support the command-line engine)
+        if ($engine eq 'festival' && ! $self->ttsFestivalFirstFlag && $^O ne 'MSWin32') {
+
+            $self->ivPoke('ttsFestivalFirstFlag', TRUE);
+            # Only start the server if a port has been specified
+            if (
+                defined $self->ttsFestivalServerPort
+                && $self->ttsFestivalServerPort ne ''
+            ) {
+                # Request that $self->ttsPerformJobs starts the server, and then connects to it
+                $self->ivPush('ttsFestivalRequestList', 'start');
+            }
+        }
+
+        # Set the voice, speed, rate, pitch and volume to use (overriding the TTS configuration
+        #   object, if necessary)
         if (! $voice) {
 
             $voice = $ttsObj->voice;        # May still be 'undef'
@@ -13715,584 +13951,160 @@
 
         # Split $text into separate lines, so we can check each line before re-combining them for
         #   TTS operations
-        @lineList = split("\n", $text);
-
         # Don't attempt to convert any lines which contain no alphanumeric characters
-        foreach my $line (@lineList) {
+        foreach my $line (split("\n", $text)) {
 
-            if ($line =~ m/\w/) {
+            if ($line =~ m/[[:alnum:]]/) {
 
-                push (@modList, $line);
+                push (@lineList, $line);
             }
         }
 
-        # Check each line of $text against exclusive/excluded patterns  (unless the flag is set)
-        if (! $exclFlag) {
+        if (! @lineList) {
 
-            foreach my $line (@modList) {
+            # There is no alphanumeric text to read
+            return undef;
+        }
+
+        # For 'receive' text, check each line against the world profile's recognised command prompts
+        #   so the ';prompt' command can retrieve the most recent one
+        if (! $exclFlag && $type eq 'receive') {
+
+            OUTER: foreach my $line (@lineList) {
+
+                INNER: foreach my $pattern ($session->currentWorld->cmdPromptPatternList) {
+
+                    # (To avoid having to check the patterns again below, compile two separate
+                    #   lists)
+                    if ($line =~ m/$pattern/i) {
+
+                        push (@promptList, $line);
+                    }
+                }
+            }
+
+            if (@promptList) {
+
+                $self->ivPoke('ttsLastPrompt', $promptList[-1]);
+            }
+        }
+
+        # Check each line of $text against exclusive/excluded patterns (unless the flag is set)
+        if ($exclFlag) {
+
+            @modList = @lineList;
+
+        } else {
+
+            OUTER: foreach my $line (@lineList) {
 
                 my $matchFlag;
 
                 if ($ttsObj->exclusiveList) {
 
-                    OUTER: foreach my $pattern ($ttsObj->exclusiveList) {
+                    INNER: foreach my $pattern ($ttsObj->exclusiveList) {
 
                         if ($line =~ m/$pattern/i) {
 
                             $matchFlag = TRUE;
-                            last OUTER;
+                            last INNER;
                         }
                     }
 
                     if ($matchFlag) {
 
                         # $line matches an exclusive pattern, so we do convert it to speech
-                        push (@finalList, $line);
+                        push (@modList, $line);
                     }
 
                 } elsif ($ttsObj->excludedList) {
 
-                    OUTER: foreach my $pattern ($ttsObj->excludedList) {
+                    INNER: foreach my $pattern ($ttsObj->excludedList) {
 
                         if ($line =~ m/$pattern/i) {
 
                             $matchFlag = TRUE;
-                            last OUTER;
+                            last INNER;
                         }
                     }
 
                     if (! $matchFlag) {
 
                         # $line does not match an excluded pattern, so we do convert it to speech
-                        push (@finalList, $line);
+                        push (@modList, $line);
+                    }
+
+                } elsif ($type eq 'receive' && $self->ttsPromptFlag && $session->loginFlag) {
+
+                    INNER: foreach my $promptLine (@promptList) {
+
+                        if ($line eq $promptLine) {
+
+                            $matchFlag = TRUE;
+                            last INNER;
+                        }
+                    }
+
+                    if (! $matchFlag) {
+
+                        # $line does not match a recognised command prompt, so we do convert it to
+                        #   speech
+                        push (@modList, $line);
                     }
 
                 } else {
 
                     # No exclusive/excluded patterns to check
-                    push (@finalList, $line);
+                    push (@modList, $line);
                 }
             }
 
-            if (! @finalList) {
+            if (! @modList) {
 
-                # No readable lines found, so don't convert anything
+                # No readable lines found, so don't perform TTS
                 return undef;
+            }
+        }
+
+        # Recombine the lines into a single string, so that the TTS engine reads them more naturally
+        if ($type ne 'receive') {
+
+            push (@finalList, join(' ', @modList));
+
+        } else {
+
+            # Text received from the world is handled a little differently
+            if (! $self->ttsSmoothFlag) {
+
+                # Don't recombine the lines. For most TTS engines, there will be an audible gap
+                #   between each line, but the user can use ';skip' and ';unskip' to replay whole
+                #   lines, exactly as they were received from the world
+                @finalList = @modList;
 
             } else {
 
-                # Recombine the lines into a single string, so that the TTS engine reads them more
-                #   naturally
-                $text = join(' ', @finalList);
+                # Split the text into artificial lines, ending with a full stop (etc). The user can
+                #   ';skip' and ';unskip' lines that correspond to sentences (as far as possible)
+                $string = join(' ', @modList);
+                @finalList = $string =~ m/[^\.\!\?]+[\.\!\?]*/g;
             }
         }
 
-        # Prepare the system command to use. If $engine is set to the dummy engine 'none', then we
-        #   don't prepare a system command at all
+        # Create new TTS job(s), and add them to the job list
+        foreach my $line (@finalList) {
 
-        # Prepare a system command on MS Windows
-        if ($^O eq 'MSWin32') {
+            # Create a new TTS job, and add it to the job list
+            $self->ttsAddJob($line, $engine, $voice, $speed, $rate, $pitch, $volume);
+        }
 
-            if ($engine eq 'espeak') {
+        # Inform the calling session (if any) which type of message was most recently converted
+        #   to speech
+        if ($session) {
 
-                # With eSpeak, we can set the voice, speed and pitch, but not rate or volume
-                if (! $self->eSpeakPath) {
-
-                    # No eSpeak engine found in the system
-                    return undef;
-
-                } else {
-
-                    push (@msWinList,
-                        $self->eSpeakPath,
-                        $text,
-                       );
-                }
-
-                if (defined $voice) {
-
-                    push (@msWinList, '-v', $voice);
-                }
-
-                # Speed in the range 10-200
-                if ($self->floatCheck($speed, 0, 100)) {
-
-                    $speed = int($speed * 1.9) + 10;
-
-                    push (@msWinList, '-s', $speed);
-                }
-
-                # Pitch in the range 0-99
-                if ($self->floatCheck($pitch, 0, 100)) {
-
-                    if ($pitch > 99) {
-
-                        $pitch = 99;
-                    }
-
-                    push (@msWinList, '-p', $pitch);
-                }
-
-            } elsif ($engine eq 'esng') {
-
-                # With espeak-ng, we can set the voice, speed, pitch and volume, but not rate
-                push (@msWinList,
-                    "C:\\Program Files\\eSpeak NG\\espeak-ng",
-                    $text,
-                );
-
-                if (defined $voice) {
-
-                    push (@msWinList, '-v', $voice);
-                }
-
-                # Speed in the range 10-200
-                if ($self->floatCheck($speed, 0, 100)) {
-
-                    $speed = int($speed * 1.9) + 10;
-
-                    push (@msWinList, '-s', $speed);
-                }
-
-                # Pitch in the range 0-99
-                if ($self->floatCheck($pitch, 0, 100)) {
-
-                    if ($pitch > 99) {
-
-                        $pitch = 99;
-                    }
-
-                    push (@msWinList, '-p', $pitch);
-                }
-
-                # Volume in the range 0-200
-                if ($self->floatCheck($volume, 0, 100)) {
-
-                    $volume *= 2;
-
-                    push (@msWinList, '-a', $volume);
-                }
-
-            } elsif ($engine eq 'flite' || $engine eq 'festival') {
-
-                # Flite not available on MS Windows
-                # Festival has been ported to MS Windows, but with little or no documentation
-                return undef;
-
-            } elsif ($engine eq 'swift') {
-
-                # With Swift on MS Windows (using Cepstral), we can set the voice, speed, pitch and
-                #   volume, but not rate
-                push (@msWinList, "C:\\Program Files\\Cepstral\\bin\\swift");
-
-                if ($voice) {
-
-                    push (@msWinList, '-n', $voice);
-                }
-
-                # Speed in the range 100-400
-                if ($self->floatCheck($speed, 0, 100)) {
-
-                    $speed = ($speed * 3) + 100;
-
-                    $param = 'speech/rate=' . $speed
-                }
-
-                # Pitch in the range 0.1-5
-                if ($self->floatCheck($pitch, 0, 100)) {
-
-                    $pitch = int($pitch/20);
-                    if ($pitch < 0.1) {
-
-                        $pitch = 0.1;
-                    }
-
-                    if (! $param) {
-                        $param = 'speech/pitch/shift=' . $pitch;
-                    } else {
-                        $param .= ',speech/pitch/shift=' . $pitch;
-                    }
-                }
-
-                # Volume in the range 0-100
-                if ($self->floatCheck($volume, 0, 100)) {
-
-                    if (! $param) {
-                        $param = 'audio/volume=' . $volume;
-                    } else {
-                        $param .= ',audio/volume=' . $volume;
-                    }
-                }
-
-                if ($param) {
-
-                    push (@msWinList, '-p', $param);
-                }
-
-                push (@msWinList, $text);
-            }
-
-            # Convert the text to speech
-            if ($engine eq 'festival' && $self->ttsFestivalServer) {
-
-                # (If using Festival server, we contact it directly; otherwise use the standard
-                #   Perl system command)
-                $self->ttsFestivalServer->print($cmd);
-
-            } elsif ($configuration ne 'none') {
-
-                system (@msWinList);
-            }
-
-            # Inform the calling session (if any) which type of message was most recently converted
-            #   to speech
-            if ($session) {
-
-                $session->set_ttsLastType($type);
-            }
-
-        # Prepare a system command on Linux/*BSD
-        } else {
-
-            if ($engine eq 'espeak') {
-
-                # With eSpeak, we can set the voice, speed and pitch, but not rate or volume
-                $cmd = 'espeak "' . $text . '"';
-
-                if (defined $voice) {
-
-                    $cmd .= ' -v ' . $voice;
-                }
-
-                # Speed in the range 10-200
-                if ($self->floatCheck($speed, 0, 100)) {
-
-                    $speed = int($speed * 1.9) + 10;
-
-                    $cmd .= ' -s ' . $speed;
-                }
-
-                # Pitch in the range 0-99
-                if ($self->floatCheck($pitch, 0, 100)) {
-
-                    if ($pitch > 99) {
-
-                        $pitch = 99;
-                    }
-
-                    $cmd .= ' -p ' . $pitch;
-                }
-
-            } elsif ($engine eq 'esng') {
-
-                # With espeak-ng, we can set the voice, speed, pitch and volume, but not rate
-                $cmd = 'espeak-ng "' . $text . '"';
-
-                if (defined $voice) {
-
-                    $cmd .= ' -v ' . $voice;
-                }
-
-                # Speed in the range 10-200
-                if ($self->floatCheck($speed, 0, 100)) {
-
-                    $speed = int($speed * 1.9) + 10;
-
-                    $cmd .= ' -s ' . $speed;
-                }
-
-                # Pitch in the range 0-99
-                if ($self->floatCheck($pitch, 0, 100)) {
-
-                    if ($pitch > 99) {
-
-                        $pitch = 99;
-                    }
-
-                    $cmd .= ' -p ' . $pitch;
-                }
-
-                # Volume in the range 0-200
-                if ($self->floatCheck($volume, 0, 100)) {
-
-                    $volume *= 2;
-
-                    $cmd .= ' -a ' . $volume;
-                }
-
-            } elsif ($engine eq 'flite') {
-
-                # With Flite, we can set the voice, but not speed, rate, pitch or volume
-                $cmd = 'flite -t "' . $text . '"';
-
-                if (defined $voice) {
-
-                    $cmd .= ' -voice ' . $voice;
-                }
-
-            } elsif ($engine eq 'festival') {
-
-                # When the specified engine is Festival, we try using the Festival server if
-                #   possible; otherwise, we default to using the Festival engine from the command
-                #   line
-                # With Festival server, we can set the voice, rate, pitch and volume, but not speed
-                # With Festival command line, we can't set the voice, speed, rate pitch of volume
-
-                # Start the Festival server (if required)
-                if ($self->ttsFestivalServerMode eq 'waiting' && $self->ttsStartServerFlag) {
-
-                    # Attempt to start the Festival server
-                    $self->ttsStartServer();
-
-                    # We're now waiting for the first successful connection
-                    $self->set_ttsFestivalServerMode('connecting');
-                }
-
-                # Connect to the Festival server (if required)
-                if ($self->ttsFestivalServerMode eq 'connecting') {
-
-                    $self->ttsConnectServer();
-                }
-
-                # Prepare the system command, depending on whether we're using the Festival server,
-                #   or not
-                if ($self->ttsFestivalServer) {
-
-                    # Use Festival server
-                    $cmd = "(let ((utt (Utterance Text \"$text\")))";
-                    if ($voice) {
-
-                        $cmd .= " (begin ($voice)";
-
-                        # Rate in the range 0.5-2
-                        if ($self->floatCheck($rate, 0, 100)) {
-
-                            $rate = ($rate * 0.015) + 0.5;
-
-                            $cmd .= " (Parameter.set 'Duration_Stretch $rate)";
-                        }
-
-                        # Volume in the range 0.33-6
-                        if ($self->floatCheck($volume, 0, 100)) {
-
-                            $volume = ($volume * 0.0567) + 0.33;
-
-                            $cmd .= " (utt.synth utt) (utt.wave.resample utt 8000)"
-                                        . " (utt.wave.rescale utt $volume) (utt.play utt)";
-                        }
-
-                        $cmd .= ")";
-                    }
-
-                    $cmd .= ")\n";
-
-                } else {
-
-                    # Don't use Festival server
-                    $cmd = 'echo ' . $text . ' | festival --tts';
-                }
-
-            } elsif ($engine eq 'swift') {
-
-                # With Swift on Linux (using Cepstral), we can set the voice, rate, pitch and
-                #   volume, but not speed
-                $begin = '';
-                $end = '';
-                if ($voice) {
-
-                    $begin .= "swift <voice name=\"$voice\">";
-                    $end = "</voice>" . $end;
-                }
-
-                # (rate, pitch and volume all share an element; only create the element if at least
-                #   one valid value is being used)
-
-                # Rate in the range 0.5-2
-                if ($self->floatCheck($rate, 0, 100)) {
-
-                    $rateFlag = TRUE;
-                    $rate = ($rate * 0.015) + 0.5;
-                }
-
-                # Pitch in the range 0.1-5
-                if ($self->floatCheck($pitch, 0, 100)) {
-
-                    $pitch = $pitch / 20;
-                    if ($pitch < 0.1) {
-
-                        $pitch = 0.1;
-                    }
-
-                    $pitchFlag = TRUE;
-                }
-
-                # Volume in the range 0.33-6
-                if ($self->floatCheck($volume, 0, 100)) {
-
-                    $volumeFlag = TRUE;
-                    $volume = ($volume * 0.0567) + 0.33;
-                }
-
-                if ($rateFlag || $pitchFlag || $volumeFlag) {
-
-                    $begin .= "<prosody";
-                    if ($rateFlag) {
-
-                        $begin .= " rate='$rate'";
-                    }
-
-                    if ($pitchFlag) {
-
-                        $begin .= " pitch='$pitch'";
-                    }
-
-                    if ($volumeFlag) {
-
-                        $begin .= " volume='$volume'";
-                    }
-
-                    $begin .= ">";
-                    $end = "</prosody>" . $end;
-                }
-
-                $cmd = $begin . $text . $end;
-            }
-
-            # Convert the text to speech
-            if ($engine eq 'festival' && $self->ttsFestivalServer) {
-
-                # (If using Festival server, we contact it directly; otherwise use the standard
-                #   Perl system command)
-                $self->ttsFestivalServer->print($cmd);
-
-            } elsif ($configuration ne 'none') {
-
-                system $cmd;
-            }
-
-            # Inform the calling session (if any) which type of message was most recently converted
-            #   to speech
-            if ($session) {
-
-                $session->set_ttsLastType($type);
-            }
+            $session->set_ttsLastType($type);
         }
 
         # Operation complete
-        return 1;
-    }
-
-    sub ttsStartServer {
-
-        # Called by GA::Cmd::Speech->do and $self->tts
-        # Attempts to start the Festival server on the local system
-        #
-        # Expected arguments
-        #   (none besides self)
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $check) = @_;
-
-        # Check for improper arguments
-        if (defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->ttsStartServer', @_);
-        }
-
-        system "festival --server &";
-
-        return 1;
-    }
-
-    sub ttsConnectServer {
-
-        # Called by $self->tts
-        # When $self->ttsFestivalServerMode is 'connecting', actually connects to the Festival
-        #   server, changing the mode to 'connected' if successful
-        #
-        # Expected arguments
-        #   (none besides self)
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $check) = @_;
-
-        # Local variables
-        my $server;
-
-        # Check for improper arguments
-        if (defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->ttsConnectServer', @_);
-        }
-
-        if (! $self->ttsFestivalServerPort) {
-
-            # Cannot connect to the server without a port
-            $self->set_ttsFestivalServerMode('connected');
-
-        } else {
-
-            # Attempt to connect to the Festival server
-            $server = IO::Socket::INET->new(
-                Proto     => 'tcp',
-                PeerAddr  => '127.0.0.1',
-                PeerPort  => $self->ttsFestivalServerPort,
-            );
-
-            if ($server) {
-
-                # Connected; store it as an IV
-                $self->set_ttsFestivalServer($server);
-                $self->set_ttsFestivalServerMode('connected');
-
-            } elsif (! $self->ttsStartServerFlag) {
-
-                # We didn't start the server. If the connection failed, give up after
-                #   the first attempt (if we did start the server, keep trying)
-                $self->set_ttsFestivalServerMode('connected');
-            }
-        }
-
-        return 1;
-    }
-
-    sub ttsReconnectServer {
-
-        # Called by GA::Cmd::Speech->do and GA::Client->set_ttsFestivalServerPort
-        # Disconnects from the Festival server (if connected) and reset GA::Client IVs, so that the
-        #   next call to $self->tts will initiate a reconnection
-        #
-        # Expected arguments
-        #   (none besides self)
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $check) = @_;
-
-        # Check for improper arguments
-        if (defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->ttsReconnectServer', @_);
-        }
-
-        if ($self->ttsFestivalServer) {
-
-            shutdown($self->ttsFestivalServer, 2);
-            $self->set_ttsFestivalServer();
-        }
-
-        # Setting the mode to 0 will cause the next call to $self->tts to initiate the
-        #   reconnection
-        $self->set_ttsFestivalServerMode('waiting');
-
         return 1;
     }
 
@@ -14312,7 +14124,10 @@
         my ($self, $check) = @_;
 
         # Local variables
-        my @list;
+        my (
+            $default,
+            @list,
+        );
 
         # Check for improper arguments
         if (defined $check) {
@@ -14321,7 +14136,7 @@
         }
 
         # First create standard TTS configuration objects for each supported TTS engine ('espeak',
-        #   'flite', 'festival', 'swift' and the dummy engine 'none')
+        #   'esng', 'flite', 'festival', 'swift' and the dummy engine 'none')
         @list = $self->constTtsDefaultList;
 
         do {
@@ -14361,19 +14176,42 @@
 
         # Next create the remaining standard TTS configuration objects, copying settings from one of
         #   the objects we created above
+
+        # Decide which default engine to use, when $self->ttsObjHash doesn't specify one
+        if ($^O ne 'MSWin32') {
+
+            $default = 'espeak';
+
+        } else {
+
+            if (defined $self->msWinPathFestival && -e $self->msWinPathFestival) {
+                $default = 'festival';
+            } elsif (defined $self->msWinPathESNG && -e $self->msWinPathESNG) {
+                $default = 'esng';
+            } else {
+                $default = 'espeak';
+            }
+        }
+
+        # Create the remaining configurations
         foreach my $name ($self->ivKeys('constTtsObjHash')) {
 
-            my ($copyName, $copyObj, $obj);
+            my ($copyName, $copyObj, $newObj);
 
             # If this TTS configuration object wasn't created above...
             if (! $self->ivExists('ttsObjHash', $name)) {
 
                 # Copy settings from this already-created TTS configuration object
                 $copyName = $self->ivShow('constTtsObjHash', $name);
+                if (! defined $copyName) {
+
+                    $copyName = $default;
+                }
+
                 $copyObj = $self->ivShow('ttsObjHash', $copyName);
 
                 # Create a new object, using the settings from $copyObj
-                $obj = Games::Axmud::Obj::Tts->new(
+                $newObj = Games::Axmud::Obj::Tts->new(
                     $name,
                     $copyObj->engine,
                     $copyObj->voice,
@@ -14383,7 +14221,7 @@
                     $copyObj->volume,
                 );
 
-                if (! $obj) {
+                if (! $newObj) {
 
                     return $self->writeError(
                         'Cannot create the standard TTS configuration object \'' . $name . '\'',
@@ -14392,7 +14230,7 @@
 
                 } else {
 
-                    $self->ivAdd('ttsObjHash', $name, $obj);
+                    $self->ivAdd('ttsObjHash', $name, $newObj);
                 }
             }
         }
@@ -14571,6 +14409,2073 @@
 
         # Operation complete
         return 1;
+    }
+
+    # (TTS jobs)
+
+    sub ttsReset {
+
+        # Called by $self->set_customAllowTTSFlag when TTS has just been disabled
+        # Interrupts any TTS jobs that might be in progress (halting any speech that the user can
+        #   hear), and resets TTS IVs to their default values
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->ttsReset', @_);
+        }
+
+        # Interrupt any speech being read aloud. The next call to $self->ttsPerformJobs will set
+        #   ->ttsCurrentHarness back to 'undef'
+        $self->ttsInterruptJob();
+
+        # Disconnect from the Festival server, if connected
+        $self->ttsFestivalDisconnect();
+
+        # Reset IVs
+        $self->ivEmpty('ttsJobList');
+        $self->ivEmpty('ttsUrgentJobList');
+        $self->ivPoke('ttsJobMode', 'default');
+        $self->ivPoke('ttsJobPointer', 0);
+        $self->ivPoke('ttsJobMiniPointer', 0);
+        $self->ivPoke('ttsJobAutoFlag', TRUE);
+        $self->ivPoke('ttsJobOnceFlag', TRUE);
+        $self->ivPoke('ttsChangeModeFlag', FALSE);
+#        $self->ivUndef('ttsCurrentHarness');
+
+        $self->ivPoke('ttsFestivalServerMode', 'cmd_line');
+        $self->ivPoke('ttsFestivalConnectMode', 'cmd_line');
+        $self->ivUndef('ttsFestivalSocket');
+        $self->ivEmpty('ttsFestivalRequestList');
+        $self->ivUndef('ttsFestivalCheckTime');
+        $self->ivPoke('ttsFestivalFailFlag', FALSE);
+        # (Still don't start the server again, if a previous attempt succeeded)
+#        $self->ivPoke('ttsFestivalSuccessFlag', FALSE);
+
+        return 1;
+    }
+
+    sub ttsRestart {
+
+        # Called by $self->connectBlind, just before it calls ->startSession
+        # The initial dialogue windows have almost certainly interrupted the job list, so when the
+        #   session starts, received text won't be read aloud until the ;skip, ;resume (etc)
+        #   commands are used
+        # This is a less extreme version of $self->ttsReset. Empties the job list (but not the
+        #   urgent job list or the request list), and resets some IVs, so that the session's text
+        #   can be converted to speech almost immediately (i.e. after the end of any urgent jobs
+        #   created by the initial dialogue windows)
+        #
+        # Expected arguments
+        #   (none besides ($self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->ttsRestart', @_);
+        }
+
+        # Reset IVs
+        $self->ivEmpty('ttsJobList');
+        $self->ivPoke('ttsJobMode', 'default');
+        $self->ivPoke('ttsJobPointer', 0);
+        $self->ivPoke('ttsJobMiniPointer', 0);
+        $self->ivPoke('ttsJobAutoFlag', TRUE);
+        $self->ivPoke('ttsJobOnceFlag', TRUE);
+        $self->ivPoke('ttsChangeModeFlag', FALSE);
+
+        return 1;
+    }
+
+    sub ttsAddJob {
+
+        # Called by $self->tts (only)
+        # Creates a new TTS job, and adds it to the job list (deleting the oldest job, if the list
+        #   is now too long)
+        #
+        # Expected arguments
+        #   $text       - The text to convert to speech (should not be an empty string)
+        #   $engine     - TTS engine to use (must be one of the values in
+        #                   GA::CLIENT->constTTSList)
+        #
+        # Optional arguments
+        #   $voice      - Voice used with the TTS engine (eSpeak, espeak-ng, Flite, Festival server,
+        #                   Swift only; ignored when the engine is Festival command line). If an
+        #                   empty string or 'undef', the engine's default voice is used
+        #   $speed      - Word speed used with the TTS engine (eSpeak and espeak-ng only; ignored
+        #                   for other engines). A value in the range 0-100. If an invalid value or
+        #                   'undef', the engine's default speed is used
+        #   $rate       - Word rate used with the TTS engine (Festival server and Swift only;
+        #                   ignored for other engines, including Festival command line). A value in
+        #                   the range 0-100. If an invalid value or 'undef', the engine's default
+        #                   rate is used
+        #   $pitch      - Word pitch used with the TTS engine (eSpeak and Swift only; ignored for
+        #                   other engines). A value in the range 0-100. If an invalid value or
+        #                   'undef', the engine's default pitch is used
+        #   $volume     - Volume used with the TTS engine (Festival server and Swift only; ignored
+        #                   for other engines, including Festival command line). A value in the
+        #                   range 0-100. If an invalid value or 'undef', the engine's default pitch
+        #                   is used
+        # Return values
+        #   'undef' on improper arguments or if the job can't be created
+        #   1 otherwise
+
+        my ($self, $text, $engine, $voice, $speed, $rate, $pitch, $volume, $check) = @_;
+
+        # Local variables
+        my $jobObj;
+
+        # Check for improper arguments
+        if (! defined $text || ! defined $engine || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->openURL', @_);
+        }
+
+        # Create the TTS job
+        $jobObj = Games::Axmud::Obj::TtsJob->new(
+            $text,
+            $engine,
+            $voice,
+            $speed,
+            $rate,
+            $pitch,
+            $volume,
+        );
+
+        if (! $jobObj) {
+
+            return undef;
+
+        } else {
+
+            # Add the new job to the list, deleting the oldest job, if the list is now too long
+            $self->ivPush('ttsJobList', $jobObj);
+            if ((scalar $self->ttsJobList) > $self->ttsJobMax) {
+
+                $self->ivShift('ttsJobList');
+            }
+
+            if ($self->ttsJobPointer == -1) {
+
+                $self->ivPoke('ttsJobPointer', ((scalar $self->ttsJobList) - 1));
+            }
+
+            return 1;
+        }
+    }
+
+    sub ttsAddUrgentJob {
+
+        # Can be called by anything to add a job to $self->ttsUrgentJobList. Jobs on this list are
+        #   performed immediately, and before any job in $self->ttsJobList
+        # Currently used only for system messages that must be read aloud immediately
+        #
+        # Expected arguments
+        #   $text           - The text to convert to speech (should not be an empty string)
+        #
+        # Optional arguments
+        #   $configName    - The name of the TTS configuration to use. If 'undef' or an
+        #                       unrecognised name, uses the 'system' configuration
+        #   $overrideFlag  - If TRUE, the urgent job list is emptied, before this job is added. If
+        #                       FALSE (or 'undef'), other urgent jobs are performed first
+        #   $engine, $voice, $speed, $rate, $pitch, $volume
+        #                  - Values which, if specified, override those specified by the TTS
+        #                       configuration
+        #
+        # Return values
+        #   'undef' on improper arguments or if the job can't be created
+        #   1 otherwise
+
+        my (
+            $self, $text, $configName, $overrideFlag, $engine, $voice, $speed, $rate, $pitch,
+            $volume, $check
+        ) = @_;
+
+        # Local variables
+        my ($configObj, $jobObj);
+
+        # Check for improper arguments
+        if (! defined $text || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->ttsAddUrgentJob', @_);
+        }
+
+        # Set values to use
+        if (! defined $configName || ! $self->ivExists('ttsObjHash', $configName)) {
+
+            $configName = 'system'
+        }
+
+        $configObj = $self->ivShow('ttsObjHash', $configName);
+
+        if (! defined $engine) {
+
+            $engine = $configObj->engine;
+        }
+
+        if (! defined $voice) {
+
+            $voice = $configObj->voice;
+        }
+
+        if (! defined $speed) {
+
+            $speed = $configObj->speed;
+        }
+
+        if (! defined $rate) {
+
+            $rate = $configObj->rate;
+        }
+
+        if (! defined $pitch) {
+
+            $pitch = $configObj->pitch;
+        }
+
+        if (! defined $volume) {
+
+            $volume = $configObj->volume;
+        }
+
+        # Create the TTS job
+        $jobObj = Games::Axmud::Obj::TtsJob->new(
+            $text,
+            $engine,
+            $voice,
+            $speed,
+            $rate,
+            $pitch,
+            $volume,
+            TRUE,                   # This is an urgent job
+        );
+
+        if (! $jobObj) {
+
+            return undef;
+
+        } else {
+
+            # Add the new job to the urgent list
+            if ($overrideFlag) {
+                $self->ivPoke('ttsUrgentJobList', $jobObj);
+            } else {
+                $self->ivPush('ttsUrgentJobList', $jobObj);
+            }
+
+            # Interrupt any ongoing TTS
+            $self->ttsInterruptJob();
+            # Update other IVs, as if the user had typed ';shutup' (unless we are alrady at the end
+            #   of the list; in that case, it's better to keep reading aloud new incoming text)
+            if ($self->ttsJobPointer > -1) {
+
+                $self->ivPoke('ttsJobAutoFlag', FALSE);
+                $self->ivPoke('ttsJobOnceFlag', FALSE);
+            }
+
+            return 1;
+        }
+    }
+
+    sub ttsPerformJobs {
+
+        # Called by $self->spinClientLoop (only)
+        # This function does three things on every spin of the client loop:
+        #   1. TTS requested actions are used to handle Axmud's connection to a Festival server. If
+        #       requested actions have been made, executes the first one and returns, without
+        #       executing any more actions or performing any TTS jobs
+        #   2. If a previous call to this function has sent text to a TTS engine, checks to see
+        #       whether the TTS conversion has been completed, and updates IVs if so
+        #   3. A TTS job comprises a piece of text to be converted to speech (by sending the text to
+        #       a TTS engine). The text is sometimes split into pieces (sentences or words), and
+        #       converted to speech one piece at a time. If TTS jobs are waiting to be performed,
+        #       performs the first one. Any 'urgent' TTS jobs take priority over other jobs.
+        #       Performing a job comprises converting the whole text to speech, or just one
+        #       sentence/word of it. (Subsequent jobs are performed in future calls to this
+        #       function)
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my (
+            $request, $jobObj, $urgentFlag,
+            @cmdList,
+        );
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->ttsPerformJobs', @_);
+        }
+
+        # Perform the first requested action for the Festival server
+        # (Perform only one request per spin of the client loop, giving the Festival server a chance
+        #   to start up, before we try to connect to it. Ignore any invalid requests)
+        $request = $self->ivShift('ttsFestivalRequestList');
+        if (defined $request) {
+
+            if ($request eq 'disconnect' && $self->ttsFestivalSocket) {
+
+                # Disconnect from a Festival server
+                $self->ttsFestivalDisconnect();
+
+            } elsif ($request eq 'start') {
+
+                # Start the Festival server
+                $self->ttsFestivalStart();
+
+            } elsif ($request eq 'connect' && ! $self->ttsFestivalSocket) {
+
+                # Connect to a Festival server
+                if (! $self->ttsFestivalConnect()) {
+
+                    if (defined $self->ttsFestivalCheckTime) {
+
+                        # When the server has just been started, we wait a few seconds before giving
+                        #   up trying to connect to it, rather than giving up immediately, as we
+                        #   ordinarly would
+                        if ($self->ttsFestivalCheckTime > $self->getTime()) {
+
+                            # Process this same request again, on the next spin of the client loop
+                            $self->ivUnshift('ttsFestivalRequestList', $request);
+
+                        } else {
+
+                            # We have been waiting too long, so give up
+                            $self->ivUndef('ttsFestivalCheckTime');
+                            # Default to using the command-line engine
+                            $self->ivPoke('ttsFestivalServerMode', 'cmd_line');
+                            $self->ivPoke('ttsFestivalConnectMode', 'cmd_line');
+                        }
+
+                    } else {
+
+                        # Failed once-only connection. Default to using the command-line engine
+                        $self->ivPoke('ttsFestivalServerMode', 'cmd_line');
+                        $self->ivPoke('ttsFestivalConnectMode', 'cmd_line');
+                    }
+
+                } else {
+
+                    # Make sure the IV is reset after a successful connection
+                    $self->ivUndef('ttsFestivalCheckTime');
+                }
+            }
+
+            # Do not perform any more requests, or any more jobs, until the next spin of the
+            #   client loop. (This gives us time to connect to a Festival server, before doing
+            #   text-to-speech)
+            return 1;
+        }
+
+        # If text was being converted to speech during the last spin of the client loop, see if it's
+        #   finished yet
+        if ($self->ttsCurrentHarness) {
+
+            if ($self->ttsCurrentHarness->pumpable()) {
+
+                # TTS conversion in progress; wait for the next spin of the client loop before
+                #   performing the next job, if any
+                return 1;
+
+            } else {
+
+                # TTS conversion completed; update the IV
+                $self->ivUndef('ttsCurrentHarness');
+            }
+        }
+
+        # Perform the current TTS job, if it's waiting to be performed
+        if (
+            ($self->ttsJobAutoFlag || $self->ttsJobOnceFlag)
+            || $self->ttsUrgentJobList
+        ) {
+            # Get the next job, if any. 'Urgent' jobs take priority over everything else
+            $jobObj = $self->ivShift('ttsUrgentJobList');
+            if (! $jobObj) {
+
+                $jobObj = $self->ttsGetNextJob();
+                if ($jobObj) {
+
+                    # Set the value of GA::Obj::TtsJob->currentText which, depending on the value of
+                    #   $self->ttsJobMode, will be the whole of its ->text, or just a sentence, or
+                    #   just a single word
+                    # (This does not apply to 'urgen't jobs, which are always performed with their
+                    #   entire ->text)
+                    $jobObj->prepareText();
+                }
+            }
+
+            if ($jobObj) {
+
+                # Retrieve values from the GA::Obj::TtsJob, and convert them into a list of
+                #   parameters to be used in the system command
+                @cmdList = $self->ttsPrepareSystemCmd($jobObj);
+                if (@cmdList) {
+
+                    # Mark this job's text as having been converted to speech at least once (and
+                    #   perhaps only partially)
+                    $jobObj->ivPoke('newFlag', FALSE);
+
+                    # Convert text to speech using the Festival engine
+                    if ($jobObj->engine eq 'festival') {
+
+                        if (
+                            $self->ttsFestivalConnectMode eq 'connected'
+                            && ($^O ne 'MSWin32')
+                        ) {
+                            # Use the server engine. If the socket has closed,
+                            #   $self->ttsFestivalServerMode is updated. We never use the server
+                            #   engine on MS windows
+                            $self->ttsFestivalSend($cmdList[0]);
+                        }
+
+                        if ($self->ttsFestivalServerMode eq 'cmd_line') {
+
+                            # Use the command-line engine
+                            # The first argument in @cmdList is for the server engine, so discard it
+                            shift @cmdList;
+                            # The rest of @cmdList is already in the correct format for
+                            #   IPC::Run::start, so we don't need to take out a reference on it,
+                            #   as we do for all other engines
+                            if ($^O ne 'MSWin32') {
+
+                                eval {
+                                    $self->ivPoke('ttsCurrentHarness', IPC::Run::start(@cmdList));
+                                };
+
+                            } else {
+
+                                # N.B. In order for this to work, the IPC::Run code itself must be
+                                #   modified. See the notes in ../axmud/nsis/axmud.install.nsi
+                                eval {
+                                    $self->ivPoke(
+                                        'ttsCurrentHarness',
+                                        IPC::Run::start_festival(@cmdList),
+                                    );
+                                };
+                            }
+                        }
+
+                    # Convert text to speech using all other supported engines
+                    } else {
+
+                        # All engines except Festival
+                        eval { $self->ivPoke('ttsCurrentHarness', IPC::Run::start(\@cmdList)); };
+                    }
+                }
+
+                # (Urgent jobs do not affect our pointers at all)
+                if (! $jobObj->urgentFlag) {
+
+                    # Move the pointer(s) to the next word, sentence or job, if necessary
+                    if ($self->ttsJobAutoFlag) {
+
+                        # On the next spin of the loop, perform the job after this one (if required)
+                        $self->ttsAdvancePointer();
+
+                    } elsif ($self->ttsJobOnceFlag) {
+
+                        # The job we've just performed is only performed once
+                        $self->ivPoke('ttsJobOnceFlag', FALSE);
+                    }
+
+                    # Update the IV which prevents ;skip from going straight to the second sentence/
+                    #   word in a job, after a change to $self->ttsJobMode
+                    $self->ivPoke('ttsChangeModeFlag', FALSE);
+                }
+            }
+        }
+
+        # Wait for the next spin of the client loop
+        return 1;
+    }
+
+    sub ttsGetNextJob {
+
+        # Called by $self->ttsPerformJobs
+        # A pointer specifies which TTS job in the job list is the next one to be performed
+        # Depending on current settings, either return the job, or return 'undef' if there is no job
+        #   to perform
+        #
+        # Expected arguments
+        #   (none)
+        #
+        # Return values
+        #   'undef' on improper arguments or if there is no job to perform
+        #   Otherwise, returns the GA::Obj::TTSJob object for the next job to perform
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->ttsGetNextJob', @_);
+        }
+
+        if ($self->ttsJobAutoFlag || $self->ttsJobOnceFlag) {
+
+            if (! $self->ttsJobList || $self->ttsJobPointer == -1) {
+
+                # Job list is empty, or all jobs already performed (so pointer is at the end of the
+                #   list)
+                return undef;
+
+            } else {
+
+                # A job is waiting to be performed
+                return $self->ttsReadJob($self->ttsJobPointer);
+            }
+        }
+    }
+
+    sub ttsReadJob {
+
+        # Called by $self->ttsGetNextJob, ->ttsAdvancePointer and ->ttsRegressPointer
+        # A pointer specifies which TTS job in the job list is the next one to be performed
+        # Read the next job and return it
+        #
+        # Expected arguments
+        #   $pointer    - An index in $self->ttsJobList, pointing at a GA::Obj::TtsJob object
+        #
+        # Return values
+        #   'undef' on improper arguments or if there is no job to perform
+        #   Otherwise, returns the GA::Obj::TTSJob object for the next job to perform
+
+        my ($self, $pointer, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $pointer || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->ttsReadJob', @_);
+        }
+
+        # (The calling function should have checked that the list contains jobs, and that the
+        #   pointer is not at the end of the list)
+        if (! $self->ttsJobList || $pointer == -1) {
+
+            return undef;
+
+        } else {
+
+            return $self->ivIndex('ttsJobList', $pointer);
+        }
+    }
+
+    sub ttsAdvancePointer {
+
+        # Called by $self->ttsPerformJobs and ->ttsSkipJob
+        #
+        # Two pointers specify the next piece of text to be converted to speech
+        # $self->ttsJobPointer points to an index in $self->ttsJobList, corresponding to a
+        #   GA::Obj::TtsJob object. If the pointer is at the end of the list, its value is -1
+        # $self->ttsJobMiniPointer points to a position in that job's text (the first character is
+        #   0)
+        #
+        # Move the pointers from their current position, to the next position (the next job, and/or
+        #   the next sentence/word in the current job)
+        #
+        # Expected arguments
+        #   (none besides ($self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if there's an error
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my ($jobObj, $mode, $result);
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->ttsAdvancePointer', @_);
+        }
+
+        # (Don't do anything if the job list is empty, or if the pointer is already at the end of
+        #   the list)
+        if ($self->ttsJobList && $self->ttsJobPointer > -1) {
+
+            $jobObj = $self->ttsReadJob($self->ttsJobPointer);
+            if (! $jobObj) {
+
+                # Some kind of error. Mark the pointer at the end of the list
+                $self->ivPoke('ttsJobPointer', -1);
+                $self->ivPoke('ttsJobMiniPointer', 0);
+                # When we reach the end of the list, resume auto-reading text
+                $self->ivPoke('ttsJobAutoFlag', TRUE);
+
+                return undef;
+            }
+
+            $mode = $self->ttsJobMode;
+
+            if ($mode eq 'sentence' && ! $self->ttsJobAutoFlag) {
+
+                # Advance the pointer(s), one sentence at a time
+                $result = $jobObj->findNextSentence($self->ttsJobMiniPointer);
+                if (! defined $result) {
+
+                    # The mini-pointer is already pointing to the start of the last sentence.
+                    #   Advance the pointer to the beginning of the next line
+                    $mode = 'default';
+
+                } else {
+
+                    $self->ivPoke('ttsJobMiniPointer', $result);
+                }
+
+            } elsif ($mode eq 'word' && ! $self->ttsJobAutoFlag) {
+
+                # Advance the pointer(s), one word at a time
+                $result = $jobObj->findNextWord($self->ttsJobMiniPointer);
+                if (! defined $result) {
+
+                    # The mini-pointer is already pointing to the start of the last word. Advance
+                    #   the pointer to the beginning of the next line
+                    $mode = 'default';
+
+                } else {
+
+                    $self->ivPoke('ttsJobMiniPointer', $result);
+                }
+            }
+
+            if ($mode eq 'default' || $self->ttsJobAutoFlag) {
+
+                # Advance the main pointer to the next job
+                if ($self->ttsJobPointer >= ((scalar $self->ttsJobList) - 1)) {
+
+                    # Now at the end of the job list
+                    $self->ivPoke('ttsJobPointer', -1);
+                    $self->ivPoke('ttsJobMiniPointer', 0);
+                    # When we reach the end of the list, resume auto-reading text
+                    $self->ivPoke('ttsJobAutoFlag', TRUE);
+
+                } else {
+
+                    # Move the pointer to the next job in the list
+                    $self->ivIncrement('ttsJobPointer');
+                    $self->ivPoke('ttsJobMiniPointer', 0);
+                }
+            }
+        }
+
+        return 1;
+    }
+
+    sub ttsRegressPointer {
+
+        # Called by $self->ttsUnskipJob and ->ttsLastJob
+        #
+        # Two pointers specify the next piece of text to be converted to speech
+        # $self->ttsJobPointer points to an index in $self->ttsJobList, corresponding to a
+        #   GA::Obj::TtsJob object. If the pointer is at the end of the list, its value is -1
+        # $self->ttsJobMiniPointer points to a position in that job's text (the first character is
+        #   0)
+        #
+        # Move the pointers from their current position, to the previous position (the previous job,
+        #   and/or the previous sentence/word in the current job)
+        #
+        # Expected arguments
+        #   (none besides ($self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if there's an error
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my ($jobObj, $mode, $result, $updateFlag, $pointer, $newJobObj);
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->ttsRegressPointer', @_);
+        }
+
+        # (Don't do anything if the job list is empty, or if both pointers are already at the
+        #   beginning of the list)
+        if ($self->ttsJobList && ($self->ttsJobPointer != 0 || $self->ttsJobMiniPointer != 0)) {
+
+            $mode = $self->ttsJobMode;
+
+            if ($self->ttsJobPointer != -1) {
+
+                $jobObj = $self->ttsReadJob($self->ttsJobPointer);
+                if (! $jobObj) {
+
+                    # Some kind of error. Mark the pointer at the beginning of the list
+                    $self->ivPoke('ttsJobPointer', 0);
+                    $self->ivPoke('ttsJobMiniPointer', 0);
+
+                    return undef;
+                }
+
+            } elsif ($mode eq 'sentence' || $mode eq 'word') {
+
+                # The main pointer is at the end of the list. Allow the code below to regress the
+                #   pointer to the previous job, then the last sentence/word in that job
+                $mode = 'default';
+                $updateFlag = TRUE;
+            }
+
+            if ($mode eq 'sentence') {
+
+                # Regress the pointer(s), one sentence at a time
+                $result = $jobObj->findPreviousSentence($self->ttsJobMiniPointer);
+                if (! defined $result) {
+
+                    # The mini-pointer is already pointing to the start of the first sentence (or
+                    #   there was an error)
+                    # Regress the pointer to the last sentence in the previous line
+                    $mode = 'default';
+                    if ($self->ttsJobPointer != 0) {
+
+                        $updateFlag = TRUE;
+                    }
+
+                } else {
+
+                    $self->ivPoke('ttsJobMiniPointer', $result);
+                }
+
+            } elsif ($mode eq 'word') {
+
+                # Regress the pointer(s), one word at a time
+                $result = $jobObj->findPreviousWord($self->ttsJobMiniPointer);
+                if (! defined $result) {
+
+                    # The mini-pointer is already pointing to the start of the first word (or
+                    #   there was an error)
+                    # Regress the pointer to the last word in the previous line
+                    $mode = 'default';
+                    if ($self->ttsJobPointer != 0) {
+
+                        $updateFlag = TRUE;
+                    }
+
+                } else {
+
+                    $self->ivPoke('ttsJobMiniPointer', $result);
+                }
+            }
+
+            if ($mode eq 'default') {
+
+                # Regress the pointer to the previous job
+                if ($self->ttsJobPointer == -1) {
+                    $pointer = scalar $self->ttsJobList;
+                } else {
+                    $pointer = $self->ttsJobPointer;
+                }
+
+                if ($pointer > 0) {
+
+                    $pointer--;
+                }
+
+                $self->ivPoke('ttsJobPointer', $pointer);
+                $self->ivPoke('ttsJobMiniPointer', 0);
+
+                if ($updateFlag) {
+
+                    $newJobObj = $self->ttsReadJob($self->ttsJobPointer);
+                    if ($newJobObj) {
+
+                        if ($self->ttsJobMode eq 'sentence') {
+                            $result = $newJobObj->findPreviousSentence(length($newJobObj->text));
+                        } else {
+                            $result = $newJobObj->findPreviousWord(length($newJobObj->text));
+                        }
+
+                        if (! defined $result) {
+
+                            # The previous job contains only one sentence/word
+                            $self->ivPoke('ttsJobMiniPointer', 0);
+
+                        } else {
+
+                            # The previous job contains multiple sentences/words
+                            $self->ivPoke('ttsJobMiniPointer', $result);
+                        }
+                    }
+                }
+            }
+        }
+
+        return 1;
+    }
+
+    sub ttsSkipJob {
+
+        # Can be called by anything (but usually called by GA::Cmd::Skip->do)
+        # Depending on the value of $self->ttsJobMode, interrupt any text currently being converted
+        #   to speech, and move the pointers to the next job, or the next sentence or word in the
+        #   current job
+        #
+        # Expected arguments
+        #   (none besides ($self)
+        #
+        # Optional arguments
+        #   $jobCount   - If specified, must be an integer, 1 or above. Override the normal
+        #                   behaviour by resetting IVs to their default values, then skipping
+        #                   the specified number of jobs in the list (or to the last job in the
+        #                   list, if there aren't enough jobs)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $jobCount, $check) = @_;
+
+        # Check for improper arguments
+        if ((defined $jobCount && ! $self->intCheck($jobCount, 1)) || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->ttsSkipJob', @_);
+        }
+
+        # Advance the pointer, in order to perform the next job, if necessary
+        if ($self->ttsJobList) {
+
+            if (! defined $jobCount) {
+
+                if (
+                    # (When this flag is set, the pointer has already been advanced by
+                    #   ->ttsPerformJobs)
+                    ! $self->ttsJobAutoFlag
+                    # (When this flag is set, there has been a change in $self->ttsJobMode. Let the
+                    #   user hear the first sentence/word in the job, not the second one)
+                    && ! $self->ttsChangeModeFlag
+                ) {
+                    $self->ttsAdvancePointer();
+                }
+
+            } else {
+
+                if ($self->ttsJobPointer != -1) {
+
+                    $self->ivPoke('ttsJobPointer', ($self->ttsJobPointer + $jobCount));
+                }
+
+                if ($self->ttsJobPointer >= scalar ($self->ttsJobList)) {
+
+                    $self->ivPoke('ttsJobPointer', -1);
+                }
+
+                $self->ivPoke('ttsJobMiniPointer', 0);
+            }
+
+            $self->ivPoke('ttsChangeModeFlag', FALSE);
+            if ($self->ttsJobPointer > -1 && ! $self->ttsJobAutoFlag) {
+
+                $self->ivPoke('ttsJobOnceFlag', TRUE);
+            }
+
+            # Interrupt any text being converted to speech right now, allowing the next job to
+            #   start as quickly as possible
+            $self->ttsInterruptJob();
+        }
+
+        return 1;
+    }
+
+    sub ttsUnskipJob {
+
+        # Can be called by anything (but usually called by GA::Cmd::Unskip->do)
+        # Depending on the value of $self->ttsJobMode, interrupt any text currently being converted
+        #   to speech, and move the pointers to the previous job, or the previous sentence or word
+        #   in the current job
+        #
+        # Expected arguments
+        #   (none besides ($self)
+        #
+        # Optional arguments
+        #   $jobCount   - If specified, must be an integer, 1 or above. Override the normal
+        #                   behaviour by resetting IVs to their default values, then unskipping
+        #                   the specified number of jobs in the list (or to the first job in the
+        #                   list, if there aren't enough jobs)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $jobCount, $check) = @_;
+
+        # Check for improper arguments
+        if ((defined $jobCount && ! $self->intCheck($jobCount, 1)) || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->ttsUnskipJob', @_);
+        }
+
+        if ($self->ttsJobList) {
+
+            if (! defined $jobCount) {
+
+                if ($self->ttsJobAutoFlag && $self->ttsCurrentHarness) {
+
+                    # A job is being performed right now, and the pointer has already been advanced
+                    #   to the next job; therefore, to get the previous line/sentence/word, we need
+                    #   to regress the pointer twice
+                    $self->ttsRegressPointer();
+                }
+
+                # If the pointer is already at the beginning of the list, re-perform the first job
+                #   in the list
+                # (This doesn't happen when we're at the end of the list, and $self->ttsSkipJob is
+                #   called)
+                $self->ttsRegressPointer();
+
+            } else {
+
+                if ($self->ttsJobPointer != -1) {
+
+                    $self->ivPoke('ttsJobPointer', ($self->ttsJobPointer - $jobCount));
+                } else {
+                    $self->ivPoke('ttsJobPointer', ((scalar $self->ttsJobList) - $jobCount - 1));
+                }
+
+                if ($self->ttsJobPointer < 0) {
+
+                    $self->ivPoke('ttsJobPointer', 0);
+                }
+
+                $self->ivPoke('ttsJobMiniPointer', 0);
+            }
+
+            $self->ivPoke('ttsJobAutoFlag', FALSE);
+            $self->ivPoke('ttsJobOnceFlag', TRUE);
+
+            # Interrupt any text being converted to speech right now, allowing the next job to
+            #   start as quickly as possible
+            $self->ttsInterruptJob();
+        }
+
+        return 1;
+    }
+
+    sub ttsFirstJob {
+
+        # Can be called by anything (but usually called by GA::Cmd::First->do)
+        # Depending on the value of $self->ttsJobMode, interrupt any text currently being converted
+        #   to speech, and move the pointers to the first job, or the first sentence or word in the
+        #   current job
+        #
+        # Expected arguments
+        #   (none besides ($self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->ttsFirstJob', @_);
+        }
+
+        if ($self->ttsJobList) {
+
+            if ($self->ttsJobMode eq 'default') {
+
+                # Move the main pointer to the beginning of the job list
+                $self->ivPoke('ttsJobPointer', 0);
+                $self->ivPoke('ttsJobMiniPointer', 0);
+
+            } else {
+
+                # Replay the first word/sentence in the current job
+                $self->ivPoke('ttsJobMiniPointer', 0);
+            }
+
+            $self->ivPoke('ttsJobAutoFlag', FALSE);
+            $self->ivPoke('ttsJobOnceFlag', TRUE);
+
+            # Interrupt any text being converted to speech right now, allowing the next job to
+            #   start as quickly as possible
+            $self->ttsInterruptJob();
+        }
+
+        return 1;
+    }
+
+    sub ttsLastJob {
+
+        # Can be called by anything (but usually called by GA::Cmd::Last->do)
+        # Depending on the value of $self->ttsJobMode, interrupt any text currently being converted
+        #   to speech, and move the pointers to the first job, or the first sentence or word in the
+        #   current job
+        #
+        # Expected arguments
+        #   (none besides ($self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my ($jobObj, $result);
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->ttsLastJob', @_);
+        }
+
+        if ($self->ttsJobList) {
+
+            $jobObj = $self->ttsReadJob($self->ttsJobPointer);
+
+            if (! $jobObj || $self->ttsJobMode eq 'default') {
+
+                # Move the pointer after the last job...
+                $self->ivPoke('ttsJobPointer', -1);
+                $self->ivPoke('ttsJobMiniPointer', 0);
+
+                # Then regress the pointer to put it at the beginning of the last job, ready to read
+                #   it out
+                $self->ttsRegressPointer();
+
+                $self->ivPoke('ttsJobAutoFlag', TRUE);
+                $self->ivPoke('ttsJobOnceFlag', FALSE);
+
+            } else {
+
+                # Move the mini-pointer to the start of the job's text
+                $self->ivPoke('ttsJobMiniPointer', 0);
+
+                if ($self->ttsJobMode eq 'sentence') {
+
+                    # Then move it to the final sentence, one sentence at a time
+                    do {
+
+                        $result = $jobObj->findNextSentence($self->ttsJobMiniPointer);
+                        if (defined $result) {
+
+                            $self->ivPoke('ttsJobMiniPointer', $result);
+                        }
+
+                    } until (! defined $result);
+
+                } elsif ($self->ttsJobMode eq 'word') {
+
+                    # Then move it to the final word, one word at a time
+                    do {
+
+                        $result = $jobObj->findNextWord($self->ttsJobMiniPointer);
+                        if (defined $result) {
+
+                            $self->ivPoke('ttsJobMiniPointer', $result);
+                        }
+
+                    } until (! defined $result);
+                }
+
+                $self->ivPoke('ttsJobAutoFlag', FALSE);
+                $self->ivPoke('ttsJobOnceFlag', TRUE);
+            }
+
+            # Interrupt any text being converted to speech right now, allowing the next job to
+            #   start as quickly as possible
+            $self->ttsInterruptJob();
+        }
+
+        return 1;
+    }
+
+    sub ttsResumeJob {
+
+        # Can be called by anything (but usually called by GA::Cmd::Last->resume)
+        # Does two things. Usually, it interrupts any text currently being converted to speech,
+        #   switches to performing jobs by line (not by sentence or word), and moves the pointer to
+        #   the first job whose text has never been converted to speech
+        # If this is already happening, then interrupt any text currently being converted to speech
+        #   and move the pointer to the end of the list (ready to perform the next job that arrives)
+        #
+        # Expected arguments
+        #   (none besides ($self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my ($count, $jobObj);
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->ttsResumeJob', @_);
+        }
+
+        if ($self->ttsJobMode eq 'default' && $self->ttsJobAutoFlag) {
+
+            # Move the pointer to the end of the list
+            $self->ivPoke('ttsJobPointer', -1);
+            $self->ivPoke('ttsJobMiniPointer', 0);
+
+        } else {
+
+            $self->ivPoke('ttsJobMode', 'default');
+            $self->ivPoke('ttsJobAutoFlag', TRUE);
+            $self->ivPoke('ttsJobOnceFlag', TRUE);
+
+            # Find the first job which has never been converted to speech, even partially
+            $count = -1;
+            OUTER: foreach my $otherJobObj ($self->ttsJobList) {
+
+                $count++;
+                if ($otherJobObj->newFlag) {
+
+                    $jobObj = $otherJobObj;
+                    last OUTER;
+                }
+            }
+
+            if (! $jobObj) {
+
+                # All jobs performed; move the pointer to the end of the list
+                $self->ivPoke('ttsJobPointer', -1);
+                $self->ivPoke('ttsJobMiniPointer', 0);
+
+            } else {
+
+                # Move the pointer to the job
+                $self->ivPoke('ttsJobPointer', $count);
+                $self->ivPoke('ttsJobMiniPointer', 0);
+            }
+        }
+
+        # Interrupt any text being converted to speech right now, allowing the next job to start as
+        #   quickly as possible
+        $self->ttsInterruptJob();
+
+        return 1;
+    }
+
+    sub ttsSilenceJob {
+
+        # Can be called by anything (but usually called by GA::Cmd::Last->shutup)
+        # If text is being converted to speech right now, interrupts it
+        # If $self->ttsJobAutoFlag is set, unsets it (so the user can use ;skip, ;unskip and so on
+        #   to replay jobs before and after the current one)
+        #
+        # Expected arguments
+        #   (none besides ($self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->ttsSilenceJob', @_);
+        }
+
+        # Update IVs
+        $self->ivPoke('ttsJobAutoFlag', FALSE);
+        $self->ivPoke('ttsJobOnceFlag', FALSE);
+
+        # Interrupt any text being converted to speech right now, allowing the next job to start as
+        #   quickly as possible
+        $self->ttsInterruptJob();
+
+        return 1;
+    }
+
+    sub ttsInterruptJob {
+
+        # Can be called by anything, but usually called by GA::Cmd::Shutup->do, or by
+        #   $self->ttsSkipJob, ->ttsUnskipJob, ->ttsFirstJob and ->ttsLastJob
+        # If text is currently being converted to speech by a speech engine, interrupts it,
+        #   allowing the next job (or sentence/word) to be converted, if one is waiting to be
+        #   converted
+        #
+        # Expected arguments
+        #   (none besides ($self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->ttsInterruptJob', @_);
+        }
+
+        # When this IV is set, text is being converted to speech by a speech engine other than the
+        #   Festival server engine
+        if ($self->ttsCurrentHarness) {
+
+            if ($self->ttsCurrentHarness->pumpable()) {
+
+#                IPC::Run::kill_kill($self->ttsCurrentHarness, coup_d_grace => "QUIT");
+                IPC::Run::kill_kill($self->ttsCurrentHarness, grace => 0);
+            }
+
+        # Interrupt the Festival server engine, if connected
+        } elsif (
+            $self->ttsFestivalServerMode eq 'server'
+            && $self->ttsFestivalConnectMode eq 'connected'
+        ) {
+            # !!! DEBUG N.B. For unknown reasons, this should interrupt the Festival server engine,
+            #   but does not
+            $self->ttsFestivalSend("(audio_mode 'shutup)");
+        }
+
+        return 1;
+    }
+
+    sub ttsPrepareSystemCmd {
+
+        # Called by $self->ttsPerformJobs
+        # Prepares the parameters of a system command for performing the specifed TTS job. The
+        #   parameters depend on the operating system and current conditions, as well as the job
+        #   itself
+        #
+        # Expected arguments
+        #   $jobObj     - The GA::Obj::TtsJob object
+        #
+        # Return values
+        #   An empty list on improper arguments, if the TTS engine is unrecognised or if the job
+        #       can't be performed
+        #   Otherwise returns a list of parameters to use in the system command. For the Festival
+        #       engine, returns a list of two system commands, one for each engine version
+
+        my ($self, $jobObj, $check) = @_;
+
+        # Local variables
+        my @emptyList;
+
+        # Check for improper arguments
+        if (! defined $jobObj || defined $check) {
+
+            $axmud::CLIENT->writeImproper($self->_objClass . '->ttsPrepareSystemCmd', @_);
+            return @emptyList;
+        }
+
+        if ($jobObj->engine eq 'espeak') {
+            return $self->ttsConvertESpeak($jobObj);
+        } elsif ($jobObj->engine eq 'esng') {
+            return $self->ttsConvertESNG($jobObj);
+        } elsif ($jobObj->engine eq 'flite') {
+            return $self->ttsConvertFlite($jobObj);
+        } elsif ($jobObj->engine eq 'festival') {
+            return $self->ttsConvertFestival($jobObj);
+        } elsif ($jobObj->engine eq 'swift') {
+            return $self->ttsConvertSwift($jobObj);
+        } else {
+            # Unrecognised engine
+            return @emptyList;
+        }
+    }
+
+    sub ttsConvertCheck {
+
+        # Called by $self->ttsConvertESpeak, etc
+        # Checks that values stored in the specified TTS job are valid (in general), before trying
+        #   to prepare a system command. For example, checks that the specified volume is in the
+        #   range 0-100
+        # Does not check that the values are valid for a particular speech engine; that is handled
+        #   by the calling function
+        #
+        # Expected arguments
+        #   $jobObj     - The GA::Obj::TtsJob object
+        #
+        # Return values
+        #   'undef' on improper arguments, or if any of the values are valid
+        #   1 if all values are valid
+
+        my ($self, $jobObj, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $jobObj || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->ttsConvertCheck', @_);
+        }
+
+        if (
+            ! defined $jobObj->currentText
+            || $jobObj->currentText eq ''
+            || ! defined $self->ivFind('constTTSCompatList', $jobObj->engine)
+        ) {
+            return undef;
+        }
+
+        foreach my $iv (qw(speed rate pitch volume)) {
+
+            my $value = $jobObj->$iv;
+
+            if (
+                defined $value
+                && $value ne ''
+                && (
+                    ! ($value =~ m/^[-]?\d+(\.\d*)?$/)
+                    || $value < 0
+                    || $value > 100
+                )
+            ) {
+                return undef;
+            }
+        }
+
+        # All values valid (in general)
+        return 1;
+    }
+
+    sub ttsConvertESpeak {
+
+        # Called by $self->ttsPrepareSystemCmd (only)
+        # Prepares the parameters of a system command for performing the specifed TTS job, using the
+        #   eSpeak engine
+        # The parameters depend on the operating system and current conditions, as well as the job
+        #   itself
+        #
+        # Expected arguments
+        #   $jobObj     - The GA::Obj::TtsJob object
+        #
+        # Return values
+        #   An empty list on improper arguments, if the TTS engine is unrecognised or if the job
+        #       can't be performed
+        #   Otherwise returns a list of parameters to use in the system command
+
+        my ($self, $jobObj, $check) = @_;
+
+        # Local variables
+        my (@emptyList, @cmdList);
+
+        # Check for improper arguments
+        if (! defined $jobObj || defined $check) {
+
+            $axmud::CLIENT->writeImproper($self->_objClass . '->ttsConvertESpeak', @_);
+            return @emptyList;
+        }
+
+        # Check values are valid in general
+        if (! $self->ttsConvertCheck($jobObj)) {
+
+            return @emptyList;
+        }
+
+        # Prepare the system command
+        if ($^O eq 'MSWin32') {
+
+            if (-e $self->msWinPathESpeak) {
+
+                push (@cmdList, $self->msWinPathESpeak);
+
+            } elsif (-e $self->msWinAltPathESpeak) {
+
+                push (@cmdList, $self->msWinAltPathESpeak);
+
+            } else {
+
+                # eSpeak engine not installed
+                return @emptyList;
+            }
+
+        } else {
+
+            push (@cmdList, 'espeak');
+        }
+
+        if ($^O eq 'MSWin32') {
+            push (@cmdList, $jobObj->currentText);
+        } else {
+            push (@cmdList, '"' . $jobObj->currentText . '"');
+        }
+
+        # With eSpeak, we can set the voice, speed and pitch, but not rate or volume
+        if (defined $jobObj->voice && $jobObj->voice ne '') {
+
+            push (@cmdList, '-v', $jobObj->voice);
+        }
+
+        # Speed in the range 10-200
+        if (defined $jobObj->speed && $jobObj->speed ne '') {
+
+            push (@cmdList, '-s', (int($jobObj->speed * 1.9) + 10));
+        }
+
+        # Pitch in the range 0-99
+        if (defined $jobObj->pitch &&  $jobObj->pitch ne '') {
+
+            if ($jobObj->pitch > 99) {
+
+                $jobObj->pitch = 99;
+            }
+
+            push (@cmdList, '-p', $jobObj->pitch);
+        }
+
+        return @cmdList;
+    }
+
+    sub ttsConvertESNG {
+
+        # Called by $self->ttsPrepareSystemCmd (only)
+        # Prepares the parameters of a system command for performing the specifed TTS job, using the
+        #   espeak-sng engine
+        # The parameters depend on the operating system and current conditions, as well as the job
+        #   itself
+        #
+        # Expected arguments
+        #   $jobObj     - The GA::Obj::TtsJob object
+        #
+        # Return values
+        #   An empty list on improper arguments, if the TTS engine is unrecognised or if the job
+        #       can't be performed
+        #   Otherwise returns a list of parameters to use in the system command
+
+        my ($self, $jobObj, $check) = @_;
+
+        # Local variables
+        my (@emptyList, @cmdList);
+
+        # Check for improper arguments
+        if (! defined $jobObj || defined $check) {
+
+            $axmud::CLIENT->writeImproper($self->_objClass . '->ttsConvertESNG', @_);
+            return @emptyList;
+        }
+
+        # Check values are valid in general
+        if (! $self->ttsConvertCheck($jobObj)) {
+
+            return @emptyList;
+        }
+
+        # Prepare the system command
+        if ($^O eq 'MSWin32') {
+
+            if (-e $self->msWinPathESNG) {
+
+                push (@cmdList, $self->msWinPathESNG);
+
+            } else {
+
+                # espeak-ng engine not installed
+                return @emptyList;
+            }
+
+        } else {
+
+            push (@cmdList, 'espeak-ng');
+        }
+
+        if ($^O eq 'MSWin32') {
+            push (@cmdList, $jobObj->currentText);
+        } else {
+            push (@cmdList, '"' . $jobObj->currentText . '"');
+        }
+
+        # With espeak-ng, we can set the voice, speed, pitch and volume, but not rate
+        if (defined $jobObj->voice && $jobObj->voice ne '') {
+
+            push (@cmdList, '-v', $jobObj->voice);
+        }
+
+        # Speed in the range 10-200
+        if (defined $jobObj->speed && $jobObj->speed ne '') {
+
+            push (@cmdList, '-s', (int($jobObj->speed * 1.9) + 10));
+        }
+
+        # Pitch in the range 0-99
+        if (defined $jobObj->pitch && $jobObj->pitch ne '') {
+
+            if ($jobObj->pitch > 99) {
+
+                $jobObj->pitch = 99;
+            }
+
+            push (@cmdList, '-p', $jobObj->pitch);
+        }
+
+        # Volume in the range 0-200
+        if (defined $jobObj->volume && $jobObj->volume ne '') {
+
+            push (@cmdList, '-a', ($jobObj->volume * 2));
+        }
+
+        return @cmdList;
+    }
+
+    sub ttsConvertFlite {
+
+        # Called by $self->ttsPrepareSystemCmd (only)
+        # Prepares the parameters of a system command for performing the specifed TTS job, using the
+        #   Flite engine
+        # The parameters depend on the operating system and current conditions, as well as the job
+        #   itself
+        #
+        # Expected arguments
+        #   $jobObj     - The GA::Obj::TtsJob object
+        #
+        # Return values
+        #   An empty list on improper arguments, if the TTS engine is unrecognised or if the job
+        #       can't be performed
+        #   Otherwise returns a list of parameters to use in the system command
+
+        my ($self, $jobObj, $check) = @_;
+
+        # Local variables
+        my (@emptyList, @cmdList);
+
+        # Check for improper arguments
+        if (! defined $jobObj || defined $check) {
+
+            $axmud::CLIENT->writeImproper($self->_objClass . '->ttsConvertFlite', @_);
+            return @emptyList;
+        }
+
+        # Check values are valid in general
+        if (! $self->ttsConvertCheck($jobObj)) {
+
+            return @emptyList;
+        }
+
+        # Prepare the system command
+        if ($^O eq 'MSWin32') {
+
+            # Not available on MS Windows
+            return @emptyList;
+
+        } else {
+
+            push (@cmdList, 'flite');
+        }
+
+        push (@cmdList, '-t', '"' . $jobObj->currentText . '"');
+
+        # With Flite, we can set the voice, but not speed, rate, pitch or volume
+        if (defined $jobObj->voice && $jobObj->voice ne '') {
+
+            push (@cmdList, '-voice', $jobObj->voice);
+        }
+
+        return @cmdList;
+    }
+
+    sub ttsConvertFestival {
+
+        # Called by $self->ttsPrepareSystemCmd (only)
+        # Prepares the parameters of a system command for performing the specifed TTS job, using the
+        #   Festival engine
+        # The parameters depend on the operating system and current conditions, as well as the job
+        #   itself
+        #
+        # Expected arguments
+        #   $jobObj     - The GA::Obj::TtsJob object
+        #
+        # Return values
+        #   An empty list on improper arguments, if the TTS engine is unrecognised or if the job
+        #       can't be performed
+        #   Otherwise, returns a list of arguments. The first argument is the command for the
+        #       server engine. The remaining comprise the command for the command-line engine. Thus,
+        #       if $self->ttsPerformJobs tries to use the server engine and fails, it can default
+        #       back to the command-line engine without calling this function a second time
+
+        my ($self, $jobObj, $check) = @_;
+
+        # Local variables
+        my (
+            $cmd,
+            @emptyList, @cmdList,
+        );
+
+        # Check for improper arguments
+        if (! defined $jobObj || defined $check) {
+
+            $axmud::CLIENT->writeImproper($self->_objClass . '->ttsConvertFestival', @_);
+            return @emptyList;
+        }
+
+        # Check values are valid in general
+        if (! $self->ttsConvertCheck($jobObj)) {
+
+            return @emptyList;
+        }
+
+        # Prepare the system command
+
+        # Server engine (never used on MS Windows)
+        $cmd = "(let ((utt (Utterance Text \"" . $jobObj->currentText . "\")))";
+        if (defined $jobObj->voice && $jobObj->voice ne '') {
+
+            $cmd .= " (begin (" . $jobObj->voice . ")";
+
+            # Rate in the range 0.5-2
+            if (defined $jobObj->rate && $jobObj->rate ne '') {
+
+                $cmd .= " (Parameter.set 'Duration_Stretch' " . (($jobObj->rate * 0.015) + 0.5)
+                            . ")";
+            }
+
+            # Volume in the range 0.33-6
+            if (defined $jobObj->volume && $jobObj->volume ne '') {
+
+                $cmd .= " (utt.synth utt) (utt.wave.resample utt 8000)"
+                            . " (utt.wave.rescale utt " . (($jobObj->volume * 0.0567) + 0.33)
+                            . ") (utt.play utt)";
+            }
+
+            $cmd .= ")";
+        }
+
+        $cmd .= ")\n";
+
+        push (@cmdList, $cmd);
+
+        # Command-line engine (used on all operating systems)
+        # For system commands using pipes, IPC::Run::start expects a list in this format
+        if ($^O eq 'MSWin32') {
+
+            if (-e $self->msWinPathFestival) {
+
+                chomp $cmd;
+                # In MS Windows CMD.exe, need to escape the characters & \ < > ^ | "
+                $cmd =~ s/([\&\\\<\>\^\|\"])/^$1/g;
+
+                # N.B. In order for this to work, the IPC::Run code itself must be modified. See the
+                #   instructions in ../axmud/nsis/axmud.install.nsi
+                push (@cmdList,
+                    [ 'CMD', '/C', 'echo', '""' . $cmd . '""', ],
+                    '|',
+                    [ $self->msWinPathFestival ],
+                );
+
+            } else {
+
+                # Festival engine not installed
+                return @emptyList;
+            }
+
+        } else {
+
+            push (@cmdList,
+                [ 'echo', $cmd, ],
+                '|',
+                [ 'festival' ],
+            );
+        }
+
+        # Return the server command first, followed by the arguments comprising the command for the
+        #   ommand-line engine
+        return @cmdList;
+    }
+
+    sub ttsConvertSwift {
+
+        # Called by $self->ttsPrepareSystemCmd (only)
+        # Prepares the parameters of a system command for performing the specifed TTS job, using the
+        #   Swift engine
+        # The parameters depend on the operating system and current conditions, as well as the job
+        #   itself
+        #
+        # Expected arguments
+        #   $jobObj     - The GA::Obj::TtsJob object
+        #
+        # Return values
+        #   An empty list on improper arguments, if the TTS engine is unrecognised or if the job
+        #       can't be performed
+        #   Otherwise returns a list of parameters to use in the system command
+
+        my ($self, $jobObj, $check) = @_;
+
+        # Local variables
+        my (
+            $param, $pitch, $begin, $end, $rate, $volume,
+            @emptyList, @cmdList,
+        );
+
+        # Check for improper arguments
+        if (! defined $jobObj || defined $check) {
+
+            $axmud::CLIENT->writeImproper($self->_objClass . '->ttsConvertSwift', @_);
+            return @emptyList;
+        }
+
+        # Check values are valid in general
+        if (! $self->ttsConvertCheck($jobObj)) {
+
+            return @emptyList;
+        }
+
+        # Prepare the system command
+        if ($^O eq 'MSWin32') {
+
+            if (-e $self->msWinPathSwift) {
+
+                push (@cmdList, $self->msWinPathSwift);
+
+            } else {
+
+                # Swift engine not installed
+                return @emptyList;
+            }
+
+        } else {
+
+            push (@cmdList, 'swift');
+        }
+
+        # With Swift on MS Windows (using Cepstral), we can set the voice, speed, pitch and volume,
+        #   but not rate
+        if ($^O eq 'MSWin32') {
+
+            if (defined $jobObj->voice && $jobObj->voice ne '') {
+
+                push (@cmdList, '-n', $jobObj->voice);
+            }
+
+            # Speed in the range 100-400
+            if (defined $jobObj->speed && $jobObj->speed ne '') {
+
+                $param = 'speech/rate=' . (($jobObj->speed * 3) + 100);
+            }
+
+            # Pitch in the range 0.1-5
+            if (defined $jobObj->pitch && $jobObj->pitch ne '') {
+
+                $pitch = int($jobObj->pitch / 20);
+                if ($pitch < 0.1) {
+
+                    $pitch = 0.1;
+                }
+
+                if (! $param) {
+                    $param = 'speech/pitch/shift=' . $pitch;
+                } else {
+                    $param .= ',speech/pitch/shift=' . $pitch;
+                }
+            }
+
+            # Volume in the range 0-100
+            if (defined $jobObj->volume && $jobObj->volume ne '') {
+
+                if (! $param) {
+                    $param = 'audio/volume=' . $jobObj->volume;
+                } else {
+                    $param .= ',audio/volume=' . $jobObj->volume;
+                }
+            }
+
+            # All done
+            if ($param) {
+
+                push (@cmdList, '-p', $param);
+            }
+
+            push (@cmdList, $jobObj->currentText);
+
+        # With Swift on Linux (using Cepstral), we can set the voice, rate, pitch and volume, but
+        #   not speed
+        } else {
+
+            if ($jobObj->voice ne '') {
+
+                $begin = "<voice name=\"" . $jobObj->voice . "\">";
+                $end = "</voice>";
+
+            } else {
+
+                $begin = '';
+                $end = '';
+            }
+
+            # (Rate, pitch and volume all share an element; only create the element if at least one
+            #   valid value is being used)
+
+            # Rate in the range 0.5-2
+            if (defined $jobObj->rate && $jobObj->rate ne '') {
+
+                $rate = ($jobObj->rate * 0.015) + 0.5;
+            }
+
+            # Pitch in the range 0.1-5
+            if (defined $jobObj->pitch && $jobObj->pitch ne '') {
+
+                $pitch = $jobObj->pitch / 20;
+                if ($pitch < 0.1) {
+
+                    $pitch = 0.1;
+                }
+            }
+
+            # Volume in the range 0.33-6
+            if (defined $jobObj->volume && $jobObj->volume ne '') {
+
+                $volume = ($jobObj->volume * 0.0567) + 0.33;
+            }
+
+            if ($rate ne '' || $pitch ne '' || $volume ne '') {
+
+                $begin .= "<prosody";
+                if ($rate ne '') {
+
+                    $begin .= " rate='$rate'";
+                }
+
+                if ($pitch ne '') {
+
+                    $begin .= " pitch='$pitch'";
+                }
+
+                if ($volume ne '') {
+
+                    $begin .= " volume='$volume'";
+                }
+
+                $begin .= ">";
+                $end = "</prosody>" . $end;
+            }
+
+            push (@cmdList, $begin . $jobObj->currentText . $end);
+        }
+
+        return @cmdList;
+    }
+
+    sub ttsFestivalConnect {
+
+        # Called by $self->ttsPerformJobs (only), in response to the TTS action request 'connect'
+        # Attempts to connect to a Festival server engine
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if a connection cannot be establed with the Festival
+        #       server
+        #   1 if a connection is established
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my $socket;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->ttsFestivalConnect', @_);
+        }
+
+        # These checks should have been taken care of by the calling code
+        if (
+            $self->ttsFestivalServerMode ne 'server'
+            || $self->ttsFestivalSocket
+            || $^O eq 'MSWin32'
+        ) {
+            return undef;
+        }
+
+        # Attempt to connect to the Festival server
+        $self->ivPoke('ttsFestivalConnectMode', 'connecting');
+
+        $socket = IO::Socket::INET->new(
+            Proto     => 'tcp',
+            PeerAddr  => '127.0.0.1',
+            PeerPort  => $self->ttsFestivalServerPort,
+        );
+
+        if (! $socket) {
+
+            $self->ivPoke('ttsFestivalConnectMode', 'waiting');
+
+            return undef;
+
+        } else {
+
+            $self->ivPoke('ttsFestivalConnectMode', 'connected');
+            $self->ivPoke('ttsFestivalSocket', $socket);
+
+            return 1;
+        }
+    }
+
+    sub ttsFestivalDisconnect {
+
+        # Called by $self->ttsPerformJobs (only), in response to the TTS action request 'disconnect'
+        # Attempts to disconnect from the Festival server engine
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->ttsFestivalDisconnect', @_);
+        }
+
+        if ($self->ttsFestivalSocket) {
+
+            # Close the socket
+            close $self->ttsFestivalSocket;
+            $self->ivUndef('ttsFestivalSocket');
+
+            # Update IVs
+            if ($self->ttsFestivalServerMode eq 'server') {
+
+                # (...implying, if $FESTIVAL_MODE has not been changed to 'cmd_line'...)
+                $self->ivPoke('ttsFestivalConnectMode', 'waiting');
+            }
+
+            $self->ivPoke('ttsFestivalServerMode', 'cmd_line');
+            $self->ivPoke('ttsFestivalConnectMode', 'cmd_line');
+        }
+
+        return 1;
+    }
+
+    sub ttsFestivalStart {
+
+        # Called by $self->ttsPerformJobs (only), in response to the TTS action request 'start'
+        # Assuming that no Festival server is running on the user's system, attempts to start one
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' if the server cannot be started or, if it is started, a connection cannot be
+        #       established with it
+        #   1 on success
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my $result;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->ttsFestivalStart', @_);
+        }
+
+        # Don't try to start the server a second time, unless the port has changed
+        if (
+            $self->ttsFestivalFailFlag
+            || $self->ttsFestivalSuccessFlag
+            || $^O eq 'MSWin32'
+        ) {
+            return undef;
+        }
+
+        # Update IVs
+        $self->ivPoke('ttsFestivalServerMode', 'server');
+        $self->ivPoke('ttsFestivalConnectMode', 'waiting');
+
+        # Start the server
+        $result = system "festival --server &";
+        if ($result == -1) {
+
+            # Server not started. Don't try again, unless the Festival port changes
+            $self->ivPoke('ttsFestivalFailFlag', TRUE);
+            return undef;
+
+        } else {
+
+            # Server started
+            # Don't try again under any circumstances. This setting prevents Axmud from starting
+            #   redundant multiple servers
+            $self->ivPoke('ttsFestivalSuccessFlag', TRUE);
+
+            # On the next spin of the client loop, try to connect to the server
+            $self->ivPush('ttsFestivalRequestList', 'connect');
+
+            # The server may need time to initialise, before we can connect to it
+            # Ordinarily we give up after the first failed connection. Set variables that allow
+            #   $self->ttsPerformJobs to keep trying for a few seconds, before giving up
+            $self->ivPoke('ttsFestivalCheckTime', $self->getTime() + $self->ttsFestivalStopTime);
+
+            return 1;
+        }
+    }
+
+    sub ttsFestivalSend {
+
+        # Called by $self->ttsPerformJobs and ->ttsInterruptJob
+        # Sends a command to the Festival server. If the connection has closed, updates IVs
+        #
+        # Expected arguments
+        #   $cmd    - The text to send to the server
+        #
+        # Return values
+        #   'undef' on improper arguments, if not connected to the server or if the connection has
+        #       closed
+        #   1 otherwise
+
+        my ($self, $cmd, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $cmd || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->ttsFestivalSend', @_);
+        }
+
+        if (
+            $self->ttsFestivalServerMode ne 'server'
+            || $self->ttsFestivalConnectMode ne 'connected'
+            || ! $self->ttsFestivalSocket
+            || $^O eq 'MSWin32'
+        ) {
+            return undef;
+
+        } elsif (! $self->ttsFestivalSocket->print($cmd)) {
+
+            # Socket has closed; go back to using the command line engine
+            $self->ivPoke('ttsFestivalServerMode', 'cmd_line');
+            $self->ivPoke('ttsFestivalConnectMode', 'cmd_line');
+            $self->ivUndef('ttsFestivalSocket');
+
+            return undef;
+
+        } else {
+
+            return 1;
+        }
     }
 
     # External applications
@@ -15463,11 +17368,17 @@
         # Expected arguments
         #   (none besides $self)
         #
+        # Optional arguments
+        #   $forceFlag  - The IP address fetched in the first call to this function is stored in
+        #                   $self->currentIP. This same value is then returned by each subsequent
+        #                   call to this function. However, if this flag is TRUE, the user's IP
+        #                   address is fetched again
+        #
         # Return values
         #   'undef' on improper arguments or if the IP address can't be fetched
         #   Otherwise, the user's IP (in the form '101.102.103.104')
 
-        my ($self, $check) = @_;
+        my ($self, $forceFlag, $check) = @_;
 
         # Check for improper arguments
         if (defined $check) {
@@ -15475,23 +17386,41 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->ipv4Get', @_);
         }
 
-        # $self->constIPLookupList lists several servers, in case one of them isn't available
-        foreach my $url ($self->constIPLookupList) {
+        if ($forceFlag) {
 
-            my ($obj, $response);
+            $self->ivUndef('currentIP');
+        }
 
-            $obj = HTTP::Tiny->new();
-            if ($obj) {
+        if ($self->currentIP) {
 
-                $response = $obj->get('http://canihazip.com/s/');
-                if ($response->{success} && $response->{content} =~ m/^\d+\.\d+\.\d+\.\d+$/) {
+            return self->currentIP;
 
-                    return $response->{content};
+        } else {
+
+            # $self->ipLookupList lists several servers, in case one of them isn't available
+            foreach my $url ($self->ipLookupList) {
+
+                my ($obj, $response);
+
+                # (The default timeout is 60, which is much to long for these purposes, especially
+                #   since we have other URLs to try)
+                $obj = HTTP::Tiny->new('timeout' => 1);
+                if ($obj) {
+
+                    $response = $obj->get($url);
+                    if ($response->{success} && $response->{content} =~ m/^\d+\.\d+\.\d+\.\d+$/) {
+
+                        $self->ivPoke('currentIP', $response->{content});
+
+                        return $self->currentIP;
+                    }
                 }
             }
         }
 
         # No IP address found
+        $self->ivUndef('currentIP');
+
         return undef;
     }
 
@@ -17473,6 +19402,24 @@
         return 1;
     }
 
+    sub reset_currentIP {
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->reset_currentIP', @_);
+        }
+
+        $self->ivUndef('currentIP');
+
+        # The data stored in this IV is saved in the 'config' file
+        $self->setModifyFlag('config', TRUE, $self->_objClass . '->reset_currentIP');
+
+        return 1;
+    }
+
     sub set_customAllowTTSFlag {
 
         my ($self, $flag, $check) = @_;
@@ -17492,10 +19439,21 @@
 
             $self->ivPoke('customAllowTTSFlag', FALSE);
             if (! $axmud::BLIND_MODE_FLAG) {
+
                 $self->ivPoke('systemAllowTTSFlag', FALSE);
+                $self->ivPoke('ttsForceHijackFlag', FALSE);
+
             } else {
+
                 $self->ivPoke('systemAllowTTSFlag', TRUE);
             }
+        }
+
+        if (! $self->systemAllowTTSFlag) {
+
+            # Interrupt any TTS jobs that might be in progress, and reset TTS IVs to their
+            #   default values
+            $self->ttsReset();
         }
 
         # The data stored in this IV is saved in the 'config' file
@@ -18361,6 +20319,28 @@
         return 1;
     }
 
+    sub set_ttsForceHijackFlag {
+
+        my ($self, $flag, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $flag || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->set_ttsForceHijackFlag', @_);
+        }
+
+        if ($flag) {
+            $self->ivPoke('ttsForceHijackFlag', TRUE);
+        } else {
+            $self->ivPoke('ttsForceHijackFlag', FALSE);
+        }
+
+        # The data stored in this IV is saved in the 'config' file
+        $self->setModifyFlag('config', TRUE, $self->_objClass . '->set_ttsForceHijackFlag');
+
+        return 1;
+    }
+
     sub set_gridAdjustmentFlag {
 
         my ($self, $flag, $check) = @_;
@@ -18848,6 +20828,20 @@
         return 1;
     }
 
+    sub set_ipLookupList {
+
+        my ($self, @args) = @_;
+
+        # (No improper arguments to check; @args can be an empty list)
+
+        $self->ivPoke('ipLookupList', @args);
+
+        # The data stored in this IV is saved in the 'config' file
+        $self->setModifyFlag('config', TRUE, $self->_objClass . '->set_ipLookupList');
+
+        return 1;
+    }
+
     sub set_irreversibleIconFlag {
 
         my ($self, $flag, $check) = @_;
@@ -19193,6 +21187,52 @@
         return 1;
     }
 
+    sub toggle_mnesFlag {
+
+        # $flag is not specified when called by GA::Cmd::MNES->do, but is specified when called by
+        #   GA::PrefWin::Client
+
+        my ($self, $type, $flag, $check) = @_;
+
+        # Local variables
+        my $iv;
+
+        # Check for improper arguments
+        if (! defined $type || ($type ne 'send_ip')) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->toggle_mnesFlag', @_);
+        }
+
+        # (At the moment, there is only one flag IV for MNES; nevertheless we'll keep the same
+        #   format used by other similar accessor functions)
+        if ($type eq 'send_ip') {
+
+            $iv = 'allowMnesSendIPFlag';
+        }
+
+        if (defined $flag) {
+
+            if ($flag) {
+                $self->ivPoke($iv, TRUE);
+            } else {
+                $self->ivPoke($iv, FALSE);
+            }
+
+        } elsif ($self->$iv) {
+
+            $self->ivPoke($iv, FALSE);
+
+        } else {
+
+            $self->ivPoke($iv, TRUE);
+        }
+
+        # The data stored in these IVs are saved in the 'config' file
+        $self->setModifyFlag('config', TRUE, $self->_objClass . '->toggle_mnesFlag');
+
+        return 1;
+    }
+
     sub set_modelSplitSize {
 
         my ($self, $size, $check) = @_;
@@ -19278,7 +21318,8 @@
                 $protocol ne 'msdp' && $protocol ne 'mssp' && $protocol ne 'mccp'
                 && $protocol ne 'msp' && $protocol ne 'mxp' && $protocol ne 'pueblo'
                 && $protocol ne 'zmp' && $protocol ne 'aard102' && $protocol ne 'atcp'
-                && $protocol ne 'gmcp' && $protocol ne 'mtts' && $protocol ne 'mcp'
+                && $protocol ne 'gmcp' && $protocol ne 'mtts' && $protocol ne 'mnes'
+                && $protocol ne 'mcp'
             )
         ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->toggle_mudProtocol', @_);
@@ -19306,6 +21347,8 @@
             $iv = 'useGmcpFlag';
         } elsif ($protocol eq 'mtts') {
             $iv = 'useMttsFlag';
+        } elsif ($protocol eq 'mnes') {
+            $iv = 'useMnesFlag';
         } elsif ($protocol eq 'mcp') {
             $iv = 'useMcpFlag';
         }
@@ -19595,7 +21638,8 @@
             ! defined $type
             || (
                 $type ne 'xterm' && $type ne 'long' && $type ne 'simple' && $type ne 'close_main'
-                && $type ne 'close_tab' && $type ne 'switch_offline'
+                && $type ne 'close_tab' && $type ne 'close_menu' && $type ne 'close_toolbutton'
+                && $type ne 'switch_offline'
             )
         ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->toggle_sessionFlag', @_);
@@ -19613,6 +21657,10 @@
             $iv = 'confirmCloseTabFlag';
         } elsif ($type eq 'switch_offline') {
             $iv = 'offlineOnDisconnectFlag';
+        } elsif ($type eq 'close_menu') {
+            $iv = 'confirmCloseToolButtonFlag';
+        } elsif ($type eq 'close_toolbutton') {
+            $iv = 'confirmCloseMenuFlag';
         }
 
         if ($self->$iv) {
@@ -20482,52 +22530,17 @@
         return 1;
     }
 
-    sub set_ttsFestivalServer {
-
-        my ($self, $server, $check) = @_;
-
-        # Check for improper arguments
-        if (defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->set_ttsFestivalServer', @_);
-        }
-
-        $self->ivPoke('ttsFestivalServer', $server);        # Can be 'undef'
-
-        return 1;
-    }
-
-    sub set_ttsFestivalServerMode {
-
-        my ($self, $mode, $check) = @_;
-
-        # Check for improper arguments
-        if (
-            ! defined $mode
-            || ($mode ne 'waiting' && $mode ne 'connecting' && $mode ne 'connected')
-            || defined $check
-        ) {
-            return $axmud::CLIENT->writeImproper(
-                $self->_objClass . '->set_ttsFestivalServerMode',
-                @_,
-            );
-        }
-
-        $self->ivPoke('ttsFestivalServerMode', $mode);
-
-        return 1;
-    }
-
     sub set_ttsFestivalServerPort {
 
-        my ($self, $port, $check) = @_;
+        my ($self, $newPort, $check) = @_;
+
+        # Local variables
+        my $oldPort;
 
         # Check for improper arguments
         if (
             defined $check
-            || (
-                defined $port && ($port < 0 || $port > 65535)
-            )
+            || (defined $newPort && $newPort ne '' && ($newPort < 0 || $newPort > 65535))
         ) {
             return $axmud::CLIENT->writeImproper(
                 $self->_objClass . '->set_ttsFestivalServerPort',
@@ -20535,11 +22548,40 @@
             );
         }
 
-        $self->ivPoke('ttsFestivalServerPort', $port);      # May be 'undef'
+        $oldPort = $self->ttsFestivalServerPort;
+        $self->ivPoke('ttsFestivalServerPort', $newPort);      # May be 'undef' or an empty string
 
-        # Modifying the port means we must disconnect from the Festival server (if connected) and
-        #   reconnect to the Festival server (when required)
-        $self->ttsReconnectServer();
+        # Update connected IVs
+        if (
+            ((defined $oldPort && $oldPort ne '') && (! defined $newPort || $newPort eq ''))
+            || ((defined $newPort && $newPort ne '') && (! defined $oldPort || $oldPort eq ''))
+            || (defined $oldPort && defined $newPort && $oldPort ne $newPort)
+        ) {
+            # After changing port, we are allowed to attempt to start the server again
+            $self->ivPoke('ttsFestivalFailFlag', FALSE);
+
+            # If connected to the server, disconnect
+            if (
+                $self->ttsFestivalServerMode eq 'server'
+                && $self->ttsFestivalConnectMode eq 'connected'
+            ) {
+                $self->ivPush('ttsFestivalRequestList', 'disconnect');
+            }
+
+            # If a port is specified, attempt to connect the server, starting it first, if
+            #   necessary
+            if (defined $newPort && $newPort ne '') {
+
+                if (! $self->ttsFestivalSuccessFlag) {
+                    $self->ivPush('ttsFestivalRequestList', 'start');
+                } else {
+                    $self->ivPush('ttsFestivalRequestList', 'connect');
+                }
+            }
+        }
+
+        # The data stored in this IV is saved in the 'config' file
+        $self->setModifyFlag('config', TRUE, $self->_objClass . '->set_ttsFestivalServerPort');
 
         return 1;
     }
@@ -20555,9 +22597,9 @@
         if (
             ! defined $flag
             || (
-                $type ne 'receive' && $type ne 'login' && $type ne 'system'
+                $type ne 'receive' && $type ne 'login' && $type ne 'prompt' && $type ne 'system'
                 && $type ne 'error' && $type ne 'command' && $type ne 'cmd' && $type ne 'dialogue'
-                && $type ne 'task' && $type ne 'smooth' && $type ne 'auto'
+                && $type ne 'task' && $type ne 'smooth'
             ) || defined $check
         ) {
 
@@ -20568,6 +22610,8 @@
             $iv = 'ttsReceiveFlag';
         } elsif ($type eq 'login') {
             $iv = 'ttsLoginFlag';
+        } elsif ($type eq 'prompt') {
+            $iv = 'ttsPromptFlag';
         } elsif ($type eq 'system') {
             $iv = 'ttsSystemFlag';
         } elsif ($type eq 'error') {
@@ -20580,8 +22624,6 @@
             $iv = 'ttsTaskFlag';
         } elsif ($type eq 'smooth') {
             $iv = 'ttsSmoothFlag';
-        } elsif ($type eq 'auto') {
-            $iv = 'ttsStartServerFlag';
         }
 
         if ($flag) {
@@ -20592,6 +22634,58 @@
 
         # The data stored in this IV is saved in the 'config' file
         $self->setModifyFlag('config', TRUE, $self->_objClass . '->set_ttsFlag');
+
+        return 1;
+    }
+
+    sub set_ttsHijackFlag {
+
+        my ($self, $flag, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $flag || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->set_ttsHijackFlag', @_);
+        }
+
+        if ($flag) {
+            $self->ivPoke('ttsHijackFlag', TRUE);
+        } else {
+            $self->ivPoke('ttsHijackFlag', FALSE);
+        }
+
+        # The data stored in this IV is saved in the 'config' file
+        $self->setModifyFlag('config', TRUE, $self->_objClass . '->set_tts_hijack_flag');
+
+        return 1;
+    }
+
+    sub set_ttsJobMode {
+
+        my ($self, $mode, $check) = @_;
+
+        # Check for improper arguments
+        if (
+            ! defined $mode || ($mode ne 'default' && $mode ne 'sentence' && $mode ne 'word')
+            || defined $check
+        ) {
+            return $axmud::CLIENT->writeImproper(
+                $self->_objClass . '->set_ttsJobMode',
+                @_,
+            );
+        }
+
+        $self->ivPoke('ttsJobMode', $mode);
+        if ($mode ne 'default') {
+
+            $self->ivPoke('ttsChangeModeFlag', TRUE);
+        }
+
+        # Interrupt any text being read aloud now
+        if ($self->ttsCurrentHarness) {
+
+            $axmud::CLIENT->ttsInterruptJob();
+        }
 
         return 1;
     }
@@ -20974,6 +23068,8 @@
         { $_[0]->{shutdownFlag} }
     sub terminatingFlag
         { $_[0]->{terminatingFlag} }
+    sub offlineOnDisconnectFlag
+        { $_[0]->{offlineOnDisconnectFlag} }
 
     sub sessionTabMode
         { $_[0]->{sessionTabMode} }
@@ -20987,8 +23083,10 @@
         { $_[0]->{confirmCloseMainWinFlag} }
     sub confirmCloseTabFlag
         { $_[0]->{confirmCloseTabFlag} }
-    sub offlineOnDisconnectFlag
-        { $_[0]->{offlineOnDisconnectFlag} }
+    sub confirmCloseMenuFlag
+        { $_[0]->{confirmCloseMenuFlag} }
+    sub confirmCloseToolButtonFlag
+        { $_[0]->{confirmCloseToolButtonFlag} }
 
     sub constCharSet
         { $_[0]->{constCharSet} }
@@ -21152,6 +23250,25 @@
         { my $self = shift; return @{$self->{constRoomFlagList}}; }
     sub constRoomHazardHash
         { my $self = shift; return %{$self->{constRoomHazardHash}}; }
+    sub constRoomNoObscuredHash
+        { my $self = shift; return %{$self->{constRoomNoObscuredHash}}; }
+
+    sub constModelTypeHash
+        { my $self = shift; return %{$self->{constModelTypeHash}}; }
+    sub constPrimaryDirList
+        { my $self = shift; return @{$self->{constPrimaryDirList}}; }
+    sub constShortPrimaryDirList
+        { my $self = shift; return @{$self->{constShortPrimaryDirList}}; }
+    sub constShortPrimaryDirHash
+        { my $self = shift; return %{$self->{constShortPrimaryDirHash}}; }
+    sub constOppDirHash
+        { my $self = shift; return %{$self->{constOppDirHash}}; }
+    sub constComponentTypeList
+        { my $self = shift; return @{$self->{constComponentTypeList}}; }
+    sub constExitStateHash
+        { my $self = shift; return %{$self->{constExitStateHash}}; }
+    sub constParseObjMax
+        { $_[0]->{constParseObjMax} }
 
     sub constCageTypeList
         { my $self = shift; return @{$self->{constCageTypeList}}; }
@@ -21227,23 +23344,6 @@
         { my $self = shift; return %{$self->{initScriptHash}}; }
     sub initScriptOrderList
         { my $self = shift; return @{$self->{initScriptOrderList}}; }
-
-    sub constModelTypeHash
-        { my $self = shift; return %{$self->{constModelTypeHash}}; }
-    sub constPrimaryDirList
-        { my $self = shift; return @{$self->{constPrimaryDirList}}; }
-    sub constShortPrimaryDirList
-        { my $self = shift; return @{$self->{constShortPrimaryDirList}}; }
-    sub constShortPrimaryDirHash
-        { my $self = shift; return %{$self->{constShortPrimaryDirHash}}; }
-    sub constOppDirHash
-        { my $self = shift; return %{$self->{constOppDirHash}}; }
-    sub constComponentTypeList
-        { my $self = shift; return @{$self->{constComponentTypeList}}; }
-    sub constExitStateHash
-        { my $self = shift; return %{$self->{constExitStateHash}}; }
-    sub constParseObjMax
-        { $_[0]->{constParseObjMax} }
 
     sub constLogPrefHash
         { my $self = shift; return %{$self->{constLogPrefHash}}; }
@@ -21413,6 +23513,8 @@
         { $_[0]->{useGmcpFlag} }
     sub useMttsFlag
         { $_[0]->{useMttsFlag} }
+    sub useMnesFlag
+        { $_[0]->{useMnesFlag} }
     sub useMcpFlag
         { $_[0]->{useMcpFlag} }
 
@@ -21490,6 +23592,11 @@
 
     sub zmpPackageHash
         { my $self = shift; return %{$self->{zmpPackageHash}}; }
+
+    sub constMnesCharsetList
+        { my $self = shift; return @{$self->{constMnesCharsetList}}; }
+    sub allowMnesSendIPFlag
+        { $_[0]->{allowMnesSendIPFlag} }
 
     sub constMcpPackageList
         { my $self = shift; return @{$self->{constMcpPackageList}}; }
@@ -21819,10 +23926,8 @@
     sub constIconSizeList
         { my $self = shift; return @{$self->{constIconSizeList}}; }
 
-    sub guiPrivateFlag
-        { $_[0]->{guiPrivateFlag} }
-    sub guiPrivateMenuFlag
-        { $_[0]->{guiPrivateMenuFlag} }
+    sub constShadowType
+        { $_[0]->{constShadowType} }
 
     sub constStripHash
         { my $self = shift; return %{$self->{constStripHash}}; }
@@ -21878,10 +23983,36 @@
         { my $self = shift; return @{$self->{constTTSList}}; }
     sub constTTSCompatList
         { my $self = shift; return @{$self->{constTTSCompatList}}; }
-    sub eSpeakPath
-        { $_[0]->{eSpeakPath} }
     sub ttsSmoothFlag
         { $_[0]->{ttsSmoothFlag} }
+
+    sub ttsJobList
+        { my $self = shift; return @{$self->{ttsJobList}}; }
+    sub ttsJobMax
+        { $_[0]->{ttsJobMax} }
+    sub ttsUrgentJobList
+        { my $self = shift; return @{$self->{ttsUrgentJobList}}; }
+    sub ttsJobMode
+        { $_[0]->{ttsJobMode} }
+    sub ttsJobPointer
+        { $_[0]->{ttsJobPointer} }
+    sub ttsJobMiniPointer
+        { $_[0]->{ttsJobMiniPointer} }
+    sub ttsJobAutoFlag
+        { $_[0]->{ttsJobAutoFlag} }
+    sub ttsJobOnceFlag
+        { $_[0]->{ttsJobOnceFlag} }
+    sub ttsChangeModeFlag
+        { $_[0]->{ttsChangeModeFlag} }
+    sub ttsCurrentHarness
+        { $_[0]->{ttsCurrentHarness} }
+
+    sub ttsHijackKeycodeHash
+        { my $self = shift; return %{$self->{ttsHijackKeycodeHash}}; }
+    sub ttsHijackFlag
+        { $_[0]->{ttsHijackFlag} }
+    sub ttsForceHijackFlag
+        { $_[0]->{ttsForceHijackFlag} }
 
     sub constTtsDefaultList
         { my $self = shift; return @{$self->{constTtsDefaultList}}; }
@@ -21911,6 +24042,8 @@
         { $_[0]->{ttsReceiveFlag} }
     sub ttsLoginFlag
         { $_[0]->{ttsLoginFlag} }
+    sub ttsPromptFlag
+        { $_[0]->{ttsPromptFlag} }
     sub ttsSystemFlag
         { $_[0]->{ttsSystemFlag} }
     sub ttsSystemErrorFlag
@@ -21922,16 +24055,42 @@
     sub ttsTaskFlag
         { $_[0]->{ttsTaskFlag} }
 
+    sub ttsLastPrompt
+        { $_[0]->{ttsLastPrompt} }
+
+    sub msWinPathESpeak
+        { $_[0]->{msWinPathESpeak} }
+    sub msWinAltPathESpeak
+        { $_[0]->{msWinAltPathESpeak} }
+    sub msWinPathESNG
+        { $_[0]->{msWinPathESNG} }
+    sub msWinPathFestival
+        { $_[0]->{msWinPathFestival} }
+    sub msWinPathSwift
+        { $_[0]->{msWinPathSwift} }
+
     sub constTtsFestivalServerPort
         { $_[0]->{constTtsFestivalServerPort} }
     sub ttsFestivalServerPort
         { $_[0]->{ttsFestivalServerPort} }
-    sub ttsFestivalServer
-        { $_[0]->{ttsFestivalServer} }
-    sub ttsStartServerFlag
-        { $_[0]->{ttsStartServerFlag} }
+    sub ttsFestivalFirstFlag
+        { $_[0]->{ttsFestivalFirstFlag} }
     sub ttsFestivalServerMode
         { $_[0]->{ttsFestivalServerMode} }
+    sub ttsFestivalConnectMode
+        { $_[0]->{ttsFestivalConnectMode} }
+    sub ttsFestivalSocket
+        { $_[0]->{ttsFestivalSocket} }
+    sub ttsFestivalRequestList
+        { my $self = shift; return @{$self->{ttsFestivalRequestList}}; }
+    sub ttsFestivalCheckTime
+        { $_[0]->{ttsFestivalCheckTime} }
+    sub ttsFestivalStopTime
+        { $_[0]->{ttsFestivalStopTime} }
+    sub ttsFestivalFailFlag
+        { $_[0]->{ttsFestivalFailFlag} }
+    sub ttsFestivalSuccessFlag
+        { $_[0]->{ttsFestivalSuccessFlag} }
 
     sub constMonthList
         { my $self = shift; return @{$self->{constMonthList}}; }
@@ -21946,6 +24105,10 @@
 
     sub constIPLookupList
         { my $self = shift; return @{$self->{constIPLookupList}}; }
+    sub ipLookupList
+        { my $self = shift; return @{$self->{ipLookupList}}; }
+    sub currentIP
+        { $_[0]->{currentIP} }
 
     sub constHelpCharLimit
         { $_[0]->{constHelpCharLimit} }

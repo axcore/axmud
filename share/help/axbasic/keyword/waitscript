@@ -8,7 +8,12 @@ WAITSCRIPT expression
          current script waits until the new script has terminated, before
          resuming execution.
       Arith-Exp is the name of the new script.
-               
+
+   Requires:
+      If the script is not being run as a task, the WAITSCRPT statement is
+         ignored (and no error message is generated). Execution continues with
+         the next statement.
+                        
    Examples:
       WAITSCRIPT "otherscript"
       PRINT "I'm back, baby!"

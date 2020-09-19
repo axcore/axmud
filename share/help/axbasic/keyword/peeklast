@@ -16,7 +16,7 @@ PEEKLAST ARRAY variable-name = axmud-object-property
          index will be 9. If the list is empty, 'variable-name' is set to -1.
          If 'variable-name' is a string variable (or a string array), a string 
          value such as "3" is used.
-
+         
    Examples:
       ! Store the last index of a list property in an Axbasic global scalar 
       ! variable

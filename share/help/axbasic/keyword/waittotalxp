@@ -10,9 +10,6 @@ WAITTOTALXP expression [ , expression ]
          (depending on the world).
       The second expression is a timeout measured in seconds. If specified, the
          script gives up waiting after that period and resumes execution.
-      If the Axbasic script isn't being run from within a task, the WAITTOTALXP
-         statement is ignored (and no error message is generated). Execution
-         continues immediately with the next statement.
       WAITTOTALXP relies on the Status task to supply the character's total XP. 
          If the Status task is not running (or if it doesn't know anything about
          the character's total XP), the Axbasic script pauses briefly and 
@@ -20,6 +17,11 @@ WAITTOTALXP expression [ , expression ]
       See also the help for WAITEP, WAITGP, WAITHP, WAITMP, WAITSP and for 
          WAITXP and WAITNEXTXP.
 
+   Requires:
+      If the script is not being run as a task, the WAITTOTALXP statement is
+         ignored (and no error message is generated). Execution continues with
+         the next statement.
+         
    Examples:
       ! Wait for total XP to reach 50000
       WAITTOTALXP 50000

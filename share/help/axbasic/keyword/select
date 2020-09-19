@@ -8,6 +8,10 @@ SELECT CASE variable-name
          series of IF, ELSE IF and ELSE statements.
       Only constants (and not variables) can be used in the subsequent CASE
          statements.
+      After SELECT CASE, execution passes to the statement after the END SELECT
+         statement. Therefore a statement after SELECT CASE, on the same line,
+         will never be executed. (A statement after END SELECT, on the same
+         line, will be executed as normal.)
 
    Availability:
       SELECT is not available in scripts with primitive line numbers.

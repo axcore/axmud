@@ -30,6 +30,11 @@ WAITACTIVE expression
          resume execution until a matching task has started, and has become 
          active.
       See also the help for WAITNOTACTIVE.
+
+   Requires:
+      If the script is not being run as a task, the WAITACTIVE statement is
+         ignored (and no error message is generated). Execution continues with
+         the next statement.
          
    Examples:
       WAITACTIVE "condition"

@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2019 A S Lewis
+# Copyright (C) 2011-2020 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -1111,7 +1111,7 @@
 
             return $self->error(
                 $session, $inputString,
-                'Invalid switch (try \'-x\' for the xterm cube, or \'-n\' for the netscape cube',
+                'Invalid switch (try \'-x\' for the xterm cube, or \'-n\' for the netscape cube)',
             );
         }
 
@@ -2200,8 +2200,22 @@
                     'Simulated the \'' . $event . '\' hook event',
                 );
             }
+        }
+
+        # Now do custom hook events. There is no central register of custom hook events, so fire any
+        #   custom hook event whose name is in the right format (starts with an underscore,
+        #   followed by a numeric character)
+        if ($switch =~ m/^\_\w/) {
+
+            $session->checkHooks($switch);
+
+            return $self->complete(
+                $session, $standardCmd,
+                'Simulated the custom hook event \'' . $switch . '\'',
+            );
 
         } else {
+
 
             return $self->error(
                 $session, $inputString,
@@ -3127,7 +3141,11 @@
         # ;h
         if (! defined $cmd) {
 
-            if ($session->status eq 'disconnected') {
+            if ($axmud::BLIND_MODE_FLAG) {
+
+                $session->writeText('List of client commands');
+
+            } elsif ($session->status eq 'disconnected') {
 
                 $disconnectFlag = TRUE;
                 $session->writeText(
@@ -3156,13 +3174,21 @@
 
                 } else {
 
-                    # Display the command and its description (the TRUE arguments means we should
-                    #   show whether the command is available offline, or not)
-                    $session->writeText(
-                        $self->composeHelpLine($session, lc($line), $disconnectFlag),
-                    );
-
                     $count++;
+
+                    if ($axmud::BLIND_MODE_FLAG) {
+
+                        # In blind mode, display a simpler format
+                        $session->writeText($self->composeBlindHelpLine($session, lc($line)));
+
+                    } else {
+
+                        # Display the command and its description (the TRUE arguments means we
+                        #   should show whether the command is available offline, or not)
+                        $session->writeText(
+                            $self->composeHelpLine($session, lc($line), $disconnectFlag),
+                        );
+                    }
                 }
             }
 
@@ -3220,7 +3246,11 @@
                     $cmdObj = $hash{lc($line)};
 
                     # Get the shortest/standard form of the client command
-                    $newString = $cmdObj->findShortestCmd . '/' . lc($line);
+                    if ($axmud::BLIND_MODE_FLAG) {
+                        $newString = lc($line);
+                    } else {
+                        $newString = $cmdObj->findShortestCmd . '/' . lc($line);
+                    }
 
                     if ($string && (length($string) + length($newString)) > $limit) {
 
@@ -3696,10 +3726,21 @@
 
                 } else {
 
-                    # Display the command and its description (the TRUE arguments means we should
-                    #   show whether the command is available offline, or not)
-                    $session->writeText($self->composeHelpLine($session, lc($line), TRUE));
                     $count++;
+
+                    if ($axmud::BLIND_MODE_FLAG) {
+
+                        # In blind mode, display a simpler format
+                        $session->writeText($self->composeBlindHelpLine($session, lc($line)));
+
+                    } else {
+
+                        # Display the command and its description (the TRUE arguments means we
+                        #   should show whether the command is available offline, or not)
+                        $session->writeText(
+                            $self->composeHelpLine($session, lc($line), TRUE),
+                        );
+                    }
                 }
             }
 
@@ -3898,7 +3939,7 @@
         my $self = Games::Axmud::Generic::Cmd->new('listreserved', TRUE, TRUE);
         if (! $self) {return undef}
 
-        $self->{defaultUserCmdList} = ['lrs', 'listreserved'];
+        $self->{defaultUserCmdList} = ['lrd', 'listrd', 'listreserved'];
         $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists all reserved names';
 
@@ -5056,9 +5097,9 @@
             }
 
             if (! $axmud::CLIENT->confirmCloseMainWinFlag) {
-                $session->writeText('   Confirm before click-closing \'main\' window     - OFF');
+                $session->writeText('   Confirm before click-closing \'main\' window   - OFF');
             } else {
-                $session->writeText('   Confirm before click-closing \'main\' window     - ON');
+                $session->writeText('   Confirm before click-closing \'main\' window   - ON');
             }
 
             if (! $axmud::CLIENT->confirmCloseTabFlag) {
@@ -5067,8 +5108,20 @@
                 $session->writeText('   Confirm before click-closing tabs              - ON');
             }
 
+            if (! $axmud::CLIENT->confirmCloseMenuFlag) {
+                $session->writeText('   Confirm before closing session from menu       - OFF');
+            } else {
+                $session->writeText('   Confirm before closing session from menu       - ON');
+            }
+
+            if (! $axmud::CLIENT->confirmCloseToolButtonFlag) {
+                $session->writeText('   Confirm before closing session from toolbar    - OFF');
+            } else {
+                $session->writeText('   Confirm before closing session from toolbar    - ON');
+            }
+
             if (! $axmud::CLIENT->offlineOnDisconnectFlag) {
-                $session->writeText('   Switch to \'offline\' mode on disconnection      - OFF');
+                $session->writeText('   Switch to \'offline\' mode on disconnection    - OFF');
             } else {
                 $session->writeText('   Switch to \'offline\' mode on disconnection      - ON');
             }
@@ -5199,6 +5252,42 @@
                 return $self->complete(
                     $session, $standardCmd,
                     'Confirm before click-closing tabs turned ON',
+                );
+            }
+
+        } elsif ($switch eq '-e') {
+
+            $axmud::CLIENT->toggle_sessionFlag('close_menu');
+            if (! $axmud::CLIENT->confirmCloseMenuFlag) {
+
+                return $self->complete(
+                    $session, $standardCmd,
+                    'Confirm before closing session from menu turned OFF',
+                );
+
+            } else {
+
+                return $self->complete(
+                    $session, $standardCmd,
+                    'Confirm before closing session from menu turned ON',
+                );
+            }
+
+        } elsif ($switch eq '-r') {
+
+            $axmud::CLIENT->toggle_sessionFlag('close_toolbutton');
+            if (! $axmud::CLIENT->confirmCloseToolButtonFlag) {
+
+                return $self->complete(
+                    $session, $standardCmd,
+                    'Confirm before closing session from toolbar turned OFF',
+                );
+
+            } else {
+
+                return $self->complete(
+                    $session, $standardCmd,
+                    'Confirm before closing session from toolbar turned ON',
                 );
             }
 
@@ -6934,7 +7023,7 @@
         ) = @_;
 
         # Local variables
-        my ($closeSession, $count, $result);
+        my ($closeSession, $fileCount, $result);
 
         # Check for improper arguments
         if (defined $check) {
@@ -6960,12 +7049,12 @@
         }
 
         # See if there are any file objects in the session which need to be saved
-        $count = 0;
+        $fileCount = 0;
         foreach my $fileObj ($axmud::CLIENT->ivValues('fileObjHash')) {
 
             if ($fileObj->modifyFlag) {
 
-                $count++;
+                $fileCount++;
             }
         }
 
@@ -6973,18 +7062,18 @@
 
             if ($fileObj->modifyFlag) {
 
-                $count++;
+                $fileCount++;
             }
         }
 
-        if ($count && ! $axmud::CLIENT->saveConfigFlag && ! $axmud::CLIENT->saveDataFlag) {
+        if ($fileCount && ($axmud::CLIENT->saveConfigFlag || $axmud::CLIENT->saveDataFlag)) {
 
             # Ask the user for permission to save the files
             $result = $closeSession->mainWin->showMsgDialogue(
                 'Save files',
                 'question',
-                'Do you want to save files before closing this session? (unsaved files: ' . $count
-                . ')',
+                'Do you want to save files before closing this session? (unsaved files: '
+                . $fileCount . ')',
                 'yes-no',
             );
 
@@ -7108,7 +7197,7 @@
         $fileCount = scalar (keys %hash);
         $sessionCount = $axmud::CLIENT->ivPairs('sessionHash');
 
-        if ($fileCount) {
+        if ($fileCount && ($axmud::CLIENT->saveConfigFlag || $axmud::CLIENT->saveDataFlag)) {
 
             # Ask the user for permission to save the files
             $result = $session->mainWin->showMsgDialogue(
@@ -7401,7 +7490,7 @@
         }
 
         if (
-            ! $session->createIndepInterface(
+            ! $session->createIndependentInterface(
                 'timer',
                 ($minutes * 60),
                 $response,
@@ -7547,6 +7636,352 @@
 
         # Start a task, or instruct an existing one
         return $self->countDownUp($session, $inputString, $standardCmd, 'up', @args);
+    }
+}
+
+{ package Games::Axmud::Cmd::SetLookup;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
+
+    ##################
+    # Constructors
+
+    sub new {
+
+        # Create a new instance of this command object (there should only be one)
+        #
+        # Expected arguments
+        #   (none besides $class)
+        #
+        # Return values
+        #   'undef' if GA::Generic::Cmd->new reports an error
+        #   Blessed reference to the new object on success
+
+        my ($class, $check) = @_;
+
+        # Setup
+        my $self = Games::Axmud::Generic::Cmd->new('setlookup', TRUE, FALSE);
+        if (! $self) {return undef}
+
+        $self->{defaultUserCmdList} = ['slu', 'setlu', 'setlookup'];
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
+        $self->{descrip} = 'Sets the list of IP lookup servers';
+
+        # Bless the object into existence
+        bless $self, $class;
+        return $self;
+    }
+
+    ##################
+    # Methods
+
+    sub do {
+
+        my (
+            $self, $session, $inputString, $userCmd, $standardCmd,
+            @list,
+        ) = @_;
+
+        # Local variables
+        my $urlRegex;
+
+        # (No improper arguments to check)
+
+        # ;slu
+        if (! @list) {
+
+            # Reset the list of IP lookup servers
+            $axmud::CLIENT->set_ipLookupList();
+            # Also reset the stored IP, as if it had never been fetched
+            $axmud::CLIENT->reset_currentIP();
+
+            return $self->complete($session, $standardCmd, 'IP lookup server list reset');
+
+        # ;slu <list>
+        } else {
+
+            # Show an error if any of the URLs aren't valid
+            $urlRegex = $axmud::CLIENT->constUrlRegex;
+            foreach my $url (@list) {
+
+                if (! ($url =~ m/$urlRegex/i)) {
+
+                    return $self->error(
+                        $session, $inputString,
+                        'Cannot update IP lookup server list because of an invalid URL: ' . $url,
+                    );
+                }
+            }
+
+            # Set the list of IP lookup servers
+            $axmud::CLIENT->set_ipLookupList(@list);
+
+            return $self->complete($session, $standardCmd, 'IP lookup server list set');
+        }
+    }
+}
+
+{ package Games::Axmud::Cmd::ResetLookup;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
+
+    ##################
+    # Constructors
+
+    sub new {
+
+        # Create a new instance of this command object (there should only be one)
+        #
+        # Expected arguments
+        #   (none besides $class)
+        #
+        # Return values
+        #   'undef' if GA::Generic::Cmd->new reports an error
+        #   Blessed reference to the new object on success
+
+        my ($class, $check) = @_;
+
+        # Setup
+        my $self = Games::Axmud::Generic::Cmd->new('resetlookup', TRUE, FALSE);
+        if (! $self) {return undef}
+
+        $self->{defaultUserCmdList} = ['rlu', 'resetlu', 'resetlookup'];
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
+        $self->{descrip} = 'Resets the list of IP lookup servers';
+
+        # Bless the object into existence
+        bless $self, $class;
+        return $self;
+    }
+
+    ##################
+    # Methods
+
+    sub do {
+
+        my (
+            $self, $session, $inputString, $userCmd, $standardCmd,
+            $check,
+        ) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $self->improper($session, $inputString);
+        }
+
+        # Reset the IP lookup server list to its default state
+        $axmud::CLIENT->set_ipLookupList($axmud::CLIENT->constIPLookupList);
+
+        return $self->complete(
+            $session, $standardCmd,
+            'IP lookup server list reset to its default state',
+        );
+    }
+}
+
+{ package Games::Axmud::Cmd::ForceLookup;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
+
+    ##################
+    # Constructors
+
+    sub new {
+
+        # Create a new instance of this command object (there should only be one)
+        #
+        # Expected arguments
+        #   (none besides $class)
+        #
+        # Return values
+        #   'undef' if GA::Generic::Cmd->new reports an error
+        #   Blessed reference to the new object on success
+
+        my ($class, $check) = @_;
+
+        # Setup
+        my $self = Games::Axmud::Generic::Cmd->new('forcelookup', TRUE, FALSE);
+        if (! $self) {return undef}
+
+        $self->{defaultUserCmdList} = ['flu', 'forcelu', 'forcelookup'];
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
+        $self->{descrip} = 'Re-fetches the user\'s IP address';
+
+        # Bless the object into existence
+        bless $self, $class;
+        return $self;
+    }
+
+    ##################
+    # Methods
+
+    sub do {
+
+        my (
+            $self, $session, $inputString, $userCmd, $standardCmd,
+            $check,
+        ) = @_;
+
+        # Local variables
+        my $ip;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $self->improper($session, $inputString);
+        }
+
+        # Re-fetch the user's IP. The TRUE argument forces the function to contact IP lookup servers
+        #   and to ignore the IP fetched by any previous call to that function
+        $ip = $axmud::CLIENT->ipv4Get(TRUE);
+        if (! defined $ip) {
+
+            return $self->complete(
+                $session, $standardCmd,
+                'Could not fetch your IP address (see the help for \';setlookup\')',
+            );
+
+        } else {
+
+            return $self->complete(
+                $session, $standardCmd,
+                'Your IP address is now: ' . $ip,
+            );
+        }
+    }
+}
+
+{ package Games::Axmud::Cmd::ListLookup;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
+
+    ##################
+    # Constructors
+
+    sub new {
+
+        # Create a new instance of this command object (there should only be one)
+        #
+        # Expected arguments
+        #   (none besides $class)
+        #
+        # Return values
+        #   'undef' if GA::Generic::Cmd->new reports an error
+        #   Blessed reference to the new object on success
+
+        my ($class, $check) = @_;
+
+        # Setup
+        my $self = Games::Axmud::Generic::Cmd->new('listlookup', TRUE, TRUE);
+        if (! $self) {return undef}
+
+        $self->{defaultUserCmdList} = ['llu', 'listlu', 'listlookup'];
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
+        $self->{descrip} = 'Shows the list of IP lookup servers';
+
+        # Bless the object into existence
+        bless $self, $class;
+        return $self;
+    }
+
+    ##################
+    # Methods
+
+    sub do {
+
+        my (
+            $self, $session, $inputString, $userCmd, $standardCmd,
+            $check,
+        ) = @_;
+
+        # Local variables
+        my ($ip, $count);
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $self->improper($session, $inputString);
+        }
+
+        # Display header
+        $session->writeText('List of IP lookup servers');
+
+        # Display list
+        if (! $axmud::CLIENT->ipLookupList) {
+
+            $session->writeText('   <none>');
+
+        } else {
+
+            foreach my $url ($axmud::CLIENT->ipLookupList) {
+
+                $session->writeText('   ' . $url);
+            }
+        }
+
+        # Display header
+        $session->writeText('Default list of IP lookup servers');
+
+        # Display list
+        if (! $axmud::CLIENT->constIPLookupList) {
+
+            $session->writeText('   <none>');
+
+        } else {
+
+            foreach my $url ($axmud::CLIENT->constIPLookupList) {
+
+                $session->writeText('   ' . $url);
+            }
+        }
+
+        # Display header
+        $session->writeText('Your IP address:');
+        $ip = $axmud::CLIENT->ipv4Get();
+        if (! defined $ip) {
+            $session->writeText('   <not known>');
+        } else {
+            $session->writeText('   ' . $ip);
+        }
+
+        # Display footer
+        $count = scalar ($axmud::CLIENT->ipLookupList);
+        if ($count == 1) {
+
+            return $self->complete($session, $standardCmd, 'End of list (1 server found)');
+
+        } else {
+
+            return $self->complete(
+                $session, $standardCmd,
+                'End of list (' . $count . ' servers found)',
+            );
+        }
     }
 }
 
@@ -15295,13 +15730,15 @@
 
         } else {
 
-            # If a world model file has just been loaded, the automapper object (and Automapper
-            #   window, if open) must be updated
-            if (exists $loadHash{'worldmodel'} && $session->mapWin) {
+            # Multiple sessions can connect to the same world (in online or offline mode) and, in
+            #   that case, GA::Session->setupProfiles uses the same GA::Obj::WorldModel for each
+            # If a new world model has been loaded, it must be applied to each of those sessions,
+            #   and their automapper objects/windows must be reset
+            if (exists $loadHash{'worldmodel'}) {
 
-                # Reset the world model used by the automapper object (the Automapper window is
-                #   automatically updated)
-                $session->mapObj->set_worldModelObj($session->worldModelObj);
+                # Calling GA::Session->set_worldModelObj to replace the value with the same value
+                #   has the fortunate effect of handling everything
+                $session->set_worldModelObj($session->worldModelObj);
             }
 
             return $self->complete(
@@ -16010,7 +16447,7 @@
 
             $tarObj->add_files($path);
             # Rename each file in the archive to remove the directory structure
-            $tarObj->rename(substr($path, 1), $file);
+            $tarObj->rename($path, $file);
         }
 
         # Export the files as a .tgz file
@@ -17417,11 +17854,10 @@
 
                 if ($file ne $dataDir) {
 
-                    $modFile = $file;
-                    $modFile =~ s/$dataDir//;
+                    $modFile = substr($file, length($dataDir));
 
                     # 6 is the default compression level
-                    $zipObj->addFile($file, $modFile, 6);
+                    $zipObj->addFileOrDirectory($file, $modFile, 6);
                 }
             }
 
@@ -17452,7 +17888,7 @@
 
                     $tarObj->add_files($file);
                     # Rename each file in the archive to remove the directory structure
-                    $tarObj->rename(substr($file, 1), substr($file, length($dataDir)));
+                    $tarObj->rename($file, substr($file, length($dataDir)));
                 }
             }
 
@@ -17531,7 +17967,7 @@
         ) = @_;
 
         # Local variables
-        my ($choice, $oldDataDir, $extractObj);
+        my ($choice, $oldDataDir, $extractObj, $zipFlag);
 
         # Check for improper arguments
         if (defined $check) {
@@ -17631,10 +18067,19 @@
 
         # Build an Archive::Extract object
         $extractObj = Archive::Extract->new(archive => $backupPath);
-        # (The archive contains an 'axmud-data' directory, so we need to extract the archive into
-        #   the parent directory)
-        if (! $extractObj || ! $extractObj->extract(to => $axmud::DATA_DIR . '/..')) {
+        if ($backupPath =~ m/\.zip$/) {
+            $zipFlag = TRUE;
+        } else {
+            $zipFlag = FALSE;
+        }
 
+        if (
+            ! $extractObj
+            # (A .tar archive contains an 'axmud-data' directory, so we need to extract the archive
+            #   into the parent directory)
+            || (! $zipFlag && ! $extractObj->extract(to => $axmud::DATA_DIR . '/..'))
+            || ($zipFlag && ! $extractObj->extract(to => $axmud::DATA_DIR))
+        ) {
             # The data directory which was just renamed can be returned to its original name, as if
             #   nothing had happened
             rename($oldDataDir, $axmud::DATA_DIR);
@@ -19429,6 +19874,12 @@
                 $session->writeText('   MTTS (Mud Terminal Type Standard)         - OFF');
             }
 
+            if ($axmud::CLIENT->useMnesFlag) {
+                $session->writeText('   MNES (MUD NEW-ENVIRON Standard)           - ON');
+            } else {
+                $session->writeText('   MNES (MUD NEW-ENVIRON Standard)           - OFF');
+            }
+
             if ($axmud::CLIENT->useMcpFlag) {
                 $session->writeText('   MCP (Mud Client Protocol)                 - ON');
             } else {
@@ -19550,11 +20001,18 @@
                 $session->writeText('      Server has suggested GMCP and client has refused');
             }
 
-            $session->writeText('   MTTS (Mud Terminal Type Standard) ');
+            $session->writeText('   MTTS (Mud Terminal Type Standard)');
             if ($session->specifiedTType) {
                 $session->writeText('      Preferred terminal: ' . $session->specifiedTType);
             } else {
                 $session->writeText('      Preferred terminal: (not sent)');
+            }
+
+            $session->writeText('   MNES (MUD NEW-ENVIRON Standard)');
+            if ($axmud::CLIENT->allowMnesSendIPFlag) {
+                $session->writeText('      Sending user\'s IP address: YES');
+            } else {
+                $session->writeText('      Sending user\'s IP address: NO');
             }
 
             $session->writeText('   MCP (Mud Client Protocol)');
@@ -19789,6 +20247,26 @@
                 return $self->complete(
                     $session, $standardCmd,
                     'The MTTS protocol has been disabled across all sessions',
+                );
+            }
+
+        # ;spt -n
+        } elsif ($switch eq '-n') {
+
+            $axmud::CLIENT->toggle_mudProtocol('mnes');
+
+            if ($axmud::CLIENT->useMttsFlag) {
+
+                return $self->complete(
+                    $session, $standardCmd,
+                    'The MNES protocol has been enabled across all sessions',
+                );
+
+            } else {
+
+                return $self->complete(
+                    $session, $standardCmd,
+                    'The MNES protocol has been disabled across all sessions',
                 );
             }
 
@@ -21453,7 +21931,6 @@
                 $session->writeText('      no');
             }
 
-
             # Display footer
             return $self->complete($session, $standardCmd, 'End of list');
 
@@ -22754,6 +23231,113 @@
                 $session, $standardCmd,
                 'GMCP package \'' . $name . '\' sent',
             );
+        }
+    }
+}
+
+{ package Games::Axmud::Cmd::MNES;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
+
+    ##################
+    # Constructors
+
+    sub new {
+
+        # Create a new instance of this command object (there should only be one)
+        #
+        # Expected arguments
+        #   (none besides $class)
+        #
+        # Return values
+        #   'undef' if GA::Generic::Cmd->new reports an error
+        #   Blessed reference to the new object on success
+
+        my ($class, $check) = @_;
+
+        # Setup
+        my $self = Games::Axmud::Generic::Cmd->new('mnes', TRUE, FALSE);
+        if (! $self) {return undef}
+
+        $self->{defaultUserCmdList} = ['mnes'];
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
+        $self->{descrip} = 'Manages the MUD NEW-ENVIRON Standard (MNES)';
+
+        # Bless the object into existence
+        bless $self, $class;
+        return $self;
+    }
+
+    ##################
+    # Methods
+
+    sub do {
+
+        my (
+            $self, $session, $inputString, $userCmd, $standardCmd,
+            $switch,
+            $check,
+        ) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $self->improper($session, $inputString);
+        }
+
+        # mnes
+        if (! defined $switch) {
+
+            # Display header
+            $session->writeText('MUD NEW-ENVIRON Standard (MNES)');
+
+            # Display list
+            if ($axmud::CLIENT->useMnesFlag) {
+                $session->writeText('   Allow MSP in general            - YES');
+            } else {
+                $session->writeText('   Allow MSP in general            - NO');
+            }
+
+            if ($axmud::CLIENT->allowMnesSendIPFlag) {
+                $session->writeText('   Send real IP address to world   - YES');
+            } else {
+                $session->writeText('   Send real IP address to world   - NO');
+            }
+
+            # Display footer
+            return $self->complete($session, $standardCmd, 'End of list');
+
+        # ;mnes -s
+        } elsif ($switch ne '-s') {
+
+            return $self->error(
+                $session, $inputString,
+                'Invalid switch (try \'-s\' to toggle sending the user\'s IP address)',
+            );
+
+        } else {
+
+            $axmud::CLIENT->toggle_mnesFlag('send_ip');
+            if ($axmud::CLIENT->allowMnesSendIPFlag) {
+
+                return $self->complete(
+                    $session, $standardCmd,
+                    'MNES will now send the user\'s IP address to the world',
+                );
+
+            } else {
+
+                return $self->complete(
+                    $session, $standardCmd,
+                    'MNES will no longer send the user\'s IP address to the world',
+                );
+            }
         }
     }
 }
@@ -24219,6 +24803,11 @@
             );
 
             $session->writeText(
+                '   Don\'t convert prompts:      '
+                . $self->convertFlag($axmud::CLIENT->ttsPromptFlag),
+            );
+
+            $session->writeText(
                 '   Convert system messages:    '
                 . $self->convertFlag($axmud::CLIENT->ttsSystemFlag),
             );
@@ -24386,13 +24975,14 @@
                 }
             }
 
-        # ;tts receive/login/system/error/command/dialogue/task/smooth/auto on
-        # ;tts receive/login/system/error/command/dialogue/task/smooth/auto off
-        # ;tts -r/-l/-s/-e/-c/-d/-t/-m/-a on
-        # ;tts -r/-l/-s/-e/-c/-d/-t/-m/-a off
+        # ;tts receive/login/prompt/system/error/command/dialogue/task/smooth
+        # ;tts receive/login/prompt/system/error/command/dialogue/task/smooth
+        # ;tts -r/-l/-x/-s/-e/-c/-d/-t/-m on
+        # ;tts -r/-l/-x/-s/-e/-c/-d/-t/-m off
         } elsif (
             $args[0] eq 'receive' || $args[0] eq '-r'
             || $args[0] eq 'login' || $args[0] eq '-l'
+            || $args[0] eq 'prompt' || $args[0] eq '-x'
             || $args[0] eq 'system' || $args[0] eq '-s'
             || $args[0] eq 'error' || $args[0] eq '-e'
             || $args[0] eq 'command' || $args[0] eq 'cmd' || $args[0] eq '-c'
@@ -24436,6 +25026,16 @@
                     $axmud::CLIENT->set_ttsFlag('login', TRUE);
                 } else {
                     $axmud::CLIENT->set_ttsFlag('login', FALSE);
+                }
+
+            } elsif ($args[0] eq 'prompt' || $args[0] eq '-x') {
+
+                $string = 'recognised prompts';
+
+                if ($args[1] eq 'on' || $args[1] eq '-o') {
+                    $axmud::CLIENT->set_ttsFlag('prompt', TRUE);
+                } else {
+                    $axmud::CLIENT->set_ttsFlag('prompt', FALSE);
                 }
 
             } elsif ($args[0] eq 'system' || $args[0] eq '-y') {
@@ -24497,24 +25097,6 @@
                 } else {
                     $axmud::CLIENT->set_ttsFlag('smooth', FALSE);
                 }
-
-            } elsif ($args[0] eq 'auto' || $args[0] eq '-a') {
-
-                if ($args[1] eq 'on' || $args[1] eq '-o') {
-
-                    $axmud::CLIENT->set_ttsFlag('auto', TRUE);
-                    $string = 'on';
-
-                } else {
-
-                    $axmud::CLIENT->set_ttsFlag('auto', FALSE);
-                    $string = 'off';
-                }
-
-                return $self->complete(
-                    $session, $standardCmd,
-                    'Automatic startup of Festival engine server when required turned ' . $string,
-                );
             }
 
             if ($args[1] eq 'on' || $args[1] eq '-o') {
@@ -24533,26 +25115,48 @@
             }
 
         # ;tts port <port>
-        # ;tts port
+        # ;tts port default
+        # ;tts port none
         } elsif ($args[0] eq 'port' || $args[0] eq '-p') {
 
             $port = $args[1];
 
-            if (! $port) {
+            if (! defined $port) {
 
-                $axmud::CLIENT->set_ttsFestivalServerPort();
+                return $self->error(
+                    $session, $inputString,
+                    'Invalid Festival server port (must be in the range 0 to 65535, or use'
+                    . ' the words \'default\' or \'none\')',
+                );
+
+            } elsif ($port eq 'default') {
+
+                $axmud::CLIENT->set_ttsFestivalServerPort(
+                    $axmud::CLIENT->constTtsFestivalServerPort
+                );
 
                 return $self->complete(
                     $session, $standardCmd,
                     'Festival server port set to default value of \''
-                    . $axmud::CLIENT->ttsFestivalServerPort . '\'',
+                    . $axmud::CLIENT->constTtsFestivalServerPort . '\'',
+                );
+
+            } elsif ($port eq 'none') {
+
+                $axmud::CLIENT->set_ttsFestivalServerPort(undef);
+
+                return $self->complete(
+                    $session, $standardCmd,
+                    'Festival server disabled (' . $axmud::SCRIPT . ' will use the command-line'
+                    . ' server instead)',
                 );
 
             } elsif (! $axmud::CLIENT->intCheck($port, 0, 65535)) {
 
                 return $self->error(
                     $session, $inputString,
-                    'Invalid Festival server port (must be in the range 0 to 65535)',
+                    'Invalid Festival server port (must be in the range 0 to 65535, or use'
+                    . ' the words \'default\' or \'none\')',
                 );
 
             } else {
@@ -24564,30 +25168,6 @@
                     'Festival server port set to \'' . $axmud::CLIENT->ttsFestivalServerPort . '\'',
                 );
             }
-
-        # ;tts reconnect
-        } elsif ($args[0] eq 'reconnect' || $args[0] eq '-n') {
-
-            $axmud::CLIENT->ttsReconnectServer();
-
-            return $self->complete(
-                $session, $standardCmd,
-                'Attempting to reconnect to the Festival server on port \''
-                . $axmud::CLIENT->ttsFestivalServerPort . '\'',
-            );
-
-        # ;tts start
-        } elsif ($args[0] eq 'restart' || $args[0] eq '-z') {
-
-            # Start the server...
-            $axmud::CLIENT->ttsStartServer();
-            # ...and reconnect to it, when required
-            $axmud::CLIENT->ttsReconnectServer();
-
-            return $self->complete(
-                $session, $standardCmd,
-                'Attempting to start the Festival server on your system',
-            );
 
         } else {
 
@@ -24695,13 +25275,18 @@
                     'Unable to test the configuration \'' . $args[0] .'\'',
                 );
 
-            } else {
+            } elsif (! $axmud::CLIENT->systemAllowTTSFlag) {
 
                 return $self->complete(
                     $session, $standardCmd,
                     'Attempted to read out a test message for the configuration \'' . $args[0]
                     . '\'',
                 );
+
+            } else {
+
+                # Show no confirmation message, so the user doesn't hear the text twice
+                return 1;
             }
         }
 
@@ -24778,19 +25363,16 @@
 
         # Convert the text to speech
         if (
-            ! $axmud::CLIENT->tts(
+            ! $axmud::CLIENT->ttsAddUrgentJob(
                 $text,
-                'other',
                 $configuration,
-                $session,
+                FALSE,          # Don't empty the urgent job list
                 $engine,
                 $voice,
                 $speed,
                 $rate,
                 $pitch,
                 $volume,
-                TRUE,           # Do not check exclusive/excluded patterns
-                TRUE,           # Read out, even if GA::CLIENT->systemAllowTTSFlag is not set
             )
         ) {
             return $self->error(
@@ -24798,11 +25380,756 @@
                 'Unable to read out \'' . $text . '\'',
             );
 
-        } else {
+        } elsif (! $axmud::CLIENT->systemAllowTTSFlag) {
 
             return $self->complete(
                 $session, $standardCmd,
                 'Attempted to read out \'' . $text . '\'',
+            );
+
+        } else {
+
+            # Show no confirmation message, so the user doesn't hear the text twice
+            return 1;
+        }
+    }
+}
+
+{ package Games::Axmud::Cmd::Split;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
+
+    ##################
+    # Constructors
+
+    sub new {
+
+        # Create a new instance of this command object (there should only be one)
+        #
+        # Expected arguments
+        #   (none besides $class)
+        #
+        # Return values
+        #   'undef' if GA::Generic::Cmd->new reports an error
+        #   Blessed reference to the new object on success
+
+        my ($class, $check) = @_;
+
+        # Setup
+        my $self = Games::Axmud::Generic::Cmd->new('split', TRUE, TRUE);
+        if (! $self) {return undef}
+
+        $self->{defaultUserCmdList} = ['spl', 'split'];
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
+        $self->{descrip} = 'Split lines, sentences or words in TTS';
+
+        # Bless the object into existence
+        bless $self, $class;
+        return $self;
+    }
+
+    ##################
+    # Methods
+
+    sub do {
+
+        my (
+            $self, $session, $inputString, $userCmd, $standardCmd,
+            $arg,
+            $check,
+        ) = @_;
+
+        # Local variables
+        my $msg;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $self->improper($session, $inputString);
+        }
+
+        if (! $arg) {
+
+            if ($axmud::CLIENT->ttsJobMode eq 'default') {
+                $axmud::CLIENT->set_ttsJobMode('sentence');
+            } elsif ($axmud::CLIENT->ttsJobMode eq 'sentence') {
+                $axmud::CLIENT->set_ttsJobMode('word');
+            } elsif ($axmud::CLIENT->ttsJobMode eq 'word') {
+                $axmud::CLIENT->set_ttsJobMode('default');
+            }
+
+        } elsif ($arg eq 'line') {
+            $axmud::CLIENT->set_ttsJobMode('default');
+        } elsif ($arg eq 'sentence' || $arg eq 'word') {
+            $axmud::CLIENT->set_ttsJobMode($arg);
+        } else {
+
+            return $self->error(
+                $session, $inputString,
+                'Split text how? (Try using \'line\', \'sentence\' or \'word\', or just'
+                . ' use the \';split\' command on its own to switch between them',
+            );
+        }
+
+        if ($axmud::CLIENT->ttsJobMode eq 'sentence') {
+            $msg = 'Sentence mode';
+        } elsif ($axmud::CLIENT->ttsJobMode eq 'word') {
+            $msg = 'Word mode';
+        } else {
+            $msg = 'Line mode';
+        }
+
+        if (! $axmud::CLIENT->systemAllowTTSFlag) {
+
+            return $self->complete(
+                $session, $standardCmd,
+                'Text-to-speech switching to ' . lc($msg),
+            );
+
+        } else {
+
+            # Show no further confirmation message, so that this command can be used as a macro
+            #   without disrupting the user experience
+            # However, do attempt to read aloud a confirmation. The call to GA::Client->ttsAddJob
+            #   produces a job which is performed immediately, before any other jobs
+            $axmud::CLIENT->ttsAddUrgentJob($msg);
+
+            return 1;
+        }
+    }
+}
+
+{ package Games::Axmud::Cmd::Skip;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
+
+    ##################
+    # Constructors
+
+    sub new {
+
+        # Create a new instance of this command object (there should only be one)
+        #
+        # Expected arguments
+        #   (none besides $class)
+        #
+        # Return values
+        #   'undef' if GA::Generic::Cmd->new reports an error
+        #   Blessed reference to the new object on success
+
+        my ($class, $check) = @_;
+
+        # Setup
+        my $self = Games::Axmud::Generic::Cmd->new('skip', TRUE, TRUE);
+        if (! $self) {return undef}
+
+        $self->{defaultUserCmdList} = ['skp', 'skip'];
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
+        $self->{descrip} = 'Reads aloud the next piece of text';
+
+        # Bless the object into existence
+        bless $self, $class;
+        return $self;
+    }
+
+    ##################
+    # Methods
+
+    sub do {
+
+        my (
+            $self, $session, $inputString, $userCmd, $standardCmd,
+            @args,
+        ) = @_;
+
+        # If a TTS is reading out something, tell it to stop. If there is more text waiting to be
+        #   read aloud, then read it
+        if (defined $args[0]) {
+
+            # Exception: if a number of jobs (or the word 'more') is specified, then resume
+            #   performing jobs, one line at a time, but skip that many jobs
+            if ($args[0] eq 'more') {
+                $axmud::CLIENT->ttsSkipJob(10);
+            } elsif ($axmud::CLIENT->intCheck($args[0], 1)) {
+                $axmud::CLIENT->ttsSkipJob($args[0]);
+            } else {
+                $axmud::CLIENT->ttsSkipJob();
+            }
+
+        } else {
+
+            $axmud::CLIENT->ttsSkipJob();
+        }
+
+        # This command shows no confirmation message, so that it can be used as a macro without
+        #   disrupting the user experience
+        return 1;
+    }
+}
+
+{ package Games::Axmud::Cmd::Unskip;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
+
+    ##################
+    # Constructors
+
+    sub new {
+
+        # Create a new instance of this command object (there should only be one)
+        #
+        # Expected arguments
+        #   (none besides $class)
+        #
+        # Return values
+        #   'undef' if GA::Generic::Cmd->new reports an error
+        #   Blessed reference to the new object on success
+
+        my ($class, $check) = @_;
+
+        # Setup
+        my $self = Games::Axmud::Generic::Cmd->new('unskip', TRUE, TRUE);
+        if (! $self) {return undef}
+
+        $self->{defaultUserCmdList} = ['usk', 'unskip'];
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
+        $self->{descrip} = 'Reads aloud the previous piece of text';
+
+        # Bless the object into existence
+        bless $self, $class;
+        return $self;
+    }
+
+    ##################
+    # Methods
+
+    sub do {
+
+        my (
+            $self, $session, $inputString, $userCmd, $standardCmd,
+            @args,
+        ) = @_;
+
+        # If a TTS is reading out something, tell it to stop. If we're at the beginning of the list,
+        #   re-read the first thing in the list. Otherwise, re-read the previous thing in the list.
+        # In all cases, stop automatically reading things in the list (until the skips back to the
+        #   end of the list)
+        if (defined $args[0]) {
+
+            # Exception: if a number of jobs (or the word 'more') is specified, then resume
+            #   performing jobs, one line at a time, but unskip that many jobs
+            if ($args[0] eq 'more') {
+                $axmud::CLIENT->ttsUnskipJob(10);
+            } elsif ($axmud::CLIENT->intCheck($args[0], 1)) {
+                $axmud::CLIENT->ttsUnskipJob($args[0]);
+            } else {
+                $axmud::CLIENT->ttsUnskipJob();
+            }
+
+        } else {
+
+            $axmud::CLIENT->ttsUnskipJob();
+        }
+
+        # This command shows no confirmation message, so that it can be used as a macro without
+        #   disrupting the user experience
+        return 1;
+    }
+}
+
+{ package Games::Axmud::Cmd::First;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
+
+    ##################
+    # Constructors
+
+    sub new {
+
+        # Create a new instance of this command object (there should only be one)
+        #
+        # Expected arguments
+        #   (none besides $class)
+        #
+        # Return values
+        #   'undef' if GA::Generic::Cmd->new reports an error
+        #   Blessed reference to the new object on success
+
+        my ($class, $check) = @_;
+
+        # Setup
+        my $self = Games::Axmud::Generic::Cmd->new('first', TRUE, TRUE);
+        if (! $self) {return undef}
+
+        $self->{defaultUserCmdList} = ['fst', 'first'];
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
+        $self->{descrip} = 'Reads aloud the first piece of text';
+
+        # Bless the object into existence
+        bless $self, $class;
+        return $self;
+    }
+
+    ##################
+    # Methods
+
+    sub do {
+
+        my (
+            $self, $session, $inputString, $userCmd, $standardCmd,
+            @args,
+        ) = @_;
+
+        # If a TTS is reading out something, tell it to stop. Then read out the first text remaining
+        #   in memory
+        $axmud::CLIENT->ttsFirstJob();
+
+        # This command shows no confirmation message, so that it can be used as a macro without
+        #   disrupting the user experience
+        return 1;
+    }
+}
+
+{ package Games::Axmud::Cmd::Last;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
+
+    ##################
+    # Constructors
+
+    sub new {
+
+        # Create a new instance of this command object (there should only be one)
+        #
+        # Expected arguments
+        #   (none besides $class)
+        #
+        # Return values
+        #   'undef' if GA::Generic::Cmd->new reports an error
+        #   Blessed reference to the new object on success
+
+        my ($class, $check) = @_;
+
+        # Setup
+        my $self = Games::Axmud::Generic::Cmd->new('last', TRUE, TRUE);
+        if (! $self) {return undef}
+
+        $self->{defaultUserCmdList} = ['last'];
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
+        $self->{descrip} = 'Reads aloud the last piece of text';
+
+        # Bless the object into existence
+        bless $self, $class;
+        return $self;
+    }
+
+    ##################
+    # Methods
+
+    sub do {
+
+        my (
+            $self, $session, $inputString, $userCmd, $standardCmd,
+            @args,
+        ) = @_;
+
+        # If a TTS is reading out something, tell it to stop. Then read out the last text remaining
+        #   in memory
+        $axmud::CLIENT->ttsLastJob();
+
+        # This command shows no confirmation message, so that it can be used as a macro without
+        #   disrupting the user experience
+        return 1;
+    }
+}
+
+{ package Games::Axmud::Cmd::Resume;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
+
+    ##################
+    # Constructors
+
+    sub new {
+
+        # Create a new instance of this command object (there should only be one)
+        #
+        # Expected arguments
+        #   (none besides $class)
+        #
+        # Return values
+        #   'undef' if GA::Generic::Cmd->new reports an error
+        #   Blessed reference to the new object on success
+
+        my ($class, $check) = @_;
+
+        # Setup
+        my $self = Games::Axmud::Generic::Cmd->new('resume', TRUE, TRUE);
+        if (! $self) {return undef}
+
+        $self->{defaultUserCmdList} = ['resume'];
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
+        $self->{descrip} = 'Reads aloud the first unread line';
+
+        # Bless the object into existence
+        bless $self, $class;
+        return $self;
+    }
+
+    ##################
+    # Methods
+
+    sub do {
+
+        my (
+            $self, $session, $inputString, $userCmd, $standardCmd,
+            @args,
+        ) = @_;
+
+        # If a TTS is reading out something, tell it to stop
+        # Then, switch to reading out whole lines, and perform the first job that has never been
+        #   performed (the first line that has never been read out)
+        # If already reading lines continuously, move to the end of the job list
+        $axmud::CLIENT->ttsResumeJob();
+
+        # This command shows no confirmation message, so that it can be used as a macro without
+        #   disrupting the user experience
+        return 1;
+    }
+}
+
+{ package Games::Axmud::Cmd::Shutup;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
+
+    ##################
+    # Constructors
+
+    sub new {
+
+        # Create a new instance of this command object (there should only be one)
+        #
+        # Expected arguments
+        #   (none besides $class)
+        #
+        # Return values
+        #   'undef' if GA::Generic::Cmd->new reports an error
+        #   Blessed reference to the new object on success
+
+        my ($class, $check) = @_;
+
+        # Setup
+        my $self = Games::Axmud::Generic::Cmd->new('shutup', TRUE, TRUE);
+        if (! $self) {return undef}
+
+        $self->{defaultUserCmdList} = ['sup', 'stfu', 'shutup'];
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
+        $self->{descrip} = 'Skips all text waiting to be read out';
+
+        # Bless the object into existence
+        bless $self, $class;
+        return $self;
+    }
+
+    ##################
+    # Methods
+
+    sub do {
+
+        my (
+            $self, $session, $inputString, $userCmd, $standardCmd,
+            @args,
+        ) = @_;
+
+        # If a TTS is reading out something, tell it to stop. No more text is read aloud until the
+        #   user types a command like ;skip, ;unskip or ;resume
+        $axmud::CLIENT->ttsSilenceJob();
+
+        # This command shows no confirmation message, so that it can be used as a macro without
+        #   disrupting the user experience
+        return 1;
+    }
+}
+
+{ package Games::Axmud::Cmd::Prompt;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
+
+    ##################
+    # Constructors
+
+    sub new {
+
+        # Create a new instance of this command object (there should only be one)
+        #
+        # Expected arguments
+        #   (none besides $class)
+        #
+        # Return values
+        #   'undef' if GA::Generic::Cmd->new reports an error
+        #   Blessed reference to the new object on success
+
+        my ($class, $check) = @_;
+
+        # Setup
+        my $self = Games::Axmud::Generic::Cmd->new('prompt', TRUE, TRUE);
+        if (! $self) {return undef}
+
+        $self->{defaultUserCmdList} = ['pro', 'prompt'];
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
+        $self->{descrip} = 'Replays the most recent prompt ignored by TTS';
+
+        # Bless the object into existence
+        bless $self, $class;
+        return $self;
+    }
+
+    ##################
+    # Methods
+
+    sub do {
+
+        my (
+            $self, $session, $inputString, $userCmd, $standardCmd,
+            $check,
+        ) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $self->improper($session, $inputString);
+        }
+
+        # Use an urgent job, so that the natural flow of TTS jobs is not affected
+        if (! defined $axmud::CLIENT->ttsLastPrompt) {
+
+            $axmud::CLIENT->ttsAddUrgentJob('No prompt has been ignored', 'system');
+
+        } else {
+
+            $axmud::CLIENT->ttsAddUrgentJob($axmud::CLIENT->ttsLastPrompt, 'receive');
+        }
+    }
+}
+
+{ package Games::Axmud::Cmd::FreeKeys;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
+
+    ##################
+    # Constructors
+
+    sub new {
+
+        # Create a new instance of this command object (there should only be one)
+        #
+        # Expected arguments
+        #   (none besides $class)
+        #
+        # Return values
+        #   'undef' if GA::Generic::Cmd->new reports an error
+        #   Blessed reference to the new object on success
+
+        my ($class, $check) = @_;
+
+        # Setup
+        my $self = Games::Axmud::Generic::Cmd->new('freekeys', TRUE, TRUE);
+        if (! $self) {return undef}
+
+        $self->{defaultUserCmdList} = ['frk', 'free', 'freekeys'];
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
+        $self->{descrip} = 'Toggles cursor (etc) keys for replaying TTS';
+
+        # Bless the object into existence
+        bless $self, $class;
+        return $self;
+    }
+
+    ##################
+    # Methods
+
+    sub do {
+
+        my (
+            $self, $session, $inputString, $userCmd, $standardCmd,
+            $check,
+        ) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $self->improper($session, $inputString);
+        }
+
+        # Toggle the flag
+        if (! $axmud::BLIND_MODE_FLAG) {
+
+            return $self->error(
+                $session, $inputString,
+                'This setting can only be changed in blind mode (try \';hijackkeys\' instead)',
+            );
+
+        } elsif (! $axmud::CLIENT->ttsHijackFlag) {
+
+            $axmud::CLIENT->set_ttsHijackFlag(TRUE);
+
+            return $self->complete(
+                $session, $standardCmd,
+                'Use cursor (etc) keys to replay text-to-speech turned ON',
+            );
+
+        } else {
+
+            $axmud::CLIENT->set_ttsHijackFlag(FALSE);
+
+            return $self->complete(
+                $session, $standardCmd,
+                'Use cursor (etc) keys to replay text-to-speech turned OFF',
+            );
+        }
+    }
+}
+
+{ package Games::Axmud::Cmd::HijackKeys;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
+
+    ##################
+    # Constructors
+
+    sub new {
+
+        # Create a new instance of this command object (there should only be one)
+        #
+        # Expected arguments
+        #   (none besides $class)
+        #
+        # Return values
+        #   'undef' if GA::Generic::Cmd->new reports an error
+        #   Blessed reference to the new object on success
+
+        my ($class, $check) = @_;
+
+        # Setup
+        my $self = Games::Axmud::Generic::Cmd->new('hijackkeys', TRUE, TRUE);
+        if (! $self) {return undef}
+
+        $self->{defaultUserCmdList} = ['hjk', 'hijack', 'hijackkeys'];
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
+        $self->{descrip} = 'Toggles cursor (etc) keys for replaying TTS';
+
+        # Bless the object into existence
+        bless $self, $class;
+        return $self;
+    }
+
+    ##################
+    # Methods
+
+    sub do {
+
+        my (
+            $self, $session, $inputString, $userCmd, $standardCmd,
+            $check,
+        ) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $self->improper($session, $inputString);
+        }
+
+        # Toggle the flag
+        if ($axmud::BLIND_MODE_FLAG) {
+
+            return $self->error(
+                $session, $inputString,
+                'This setting can not be changed in blind mode (try \';freekeys\' instead)',
+            );
+
+        } elsif (! $axmud::CLIENT->customAllowTTSFlag) {
+
+            return $self->error(
+                $session, $inputString,
+                'Text to speech is not enabled (try \';speech on\' instead)',
+            );
+
+        } elsif (! $axmud::CLIENT->ttsForceHijackFlag) {
+
+            $axmud::CLIENT->set_ttsForceHijackFlag(TRUE);
+
+            return $self->complete(
+                $session, $standardCmd,
+                'Use cursor (etc) keys to replay text-to-speech turned ON',
+            );
+
+        } else {
+
+            $axmud::CLIENT->set_ttsForceHijackFlag(FALSE);
+
+            return $self->complete(
+                $session, $standardCmd,
+                'Use cursor (etc) keys to replay text-to-speech turned OFF',
             );
         }
     }
@@ -26006,8 +27333,8 @@
 
                 return $self->error(
                     $session, $inputString,
-                    'Unrecognised text-to-speech engine: try \'espeak\', \'flite\', \'festival\','
-                    . ' \'swift\', \'none\' (or don\'t specify an engine at all)',
+                    'Unrecognised text-to-speech engine: try \'espeak\', \'esng\', \'flite\','
+                    . ' \'festival\', \'swift\', \'none\' (or don\'t specify an engine at all)',
                 );
             }
 
@@ -26516,8 +27843,8 @@
 
                 return $self->error(
                     $session, $inputString,
-                    'Set which text-to-speech engine? (Try \'espeak\', \'flite\', \'festival\','
-                    . ' \'swift\' or \'none\')',
+                    'Set which text-to-speech engine? (Try \'espeak\', \'esng\', \'flite\','
+                    . ' \'festival\', \'swift\' or \'none\')',
                 );
             }
 
@@ -59955,7 +61282,7 @@
         my $self = Games::Axmud::Generic::Cmd->new('splitscreen', TRUE, TRUE);
         if (! $self) {return undef}
 
-        $self->{defaultUserCmdList} = ['spl', 'split', 'splitscreen'];
+        $self->{defaultUserCmdList} = ['sps', 'screen', 'splitscreen'];
         $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Toggles split screen mode in the \'main\' window';
 
@@ -86824,6 +88151,558 @@
     }
 }
 
+{ package Games::Axmud::Cmd::AddRegionScheme;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
+
+    ##################
+    # Constructors
+
+    sub new {
+
+        # Create a new instance of this command object (there should only be one)
+        #
+        # Expected arguments
+        #   (none besides $class)
+        #
+        # Return values
+        #   'undef' if GA::Generic::Cmd->new reports an error
+        #   Blessed reference to the new object on success
+
+        my ($class, $check) = @_;
+
+        # Setup
+        my $self = Games::Axmud::Generic::Cmd->new('addregionscheme', TRUE, FALSE);
+        if (! $self) {return undef}
+
+        $self->{defaultUserCmdList} = ['ars', 'addrs', 'addregionscheme'];
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
+        $self->{descrip} = 'Adds a region colour scheme';
+
+        # Bless the object into existence
+        bless $self, $class;
+        return $self;
+    }
+
+    ##################
+    # Methods
+
+    sub do {
+
+        my (
+            $self, $session, $inputString, $userCmd, $standardCmd,
+            $name,
+            $check,
+        ) = @_;
+
+        # Local variables
+        my $obj;
+
+        # Check for improper arguments
+        if (! defined $name || defined $check) {
+
+            return $self->improper($session, $inputString);
+        }
+
+        # Check $name is not too long
+        if (length $name > 16) {
+
+            return $self->error(
+                $session, $inputString,
+                'Invalid region colour scheme name (can contain any characters, but maximum length'
+                . ' is 16)',
+            );
+
+        # Check a style with that name doesn't already exist
+        } elsif ($session->worldModelObj->ivExists('regionSchemeHash', $name)) {
+
+            return $self->error(
+                $session, $inputString,
+                'There is already a region colour scheme called \'' . $name
+                . '\' in the world model',
+            );
+        }
+
+        # Create the region scheme object
+        $obj = $session->worldModelObj->addRegionScheme($session, $name);
+
+        # Operation complete
+        if (! $obj) {
+
+            return $self->error(
+                $session, $inputString,
+                'Could not add region colour scheme \'' . $name . '\'',
+            );
+
+        } else {
+
+            return $self->complete(
+                $session, $standardCmd,
+                'Added region colour scheme \'' . $name . '\'',
+            );
+        }
+    }
+}
+
+{ package Games::Axmud::Cmd::EditRegionScheme;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
+
+    ##################
+    # Constructors
+
+    sub new {
+
+        # Create a new instance of this command object (there should only be one)
+        #
+        # Expected arguments
+        #   (none besides $class)
+        #
+        # Return values
+        #   'undef' if GA::Generic::Cmd->new reports an error
+        #   Blessed reference to the new object on success
+
+        my ($class, $check) = @_;
+
+        # Setup
+        my $self = Games::Axmud::Generic::Cmd->new('editregionscheme', TRUE, FALSE);
+        if (! $self) {return undef}
+
+        $self->{defaultUserCmdList} = ['ers', 'editrs', 'editregionscheme'];
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
+        $self->{descrip} = 'Opens an \'edit\' window for a region colour scheme';
+
+        # Bless the object into existence
+        bless $self, $class;
+        return $self;
+    }
+
+    ##################
+    # Methods
+
+    sub do {
+
+        my (
+            $self, $session, $inputString, $userCmd, $standardCmd,
+            $name,
+            $check,
+        ) = @_;
+
+        # Local variables
+        my $obj;
+
+        # Check for improper arguments
+        if (! defined $name || defined $check) {
+
+            return $self->improper($session, $inputString);
+        }
+
+        # Check the region scheme exists
+        $obj = $session->worldModelObj->ivShow('regionSchemeHash', $name);
+        if (! $obj) {
+
+            return $self->error(
+                $session, $inputString,
+                'The world model doesn\'t contain a region colour scheme called \'' . $name . '\'',
+            );
+        }
+
+        # Open an \'edit\' window for the region scheme object
+        if (
+            ! $session->mainWin->createFreeWin(
+                'Games::Axmud::EditWin::RegionScheme',
+                $session->mainWin,
+                $session,
+                'Edit region colour scheme \'' . $name . '\'',
+                $obj,
+                FALSE,                  # Not temporary
+            )
+        ) {
+            return $self->error(
+                $session, $inputString,
+                'Could not edit the region colour scheme \'' . $name . '\'',
+            );
+
+        } else {
+
+            return $self->complete(
+                $session, $standardCmd,
+                'Opened \'edit\' window for the region colour scheme \'' . $name . '\'',
+            );
+        }
+    }
+}
+
+{ package Games::Axmud::Cmd::RenameRegionScheme;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
+
+    ##################
+    # Constructors
+
+    sub new {
+
+        # Create a new instance of this command object (there should only be one)
+        #
+        # Expected arguments
+        #   (none besides $class)
+        #
+        # Return values
+        #   'undef' if GA::Generic::Cmd->new reports an error
+        #   Blessed reference to the new object on success
+
+        my ($class, $check) = @_;
+
+        # Setup
+        my $self = Games::Axmud::Generic::Cmd->new('renameregionscheme', TRUE, FALSE);
+        if (! $self) {return undef}
+
+        $self->{defaultUserCmdList} = ['rrs', 'renamers', 'renameregionscheme'];
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
+        $self->{descrip} = 'Renames a region colour scheme';
+
+        # Bless the object into existence
+        bless $self, $class;
+        return $self;
+    }
+
+    ##################
+    # Methods
+
+    sub do {
+
+        my (
+            $self, $session, $inputString, $userCmd, $standardCmd,
+            $oldName, $newName,
+            $check,
+        ) = @_;
+
+        # Check for improper arguments
+        if (! defined $oldName || ! defined $newName || defined $check) {
+
+            return $self->improper($session, $inputString);
+        }
+
+        # Check that the old name exists (no reason why it shouldn't, but we'll check anyway)
+        if (! $session->worldModelObj->ivExists('regionSchemeHash', $oldName)) {
+
+            return $self->error(
+                $session, $inputString,
+                'A region colour scheme called \'' . $oldName . '\' doesn\'t exist',
+            );
+
+        # ...and that the new name doesn't already exist
+        } elsif ($session->worldModelObj->ivExists('regionSchemeHash', $newName)) {
+
+            return $self->error(
+                $session, $inputString,
+                'A region colour scheme called \'' . $newName . '\' already exists',
+            );
+
+        # ...and is not too long
+        } elsif (length $newName > 16) {
+
+            return $self->error(
+                $session, $inputString,
+                'Invalid region colour scheme name (can contain any characters, but maximum length'
+                . ' is 16)',
+            );
+
+        } elsif ($oldName eq 'default') {
+
+            return $self->error(
+                $session, $inputString,
+                'The default region colour scheme cannot be renamed',
+            );
+
+        } elsif (! $session->worldModelObj->renameRegionScheme($session, $oldName, $newName)) {
+
+            return $self->error(
+                $session, $inputString,
+                'Failed to rename the region colour scheme \'' . $oldName . '\'',
+            );
+
+        } else {
+
+            return $self->complete(
+                $session, $standardCmd,
+                'Region colour scheme \'' . $oldName . '\' renamed as \'' . $newName . '\'',
+            );
+        }
+    }
+}
+
+{ package Games::Axmud::Cmd::DeleteRegionScheme;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
+
+    ##################
+    # Constructors
+
+    sub new {
+
+        # Create a new instance of this command object (there should only be one)
+        #
+        # Expected arguments
+        #   (none besides $class)
+        #
+        # Return values
+        #   'undef' if GA::Generic::Cmd->new reports an error
+        #   Blessed reference to the new object on success
+
+        my ($class, $check) = @_;
+
+        # Setup
+        my $self = Games::Axmud::Generic::Cmd->new('deleteregionscheme', TRUE, FALSE);
+        if (! $self) {return undef}
+
+        $self->{defaultUserCmdList} = ['drs', 'delrs', 'deleters', 'deleteregionscheme'];
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
+        $self->{descrip} = 'Deletes a region colour scheme';
+
+        # Bless the object into existence
+        bless $self, $class;
+        return $self;
+    }
+
+    ##################
+    # Methods
+
+    sub do {
+
+        my (
+            $self, $session, $inputString, $userCmd, $standardCmd,
+            $name,
+            $check,
+        ) = @_;
+
+        # Local variables
+        my $obj;
+
+        # Check for improper arguments
+        if (! defined $name || defined $check) {
+
+            return $self->improper($session, $inputString);
+        }
+
+        # Check the region colour scheme exists, and is deleteable
+        $obj = $session->worldModelObj->ivShow('regionSchemeHash', $name);
+        if (! $obj) {
+
+            return $self->error(
+                $session, $inputString,
+                'The world model doesn\'t contain a region colour scheme called \'' . $name . '\'',
+            );
+
+        } elsif ($name eq 'default') {
+
+            return $self->error(
+                $session, $inputString,
+                'The default region colour scheme cannot be deleted',
+            );
+
+        } else {
+
+            # Delete the scheme
+            $session->worldModelObj->deleteRegionScheme(
+                TRUE,           # Update automapper windows now
+                $name,
+            );
+
+            return $self->complete(
+                $session, $standardCmd,
+                'Region colour scheme \'' . $name . '\' deleted',
+            );
+        }
+    }
+}
+
+{ package Games::Axmud::Cmd::ListRegionScheme;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(Games::Axmud::Generic::Cmd Games::Axmud);
+
+    ##################
+    # Constructors
+
+    sub new {
+
+        # Create a new instance of this command object (there should only be one)
+        #
+        # Expected arguments
+        #   (none besides $class)
+        #
+        # Return values
+        #   'undef' if GA::Generic::Cmd->new reports an error
+        #   Blessed reference to the new object on success
+
+        my ($class, $check) = @_;
+
+        # Setup
+        my $self = Games::Axmud::Generic::Cmd->new('listregionscheme', TRUE, TRUE);
+        if (! $self) {return undef}
+
+        $self->{defaultUserCmdList} = ['lrs', 'listrs', 'listregionscheme'];
+        $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
+        $self->{descrip} = 'Lists region colour schemes';
+
+        # Bless the object into existence
+        bless $self, $class;
+        return $self;
+    }
+
+    ##################
+    # Methods
+
+    sub do {
+
+        my (
+            $self, $session, $inputString, $userCmd, $standardCmd,
+            $check,
+        ) = @_;
+
+        # Local variables
+        my (
+            @schemeList,
+            %schemeHash,
+        );
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $self->improper($session, $inputString);
+        }
+
+        # (Very unlikely, because the 'default' scheme should be undeletable)
+        if (! $session->worldModelObj->regionSchemeHash) {
+
+            return $self->complete(
+                $session, $standardCmd,
+                'The world model contains no region colour schemes',
+            );
+        }
+
+        # Compile a hash of region schemes and the regions that use them, in the form
+        #   $schemeHash{scheme_name} = reference_to_list_of_region_names
+        foreach my $schemeObj ($session->worldModelObj->ivValues('regionSchemeHash')) {
+
+            $schemeHash{$schemeObj->name} = [];
+        }
+
+        foreach my $regionmapObj ($session->worldModelObj->ivValues('regionmapHash')) {
+
+            my ($schemeName, $listRef);
+
+            if (! defined $schemeName) {
+                $schemeName = 'default';
+            } else {
+                $schemeName = $regionmapObj->regionScheme;
+            }
+
+            if (! exists $schemeHash{$schemeName}) {
+
+                $schemeHash{$schemeName} = [ $regionmapObj->name ];
+
+            } else {
+
+                $listRef = $schemeHash{$schemeName};
+                push (@$listRef, $regionmapObj->name);
+            }
+        }
+
+        # Display header
+        $session->writeText(
+            'List of region colour scheme (* - default scheme, cannot be deleted)',
+        );
+        $session->writeText('   Name             Used by');
+
+        # Display list
+        @schemeList = sort {lc($a) cmp lc($b)} (keys %schemeHash);
+        foreach my $schemeName (@schemeList) {
+
+            my (
+                $column, $listRef, $region,
+                @regionList,
+            );
+
+            # (The default region scheme should be named 'default', but we'll check anyway)
+            if (
+                defined $session->worldModelObj->defaultSchemeObj
+                && $session->worldModelObj->defaultSchemeObj->name eq $schemeName
+            ) {
+                $column = ' * ';
+            } else {
+                $column = '   ';
+            }
+
+            $listRef = $schemeHash{$schemeName};
+            @regionList = sort {lc($a) cmp lc($b)} (@$listRef);
+
+            # First region (if any) goes on the same line as the scheme name. Subsequent regions (if
+            #   any) go on their own lines
+            if (! @regionList) {
+                $region = '<none>';
+            } else {
+                $region = shift @regionList;
+            }
+
+            $session->writeText(
+                $column . sprintf('%-16.16s ', $schemeName) . $region,
+            );
+
+            foreach my $otherRegion (@regionList) {
+
+                $session->writeText('                    ' . $otherRegion);
+            }
+        }
+
+        # Display footer
+        if (@schemeList == 1) {
+
+            return $self->complete(
+                $session, $standardCmd,
+                'End of list (1 region colour scheme found)',
+            );
+
+        } else {
+
+            return $self->complete(
+                $session, $standardCmd,
+                'End of list (' . @schemeList . ' region colour schemes found)',
+            );
+        }
+    }
+}
+
 { package Games::Axmud::Cmd::AddLabelStyle;
 
     use strict;
@@ -87040,7 +88919,7 @@
                 'Games::Axmud::EditWin::MapLabelStyle',
                 $session->mainWin,
                 $session,
-                'Edit label style \'' . $name . '\'',
+                'Edit map label style \'' . $name . '\'',
                 $obj,
                 FALSE,                  # Not temporary
             )
@@ -87130,6 +89009,14 @@
             return $self->error(
                 $session, $inputString,
                 'A map label style called \'' . $newName . '\' already exists',
+            );
+
+        # ...and is not too long
+        } elsif (length $newName > 16) {
+
+            return $self->error(
+                $session, $inputString,
+                'Invalid label style name (can contain any characters, but maximum length is 16)',
             );
 
         } elsif (! $session->worldModelObj->renameLabelStyle($session, $oldName, $newName)) {
@@ -87263,7 +89150,7 @@
         my $self = Games::Axmud::Generic::Cmd->new('listlabelstyle', TRUE, TRUE);
         if (! $self) {return undef}
 
-        $self->{defaultUserCmdList} = ['lls', 'liststyle', 'listlabelstyles'];
+        $self->{defaultUserCmdList} = ['lls', 'liststyle', 'listlabelstyle'];
         $self->{userCmdList} = \@{$self->{defaultUserCmdList}};
         $self->{descrip} = 'Lists map label styles';
 

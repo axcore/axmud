@@ -9,9 +9,6 @@ WAITSLEEP [ expression ]
          asleep, passed out or dead, they're considered alive.
       The expression is a timeout measured in seconds. If specified, the script
          gives up waiting after that period and resumes execution.
-      If the Axbasic script isn't being run from within a task, the WAITSLEEP
-         statement is ignored (and no error message is generated). Execution
-         continues immediately with the next statement.
          
       WAITSLEEP relies on the Status task to supply the character's current life
          status. If the Status task is not running, the Axbasic script pauses 
@@ -20,6 +17,11 @@ WAITSLEEP [ expression ]
          that the character is alive.
       See also the help for WAITALIVE, WAITDEAD and WAITPASSOUT.
 
+   Requires:
+      If the script is not being run as a task, the WAITSLEEP statement is
+         ignored (and no error message is generated). Execution continues with
+         the next statement.
+         
    Examples:
       WAITSLEEP
       WAITSLEEP 100

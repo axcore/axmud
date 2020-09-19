@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2019 A S Lewis
+# Copyright (C) 2011-2020 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -182,7 +182,7 @@
             scroller                    => undef,       # Gtk3::ScrolledWindow
             hAdjustment                 => undef,       # Gtk3::Adjustment
             vAdjustment                 => undef,       # Gtk3::Adjustment
-            table                       => undef,       # Gtk3::Grid
+            grid                        => undef,       # Gtk3::Grid
             hBox                        => undef,       # Gtk3::HBox
             nextButton                  => undef,       # Gtk3::Button
             previousButton              => undef,       # Gtk3::Button
@@ -199,6 +199,7 @@
                 'intro',
                 'mainWin',
                 'zonemap',
+                'world',
                 'task',
                 'sigil',
                 'last',
@@ -229,6 +230,10 @@
             #   want to switch the zonemap back to widescreen a second time)
             widescreenFlag              => FALSE,
 
+            # The GA::Obj::SimpleList containing a list of pre-configured worlds
+            slWidget                    => undef,
+
+            # Pre-configured worlds, in the order they're
             # Initial tasks
             taskInitHash                => {
                 'status'                => TRUE,
@@ -410,7 +415,7 @@
 
         # Local variables
         my (
-            $zonemapObj, $initStatusObj, $initLocatorObj,
+            $zonemapObj, $slWidget, $initStatusObj, $initLocatorObj,
             @taskList,
             %checkHash,
         );
@@ -444,7 +449,7 @@
             }
         }
 
-        # In v1.2.0, window tiling was enable for MSWin users. For those users with existing Axmud
+        # In v1.2.0, window tiling was enabled for MSWin users. For those users with existing Axmud
         #   installations, this 'wiz' window is called a second time
         # For that reason, check that Locator/Status tasks don't already exist in the global
         #   tasklist. If they do, update their settings, rather than creating a new task
@@ -459,6 +464,66 @@
             # While we're at it, compile a hash of global initial tasks, containing only the first
             #   instance of each type of task
             $checkHash{$initTaskObj->name} = undef;
+        }
+
+        # Remove pre-configured worlds, as required
+        $slWidget = $self->slWidget;
+        OUTER: foreach my $listRef (@{$slWidget->{data}}) {
+
+            my ($worldObj, $fileObj);
+
+            # $listRef is in the form [remove_flag, profile_name...]
+            if ($$listRef[0]) {
+
+                # Remove this world profile
+                $worldObj = $axmud::CLIENT->ivShow('worldProfHash', $$listRef[1]);
+                if ($worldObj) {
+
+                    # (It should not be possible for any session to be running, but in case someone
+                    #   is testing this window, we'll check anyway)
+                    INNER: foreach my $session ($axmud::CLIENT->listSessions()) {
+
+                        if (defined $session->currentWorld && $session->currentWorld eq $worldObj) {
+
+                            # (Not a fatal error)
+                            $axmud::CLIENT->writeWarning(
+                                'Could not delete world profile \'' . $worldObj->name
+                                . '\' - it is in use by a session',
+                                $self->_objClass . '->saveChanges',
+                            );
+
+                            next OUTER;
+                        }
+                    }
+
+                    # Delete the world's data files. First find the file object
+                    $fileObj = $axmud::CLIENT->ivShow('fileObjHash', $worldObj->name);
+                    if (! $fileObj) {
+
+                        # (Not a fatal error)
+                        $axmud::CLIENT->writeWarning(
+                            'Could not delete world profile \'' . $worldObj->name
+                            . '\' - file object is missing',
+                            $self->_objClass . '->saveChanges',
+                        );
+                    }
+
+                    # Delete the whole directory used for that world (e.g. /data/worlds/WORLD_NAME)
+                    if (! $fileObj->destroyStandardDir()) {
+
+                        # (Not a fatal error)
+                        $axmud::CLIENT->writeWarning(
+                            'Could not delete data files for the world profile \'' . $worldObj->name
+                            . '\'',
+                            $self->_objClass . '->saveChanges',
+                        );
+                    }
+
+                    # Update the GA::Client registries
+                    $axmud::CLIENT->del_worldProf($worldObj);
+                    $axmud::CLIENT->del_fileObj($fileObj);
+                }
+            }
         }
 
         # Add initial tasks (if any) in a set order
@@ -571,7 +636,7 @@
 
     sub introPage {
 
-        # Intro page - called by $self->setupTable or ->updateTable
+        # Intro page - called by $self->setupGrid or ->updateGrid
         #
         # Expected arguments
         #   (none besides $self)
@@ -592,29 +657,29 @@
         }
 
         # Intro
-        $self->addLabel($self->table, '<b>Setup wizard (' . $self->getPageString() . ')</b>',
+        $self->addLabel($self->grid, '<b>Setup wizard (' . $self->getPageString() . ')</b>',
             0, 12, 0, 1);
 
         $self->addSimpleImage(
-            $self->table,
+            $self->grid,
             $axmud::CLIENT->getDialogueIcon('large'),
             undef,
             1, 6, 1, 12);
 
         # (Empty labels for spacing)
-        my $label = $self->addLabel($self->table, '',
+        my $label = $self->addLabel($self->grid, '',
             7, 10, 1, 4);
         $label->set_vexpand(TRUE);
 
-        $self->addLabel($self->table, '<b>Welcome to ' . $axmud::SCRIPT . '!</b>',
+        $self->addLabel($self->grid, '<b>Welcome to ' . $axmud::SCRIPT . '!</b>',
             7, 10, 4, 5);
         $self->addLabel(
-            $self->table,
+            $self->grid,
             '<i>Please take a few moments to set up your new MUD client</i>',
             7, 10, 5, 6);
 
         my $button = $self->addButton(
-            $self->table,
+            $self->grid,
             undef,
             "Ok, let's get started!",
             "Move on to the next page",
@@ -627,7 +692,7 @@
         });
 
         my $button2 = $self->addButton(
-            $self->table,
+            $self->grid,
             undef,
             "Use recommended settings for my system",
             "Close this window and use recommended settings",
@@ -650,7 +715,7 @@
         });
 
         my $button3 = $self->addButton(
-            $self->table,
+            $self->grid,
             undef,
             "Just use default settings",
             "Close this window and use default settings",
@@ -663,7 +728,7 @@
         });
 
         # (Empty labels for spacing)
-        my $label2 = $self->addLabel($self->table, '',
+        my $label2 = $self->addLabel($self->grid, '',
             7, 10, 9, 12);
         $label2->set_vexpand(TRUE);
 
@@ -672,7 +737,7 @@
 
     sub mainWinPage {
 
-        # 'Main' window page - called by $self->setupTable or ->updateTable
+        # 'Main' window page - called by $self->setupGrid or ->updateGrid
         #
         # Expected arguments
         #   (none besides $self)
@@ -693,22 +758,22 @@
         }
 
         # 'Main' windows
-        $self->addLabel($self->table, '<b>\'Main\' windows (' . $self->getPageString() . ')</b>',
+        $self->addLabel($self->grid, '<b>\'Main\' windows (' . $self->getPageString() . ')</b>',
             0, 12, 0, 1);
         $self->addLabel(
-            $self->table,
+            $self->grid,
             "<i>Choose how Axmud handles multiple simultaneous connections.</i>",
             1, 12, 1, 2);
 
         $self->addSimpleImage(
-            $self->table,
+            $self->grid,
             $axmud::SHARE_DIR . '/icons/setup/shared.png',
             undef,
             1, 3, 3, 5);
 
         my ($radioButton, $radioButton2, $group);
         ($group, $radioButton) = $self->addRadioButton(
-            $self->table,
+            $self->grid,
             undef,
             undef,
             undef,
@@ -717,29 +782,29 @@
             4, 5, 3, 4);
 
         $self->addLabel(
-            $self->table,
+            $self->grid,
             "All connections <b>share</b> a single \'main\' window.",
             5, 12, 3, 4);
 
         $self->addLabel(
-            $self->table,
+            $self->grid,
             "<i>This is a good choice if you have a small monitor, or if you often connect\n"
             . "to several worlds at a time. You can click the tabs at the top of each\n"
             . "window to switch between connections.</i>",
             5, 12, 4, 5);
 
         # (Empty labels for spacing)
-        $self->addLabel($self->table, '',
+        $self->addLabel($self->grid, '',
             1, 12, 5, 6);
 
         $self->addSimpleImage(
-            $self->table,
+            $self->grid,
             $axmud::SHARE_DIR . '/icons/setup/single.png',
             undef,
             1, 3, 6, 8);
 
         ($group, $radioButton2) = $self->addRadioButton(
-            $self->table,
+            $self->grid,
             undef,
             $group,
             undef,
@@ -748,12 +813,12 @@
             4, 5, 6, 7);
 
          $self->addLabel(
-            $self->table,
+            $self->grid,
             "All connections have <b>their own</b> \'main\' window.",
             5, 12, 6, 7);
 
          $self->addLabel(
-            $self->table,
+            $self->grid,
             "<i>This is a good choice if you have a large monitor (or several monitors),\n"
             . "or if you rarely connect to more than one world at a time.</i>",
             5, 12, 7, 8);
@@ -784,7 +849,7 @@
         });
 
         # (Empty labels for spacing)
-        my $label = $self->addLabel($self->table, '',
+        my $label = $self->addLabel($self->grid, '',
             1, 12, 9, 10);
         $label->set_vexpand(TRUE);
 
@@ -793,7 +858,7 @@
 
     sub zonemapPage {
 
-        # Zonemap page - called by $self->setupTable or ->updateTable
+        # Zonemap page - called by $self->setupGrid or ->updateGrid
         #
         # Expected arguments
         #   (none besides $self)
@@ -814,10 +879,10 @@
         }
 
         # Zonemaps
-        $self->addLabel($self->table, '<b>Zonemaps (' . $self->getPageString() . ')</b>',
+        $self->addLabel($self->grid, '<b>Zonemaps (' . $self->getPageString() . ')</b>',
             0, 12, 0, 1);
         $self->addLabel(
-            $self->table,
+            $self->grid,
             "<i>A zonemap is a plan for arranging windows on the desktop. Select the best zonemap"
             . " for your system.</i>",
             1, 12, 1, 2);
@@ -825,14 +890,14 @@
         if ($self->shareMainWinFlag) {
 
             $self->addSimpleImage(
-                $self->table,
+                $self->grid,
                 $axmud::SHARE_DIR . '/icons/setup/basic_zonemap.png',
                 undef,
                 1, 4, 2, 5);
 
             my ($radioButton, $radioButton2, $radioButton3, $group);
             ($group, $radioButton) = $self->addRadioButton(
-                $self->table,
+                $self->grid,
                 undef,
                 undef,
                 'Basic',
@@ -841,13 +906,13 @@
                 4, 6, 3, 4);
 
             $self->addSimpleImage(
-                $self->table,
+                $self->grid,
                 $axmud::SHARE_DIR . '/icons/setup/extended_zonemap.png',
                 undef,
                 7, 10, 2, 5);
 
             ($group, $radioButton2) = $self->addRadioButton(
-                $self->table,
+                $self->grid,
                 undef,
                 $group,
                 'Extended',
@@ -856,17 +921,17 @@
                 10, 12, 3, 4);
 
             # (Empty labels for spacing)
-            $self->addLabel($self->table, '',
+            $self->addLabel($self->grid, '',
                 1, 12, 5, 6);
 
             $self->addSimpleImage(
-                $self->table,
+                $self->grid,
                 $axmud::SHARE_DIR . '/icons/setup/widescreen_zonemap.png',
                 undef,
                 1, 4, 6, 9);
 
             ($group, $radioButton3) = $self->addRadioButton(
-                $self->table,
+                $self->grid,
                 undef,
                 $group,
                 'Widescreen',
@@ -930,14 +995,14 @@
         } else {
 
             $self->addSimpleImage(
-                $self->table,
+                $self->grid,
                 $axmud::SHARE_DIR . '/icons/setup/horizontal_zonemap.png',
                 undef,
                 1, 4, 2, 5);
 
             my ($radioButton, $radioButton2, $radioButton3, $group);
             ($group, $radioButton) = $self->addRadioButton(
-                $self->table,
+                $self->grid,
                 undef,
                 $group,
                 'Horizontal',
@@ -946,13 +1011,13 @@
                 4, 6, 3, 4);
 
             $self->addSimpleImage(
-                $self->table,
+                $self->grid,
                 $axmud::SHARE_DIR . '/icons/setup/vertical_zonemap.png',
                 undef,
                 7, 10, 2, 5);
 
             ($group, $radioButton2) = $self->addRadioButton(
-                $self->table,
+                $self->grid,
                 undef,
                 $group,
                 'Vertical',
@@ -961,17 +1026,17 @@
                 10, 12, 3, 4);
 
             # (Empty labels for spacing)
-            $self->addLabel($self->table, '',
+            $self->addLabel($self->grid, '',
                 1, 12, 5, 6);
 
             $self->addSimpleImage(
-                $self->table,
+                $self->grid,
                 $axmud::SHARE_DIR . '/icons/setup/no_zonemap.png',
                 undef,
                 1, 4, 6, 9);
 
             ($group, $radioButton3) = $self->addRadioButton(
-                $self->table,
+                $self->grid,
                 undef,
                 $group,
                 'No zonemap',
@@ -1014,16 +1079,108 @@
         }
 
         # (Empty labels for spacing)
-        my $label = $self->addLabel($self->table, '',
+        my $label = $self->addLabel($self->grid, '',
             1, 12, 9, 10);
         $label->set_vexpand(TRUE);
 
         return 1;
     }
 
+    sub worldPage {
+
+        # World page - called by $self->setupGrid or ->updateGrid
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my (
+            $count,
+            @columnList, @dataList,
+        );
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->worldPage', @_);
+        }
+
+        # Pre-configured worlds
+        $self->addLabel(
+            $self->grid, '<b>Pre-configured worlds (' . $self->getPageString() . ')</b>',
+            0, 12, 0, 1);
+        $self->addLabel(
+            $self->grid,
+            '<i>If you don\'t want a lot of pre-configured worlds, you can remove some of them'
+            . ' here.</i>',
+            1, 12, 1, 2);
+
+        # Add a simple list
+        @columnList = (
+            'Remove', 'bool',
+            'Profile', 'text',
+            'Pre-configured world', 'text',
+            'Host', 'text',
+            'Port', 'int',
+        );
+
+        $count = $axmud::CLIENT->ivPairs('worldProfHash');
+        foreach my $worldObj (
+            sort {lc($a->name) cmp lc($b->name)} ($axmud::CLIENT->ivValues('worldProfHash'))
+        ) {
+            push (@dataList,
+                FALSE,          # Don't delete the world profile, unless the user selects it
+                $worldObj->name,
+                $worldObj->longName,
+                $worldObj->dns,
+                $worldObj->port,
+            );
+        }
+
+        my $slWidget = $self->addSimpleList($self->grid, \@columnList, \@dataList, TRUE,
+            1, 12, 2, 11);
+
+        my $button = $self->addButton(
+            $self->grid,
+            undef,
+            'Remove all', 'Remove all pre-configured worlds',
+            1, 6, 11, 12);
+        $button->signal_connect('clicked' => sub {
+
+            for (my $i = 0; $i < $count; $i++) {
+
+                ${$slWidget->{data}}[$i][0] = TRUE;
+            }
+        });
+
+        my $button2 = $self->addButton(
+            $self->grid,
+            undef,
+            'Remove none', 'Retain all pre-configured worlds',
+            6, 12, 11, 12);
+        $button2->signal_connect('clicked' => sub {
+
+            for (my $i = 0; $i < $count; $i++) {
+
+                ${$slWidget->{data}}[$i][0] = FALSE;
+            }
+        });
+
+        # Update IVs
+        $self->ivPoke('slWidget', $slWidget);
+
+        return 1;
+    }
+
     sub taskPage {
 
-        # Task page - called by $self->setupTable or ->updateTable
+        # Task page - called by $self->setupGrid or ->updateGrid
         #
         # Expected arguments
         #   (none besides $self)
@@ -1047,45 +1204,45 @@
         }
 
         # Tasks
-        $self->addLabel($self->table, '<b>Tasks (' . $self->getPageString() . ')</b>',
+        $self->addLabel($self->grid, '<b>Tasks (' . $self->getPageString() . ')</b>',
             0, 12, 0, 1);
         $self->addLabel(
-            $self->table,
+            $self->grid,
             "<i>Choose which of " . $axmud::SCRIPT . "'s built-in tasks (if any) should start at"
             . " the beginning of every session.</i>",
             1, 10, 1, 2);
         my $button = $self->addButton(
-            $self->table,
+            $self->grid,
             undef,
             'Select all', 'Select/deselect all tasks',
             10, 12, 1, 2);
 
         # Recommended tasks
-        $self->addLabel($self->table, '<u>Recommended tasks</u>',
+        $self->addLabel($self->grid, '<u>Recommended tasks</u>',
             1, 12, 2, 3);
 
         $self->addSimpleImage(
-            $self->table,
+            $self->grid,
             $axmud::SHARE_DIR . '/icons/setup/status_task.png',
             undef,
             1, 2, 3, 5);
 
         my $checkButton = $self->addCheckButton(
-            $self->table,
+            $self->grid,
             'Status task',
             undef,
             $self->ivShow('taskInitHash', 'status'),
             TRUE,
             2, 6, 3, 4);
         my $checkButton2 = $self->addCheckButton(
-            $self->table,
+            $self->grid,
             'Show task window',
             undef,
             $self->ivShow('taskSettingHash', 'status_win'),
             TRUE,
             2, 4, 4, 5);
         my $checkButton3 = $self->addCheckButton(
-            $self->table,
+            $self->grid,
             'Show gauges',
             undef,
             $self->ivShow('taskSettingHash', 'status_gauge'),
@@ -1093,27 +1250,27 @@
             4, 6, 4, 5);
 
         $self->addLabel(
-            $self->table,
+            $self->grid,
             "<i>Tracks information about the character, such as their\n"
             . "health and energy points. It's essential for the gauges\n"
             . "that appear near the bottom of the 'main' window.</i>",
             1, 6, 6, 7);
 
         $self->addSimpleImage(
-            $self->table,
+            $self->grid,
             $axmud::SHARE_DIR . '/icons/setup/locator_task.png',
             undef,
             7, 8, 3, 5);
 
         my $checkButton4 = $self->addCheckButton(
-            $self->table,
+            $self->grid,
             'Locator task',
             undef,
             $self->ivShow('taskInitHash', 'locator'),
             TRUE,
             8, 12, 3, 4);
         my $checkButton5 = $self->addCheckButton(
-            $self->table,
+            $self->grid,
             'Show task window',
             undef,
             $self->ivShow('taskSettingHash', 'locator_win'),
@@ -1121,134 +1278,134 @@
             8, 12, 4, 5);
 
         $self->addLabel(
-            $self->table,
+            $self->grid,
             "<i>Tracks the character\'s position in the world. It\'s essential\n"
-            . "for the automapper, but neither the Locator nor Status task\n"
-            . "windows actually need to be open.</i>",
+            . "for the automapper, but neither the Locator nor Status\n"
+            . "task windows actually need to be open.</i>",
             7, 12, 6, 7);
 
         # Optional tasks
-        $self->addLabel($self->table, '<u>Optional tasks</u>',
+        $self->addLabel($self->grid, '<u>Optional tasks</u>',
             1, 12, 7, 8);
 
         $self->addSimpleImage(
-            $self->table,
+            $self->grid,
             $axmud::SHARE_DIR . '/icons/setup/attack_task.png',
             undef,
             1, 2, 8, 9);
 
         my $checkButton6 = $self->addCheckButton(
-            $self->table,
+            $self->grid,
             'Attack task',
             undef,
             $self->ivShow('taskInitHash', 'attack'),
             TRUE,
             2, 6, 8, 9);
         $self->addLabel(
-            $self->table,
+            $self->grid,
             "<i>Tracks the character\'s fights and interactions,\n"
             . "updating current profiles as it goes.</i>",
             2, 6, 9, 10);
 
         $self->addSimpleImage(
-            $self->table,
+            $self->grid,
             $axmud::SHARE_DIR . '/icons/setup/compass_task.png',
             undef,
             1, 2, 10, 11);
 
         my $checkButton7 = $self->addCheckButton(
-            $self->table,
+            $self->grid,
             'Compass task',
             undef,
             $self->ivShow('taskInitHash', 'compass'),
             TRUE,
             2, 6, 10, 11);
         $self->addLabel(
-            $self->table,
+            $self->grid,
             "<i>A convenient way to enable and disable keypad\n"
             . "macros for moving around the world.</i>",
             2, 6, 11, 12);
 
         $self->addSimpleImage(
-            $self->table,
+            $self->grid,
             $axmud::SHARE_DIR . '/icons/setup/divert_task.png',
             undef,
             1, 2, 12, 13);
 
         my $checkButton8 = $self->addCheckButton(
-            $self->table,
+            $self->grid,
             'Channels task, or',
             undef,
             $self->ivShow('taskInitHash', 'divert'),
             TRUE,
             2, 4, 12, 13);
         my $checkButton9 = $self->addCheckButton(
-            $self->table,
+            $self->grid,
             'Divert task',
             undef,
             $self->ivShow('taskInitHash', 'divert'),
             TRUE,
             4, 6, 12, 13);
         $self->addLabel(
-            $self->table,
+            $self->grid,
             "<i>Diverts social messages and tells to a separate\n"
             . "task window. Channels tasks have multiple tabs.</i>",
             2, 6, 13, 14);
 
         # (Right column)
         $self->addSimpleImage(
-            $self->table,
+            $self->grid,
             $axmud::SHARE_DIR . '/icons/setup/inventory_task.png',
             undef,
             7, 8, 8, 9);
 
         my $checkButton10 = $self->addCheckButton(
-            $self->table,
+            $self->grid,
             'Inventory task',
             undef,
             $self->ivShow('taskInitHash', 'inventory'),
             TRUE,
             8, 12, 8, 9);
         $self->addLabel(
-            $self->table,
+            $self->grid,
             "<i>Keeps track of the character's inventory and\n"
             . "displays a summary in its own task window.</i>",
             8, 12, 9, 10);
 
         $self->addSimpleImage(
-            $self->table,
+            $self->grid,
             $axmud::SHARE_DIR . '/icons/setup/launch_task.png',
             undef,
             7, 8, 10, 11);
 
         my $checkButton11 = $self->addCheckButton(
-            $self->table,
+            $self->grid,
             'Launch task',
             undef,
             $self->ivShow('taskInitHash', 'launch'),
             TRUE,
             8, 12, 10, 11);
         $self->addLabel(
-            $self->table,
+            $self->grid,
             "<i>A convenient method for selecting and running\n"
             . $axmud::BASIC_NAME . " scripts.</i>",
             8, 12, 11, 12);
 
         $self->addSimpleImage(
-            $self->table,
+            $self->grid,
             $axmud::SHARE_DIR . '/icons/setup/notepad_task.png',
             undef,
             7, 8, 12, 13);
 
         my $checkButton12 = $self->addCheckButton(
-            $self->table,
+            $self->grid,
             'Notepad task',
             undef,
             $self->ivShow('taskInitHash', 'notepad'),
             TRUE,
             8, 12, 12, 13);
         $self->addLabel(
-            $self->table,
+            $self->grid,
             "<i>Write your notes here. They will be waiting for\n"
             . "you, the next time you connect to the world.</i>",
             8, 12, 13, 14);
@@ -1385,7 +1542,7 @@
 
     sub sigilPage {
 
-        # Sigil page - called by $self->setupTable or ->updateTable
+        # Sigil page - called by $self->setupGrid or ->updateGrid
         #
         # Expected arguments
         #   (none besides $self)
@@ -1409,169 +1566,169 @@
         }
 
         # Commands
-        $self->addLabel($self->table, '<b>Commands (' . $self->getPageString() . ')</b>',
+        $self->addLabel($self->grid, '<b>Commands (' . $self->getPageString() . ')</b>',
             0, 12, 0, 1);
         $self->addLabel(
-            $self->table,
+            $self->grid,
             "<i>Some types of command start with a special character (sigil). Choose which sigils"
             . " to enable.</i>",
             1, 10, 1, 2);
         my $button = $self->addButton(
-            $self->table,
+            $self->grid,
             undef,
             'Select all', 'Select/deselect all sigils',
             10, 12, 1, 2);
 
         # Compulsory sigils
-        $self->addLabel($self->table, '<u>Compulsory sigils</u>',
+        $self->addLabel($self->grid, '<u>Compulsory sigils</u>',
             1, 12, 2, 3);
 
         $self->addSimpleImage(
-            $self->table,
+            $self->grid,
             $axmud::SHARE_DIR . '/icons/setup/client_sigil.png',
             undef,
             1, 2, 3, 4);
 
-        my $checkButton = $self->addCheckButton($self->table, 'Client commands', undef, TRUE, FALSE,
+        my $checkButton = $self->addCheckButton($self->grid, 'Client commands', undef, TRUE, FALSE,
             2, 6, 3, 4);
 
         $self->addLabel(
-            $self->table,
-            "<i>Client commands are processed by " . $axmud::SCRIPT . " directly, not sent\n"
-            . "to the world.</i>",
+            $self->grid,
+            "<i>Client commands are processed by " . $axmud::SCRIPT . " directly,\n"
+            . "not sent to the world.</i>",
             1, 6, 4, 5);
 
         $self->addSimpleImage(
-            $self->table,
+            $self->grid,
             $axmud::SHARE_DIR . '/icons/setup/forced_sigil.png',
             undef,
             7, 8, 3, 4);
 
         my $checkButton2 = $self->addCheckButton(
-            $self->table, 'Forced world commands', undef, TRUE, FALSE,
+            $self->grid, 'Forced world commands', undef, TRUE, FALSE,
             8, 12, 3, 4);
 
         $self->addLabel(
-            $self->table,
+            $self->grid,
             "<i>Everything after the commas is sent directly to the world;\n"
             . "useful for world commands beginning with an " . $axmud::SCRIPT . " sigil.</i>",
             7, 12, 4, 5);
 
         # Optional sigils
-        $self->addLabel($self->table, '<u>Optional sigils</u>',
+        $self->addLabel($self->grid, '<u>Optional sigils</u>',
             1, 12, 5, 6);
 
         $self->addSimpleImage(
-            $self->table,
+            $self->grid,
             $axmud::SHARE_DIR . '/icons/setup/echo_sigil.png',
             undef,
             1, 2, 6, 7);
 
         my $checkButton3 = $self->addCheckButton(
-            $self->table,
+            $self->grid,
             'Echo commands',
             undef,
             $self->ivShow('sigilHash', 'echo'),
             TRUE,
             2, 6, 6, 7);
         $self->addLabel(
-            $self->table,
+            $self->grid,
             "<i>Everything after the quote is displayed in the\n"
             . "'main' window as a system message.</i>",
             2, 6, 7, 8);
 
         $self->addSimpleImage(
-            $self->table,
+            $self->grid,
             $axmud::SHARE_DIR . '/icons/setup/perl_sigil.png',
             undef,
             1, 2, 8, 9);
 
         my $checkButton4 = $self->addCheckButton(
-            $self->table,
+            $self->grid,
             'Perl commands',
             undef,
             $self->ivShow('sigilHash', 'perl'),
             TRUE,
             2, 6, 8, 9);
         $self->addLabel(
-            $self->table,
+            $self->grid,
             "<i>Everything after the forward slash is executed\n"
             . "as a mini-Perl programme.</i>",
             2, 6, 9, 10);
 
         $self->addSimpleImage(
-            $self->table,
+            $self->grid,
             $axmud::SHARE_DIR . '/icons/setup/script_sigil.png',
             undef,
             1, 2, 10, 11);
 
         my $checkButton5 = $self->addCheckButton(
-            $self->table,
+            $self->grid,
             'Script commands',
             undef,
             $self->ivShow('sigilHash', 'script'),
             TRUE,
             2, 6, 10, 11);
         $self->addLabel(
-            $self->table,
+            $self->grid,
             "<i>A quick way to run " . $axmud::BASIC_NAME . " scripts. Everything\n"
             . "after the ampersand is the name of the script.</i>",
             2, 6, 11, 12);
 
         # (Right column)
         $self->addSimpleImage(
-            $self->table,
+            $self->grid,
             $axmud::SHARE_DIR . '/icons/setup/multi_sigil.png',
             undef,
             7, 8, 6, 7);
 
         my $checkButton6 = $self->addCheckButton(
-            $self->table,
+            $self->grid,
             'Multi commands',
             undef,
             $self->ivShow('sigilHash', 'multi'),
             TRUE,
             8, 12, 6, 7);
         $self->addLabel(
-            $self->table,
+            $self->grid,
             "<i>Sends a world command to every session (or every\n"
             . "session connected to the same world.)</i>",
             8, 12, 7, 8);
 
         $self->addSimpleImage(
-            $self->table,
+            $self->grid,
             $axmud::SHARE_DIR . '/icons/setup/speedwalk_sigil.png',
             undef,
             7, 8, 8, 9);
 
         my $checkButton7 = $self->addCheckButton(
-            $self->table,
+            $self->grid,
             'Speedwalk commands',
             undef,
             $self->ivShow('sigilHash', 'speed'),
             TRUE,
             8, 12, 8, 9);
         $self->addLabel(
-            $self->table,
+            $self->grid,
             "<i>Speedwalk commands can be simple, e.g. <b>.3n</b>\n"
             . "or complex, e.g. <b>3[close]wO(sw)(sw)</b></i>",
             8, 12, 9, 10);
 
         $self->addSimpleImage(
-            $self->table,
+            $self->grid,
             $axmud::SHARE_DIR . '/icons/setup/bypass_sigil.png',
             undef,
             7, 8, 10, 11);
 
         my $checkButton8 = $self->addCheckButton(
-            $self->table,
+            $self->grid,
             'Bypass commands',
             undef,
             $self->ivShow('sigilHash', 'bypass'),
             TRUE,
             8, 12, 10, 11);
         $self->addLabel(
-            $self->table,
+            $self->grid,
             "<i>Sends a command to the world immediately,\n"
             . "bypassing any queued world commands.</i>",
             8, 12, 11, 12);
@@ -1641,7 +1798,7 @@
 
     sub lastPage {
 
-        # Last page - called by $self->setupTable or ->updateTable
+        # Last page - called by $self->setupGrid or ->updateGrid
         #
         # Expected arguments
         #   (none besides $self)
@@ -1661,22 +1818,22 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->lastPage', @_);
         }
 
-        $self->addLabel($self->table, '<b>Finished (' . $self->getPageString() . ')</b>',
+        $self->addLabel($self->grid, '<b>Finished (' . $self->getPageString() . ')</b>',
             0, 12, 0, 1);
         $self->addLabel(
-            $self->table,
+            $self->grid,
             "<i>" . $axmud::SCRIPT . " isn't like other MUD clients. Click the help icon at any"
             . " time to read about its most important features.</i>",
             1, 12, 1, 2);
 
         $self->addSimpleImage(
-            $self->table,
+            $self->grid,
             $axmud::SHARE_DIR . '/icons/setup/help.png',
             undef,
             1, 12, 2, 11);
 
         $self->addLabel(
-            $self->table,
+            $self->grid,
             "<b>Click the Finish button to get started!</b>",
             1, 12, 11, 12,
             0.5, 0.5);
@@ -1698,6 +1855,9 @@
         { $_[0]->{zonemap} }
     sub widescreenFlag
         { $_[0]->{widescreenFlag} }
+
+    sub slWidget
+        { $_[0]->{slWidget} }
 
     sub taskInitHash
         { my $self = shift; return %{$self->{taskInitHash}}; }
@@ -1868,7 +2028,7 @@
             scroller                    => undef,       # Gtk3::ScrolledWindow
             hAdjustment                 => undef,       # Gtk3::Adjustment
             vAdjustment                 => undef,       # Gtk3::Adjustment
-            table                       => undef,       # Gtk3::Grid
+            grid                        => undef,       # Gtk3::Grid
             hBox                        => undef,       # Gtk3::HBox
             nextButton                  => undef,       # Gtk3::Button
             previousButton              => undef,       # Gtk3::Button
@@ -2396,7 +2556,7 @@
 
     sub introPage {
 
-        # Intro page - called by $self->setupTable or ->updateTable
+        # Intro page - called by $self->setupGrid or ->updateGrid
         #
         # Expected arguments
         #   (none besides $self)
@@ -2417,34 +2577,34 @@
         }
 
         # Intro
-        $self->addLabel($self->table, '<b>Locator wizard (' . $self->getPageString() . ')</b>',
+        $self->addLabel($self->grid, '<b>Locator wizard (' . $self->getPageString() . ')</b>',
             0, 12, 0, 1);
 
         my $image = $self->addSimpleImage(
-            $self->table,
+            $self->grid,
             $axmud::SHARE_DIR . '/icons/system/mapper_medium.png',
             undef,
             1, 6, 3, 10);
 
         $self->addLabel(
-            $self->table,
+            $self->grid,
             "This wizard teaches the current world profile and the\ncurrent dictionary how to read"
             . " room statements (also\ncalled \'room descriptions\') in the game world.",
             7, 12, 3, 4);
 
         $self->addLabel(
-            $self->table,
+            $self->grid,
             "The Locator task and the Automapper window <b>won\'t work\nat all</b> until the wizard"
             . " has finished (unless you are using a\npre-configured world).",
             7, 12, 5, 6);
 
         $self->addLabel(
-            $self->table,
+            $self->grid,
             "Use the <b>Next</b> and <b>Previous</b> buttons to navigate between\npages.",
             7, 12, 7, 8);
 
         $self->addLabel(
-            $self->table,
+            $self->grid,
             "(You can also configure world profiles and dictionaries\nby using their 'edit'"
             . " windows.)",
             7, 12, 9, 10);
@@ -2453,7 +2613,7 @@
         @list = (1, 2, 10, 11);
         foreach my $row (@list) {
 
-            $self->addLabel($self->table, '',
+            $self->addLabel($self->grid, '',
                 1, 12, $row, ($row + 1));
         }
 
@@ -2462,7 +2622,7 @@
 
     sub directionsPage {
 
-        # Directions page - called by $self->setupTable or ->updateTable
+        # Directions page - called by $self->setupGrid or ->updateGrid
         #
         # Expected arguments
         #   (none besides $self)
@@ -2490,40 +2650,40 @@
                             ($axmud::CLIENT->ivValues('constPhrasebookHash'));
 
         # Primary directions
-        $self->addLabel($self->table, '<b>Primary directions (' . $self->getPageString() . ')</b>',
+        $self->addLabel($self->grid, '<b>Primary directions (' . $self->getPageString() . ')</b>',
             0, 12, 0, 1);
 
         $self->addLabel(
-            $self->table,
+            $self->grid,
             $axmud::SCRIPT . "\'s primary directions are the eight usual cardinal directions"
             . " (\'north\', \'east\', \'southwest\'\nand so on), the eight lesser-used cardinal"
             . " directions (\'eastnortheast\', \'southsouthwest\' and\nso on) plus the directions"
             . " \'up\' and \'down\'.",
             1, 12, 1, 2);
         $self->addLabel(
-            $self->table,
+            $self->grid,
             "The Automapper window draws all exits as one of these primary directions. An exit"
             . " called\n\'north\' is always drawn pointing towards the top of the map,"
             . " but you can choose how exits\ncalled \'enter\', \'out\' and \'portal\' are drawn.",
             1, 12, 2, 3);
         $self->addLabel(
-            $self->table,
+            $self->grid,
             "If the world\'s language is not English, or if it uses a different set of primary"
             . " directions, you\ncan set them below. Otherwise, just click the <b>Next</b> button.",
             1, 12, 3, 4);
 
         # Column titles, used twice so that 'northnortheast' (etc) appear towards the bottom
-        $self->addLabel($self->table, '<u>Primary direction</u>',
+        $self->addLabel($self->grid, '<u>Primary direction</u>',
             1, 3, 4, 5);
-        $self->addLabel($self->table, '<u>Custom primary direction</u>',
+        $self->addLabel($self->grid, '<u>Custom primary direction</u>',
             3, 6, 4, 5);
-        $self->addLabel($self->table, '<u>Custom abbreviation</u>',
+        $self->addLabel($self->grid, '<u>Custom abbreviation</u>',
             6, 9, 4, 5);
-        $self->addLabel($self->table, '<u>Primary direction</u>',
+        $self->addLabel($self->grid, '<u>Primary direction</u>',
             1, 3, 15, 16);
-        $self->addLabel($self->table, '<u>Custom primary direction</u>',
+        $self->addLabel($self->grid, '<u>Custom primary direction</u>',
             3, 6, 15, 16);
-        $self->addLabel($self->table, '<u>Custom abbreviation</u>',
+        $self->addLabel($self->grid, '<u>Custom abbreviation</u>',
             6, 9, 15, 16);
 
         # Entry boxes for each custom direction. Compose a list of directions, using the usual
@@ -2547,11 +2707,11 @@
                 $row++;
             }
 
-            $self->addLabel($self->table, $standardDir,
+            $self->addLabel($self->grid, $standardDir,
                 1, 3, $row, ($row + 1));
 
             my $entry = $self->addEntry(
-                $self->table,
+                $self->grid,
                 undef,
                 $self->ivShow('customPrimaryDirHash', $standardDir),
                 TRUE,
@@ -2576,7 +2736,7 @@
             push (@entryList, $entry);
 
             my $entry2 = $self->addEntry(
-                $self->table,
+                $self->grid,
                 undef,
                 $self->ivShow('customPrimaryAbbrevHash', $standardDir),
                 TRUE,
@@ -2604,7 +2764,7 @@
 
         # Reset directions button
         my $button = $self->addButton(
-            $self->table,
+            $self->grid,
             undef,
             'Reset directions', 'Reset the lists of primary directions',
             9, 12, 4, 5);
@@ -2616,7 +2776,7 @@
             $row++;
 
             my $button2 = $self->addButton(
-                $self->table,
+                $self->grid,
                 undef,
                 $pbObj->targetName,
                 'Use ' . ucfirst($pbObj->name) . ' language directions',
@@ -2682,7 +2842,7 @@
 
     sub dictionaryPage {
 
-        # Dictionary page - called by $self->setupTable or ->updateTable
+        # Dictionary page - called by $self->setupGrid or ->updateGrid
         #
         # Expected arguments
         #   (none besides $self)
@@ -2710,34 +2870,34 @@
                             ($axmud::CLIENT->ivValues('constPhrasebookHash'));
 
         # Dictionary words
-        $self->addLabel($self->table, '<b>Dictionary words (' . $self->getPageString() . ')</b>',
+        $self->addLabel($self->grid, '<b>Dictionary words (' . $self->getPageString() . ')</b>',
             0, 12, 0, 1);
         $self->addLabel(
-            $self->table,
+            $self->grid,
             "In order to work out what\'s in the current room, " . $axmud::SCRIPT
             . " tries to analyse lines like these:",
             1, 12, 1, 2);
         $self->addLabel(
-            $self->table,
+            $self->grid,
             '<i>Three orcs, two lamps and a giraffe are here.</i>',
             2, 12, 2, 3);
         $self->addLabel(
-            $self->table,
+            $self->grid,
             "Many worlds use the exact words \'five\', \'the\' and \'or\', but if this world"
             . " uses another set of\nwords, you can enter them below.  Otherwise, just click the"
             . " <b>Next</b> button.",
             1, 12, 3, 4);
         $self->addLabel(
-            $self->table,
+            $self->grid,
             "<b>Hint:</b> Each box should contain one word (or phrase) per line.",
             1, 12, 4, 5);
 
         # First column
-        $self->addLabel($self->table, '<u>Articles</u>',
+        $self->addLabel($self->grid, '<u>Articles</u>',
             1, 3, 5, 6);
-        $self->addLabel($self->table, '<i>\'the\'</i>',
+        $self->addLabel($self->grid, '<i>\'the\'</i>',
             1, 3, 6, 7);
-        my $textView = $self->addTextView($self->table, undef, undef, undef, TRUE,
+        my $textView = $self->addTextView($self->grid, undef, undef, undef, TRUE,
             1, 3, 7, 11);
         my $buffer = $textView->get_buffer();
         if ($self->definiteList) {
@@ -2746,9 +2906,9 @@
         }
         $self->textViewSignalConnect($buffer, 'definiteList');
 
-        $self->addLabel($self->table, '<i>\'a / an\'</i>',
+        $self->addLabel($self->grid, '<i>\'a / an\'</i>',
             1, 3, 11, 12);
-        my $textView2 = $self->addTextView($self->table, undef, undef, undef, TRUE,
+        my $textView2 = $self->addTextView($self->grid, undef, undef, undef, TRUE,
             1, 3, 12, 16);
         my $buffer2 = $textView2->get_buffer();
         if ($self->indefiniteList) {
@@ -2758,11 +2918,11 @@
         $self->textViewSignalConnect($buffer2, 'indefiniteList');
 
         # Second column
-        $self->addLabel($self->table, '<u>Conjunctions</u>',
+        $self->addLabel($self->grid, '<u>Conjunctions</u>',
             3, 6, 5, 6);
-        $self->addLabel($self->table, '<i>\'and\'</i>',
+        $self->addLabel($self->grid, '<i>\'and\'</i>',
             3, 6, 6, 7);
-        my $textView3 = $self->addTextView($self->table, undef, undef, undef, TRUE,
+        my $textView3 = $self->addTextView($self->grid, undef, undef, undef, TRUE,
             3, 6, 7, 11);
         my $buffer3 = $textView3->get_buffer();
         if ($self->andList) {
@@ -2771,9 +2931,9 @@
         }
         $self->textViewSignalConnect($buffer3, 'andList');
 
-        $self->addLabel($self->table, '<i>\'or\'</i>',
+        $self->addLabel($self->grid, '<i>\'or\'</i>',
             3, 6, 11, 12);
-        my $textView4 = $self->addTextView($self->table, undef, undef, undef, TRUE,
+        my $textView4 = $self->addTextView($self->grid, undef, undef, undef, TRUE,
             3, 6, 12, 16);
         my $buffer4 = $textView4->get_buffer();
         if ($self->orList) {
@@ -2783,11 +2943,11 @@
         $self->textViewSignalConnect($buffer4, 'orList');
 
         # Third column
-        $self->addLabel($self->table, '<u>Numbers</u>',
+        $self->addLabel($self->grid, '<u>Numbers</u>',
             6, 9, 5, 6);
-        $self->addLabel($self->table, '<i>\'one\' - \'ten\'</i>',
+        $self->addLabel($self->grid, '<i>\'one\' - \'ten\'</i>',
             6, 9, 6, 7);
-        my $textView5 = $self->addTextView($self->table, undef, undef, undef, TRUE,
+        my $textView5 = $self->addTextView($self->grid, undef, undef, undef, TRUE,
             6, 9, 7, 16);
         my $buffer5 = $textView5->get_buffer();
         if ($self->numberList) {
@@ -2800,7 +2960,7 @@
 
         # Reset list button
         my $button = $self->addButton(
-            $self->table,
+            $self->grid,
             undef,
             'Reset words',
             'Reset the lists of words and phrases',
@@ -2814,7 +2974,7 @@
             $row++;
 
             my $button2 = $self->addButton(
-                $self->table,
+                $self->grid,
                 undef,
                 $pbObj->targetName,
                 'Use ' . ucfirst($pbObj->name) . ' language terms',
@@ -2862,7 +3022,7 @@
 
     sub statementsPage {
 
-        # Statements page - called by $self->setupTable or ->updateTable
+        # Statements page - called by $self->setupGrid or ->updateGrid
         #
         # Expected arguments
         #   (none besides $self)
@@ -2879,75 +3039,75 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->statementsPage', @_);
         }
 
-        $self->addLabel($self->table, '<b>Room statements (' . $self->getPageString() . ')</b>',
+        $self->addLabel($self->grid, '<b>Room statements (' . $self->getPageString() . ')</b>',
             0, 12, 0, 1);
         $self->addLabel(
-            $self->table,
+            $self->grid,
             "In " . $axmud::SCRIPT . " terminology, a \'room statement\' is a complete description"
             . " of a room. Each statement\nconsists of several different components which occur"
             . " in a predictable order.",
             1, 12, 1, 2);
         $self->addLabel(
-            $self->table,
+            $self->grid,
             $axmud::SCRIPT . " distinguishes between \'verbose\', \'short verbose\' and \'brief\'"
             . " statements. The components\nof a \'verbose\' room statement usually include:",
             1, 12, 2, 3);
 
         # Example room taken from the DeadSouls mudlib
-        $self->addLabel($self->table, "<b>The room title</b>",
+        $self->addLabel($self->grid, "<b>The room title</b>",
             1, 4, 3, 4);
-        $self->addLabel($self->table, "<i>Village Road Intersection</i>",
+        $self->addLabel($self->grid, "<i>Village Road Intersection</i>",
             5, 12, 3, 4);
 
-        $self->addLabel($self->table, "<b>The room description</b>",
+        $self->addLabel($self->grid, "<b>The room description</b>",
             1, 4, 4, 5);
         $self->addLabel(
-            $self->table,
+            $self->grid,
             "<i>You are in the main intersection of the village. Saquivor\nroad extends north and"
             . " south, intersected east to west\nby a road that leads west toward a wilderness, and"
             . " east\ntoward shore.</i>",
             5, 12, 4, 5);
 
-        $self->addLabel($self->table, "<b>The special contents list</b>",
+        $self->addLabel($self->grid, "<b>The special contents list</b>",
             1, 4, 5, 6);
-        $self->addLabel($self->table, "<i>There is a sign here you can read.</i>",
+        $self->addLabel($self->grid, "<i>There is a sign here you can read.</i>",
             5, 12, 5, 6);
 
-        $self->addLabel($self->table, "<b>The exit list</b>",
+        $self->addLabel($self->grid, "<b>The exit list</b>",
             1, 4, 6, 7);
-        $self->addLabel($self->table, "<i>Obvious exits: south, north, east, west</i>",
+        $self->addLabel($self->grid, "<i>Obvious exits: south, north, east, west</i>",
             5, 12, 6, 7);
 
-        $self->addLabel($self->table, "<b>The contents list</b>",
+        $self->addLabel($self->grid, "<b>The contents list</b>",
             1, 4, 7, 8);
-        $self->addLabel($self->table, "<i>A great clock tower is here.</i>",
+        $self->addLabel($self->grid, "<i>A great clock tower is here.</i>",
             5, 12, 7, 8);
 
         $self->addLabel(
-            $self->table,
+            $self->grid,
             "A \'brief\' room statement often includes the following components:",
             1, 12, 8, 9);
 
         # Imaginary example
-        $self->addLabel($self->table, "<b>Room title/exit list</b>",
+        $self->addLabel($self->grid, "<b>Room title/exit list</b>",
             1, 4, 9, 10);
-        $self->addLabel($self->table, "<i>Main intersection [s, n, e, w]</i>",
+        $self->addLabel($self->grid, "<i>Main intersection [s, n, e, w]</i>",
             5, 12, 9, 10);
 
-        $self->addLabel($self->table, "<b>The contents list</b>",
+        $self->addLabel($self->grid, "<b>The contents list</b>",
             1, 4, 10, 11);
-        $self->addLabel($self->table, "<i>A great clock tower is here.</i>",
+        $self->addLabel($self->grid, "<i>A great clock tower is here.</i>",
             5, 12, 10, 11);
 
         $self->addLabel(
-            $self->table,
+            $self->grid,
             "Alternatively, some worlds allow you to use \'short verbose\' room statements, which"
             . " are usually\njust like \'verbose\' room statements, but without the room"
             . " description component.",
             1, 12, 11, 12);
 
         $self->addLabel(
-            $self->table,
+            $self->grid,
             "<b>You should now type the world\'s \'look\' command (or simply move to another room)"
             . "\nso that a <u>whole room statement</u> is visible - when you\'re ready, click on"
             . " \'Next\'.</b>",
@@ -2958,7 +3118,7 @@
 
     sub capturePage {
 
-        # Capture page - called by $self->setupTable or ->updateTable
+        # Capture page - called by $self->setupGrid or ->updateGrid
         #
         # Expected arguments
         #   (none besides $self)
@@ -2983,29 +3143,29 @@
 
         # Add initial labels
         $self->addLabel(
-            $self->table,
+            $self->grid,
             '<b>Room statement capture (' . $self->getPageString() . ')</b>',
             0, 12, 0, 1);
         $self->addLabel(
-            $self->table,
+            $self->grid,
             "Starting from the top, please identify the component to which every line belongs.",
             1, 12, 1, 2);
 
         # Add some widgets immediately below the labels
         my $button = $self->addButton(
-            $self->table,
+            $self->grid,
             undef,
             'Update lines',
             'Use the most recently-received lines',
             1, 3, 2, 3);
         my $button2 = $self->addButton(
-            $self->table,
+            $self->grid,
             undef,
             'More lines',
             'Use more lines',
             3, 5, 2, 3);
         my $button3 = $self->addButton(
-            $self->table,
+            $self->grid,
             undef,
             'Fewer lines',
             'Use fewer lines',
@@ -3013,7 +3173,7 @@
 
         my ($radioButton, $radioButton2, $radioButton3, $group);
         ($group, $radioButton) = $self->addRadioButton(
-            $self->table,
+            $self->grid,
             undef,
             undef,
             'Verbose',
@@ -3021,7 +3181,7 @@
             TRUE,
             8, 10, 2, 3);
         ($group, $radioButton2) = $self->addRadioButton(
-            $self->table,
+            $self->grid,
             undef,
             $group,
             'Short verbose',
@@ -3029,7 +3189,7 @@
             TRUE,
             10, 11, 2, 3);
         ($group, $radioButton3) = $self->addRadioButton(
-            $self->table,
+            $self->grid,
             undef,
             $group,
             'Brief',
@@ -3209,26 +3369,26 @@
             );
         }
 
-        # If any labels/entries/combo boxes have already been drawn, remove them from the table
+        # If any labels/entries/combo boxes have already been drawn, remove them from the grid
         if (@$labelListRef) {
 
             foreach my $label (@$labelListRef) {
 
-                $axmud::CLIENT->desktopObj->removeWidget($self->table, $label);
+                $axmud::CLIENT->desktopObj->removeWidget($self->grid, $label);
             }
 
             @$labelListRef = ();
 
             foreach my $entry (@$entryListRef) {
 
-                $axmud::CLIENT->desktopObj->removeWidget($self->table, $entry);
+                $axmud::CLIENT->desktopObj->removeWidget($self->grid, $entry);
             }
 
             @$entryListRef = ();
 
             foreach my $comboBox (@$comboListRef) {
 
-                $axmud::CLIENT->desktopObj->removeWidget($self->table, $comboBox);
+                $axmud::CLIENT->desktopObj->removeWidget($self->grid, $comboBox);
             }
 
             @$comboListRef = ();
@@ -3240,12 +3400,12 @@
 
             $row++;
 
-            my $label = $self->addLabel($self->table, '#' . ($line + 1),
+            my $label = $self->addLabel($self->grid, '#' . ($line + 1),
                 1, 2, $row, ($row + 1));
 
             push (@$labelListRef, $label);
 
-            my $entry = $self->addEntry($self->table, undef, undef, TRUE,
+            my $entry = $self->addEntry($self->grid, undef, undef, TRUE,
                 2, 9, $row, ($row + 1),
                 40);    # Fixed width
             # (Rather than desensitising the entry boxes, just make them un-editable)
@@ -3277,7 +3437,7 @@
                 push (@comboList, $self->ivShow('componentTypeHash', $component));
             }
 
-            my $comboBox = $self->addComboBox($self->table, undef, \@comboList, undef,
+            my $comboBox = $self->addComboBox($self->grid, undef, \@comboList, undef,
                 9, 12, $row, ($row + 1));
 
             push (@$comboListRef, $comboBox);
@@ -3533,7 +3693,7 @@
 
     sub analysisPage {
 
-        # Analysis page - called by $self->setupTable or ->updateTable
+        # Analysis page - called by $self->setupGrid or ->updateGrid
         #
         # Expected arguments
         #   (none besides $self)
@@ -3553,7 +3713,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->analysisPage', @_);
         }
 
-        $self->addLabel($self->table, '<b>Analysis (' . $self->getPageString() . ')</b>',
+        $self->addLabel($self->grid, '<b>Analysis (' . $self->getPageString() . ')</b>',
             0, 12, 0, 1);
 
         # Perform the analysis of the data gathered in the previous page
@@ -3562,17 +3722,17 @@
         # Analysis failed
         if (! $result) {
 
-            $self->addLabel($self->table, 'Room statement analysis <u>FAILED</u>. Failure message:',
+            $self->addLabel($self->grid, 'Room statement analysis <u>FAILED</u>. Failure message:',
                 1, 12, 1, 2);
-            $self->addLabel($self->table, '<i>' . $msg . '</i>',
+            $self->addLabel($self->grid, '<i>' . $msg . '</i>',
                 1, 12, 2, 3);
             $self->addLabel(
-                $self->table,
+                $self->grid,
                 "Try analysing a different room statement. Send your character to the new room,"
                 . " then click\nthe <b>\'Previous\'</b> button to return to the previous page.",
                 1, 12, 3, 4);
             $self->addLabel(
-                $self->table,
+                $self->grid,
                 "(N.B. The wizard uses a set of rules which are stricter than the normal rules. If"
                 . " you want to\ndo something that\'s not allowed here, you can try editing the"
                 . " world profile directly\nusing its 'edit' window.)",
@@ -3585,7 +3745,7 @@
 
                 # Allow moving on to the last page
                 $self->addLabel(
-                    $self->table,
+                    $self->grid,
                     "If you\'re happy to use the results of previous analyses, click the"
                     . " <b>\'Next\'</b> button to complete the\nsetup process.",
                     1, 12, 5, 6);
@@ -3602,7 +3762,7 @@
             # Add a few empty labels, so that the paragraphs in the window aren't spaced so oddly
             for (my $row = 6; $row < 12; $row++) {
 
-                $self->addLabel($self->table, '',
+                $self->addLabel($self->grid, '',
                     1, 12, $row, ($row + 1),
                 );
             }
@@ -3621,21 +3781,21 @@
             }
 
             $self->addLabel(
-                $self->table,
+                $self->grid,
                 "$string room statement analysis <u>successful</u>. If the results seems to be in"
                 . " order, click the <b>\'Next\'</b>\nbutton to see the rest of the analysis.",
                 1, 12, 1, 2);
             $self->addLabel(
-                $self->table,
+                $self->grid,
                 "Otherwise, try analysing a different room statement. Send your character to the"
                 . " new room, then\nclick the <b>\'Previous\'</b> button to return to the previous"
                 . " page.",
                 1, 12, 2, 3);
 
             # Left column
-            $self->addLabel($self->table, '<i>Room title</i>',
+            $self->addLabel($self->grid, '<i>Room title</i>',
                 1, 6, 3, 4);
-            my $entry = $self->addEntry($self->table, undef, undef, TRUE,
+            my $entry = $self->addEntry($self->grid, undef, undef, TRUE,
                 1, 6, 4, 5);
             $entry->set_editable(FALSE);
             if ($self->ivExists('analysisHash', 'verb_title')) {
@@ -3648,31 +3808,28 @@
             # Add a few empty labels below the entry for padding
             for (my $row = 5; $row < 7; $row++) {
 
-                $self->addLabel($self->table, '',
+                $self->addLabel($self->grid, '',
                     1, 6, $row, ($row + 1),
                 );
             }
 
-            $self->addLabel($self->table, '<i>Verbose description</i>',
+            $self->addLabel($self->grid, '<i>Verbose description</i>',
                 1, 6, 7, 8);
-            my $textView = $self->addTextView($self->table, undef, undef, undef, FALSE,
-                1, 6, 8, 11,
-                -1, 130);           # Fixed height
+            my $textView = $self->addTextView($self->grid, undef, undef, undef, FALSE,
+                1, 6, 8, 11);
             $self->updateTextView($textView, 'verb_descrip');
 
             # Right column
-            $self->addLabel($self->table, '<i>Exit list</i>',
+            $self->addLabel($self->grid, '<i>Exit list</i>',
                 6, 12, 3, 4);
-            my $textView2 = $self->addTextView($self->table, undef, undef, undef, FALSE,
-                6, 12, 4, 7,
-                -1, 130);           # Fixed height
+            my $textView2 = $self->addTextView($self->grid, undef, undef, undef, FALSE,
+                6, 12, 4, 7);
             $self->updateTextView($textView2, 'verb_exit');
 
-            $self->addLabel($self->table, '<i>Individual exits</i>',
+            $self->addLabel($self->grid, '<i>Individual exits</i>',
                 6, 12, 7, 8);
-            my $textView3 = $self->addTextView($self->table, undef, undef, undef, FALSE,
-                6, 12, 8, 11,
-                -1, 130);           # Fixed height
+            my $textView3 = $self->addTextView($self->grid, undef, undef, undef, FALSE,
+                6, 12, 8, 11);
             if ($self->analysisExitList) {
 
                 my $buffer3 = $textView3->get_buffer();
@@ -3689,7 +3846,7 @@
             $self->ivIncrement('analysisCount');
 
             $self->addLabel(
-                $self->table,
+                $self->grid,
                 "Brief room statement analysis <u>successful</u>.",
                 1, 12, 1, 2);
 
@@ -3716,15 +3873,15 @@
                 # (The instructions don't need to be repeated, after the user has completed this
                 #   page once before)
                 $self->addLabel(
-                    $self->table,
+                    $self->grid,
                     "Please confirm which part of the line containing the room title and exit list"
                     . " is the room title\nitself, then click the <b>\'Test\'</b> button. For"
                     . " example, in the line:",
                     1, 12, 2, 3);
-                $self->addLabel($self->table, "<i>Town Centre (n, s, e, w)</i>",
+                $self->addLabel($self->grid, "<i>Town Centre (n, s, e, w)</i>",
                     2, 12, 3, 4);
                 $self->addLabel(
-                    $self->table,
+                    $self->grid,
                     "...you should copy and paste the <u>Town Centre</u> part (but not the first"
                     . " bracket) into the box below.",
                     1, 12, 4, 5);
@@ -3744,27 +3901,27 @@
 
             if ($component eq 'brief_title_exit') {
 
-                $self->addLabel($self->table, 'Room title / exit list',
+                $self->addLabel($self->grid, 'Room title / exit list',
                     1, 3, $row, ($row + 1));
 
             } elsif ($component eq 'brief_exit_title') {
 
-                $self->addLabel($self->table, 'Exit list / room title',
+                $self->addLabel($self->grid, 'Exit list / room title',
                     1, 3, $row, ($row + 1));
 
             } else {
 
-                $self->addLabel($self->table, 'Exit list',
+                $self->addLabel($self->grid, 'Exit list',
                     1, 3, $row, ($row + 1));
             }
 
-            my $entry = $self->addEntry($self->table, undef, $bufferObj->modLine, TRUE,
+            my $entry = $self->addEntry($self->grid, undef, $bufferObj->modLine, TRUE,
                 4, 12, $row, ($row + 1));
             $entry->set_editable(FALSE);
 
-            $self->addLabel($self->table, 'Room title part',
+            $self->addLabel($self->grid, 'Room title part',
                 1, 3, ($row + 1), ($row + 2));
-            my $entry2 = $self->addEntry($self->table, undef, undef, TRUE,
+            my $entry2 = $self->addEntry($self->grid, undef, undef, TRUE,
                 4, 12, ($row + 1), ($row + 2));
 
             # If this page has already been completed, we can fill in the room title part
@@ -3808,7 +3965,7 @@
             }
 
             $button = $self->addButton(
-                $self->table,
+                $self->grid,
                 undef,
                 'Test',
                 'Test the line containing the list of exits',
@@ -3816,22 +3973,22 @@
             # ->signal_connect follows...
 
             # Middle left column
-            $self->addLabel($self->table, '<i>Room title</i>',
+            $self->addLabel($self->grid, '<i>Room title</i>',
                 1, 6, ($row + 3), ($row + 4));
-            my $entry3 = $self->addEntry($self->table, undef, undef, TRUE,
+            my $entry3 = $self->addEntry($self->grid, undef, undef, TRUE,
                 1, 6, ($row + 4), ($row + 5));
             $entry3->set_editable(FALSE);
 
             # Middle right column
-            $self->addLabel($self->table, '<i>Individual exits</i>',
+            $self->addLabel($self->grid, '<i>Individual exits</i>',
                 6, 12, ($row + 3), ($row + 4));
-            my $entry4 = $self->addEntry($self->table, undef, undef, TRUE,
+            my $entry4 = $self->addEntry($self->grid, undef, undef, TRUE,
                 6, 12, ($row + 4), ($row + 5));
             $entry4->set_editable(FALSE);
 
             # Bottom portion
             $self->addLabel(
-                $self->table,
+                $self->grid,
                 "If the results seem to be in order, click the <b>\'Next\'</b> button. Otherwise,"
                 . " try analysing a\ndifferent room statement. Send your character to the new room,"
                 . " then click the <b>\'Previous\'</b> button.",
@@ -3842,14 +3999,14 @@
                 # Add a few empty labels to make the spacing between widgets better
                 for (my $count = ($row + 5); $count < ($row + 9); $count++) {
 
-                    $self->addLabel($self->table, '',
+                    $self->addLabel($self->grid, '',
                         1, 12, $count, ($count + 1));
                 }
 
             } else {
 
                 # Add just a single label to make the spacing between widgets better
-                $self->addLabel($self->table, '',
+                $self->addLabel($self->grid, '',
                     1, 12, ($row + 5), ($row + 6));
             }
 
@@ -3991,7 +4148,7 @@
 
     sub analysis2Page {
 
-        # Analysis2 page - called by $self->setupTable or ->updateTable
+        # Analysis2 page - called by $self->setupGrid or ->updateGrid
         #
         # Expected arguments
         #   (none besides $self)
@@ -4012,24 +4169,24 @@
         }
 
         # Contents analysis
-        $self->addLabel($self->table, '<b>Contents analysis (' . $self->getPageString() . ')</b>',
+        $self->addLabel($self->grid, '<b>Contents analysis (' . $self->getPageString() . ')</b>',
             0, 12, 0, 1);
         $self->addLabel(
-            $self->table,
+            $self->grid,
             $axmud::SCRIPT . " needs some more details so it can analyse lists of objects. For"
             . " example, in the line:",
             1, 12, 1, 2);
         $self->addLabel(
-            $self->table,
+            $self->grid,
             '<i>Three orcs, two lamps and a giraffe are here.</i>',
             2, 12, 2, 3);
         $self->addLabel(
-            $self->table,
+            $self->grid,
             "..." . $axmud::SCRIPT . " needs to know that the pattern <i>\'are here\'</i> means"
             . " that there are objects in this room.",
             1, 12, 3, 4);
         $self->addLabel(
-            $self->table,
+            $self->grid,
             "Please examine the contents list on the left (it will be empty if you didn\'t allocate"
             . " any contents).\nIf the box on the right doesn\'t contain the correct patterns"
             . " (regular expressions), you can add them now.",
@@ -4042,11 +4199,10 @@
         }
 
         # Left column
-        $self->addLabel($self->table, '<i>Room statement\'s contents list</i>',
+        $self->addLabel($self->grid, '<i>Room statement\'s contents list</i>',
             1, 6, 5, 6);
-        my $textView = $self->addTextView($self->table, undef, undef, undef, FALSE,
-            1, 6, 6, 7,
-            -1, 110);
+        my $textView = $self->addTextView($self->grid, undef, undef, undef, FALSE,
+            1, 6, 6, 7);
         my $buffer = $textView->get_buffer();
         if ($component && ($component eq 'verb_content' || $component eq 'brief_content')) {
 
@@ -4054,11 +4210,10 @@
         }
 
         # Right column
-        $self->addLabel($self->table, '<i>Marker patterns (e.g. \'is here.\')</i>',
+        $self->addLabel($self->grid, '<i>Marker patterns (e.g. \'is here.\')</i>',
             6, 12, 5, 6);
-        my $textView2 = $self->addTextView($self->table, undef, undef, undef, TRUE,
-            6, 12, 6, 7,
-            -1, 110);
+        my $textView2 = $self->addTextView($self->grid, undef, undef, undef, TRUE,
+            6, 12, 6, 7);
         my $buffer2 = $textView2->get_buffer();
         if ($self->markerList) {
 
@@ -4070,22 +4225,21 @@
         if ($component) {
 
             $self->addLabel(
-                $self->table,
+                $self->grid,
                 "If you like, you can test the patterns by clicking the <b>\'Test\'</b> button."
                 . " When you\'re satisfied,\nclick the <b>\'Next\'</b> button at the bottom of the"
                 . " window.",
                 1, 9, 7, 8);
             my $button = $self->addButton(
-                $self->table,
+                $self->grid,
                 undef,
                 'Test',
                 'Test the contents patterns',
                 9, 12, 7, 8);
             # ->signal_connect appears just below...
 
-            my $textView3 = $self->addTextView($self->table, undef, undef, undef, FALSE,
-                1, 12, 8, 9,
-                -1, 110);
+            my $textView3 = $self->addTextView($self->grid, undef, undef, undef, FALSE,
+                1, 12, 8, 9);
             my $buffer3 = $textView3->get_buffer();
 
             $button->signal_connect('clicked' => sub {
@@ -4124,7 +4278,7 @@
         } else {
 
             $self->addLabel(
-                $self->table,
+                $self->grid,
                 "When you\'re ready, click the \'Next\' button at the bottom of the window.",
                 1, 12, 7, 8);
         }
@@ -4134,7 +4288,7 @@
 
     sub lastPage {
 
-        # Last page - called by $self->setupTable or ->updateTable
+        # Last page - called by $self->setupGrid or ->updateGrid
         #
         # Expected arguments
         #   (none besides $self)
@@ -4154,24 +4308,24 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->lastPage', @_);
         }
 
-        $self->addLabel($self->table, '<b>Checklist (' . $self->getPageString() . ')</b>',
+        $self->addLabel($self->grid, '<b>Checklist (' . $self->getPageString() . ')</b>',
             0, 12, 0, 1);
         $self->addLabel(
-            $self->table,
+            $self->grid,
             "The world profile will now be updated to use the components displayed below. The"
             . " current\ndictionary will also be updated with any modifications you made earlier.",
             1, 12, 1, 2);
         $self->addLabel(
-            $self->table,
+            $self->grid,
             "Click <b>\'Finish\'</b> to complete the setup process or click <b>\'Previous\'</b> to"
             . " capture another room\nstatement.",
             1, 12, 2, 3);
 
         # Left column
-        $self->addLabel($self->table, '<u>Verbose statements</u>',
+        $self->addLabel($self->grid, '<u>Verbose statements</u>',
             1, 4, 3, 4);
         my $checkButton = $self->addCheckButton(
-            $self->table, 'Analysis complete', undef, FALSE, FALSE,
+            $self->grid, 'Analysis complete', undef, FALSE, FALSE,
             1, 4, 4, 5);
         if ($self->verboseComponentObjList) {
 
@@ -4179,18 +4333,17 @@
         }
 
         my $checkButton2 = $self->addCheckButton(
-            $self->table, 'Set in profile', undef, FALSE, FALSE,
+            $self->grid, 'Set in profile', undef, FALSE, FALSE,
             1, 4, 5, 6);
         if ($self->session->currentWorld->verboseComponentList) {
 
             $checkButton2->set_active(TRUE);
         }
 
-        $self->addLabel($self->table, 'Component list:',
+        $self->addLabel($self->grid, 'Component list:',
             1, 4, 6, 7);
-        my $textView = $self->addTextView($self->table, undef, undef, undef, FALSE,
-            1, 4, 7, 10,
-            -1, 220);
+        my $textView = $self->addTextView($self->grid, undef, undef, undef, FALSE,
+            1, 4, 7, 10);
         my $buffer = $textView->get_buffer();
         foreach my $componentObj ($self->verboseComponentObjList) {
 
@@ -4199,10 +4352,10 @@
         $buffer->set_text(join("\n", @verboseList));
 
         # Middle column
-        $self->addLabel($self->table, '<u>Short verbose statements</u>',
+        $self->addLabel($self->grid, '<u>Short verbose statements</u>',
             5, 8, 3, 4);
         my $checkButton3 = $self->addCheckButton(
-            $self->table, 'Analysis complete', undef, FALSE, FALSE,
+            $self->grid, 'Analysis complete', undef, FALSE, FALSE,
             5, 8, 4, 5);
         if ($self->shortComponentObjList) {
 
@@ -4210,18 +4363,17 @@
         }
 
         my $checkButton4 = $self->addCheckButton(
-            $self->table, 'Set in profile', undef, FALSE, FALSE,
+            $self->grid, 'Set in profile', undef, FALSE, FALSE,
             5, 8, 5, 6);
         if ($self->session->currentWorld->shortComponentList) {
 
             $checkButton4->set_active(TRUE);
         }
 
-        $self->addLabel($self->table, 'Component list:',
+        $self->addLabel($self->grid, 'Component list:',
             5, 8, 6, 7);
-        my $textView2 = $self->addTextView($self->table, undef, undef, undef, FALSE,
-            5, 8, 7, 10,
-            -1, 220);
+        my $textView2 = $self->addTextView($self->grid, undef, undef, undef, FALSE,
+            5, 8, 7, 10);
         my $buffer2 = $textView2->get_buffer();
         foreach my $componentObj ($self->shortComponentObjList) {
 
@@ -4230,10 +4382,10 @@
         $buffer2->set_text(join("\n", @shortList));
 
         # Right column
-        $self->addLabel($self->table, '<u>Brief statements</u>',
+        $self->addLabel($self->grid, '<u>Brief statements</u>',
             9, 12, 3, 4);
         my $checkButton5 = $self->addCheckButton(
-            $self->table, 'Analysis complete', undef, FALSE, FALSE,
+            $self->grid, 'Analysis complete', undef, FALSE, FALSE,
             9, 12, 4, 5);
         if ($self->briefComponentObjList) {
 
@@ -4241,18 +4393,17 @@
         }
 
         my $checkButton6 = $self->addCheckButton(
-            $self->table, 'Set in profile', undef, FALSE, FALSE,
+            $self->grid, 'Set in profile', undef, FALSE, FALSE,
             9, 12, 5, 6);
         if ($self->session->currentWorld->briefComponentList) {
 
             $checkButton6->set_active(TRUE);
         }
 
-        $self->addLabel($self->table, 'Component list:',
+        $self->addLabel($self->grid, 'Component list:',
             9, 12, 6, 7);
-        my $textView3 = $self->addTextView($self->table, undef, undef, undef, FALSE,
-            9, 12, 7, 10,
-            -1, 220);
+        my $textView3 = $self->addTextView($self->grid, undef, undef, undef, FALSE,
+            9, 12, 7, 10);
         my $buffer3 = $textView3->get_buffer();
         foreach my $componentObj ($self->briefComponentObjList) {
 

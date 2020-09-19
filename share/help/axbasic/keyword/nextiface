@@ -5,13 +5,14 @@ NEXTIFACE
 
    Notes:
       Whenever a trigger created by a SETTRIG statement fires, an 'interface
-         notification' is created.
+         notification' is created. The same thing happens when an alias, macro,
+         timer or hook created by SETALIAS, SETMACRO, SETTIMER or SETHOOK fires.
       The interface notification list contains all the notifications received
          but not yet processed. One of them - usually the first one in the
          list - is the 'current' notification.
          
       Axbasic functions like Ifacename$ () and Ifacenum () can be used to import
-         information about the trigger that caused the current notification.
+         information about the interface that caused the current notification.
       Once you have all the information you need, use a NEXTIFACE statement to
          remove that notification from the list (permanently).
       If the modified list is not empty, the first notification in the list is

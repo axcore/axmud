@@ -6,6 +6,8 @@ Ifacename$ ()
 
    Notes:
       The interface notification list contains all the notifications received,
-         and not yet processed, as the result of an earlier SETTRIG statement.
-      Returns the name of the active interface corresponding to the trigger that
-         fired. If there is no current notification, returns an empty string.
+         and not yet processed, as the result of an earlier SETTRIG, SETALIAS,
+         SETMACRO, SETTIMER or SETHOOK statement.
+      Returns the name of the active interface corresponding to the trigger,
+         alias (etc) that fired. If there is no current notification, returns an
+         empty string.

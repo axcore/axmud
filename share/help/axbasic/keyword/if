@@ -1,12 +1,15 @@
 IF condition THEN statement [ : statement ... ] 
    [ ELSE statement [ : statement ... ]]
-   
+IF condition THEN statement [ : statement ... ] 
+   [ ELSEIF condition [ : statement ... ]]
 IF condition THEN expression [ ELSE expression ]
 
 IF condition THEN
    statement
    statement
 ELSE IF condition THEN
+   statement
+ELSEIF condition THEN
    statement
 ELSE
    statement
@@ -21,12 +24,16 @@ END IF
       IF..THEN and IF..THEN..ELSE statements can occur either on a single line,
          or spread across multiple lines in a code block terminating with an
          END IF statement.
+      If the condition is false, then all statements after the following ELSE
+         are executed, even those separated by colon characters.
+         executed (including full statements after a colon character).
       In scripts with line numbers, these statements are interchangeable:
          10 IF number > 1 THEN GOTO 100
          10 IF number > 1 THEN 100
       If non-conditional expressions are used, they must evaluate to line 
          numbers or an error will occur. Complex expressions like '(x + 10) / 2' 
          can be used as well as simple line numbers like 100.
+      ELSE IF behaves exactly like ELSEIF.
 
    Availability:
       Multiple-line IF..END IF code blocks aren't available in scripts with
@@ -45,6 +52,14 @@ END IF
          PRINT "Number is between 5 and 100"
       END IF
 
+      ! Everything after the ELSE is executed, so this displays "more than"
+      LET number = 10
+      IF number < 10 THEN PRINT "less" ELSE PRINT "more" : PRINT " than"
+      ! Nothing after the ELSE is executed, so this doesn't display "less than"
+      LET number = 5
+      IF number < 10 THEN PRINT "less" ELSE PRINT "more" : PRINT " than"
+
+      ! An example of implied GOTO statements
       10 LET number = 5
       20 IF number > 10 THEN 100
       30 IF number > 1 THEN 200 ELSE 300

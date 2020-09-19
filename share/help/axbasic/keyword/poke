@@ -83,21 +83,21 @@ POKE ARRAY axmud-object-property, variable-name
       POKE "world.current.worldURL", url$
 
       ! Set the current world's dark room patterns (a list property)
-      LET size = 3
-      DIM patterns$ (size)
+      LET total = 3
+      DIM patterns$ (total)
       DATA "You cannot see", "You bump your head", "You stub your toe"
-      FOR a = 1 TO size
+      FOR a = 1 TO total
          READ patterns$ (a)
       NEXT a
       POKE ARRAY "world.current.darkRoomPatternList", patterns$
 
       ! Set the current world's currency conversion chart (a hash property)
-      LET size = 6
-      DIM pairs$ (size)
+      LET total = 6
+      DIM pairs$ (total)
       DATA "gold", 1
       DATA "silver", 0.5
       DATA "bronze", 0.1
-      FOR a = 1 TO size
+      FOR a = 1 TO total
          READ pairs$ (a)
       NEXT a
       POKE ARRAY "world.current.currencyHash", pairs$

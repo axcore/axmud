@@ -7,8 +7,10 @@ SETTRIG expression [ , expression ]
       A convenient way to create a trigger that launches another Axbasic script
          (or notifies this script's parent task) whenever it fires.
          
-      The first expression is the stimulus (a pattern). Axmud automatically
-         assigns its own name to dependent triggers.
+      The first expression is the stimulus (a pattern). For triggers, the
+         pattern is matched again lines of text received from the world.
+      (Axmud automatically assigns its own name to dependent triggers.)
+         
       If the second expression is specified, it should be the name of an Axbasic
          script to run immediately (without a parent task) when the trigger
          fires.
@@ -18,6 +20,12 @@ SETTRIG expression [ , expression ]
          (see the help for NEXTIFACE for more information).
       Also see the help for WAITTRIG.
 
+   Requires:
+      If the script is not being run as a task, a SETTRIG statement without a
+         second expression (specifying another script to run) is ignored (and no
+         error message is generated). Execution continues with the next
+         statement.
+         
    Examples:
       SETTRIG "The orc kills you"
       SETTRIG "You are ready to cross the bridge!", "cross_bridge"

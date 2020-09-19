@@ -65,7 +65,10 @@ PEEK ARRAY variable-name = axmud-object-property
          import an Axmud list into an Axbasic scalar variable using PEEK, 
          PEEKVALUES or PEEKNUMBER.
       Note that only PEEK can be used to return the object itself.
-
+      All Axbasic arrays have a maximum number of cells of 1,000,000. If the
+         PEEK statement exceeds this maximum, the excess values are not added to
+         the array (and no error message is generated).
+         
    Examples:
       ! Import a Perl object
       ! The value stored in object$ will be something like 
@@ -97,8 +100,8 @@ PEEK ARRAY variable-name = axmud-object-property
       ! First get the size of the Perl list 
       PEEKNUMBER size = "world.current.doorPatternList"
       ! Then import the Perl list into an Axbasic array
-      PEEK data$ = "world.current.doorPatternList"
+      PEEK stuff$ = "world.current.doorPatternList"
       ! Display each member of the list
       FOR a = 1 to size
-         PRINT data$(a)
+         PRINT stuff$(a)
       NEXT a

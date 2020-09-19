@@ -5,7 +5,8 @@ Ifacetype$ ()
 
    Notes:
       The interface notification list contains all the notifications received,
-         and not yet processed, as the result of an earlier SETTRIG statement.
-      At present, only triggers produce interface notifications, so only the
-         string "trigger" is returned. If there is no current notification,
-         returns an empty string.
+         and not yet processed, as the result of an earlier SETTRIG, SETALIAS,
+         SETMACRO, SETTIMER or SETHOOK statement.
+      Returns one of the following strings: "trigger", "alias", "macro",
+         "timer", "hook" or an empty string, if there is no current
+         notification.

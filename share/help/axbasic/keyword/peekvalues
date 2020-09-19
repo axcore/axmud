@@ -21,6 +21,10 @@ PEEKVALUES ARRAY variable-name = axmud-object-property
          and just one of the hash property's values is not a string, you'll get 
          an error.
 
+      All Axbasic arrays have a maximum number of cells of 1,000,000. If the
+         PEEKVALUES statement exceeds this maximum, the excess values are not
+         added to the array (and no error message is generated).
+         
    Examples:
       ! Store the values of a hash property in an Axbasic global array 
       ! The following two statements behave in exactly the same way

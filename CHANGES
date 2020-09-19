@@ -1,3 +1,221 @@
+v1.3.0 (19 Sep 2020)
+--------------------------------------------------------------------------------
+
+Pre-configured worlds
+- Three new pre-configured worlds: Godwars: Rebirth of Apocalypse, Lowlands and
+    Realms of Wonder
+- Updated hosts/ports for several pre-configured worlds
+- Patched the pre-configured world for RetroMUD, which could not detect exit
+    lists over several lines
+
+Text-to-speech improvements
+- This version contains numerous improvements for users with a visual
+    impairment, and for anyone else who wants to convert text to speech
+- On MS Windows, these improvements are no necessarily all working as they
+    should be. In particular, the Festival speech engine is now supported on MS
+    Windows, but does not work very well. espeak-ng does not appear to work on
+    Windows 7, but does work on Windows 10. This is an on-going effort and more
+    refinements will be added in future releases
+- Among the new features are these:
+- The MS Windows installer includes both eSpeak and espeak-ng. If you choose to
+    install espeak-ng, it is used as the default speech engine (in new
+    installations)
+- Text-to-speech does not cause Axmud to freeze any more
+- In the version of Axmud optimised for visually-impaired users, Axmud will
+    stop reading aloud when you select something or click a button. In the list
+    of worlds, you can press the page up/page down keys to skip 10 worlds at a
+    time
+- In the optimised version, Axmud now remembers the last 1000 lines of text
+    converted to speech, and you can replay them at any time
+- Use the left/right arrow keys to replay the previous/next line. Use the page
+    up/page down keys to skip 10 lines. Use the up/down keys to replay the
+    first/last line in memory. Use the tab key to replace the first line that
+    hasn't been read aloud yet. Press it again to skip to the end of the queue,
+    waiting for more text to be received from the world. Use the escape key to
+    silence whatever text is being read aloud right now
+- Use the home key to switch between replaying whole lines, or sentences, or
+    individual words. For sentences/words, the up/down keys play the first or
+    last sentence/word in the line
+- In the optimised version, for pre-configured worlds, Axmud won't read aloud
+    the command prompt (as it usually takes a long time). Use ';speech prompt
+    off' to disable this behaviour. You can hear the most recent prompt at any
+    time by using the end key (or by typing ;prompt)
+- As well as using those special keys, you can also use the new client commands
+    ;split, ;skip, ;unskip, ;first, ;last, ;resume, ;shutup and ;prompt
+- If you need the special keys for something else, you can release them with the
+    ;freekeys command
+- In the normal version of Axmud, you can enable the special keys by typing the
+    ;hijackkeys command
+
+Text-to-speech fixes
+- In the optimised version, text is not obscured when entering a password.
+    Fixed, and also removed the 16-character limit in the password box
+- In the optimised version, Axmud's messages about automatic saves are no longer
+    read aloud
+- In the optimised version, simplified the 'don't forget to ;login' message
+- In the optimised version, when trying to connect to a world without an
+    automatic login, stopped the annoying warning message about missions
+
+Axbasic new features
+- Added FOR EACH loops (works with one- and multi-dimensional arrays)
+- In programmes without line numbers, arrays can now have lower and upper
+    bounds. For example, you can use 'DIM data (10 to 20, 100)'. The default
+    lower bound is 1. In programmes with line numbers, you can't specify upper
+    and lower bounds; the lower bound is always 0. With line numbers (only), the
+    DIM statement is optional; an array will be created with cells numbered
+    0..10 if you don't use a DIM statement. See the help for DIM (or re-read the
+    tutorial) for more information about how this works
+- Added POP, PUSH, SHIFT and UNSHIFT statements for one-dimensional arrays
+    (stacks). An empty array (stack) can now be created with a 'DIM var ()'
+    statement
+- You can now get the size of an array with 'LET var = SIZE ...', and you can
+    get the number of dimensions with 'LET var = DIMENSIONS ...'
+- You can get the upper and lower bounds of an array dimension with
+    'LET var = UPPER ...' or with 'LET var = LOWER ...'
+- Added SETALIAS, SETMACRO, SETTIMER and SETHOOK, alongside the existing SETTRIG
+    statement
+- Added WAITALIAS, WAITMACRO, WAITTIMER and WAITHOOK, alongside the existing
+    WAITTRIG statement
+- Notifications from aliases now include the whole world command. As a result,
+    the Ifacedefined(), Ifacestrings(), Ifacepop$(), Ifaceselect$(),
+    Ifaceshift$() and Ifacetext$() functions have changed slightly. See also
+    the help for the new Ifacedata$() function (or re-read the tutorial, which
+    explains the changes)
+- Added the pseudo-function TAB (), using in PRINT statements in very ancient
+    BASIC programmes
+- ELSE IF can now also be spelled ELSEIF
+
+Axbasic fixes
+- Improved the code so that Axbasic scripts can be used comfortably in their own
+    task windows, when required. For example, INPUT statements are no longer
+    redirected into the main window. The task window was supposed to have a
+    command entry box by default, but usually didn't (fixed)
+- Axbasic got stuck in an infinite GOSUB..RETURN loop, when there were more
+    statements on the same line, after the GOSUB statment. The same problem
+    applied to other loop structures, including IF..THEN..ELSE, FOR..NEXT,
+    DO..UNTIL and WHILE..LOOP. Fixed them all
+- Fixed a problem that prevented all SELECT..CASE loops working. Any statements
+    after the SELECT statement (and on the same line) are now ignored
+- Fixed non-traditional handling of integers in PRINT statements, so that
+    ancient BASIC programmes that assumed the integer has trailing whitespace
+    (and leading whitespace, for non-negative integers) work correctly
+- Statements ending with a literal 0 value could not be interpreted correctly.
+    Fixed
+- In programmes with primitive line numbers, trailing whitespace at the end of
+    a line produced a syntax error. Fixed
+- Updated and improved a large number of Axbasic help files
+
+Major new features
+- In the automapper, maps can now be drawn without exits, except in the room
+    around the character's current location, for any selected rooms, and any
+    rooms marked the room flags 'blocked_room', 'avoid_room', 'mortal_danger',
+    'danger', 'world_centre', 'world_start', 'meet_point', 'main_route',
+    'minor_route', 'cross_route', 'arrow_route', 'wrong_route', 'portal',
+    'sign_post'. Setting this mode drastically reduces the drawing time for
+    extremely large maps (with thousands of rooms and tens of thousands of
+    exits). The mode can be applied to individual regions, or all regions
+- In that situation, exits can be re-drawn or re-obscured as the character moves
+    around the world (if you enable that particular feature)
+- Drawing exit ornaments can also be enabled and disabled in individual regions
+    now
+- In the automapper, regions can now have their own colour scheme (use a green
+    background for forests, or a black one for caves, and so on). All colours,
+    not just the map background colour, can be changed (it's up to you to make
+    sure that the results are not confusing). From the automapper menu,
+    select 'Regions > Colour schemes', or use the new client commands
+    ;addregionscheme, ;editregionscheme, ;renameregionscheme,
+    ;deleteregionscheme, ;listregionscheme
+- Added support for MNES (MUD NEW-ENVIRON Standard). Your real IP is not passed
+    to the world unless you explicitly enable that feature
+- Added support for xterm truecolour, though it has not been tested on a
+    real connection to a world (https://tintin.mudhalla.net/info/truecolor/).
+    TTYPE and MTTS negotiations now specify Axmud's support for xterm trucolour
+- Animated images (such as gifs) are now fully animated, when visible alongside
+    text in the main window or task windows. However, scaling of animated images
+    cannot be implemented at the present time. For all images, reduced the
+    padding size to the width/height of a text character. The correct placement
+    of an image in a line with text before or after it has been fixed
+
+Minor new features
+- The layout of the Connections window has been simplified a little, so that
+    it's not too small to fit in everything (on some systems)
+- The Connections window will now accept a host/port in the form
+    'deadmud.com:5555'
+- Added a new button to the main window's toolbar. Click it once to close the
+    current session (and disconnect from a world, if connected to one). Click it
+    again to close Axmud itself. Fixed several related problems and
+    inconsistencies, so that the user is prompted for a confirmation, no matter
+    which method of halting an individual session or the whole client they use
+- The automapper window now has separate toolbuttons for horizontal and vertical
+    exit lenghts. Updated the Axmud guide, which did not mention anything about
+    exit lengths
+- Added custom hook events. When you create a hook, you can use one of Axmud's
+    standard hook events, or specify a custom one. Custom hook events have
+    names that begin with an underline (underscore), to prevent conflicts with
+    any new (standard) hook events that might be introduced in future releases.
+    This new feature is of limited use, but might be useful in Axbasic scripts
+- For new installations, the setup wizard now provides a list of pre-
+    configured worlds, from which you can delete any that you don't want (use
+    ;restoreworld to get them back at a later date)
+- Map label styles are now visible in the object viewer window
+
+Major fixes
+- Fixed 'no such file in archive' errors on MS Windows when exporting a world
+    model file (i.e. when exporting a map)
+- Axmud obtains the user's IP address (when required) by contacting a lookup
+    server, but this did not work at all. Updated the list of servers, since
+    some were defunct, and fixed the code. You can now specify your own list of
+    lookup servers, if you want: see the new commands ;setuplookup,
+    ;resetlookup, ;listlookup and ;forcelookup
+- The object viewer windows was unable to display most help files. Fixed
+- If multiple sessions are connected to the same world (in online or offline
+    mode), they should share a world model (map). This is what happens when
+    the sessions start, but if you import a new world model (for example, in
+    the automapper window click 'File > Import/load world model...'), the new
+    model was not applied to all sessions. Fixed
+- Vastly improved the layout of the Compass task window (this fix will apply to
+    any similar window)
+- Fixed various problems with pseudo-windows (for example, task windows which
+    are placed inside the main window), which were not working at all
+
+Minor fixes
+- Fixed the Status task's attempts to set a non-existent character profile
+- The Locator task was not able to find a second block of coloured text in the
+    desired colour. Fixed
+- Fixed the broken ';backupdata -z' command
+- Fixed ';restoredata' command, when loading from a .zip file
+- MXP <SEND> tags containing entities besides &text; are now handled correctly
+- Fixed failure to capture a whole room description, marked with MXP tags, when
+    the tags are received by the client in separate packets, and in certain
+    other situations (makes the Realms of Wonder pre-configured world work
+    correctly)
+- Fixed an error for an MXP <IMAGE> tag that doesn't specify a filename
+- Fixed broken ;stopsession command, when typed in the main window's command
+    entry box
+- In the Connections window, fixed an error that could not display links to
+    TopMudSites (and other URLs with certain non-alphanumeric characters)
+- Fixed error caused when the log-writing functions are called with the wrong
+    arguments, and fixed a typo in them
+- Minor changes to various edit windows, preference windows and other minor
+    windows, so that they're not to small to fit their contents (on most
+    systems). Minor improvements to window aesthetics generally
+- In the main window's command entry box, a newline character (for example, in
+    text copied and pasted from a text editor) was mishandled. Fixed the code so
+    that 'score\Nsouth' is treated as two separate world commands
+- Several fixes to the Connections window, in case the user finds creative ways
+    of entering invalid values for the world name/host/port
+- Fixed improper response to invalid MSDP data. Axmud now ignores the invalid
+    data, rather than sending MSDP DONT to the server (this behaviour is not a
+    part of the MSDP specification) (Git #4)
+- Cleared up some confusion in the names allowed for map label styles. Names
+    can now be 1-16 characters long, and use any type of character (including
+    spaces)
+- For new installations, when the setup wizard is visible, the menu and
+    toolbuttons in the main window are no longer clickable
+- The peek/poke strings 'client.iv' and 'client.reserved' did not work. Fixed
+- In the client preferences window, Windows > Page 3, fixed the broken button
+    for setting the default winmap
+
 v1.2.041 (31 Jul 2019)
 --------------------------------------------------------------------------------
 

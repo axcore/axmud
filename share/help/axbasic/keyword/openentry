@@ -6,15 +6,16 @@ OPENENTRY
    Notes:
       If the script is being run from within a task, this statement asks the
          task to open a task window.
-      If the Axbasic script isn't being run from within a task, or if the task
-         window is already open, the OPENENTRY statement is ignored (and no
-         error message is generated). Execution continues immediately with the
-         next statement.
       Use the WRITEWIN statement to display text in the task window.
       Use the OPENWIN statement to open a task without an entry (input) box. The
          CLOSEWIN statement closes the task window regardless of whether it has
          an entry box, or not.
 
+   Requires:
+      If the script is not being run as a task, or if the task window is already
+         open, the OPENENTRY statement is ignored (and no error message is
+         generated). Execution continues with the next statement.
+   
    Examples:
       OPENENTRY
       WRITEWIN "Hello world!"

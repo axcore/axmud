@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2019 A S Lewis
+# Copyright (C) 2011-2020 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # Lesser Public License as published by the Free Software Foundation, either version 3 of the
@@ -126,8 +126,10 @@
         package Language::Axbasic::Statement::poketrue;
         package Language::Axbasic::Statement::pokeundef;
         package Language::Axbasic::Statement::pokeunshift;
+        package Language::Axbasic::Statement::pop;
         package Language::Axbasic::Statement::print;
         package Language::Axbasic::Statement::profile;
+        package Language::Axbasic::Statement::push;
         package Language::Axbasic::Statement::randomize;
         package Language::Axbasic::Statement::read;
         package Language::Axbasic::Statement::redim;
@@ -139,9 +141,14 @@
         package Language::Axbasic::Statement::revpath;
         package Language::Axbasic::Statement::select;
         package Language::Axbasic::Statement::send;
+        package Language::Axbasic::Statement::setalias;
         package Language::Axbasic::Statement::setgauge;
+        package Language::Axbasic::Statement::sethook;
+        package Language::Axbasic::Statement::setmacro;
         package Language::Axbasic::Statement::setstatus;
+        package Language::Axbasic::Statement::settimer;
         package Language::Axbasic::Statement::settrig;
+        package Language::Axbasic::Statement::shift;
         package Language::Axbasic::Statement::skipiface;
         package Language::Axbasic::Statement::sort;
         package Language::Axbasic::Statement::sortcase;
@@ -153,6 +160,7 @@
         package Language::Axbasic::Statement::sub;
         package Language::Axbasic::Statement::titlewin;
         package Language::Axbasic::Statement::unflashwin;
+        package Language::Axbasic::Statement::unshift;
         package Language::Axbasic::Statement::until;
         package Language::Axbasic::Statement::waitactive;
         package Language::Axbasic::Statement::waitalive;
@@ -450,6 +458,8 @@
         return 1;
     }
 
+    # Functions used by POKE... and PEEK... statements
+
     sub parsePeek {
 
         # Called by $self->parse for all PEEK... statements (including PEEK itself)
@@ -502,7 +512,7 @@
             $varName = $token->tokenText;
 
             # Look up the LA::Variable. Use the local variable, if it exists. Otherwise use the
-            #   global variable, if it exists. Otherwise, create a global variable.
+            #   global variable, if it exists. Otherwise, create a global variable
             # (If the user wants to PEEK a Perl list/hash into an Axbasic array that's a local
             #   variable, they can use a DIM LOCAL statement before this one)
             if (! $arrayFlag) {
@@ -879,13 +889,15 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->importAsArray', @_);
         }
 
-        # Re-dimension the array to match the size of @array
-        $varObj->dimension(scalar @array);
+        # Re-dimension the array to match the size of @array (and to make sure it has only one
+        #   dimension)
+        $varObj->dimension(0, (scalar @array) - 1);
 
-        # Set each element in the Axbasic array to match the values of the elements in the Axmud
+        # Set each variable in the Axbasic array to match the values of the elements in the Axmud
         #   list/hash
         @cellList = $varObj->cellList;
-        # Axbasic arrays don't use element 0, so dispense with the unusable $cellList[0]
+        # The first item in LA::Variable::Array->cellList is the lower bound, which we already
+        #   know is 0 (so we can dispense with it)
         shift @cellList;
         # (But the first element of @array that we want is, of course, element 0)
         $count = -1;
@@ -905,6 +917,259 @@
         }
 
         # Do nothing
+        return 1;
+    }
+
+    # Functions used by SETTRIG, etc statements
+
+    sub parseSetInterface {
+
+        # Called by $self->parse for the SETTRIG, SETALIAS, SETMACRO, SETTIMER and SETHOOK
+        #   statements
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if there is an error
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my ($stimulusExp, $newScriptExp, $token);
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->parseSetInterface', @_);
+        }
+
+        # Convert the stimulus string into an expression
+        $stimulusExp = Language::Axbasic::Expression::Arithmetic->new(
+            $self->scriptObj,
+            $self->tokenGroupObj,
+        );
+
+        if (! defined $stimulusExp) {
+
+            return $self->scriptObj->setError(
+                'missing_or_illegal_expression',
+                $self->_objClass . '->parse',
+            );
+        }
+
+        # Get the new script name, if specified
+        if (defined $self->tokenGroupObj->shiftMatchingToken(',')) {
+
+            $token = $self->tokenGroupObj->lookAhead();
+            if (defined $token) {
+
+                $newScriptExp = Language::Axbasic::Expression::Arithmetic->new(
+                    $self->scriptObj,
+                    $self->tokenGroupObj,
+                );
+
+                if (! defined $newScriptExp) {
+
+                    return $self->scriptObj->setError(
+                        'missing_or_illegal_expression',
+                        $self->_objClass . '->parse',
+                    );
+                }
+            }
+        }
+
+        # Check that nothing follows the expression(s)
+        if (! $self->tokenGroupObj->testStatementEnd()) {
+
+            return $self->scriptObj->setError(
+                'unexpected_keywords,_operators_or_expressions',
+                $self->_objClass . '->parse',
+            );
+        }
+
+        # Store the expression(s), so $self->implement can retrieve them
+        $self->ivAdd('parseDataHash', 'stimulus', $stimulusExp);
+        $self->ivAdd('parseDataHash', 'new_script', $newScriptExp);
+
+        # Parsing complete
+        return 1;
+    }
+
+    # Functions used by WAITTRIG, etc statements
+
+    sub parseWaitInterface {
+
+        # Called by LA::Statement::waittrig->parse (and also by WAITALIAS, WAITMACRO, WAITTIMER and
+        #   WAITHOOK ->parse functions)
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if there is an error
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my ($stimulusExp, $timeoutExp);
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->parseWaitInterface', @_);
+        }
+
+        # Convert the pattern string into an expression
+        $stimulusExp = Language::Axbasic::Expression::Arithmetic->new(
+            $self->scriptObj,
+            $self->tokenGroupObj,
+        );
+
+        if (! defined $stimulusExp) {
+
+            return $self->scriptObj->setError(
+                'missing_or_illegal_expression',
+                $self->_objClass . '->parse',
+            );
+        }
+
+        # Get the timeout, if specified, and convert it into an expression
+        if (defined $self->tokenGroupObj->shiftMatchingToken(',')) {
+
+            $timeoutExp = Language::Axbasic::Expression::Arithmetic->new(
+                $self->scriptObj,
+                $self->tokenGroupObj,
+            );
+
+            if (! defined $timeoutExp) {
+
+                return $self->scriptObj->setError(
+                    'missing_or_illegal_expression',
+                    $self->_objClass . '->parse',
+                );
+            }
+        }
+
+        # Check that nothing follows the expression(s)
+        if (! $self->tokenGroupObj->testStatementEnd()) {
+
+            return $self->scriptObj->setError(
+                'unexpected_keywords,_operators_or_expressions',
+                $self->_objClass . '->parse',
+            );
+        }
+
+        # Store the expression(s), so $self->implement can retrieve them
+        $self->ivAdd('parseDataHash', 'pattern', $stimulusExp);
+        $self->ivAdd('parseDataHash', 'timeout', $timeoutExp);
+
+        # Parsing complete
+        return 1;
+    }
+
+    sub implementWaitInterface {
+
+        # Called by LA::Statement::waittrig->implement (and also by WAITALIAS, WAITMACRO, WAITTIMER
+        #   and WAITHOOK ->implement functions)
+        #
+        # Expected arguments
+        #   $interfaceType   - 'trigger', 'alias', 'macro', 'timer or 'hook'
+        #
+        # Return values
+        #   'undef' on improper arguments or if there is an error
+        #   1 otherwise
+
+        my ($self, $interfaceType, $check) = @_;
+
+        # Local variables
+        my ($stimulusExp, $stimulus, $timeoutExp, $timeout, $interfaceObj);
+
+        # Check for improper arguments
+        if (! defined $interfaceType || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->implementWaitInterface', @_);
+        }
+
+        # If the Axbasic script isn't being run from within an Axmud task, ignore the statement
+        if (! $self->scriptObj->parentTask) {
+
+            # Implementation complete. Execution resumes from the next statement
+            return 1;
+        }
+
+        # Otherwise, retrieve the argument(s) stored by $self->parse
+        $stimulusExp = $self->ivShow('parseDataHash', 'pattern');
+        $timeoutExp = $self->ivShow('parseDataHash', 'timeout');
+
+        # Evaluate the expression(s)
+        $stimulus = $stimulusExp->evaluate();
+
+        if (defined $timeoutExp) {
+
+            $timeout = $timeoutExp->evaluate();
+
+            if (! ($timeout =~  /^\d+$/)) {
+
+                return $self->scriptObj->setError(
+                    'invalid_integer',
+                    $self->_objClass . '->implement',
+                );
+
+            } elsif ($timeout < 1) {
+
+                return $self->scriptObj->setError(
+                    'number_NUM_out_of_range',
+                    $self->_objClass . '->implement',
+                    'NUM', $timeout,
+                );
+            }
+        }
+
+        # Create the interface, which will call a function in this script's parent task when it
+        #   fires
+        $interfaceObj = $self->scriptObj->session->createDependentInterface(
+            $interfaceType,
+            $stimulus,
+            $self->scriptObj->parentTask,
+            'interfaceWaitSeen',
+            'temporary',
+            1,
+        );
+
+        if (defined $interfaceObj) {
+
+            # Add this interface to the list of interfaces created during the execution of the
+            #   Axbasic script
+            $self->scriptObj->push_depInterfaceList($interfaceObj->name);
+            $self->scriptObj->set_depInterfaceName($interfaceObj->name);
+
+            # Mark this script as paused
+            $self->scriptObj->set_scriptStatus('paused');
+            # Tell the task that it's waiting for an interface, so that the interface can be
+            #   deleted, the first time it fires...
+            $self->scriptObj->parentTask->ivPoke('waitForInterface', $interfaceObj->name);
+            # ...and then begin the pause
+            if (defined $timeoutExp) {
+
+                $self->scriptObj->parentTask->pauseUntil(
+                    ($self->scriptObj->session->sessionTime + $timeout),
+                );
+
+            } else {
+
+                $self->scriptObj->parentTask->pauseUntil();
+            }
+
+        } else {
+
+            # Store the fact that creation of the interface failed
+            $self->scriptObj->set_depInterfaceName(undef);
+        }
+
+        # Implementation complete
         return 1;
     }
 
@@ -2876,8 +3141,9 @@
         # The next statement to execute is the statement after that
         if (defined $declareStatement->nextStatement) {
 
-            $self->scriptObj->set_nextStatement($declareStatement->nextStatement);
-            $self->scriptObj->set_nextLine($declareStatement->lineObj->procLineNum);
+            # LA::Script->nextStatement is currently set to this statement; continue execution
+            #   as if this were the SUB statement
+            $self->scriptObj->set_nextStatement($declareStatement);
 
         } else {
 
@@ -2962,7 +3228,7 @@
             $selectStatement = $subObj->pop_selectStackList();
         }
 
-        if (! $self->tokenGroupObj->shiftMatchingToken('else')) {
+        if ($self->tokenGroupObj->shiftMatchingToken('else')) {
 
             # CASE ELSE statement
 
@@ -4987,7 +5253,7 @@
         my ($self, $check) = @_;
 
         # Local variables
-        my $token;
+        my ($token, $specialFlag);
 
         # Check for improper arguments
         if (defined $check) {
@@ -5047,6 +5313,18 @@
             $self->scriptObj->set_declareMode('global_array');
         }
 
+        if ($self->scriptObj->executionMode eq 'line_num') {
+
+            # In programmes with line numbers, we don't allow DIM .. (10 TO 20)
+            $specialFlag = FALSE;
+
+        } else {
+
+            # A TRUE argument tells LA::Expression::Lvalue->new to attempt to extract an
+            #   LA::Expression::SpecialArgList, rather than an an LA::Expression::ArgList
+            $specialFlag = TRUE;
+        }
+
         # Process each array in turn (if several appear on the same line, they are separated by
         #   commas)
         do {
@@ -5054,6 +5332,7 @@
             my $expression = Language::Axbasic::Expression::Lvalue->new(
                 $self->scriptObj,
                 $self->tokenGroupObj,
+                $specialFlag,
             );
 
             if (! defined $expression) {
@@ -5092,7 +5371,7 @@
         my ($self, $check) = @_;
 
         # Local variables
-        my (@expList, @indices);
+        my @expList;
 
         # Check for improper arguments
         if (defined $check) {
@@ -5106,6 +5385,8 @@
         # Create each array, and set its dimensions
         foreach my $expression (@expList) {
 
+            my (@upperList, @boundList, @flatList);
+
             # If the $expression appeared in a line like DIM var, rather than the correct
             #   DIM var(10), then ->argListObj won't be defined
             if (! defined $expression->argListObj) {
@@ -5116,31 +5397,81 @@
                 );
             }
 
-            # Set up the array
-            @indices = $expression->argListObj->evaluate();
-            if (! @indices) {
+            if ($self->scriptObj->executionMode eq 'line_num') {
 
-                # DIM var() statements not allowed
-                return $self->scriptObj->setError(
-                    'invalid_expression_in_DIM_statement',
-                    $self->_objClass . '->implement',
-                );
+                # Set up the array. ->evaluate returns a list of upper bounds
+                @upperList = $expression->argListObj->evaluate();
 
-            } elsif (scalar @indices == 1 && $indices[0] == 0) {
+                # Convert that to a flat list in groups of two, in the form
+                #   (lower, upper, lower, upper...)
+                # For programmes with line numbers, the lower bound is always 0 (see the explanatory
+                #   comments in LA::Variable::Array->new)
+                # For any expression that could not be evaluated, an 'undef' value was placed in
+                #   @boundList, so we need to check for that too
+                foreach my $value (@upperList) {
 
-                # LA::Variable::Array allows empty one-dimensional arrays, which PEEK and PEEK...
-                #   statements need, but we can't create an empty one-dimensional array with DIM
-                #   statements
-                return $self->scriptObj->setError(
-                    'invalid_array_dimension_size_NUM',
-                    $self->_objClass . '->implement',
-                    'NUM', $indices[0],
-                );
+                    if (! defined $value || $value =~ m/\D/) {
+
+                        return $self->scriptObj->setError(
+                            'invalid_bound_for_array_dimension',
+                            $self->_objClass . '->implement',
+                        );
+
+                    } else {
+
+                        push (@flatList, 0, $value);
+                    }
+                }
 
             } else {
 
-                $expression->varObj->dimension(@indices);
+                # Set up the array. ->evaluate returns a list of list references. Each list
+                #   reference represents a dimension and specifies the bounds of that dimension;
+                #   either in the form (upper) or (lower, upper)
+                @boundList = $expression->argListObj->evaluate();
+
+                # Convert that to a flat list in groups of two, in the form
+                #   (lower, upper, lower, upper...)
+                # For programmes without line numbers, we use 1 as the lower bound, if not
+                #   specified
+                # For any expression that could not be evaluated, an 'undef' value was placed in
+                #   @boundList, so we need to check for that too
+                foreach my $listRef (@boundList) {
+
+                    foreach my $value (@$listRef) {
+
+                        if (! defined $value || ! ($value =~ m/^[-]?\d+$/)) {
+
+                            return $self->scriptObj->setError(
+                                'invalid_bound_for_array_dimension',
+                                $self->_objClass . '->implement',
+                            );
+                        }
+                    }
+
+                    if (scalar (@$listRef) == 1) {
+
+                        # If the lower bound is not specified, it is 1; therefore in that case, the
+                        #   upper bound cannot be less than 1)
+                        if ($$listRef[0] < 1) {
+
+                            return $self->scriptObj->setError(
+                                'invalid_bound_for_array_dimension',
+                                $self->_objClass . '->implement',
+                            );
+
+                        } else {
+
+                            push (@flatList, 1);
+                        }
+                    }
+
+                    push (@flatList, @$listRef);
+                }
             }
+
+            # Create the array
+            $expression->varObj->dimension(@flatList);
         }
 
         # Implementation complete
@@ -5262,6 +5593,7 @@
     );
 
     # ELSE IF condition THEN
+    # ELSEIF condition THEN
     # ELSE
 
     ##################
@@ -5281,7 +5613,7 @@
         my ($self, $check) = @_;
 
         # Local variables
-        my ($subObj, $ifStatement, $token, $condition);
+        my ($subObj, $ifStatement, $elseIfFlag, $token, $condition);
 
         # Check for improper arguments
         if (defined $check) {
@@ -5313,10 +5645,21 @@
             $ifStatement = $subObj->pop_ifStackList();
         }
 
-        $token = $self->tokenGroupObj->shiftMatchingToken('if');
-        if (defined $token) {
+        # Test for ELSEIF or ELSE IF
+        if ($self->keyword eq 'elseif') {
+            $elseIfFlag = TRUE;
+        } else {
 
-            # ELSE IF statement
+            $token = $self->tokenGroupObj->shiftMatchingToken('if');
+            if (defined $token) {
+
+                $elseIfFlag = TRUE;
+            }
+        }
+
+        if ($elseIfFlag) {
+
+            # ELSE IF / ELSEIF statement
 
             # If the IF statement has already seen a plain ELSE, it must not be be followed by
             #   another ELSE IF
@@ -5437,11 +5780,13 @@
         # Execution continues at the next statement after END IF
         if (defined $endIfStatement->nextStatement) {
 
-            $self->scriptObj->set_nextStatement($endIfStatement->nextStatement);
+                # LA::Script->nextStatement is currently set to this statement; continue execution
+                #   as if this were the END statement
+                $self->scriptObj->set_nextStatement($endIfStatement);
 
         } else {
 
-            # The case statement was the last (or only) statement on the line: use the next line
+            $self->scriptObj->set_nextStatement(undef);
             $self->scriptObj->set_nextLine($endIfStatement->lineObj->procLineNum + 1);
         }
 
@@ -5842,8 +6187,9 @@
             # The next statement to execute is the statement after that
             if (defined $callStatement->nextStatement) {
 
-                $self->scriptObj->set_nextStatement($callStatement->nextStatement);
-                $self->scriptObj->set_nextLine($callStatement->lineObj->procLineNum);
+                # LA::Script->nextStatement is currently set to this statement; continue execution
+                #   as if this were the GOSUB statement
+                $self->scriptObj->set_nextStatement($callStatement);
 
             } else {
 
@@ -6336,8 +6682,9 @@
             # The next statement to execute is the statement after that
             if (defined $resumeStatement->nextStatement) {
 
-                $self->scriptObj->set_nextStatement($resumeStatement->nextStatement);
-                $self->scriptObj->set_nextLine($resumeStatement->lineObj->procLineNum);
+                # LA::Script->nextStatement is currently set to this statement; continue execution
+                #   as if this were the Do/SUB/WHILE statement
+                $self->scriptObj->set_nextStatement($resumeStatement);
 
             } else {
 
@@ -6452,6 +6799,7 @@
     );
 
     # FOR variable-name = expression TO expression [ STEP expression ]
+    # FOR EACH variable-name IN variable-name
 
     ##################
     # Methods
@@ -6470,12 +6818,21 @@
         my ($self, $check) = @_;
 
         # Local variables
-        my ($lvalue, $token, $initExp, $termExp, $stepExp, $newTokenGroup);
+        my ($token, $lvalue, $initExp, $termExp, $stepExp, $newTokenGroup, $expression);
 
         # Check for improper arguments
         if (defined $check) {
 
             return $axmud::CLIENT->writeImproper($self->_objClass . '->parse', @_);
+        }
+
+        # There are two formats for a FOR statement. Store the type, so $self->implement can
+        #   retrieve it
+        $token = $self->tokenGroupObj->shiftMatchingToken('each');
+        if (! defined $token) {
+            $self->ivAdd('parseDataHash', 'each_flag', FALSE);
+        } else {
+            $self->ivAdd('parseDataHash', 'each_flag', TRUE);
         }
 
         # Read the iterator variable name
@@ -6491,8 +6848,10 @@
                 $self->_objClass . '->parse',
             );
 
-        } elsif ($lvalue->isa('Language::Axbasic::Expression::String')) {
-
+        } elsif (
+            ! $self->ivShow('parseDataHash', 'each_flag')
+            && $lvalue->isa('Language::Axbasic::Expression::String')
+        ) {
             return $self->scriptObj->setError(
                 'missing_or_illegal_iterator',
                 $self->_objClass . '->parse',
@@ -6504,76 +6863,27 @@
             $self->ivAdd('parseDataHash', 'lvalue', $lvalue);
         }
 
-        # Read the assignment operator
-        $token = $self->tokenGroupObj->shiftMatchingToken('=');
-        if (! defined $token) {
+        if (! $self->ivShow('parseDataHash', 'each_flag')) {
 
-            return $self->scriptObj->setError(
-                'missing_assignment_operator',
-                $self->_objClass . '->parse',
-            );
-        }
+            # First type: FOR variable-name = expression TO expression [ STEP expression ]
 
-        # Read the initialisation expression
-        $initExp = Language::Axbasic::Expression::Arithmetic::Numeric->new(
-            $self->scriptObj,
-            $self->tokenGroupObj,
-        );
+            # Read the assignment operator
+            $token = $self->tokenGroupObj->shiftMatchingToken('=');
+            if (! defined $token) {
 
-        if (! defined $initExp) {
+                return $self->scriptObj->setError(
+                    'missing_assignment_operator',
+                    $self->_objClass . '->parse',
+                );
+            }
 
-            return $self->scriptObj->setError(
-                'missing_or_illegal_expression',
-                $self->_objClass . '->parse',
-            );
-
-        } else {
-
-            # Store the initialisation expression, so $self->implement can retrieve it
-            $self->ivAdd('parseDataHash', 'init_exp', $initExp);
-        }
-
-        # Read the 'to' keyword
-        $token = $self->tokenGroupObj->shiftMatchingToken('to');
-        if (! defined $token) {
-
-            return $self->scriptObj->setError(
-                'syntax_error',
-                $self->_objClass . '->parse',
-            );
-        }
-
-        # Until the keyword 'step', or the end of the statement, we're copying the termination
-        #   expression
-        $termExp = Language::Axbasic::Expression::Arithmetic::Numeric->new(
-            $self->scriptObj,
-            $self->tokenGroupObj,
-        );
-
-        if (! defined $termExp) {
-
-            return $self->scriptObj->setError(
-                'missing_or_illegal_expression',
-                $self->_objClass . '->parse',
-            );
-
-        } else {
-
-            # Store the initialisation expression, so $self->implement can retrieve it
-            $self->ivAdd('parseDataHash', 'term_exp', $termExp);
-        }
-
-        # If there is anything left, it should be a 'step' keyword. If 'step' isn't specified, use
-        #   the default increment of +1
-        $token = $self->tokenGroupObj->shiftMatchingToken('step');
-        if (defined $token) {
-
-            $stepExp = Language::Axbasic::Expression::Arithmetic::Numeric->new(
+            # Read the initialisation expression
+            $initExp = Language::Axbasic::Expression::Arithmetic::Numeric->new(
                 $self->scriptObj,
                 $self->tokenGroupObj,
             );
 
-            if (! defined $stepExp) {
+            if (! defined $initExp) {
 
                 return $self->scriptObj->setError(
                     'missing_or_illegal_expression',
@@ -6582,31 +6892,135 @@
 
             } else {
 
+                # Store the initialisation expression, so $self->implement can retrieve it
+                $self->ivAdd('parseDataHash', 'init_exp', $initExp);
+            }
+
+            # Read the 'to' keyword
+            $token = $self->tokenGroupObj->shiftMatchingToken('to');
+            if (! defined $token) {
+
+                return $self->scriptObj->setError(
+                    'syntax_error',
+                    $self->_objClass . '->parse',
+                );
+            }
+
+            # Until the keyword 'step', or the end of the statement, we're copying the termination
+            #   expression
+            $termExp = Language::Axbasic::Expression::Arithmetic::Numeric->new(
+                $self->scriptObj,
+                $self->tokenGroupObj,
+            );
+
+            if (! defined $termExp) {
+
+                return $self->scriptObj->setError(
+                    'missing_or_illegal_expression',
+                    $self->_objClass . '->parse',
+                );
+
+            } else {
+
+                # Store the initialisation expression, so $self->implement can retrieve it
+                $self->ivAdd('parseDataHash', 'term_exp', $termExp);
+            }
+
+            # If there is anything left, it should be a 'step' keyword. If 'step' isn't specified,
+            #   use the default increment of +1
+            $token = $self->tokenGroupObj->shiftMatchingToken('step');
+            if (defined $token) {
+
+                $stepExp = Language::Axbasic::Expression::Arithmetic::Numeric->new(
+                    $self->scriptObj,
+                    $self->tokenGroupObj,
+                );
+
+                if (! defined $stepExp) {
+
+                    return $self->scriptObj->setError(
+                        'missing_or_illegal_expression',
+                        $self->_objClass . '->parse',
+                    );
+
+                } else {
+
+                    # Store the step expression, so $self->implement can retrieve it
+                    $self->ivAdd('parseDataHash', 'step_exp', $stepExp);
+                }
+
+            } elsif (! $self->tokenGroupObj->testStatementEnd()) {
+
+                # There shouldn't be anything after the 'step' expression
+                return $self->scriptObj->setError(
+                    'unexpected_keywords,_operators_or_expressions',
+                    $self->_objClass . '->parse',
+                );
+
+            } else {
+
+                # Create a separate token group to hold a token containing '1', and lex it, so we
+                #   can save the '1' as an expression
+                $newTokenGroup = Language::Axbasic::TokenGroup->new($self->scriptObj, '1');
+                $newTokenGroup->lex();
+                $stepExp = Language::Axbasic::Expression::Arithmetic::Numeric->new(
+                    $self->scriptObj,
+                    $newTokenGroup,
+                );
+
                 # Store the step expression, so $self->implement can retrieve it
                 $self->ivAdd('parseDataHash', 'step_exp', $stepExp);
             }
 
-        } elsif (! $self->tokenGroupObj->testStatementEnd()) {
-
-            # There shouldn't be anything after the 'step' expression
-            return $self->scriptObj->setError(
-                'unexpected_keywords,_operators_or_expressions',
-                $self->_objClass . '->parse',
-            );
-
         } else {
 
-            # Create a separate token group to hold a token containing '1', and lex it, so we can
-            #   save the '1' as an expression
-            $newTokenGroup = Language::Axbasic::TokenGroup->new($self->scriptObj, '1');
-            $newTokenGroup->lex();
-            $stepExp = Language::Axbasic::Expression::Arithmetic::Numeric->new(
+            # Second type: FOR EACH variable-name IN variable-name
+
+            # Read the 'in' keyword
+            $token = $self->tokenGroupObj->shiftMatchingToken('in');
+            if (! defined $token) {
+
+                return $self->scriptObj->setError(
+                    'syntax_error',
+                    $self->_objClass . '->parse',
+                );
+            }
+
+            # Abuse the IV that allows undeclared variables to be created by hijacking it to tell
+            #   LA::Variable->lookup that we're intentionally referring to an array variable, such
+            #   as that created by
+            #       DIM var (10)
+            #   ...by a variable name that looks like a scalar, i.e.
+            #       SORT var
+            $self->scriptObj->set_declareMode('simple');
+
+            # Get the variable name
+            $expression = Language::Axbasic::Expression::Lvalue->new(
                 $self->scriptObj,
-                $newTokenGroup,
+                $self->tokenGroupObj,
             );
 
-            # Store the step expression, so $self->implement can retrieve it
-            $self->ivAdd('parseDataHash', 'step_exp', $stepExp);
+            if (! defined $expression) {
+
+                return $self->scriptObj->setError(
+                    'missing_or_illegal_array_variable',
+                    $self->_objClass . '->parse',
+                );
+            }
+
+            # Reset the temporary IV
+            $self->scriptObj->set_declareMode('default');
+
+            if (! $self->tokenGroupObj->testStatementEnd()) {
+
+                return $self->scriptObj->setError(
+                    'unexpected_keywords,_operators_or_expressions',
+                    $self->_objClass . '->parse',
+                );
+            }
+
+            # Store the variable for ->implement to use
+            $self->ivAdd('parseDataHash', 'array_exp', $expression);
         }
 
         # Parsing complete
@@ -6627,7 +7041,10 @@
         my ($self, $check) = @_;
 
         # Local variables
-        my ($lvalue, $initExp, $result, $var, $subObj);
+        my (
+            $eachFlag, $lvalue, $initExp, $arrayExp, $result, $iterVar, $subObj, $elementVar,
+            @indexList,
+        );
 
         # Check for improper arguments
         if (defined $check) {
@@ -6636,12 +7053,14 @@
         }
 
         # Retrieve the variables stored by ->parse
+        $eachFlag = $self->ivShow('parseDataHash', 'each_flag');
         $lvalue = $self->ivShow('parseDataHash', 'lvalue');
         $initExp = $self->ivShow('parseDataHash', 'init_exp');
+        $arrayExp = $self->ivShow('parseDataHash', 'array_exp');
 
         # Get the variable object for the iterator
-        $var = $lvalue->variable;
-        if (! defined $var) {
+        $iterVar = $lvalue->variable;
+        if (! defined $iterVar) {
 
             return $self->scriptObj->setDebug(
                 'Couldn\'t set up iterator in FOR statement',
@@ -6649,18 +7068,72 @@
             );
         }
 
-        # Evaluate the  initialisation expression, and set the iterator with the value
-        $result = $initExp->evaluate();
-        if (! defined $result) {
+        # There are two formats for a FOR statement
+        if (! $eachFlag) {
 
-            return $self->scriptObj->setDebug(
-                'Couldn\'t evaluate set up  initialisation expression in FOR statement',
-                $self->_objClass . '->implement',
-            );
+            # First type: FOR variable-name = expression TO expression [ STEP expression ]
+
+            # Evaluate the initialisation expression, and set the iterator with the value
+            $result = $initExp->evaluate();
+            if (! defined $result) {
+
+                return $self->scriptObj->setDebug(
+                    'Couldn\'t evaluate initialisation expression in FOR statement',
+                    $self->_objClass . '->implement',
+                );
+
+            } else {
+
+                $iterVar->set($result);
+            }
 
         } else {
 
-            $var->set($result);
+            # Second type: FOR EACH variable-name IN variable-name
+
+            # If the array is empty, then we can't iterate over it (and there's no way to jump to
+            #   the NEXT statement)
+            if ((scalar $arrayExp->varObj->cellList) <= 1) {
+
+                return $self->scriptObj->setError(
+                    'cannot_iterate_over_empty_array',
+                    $self->_objClass . '->implement',
+                );
+
+            } else {
+
+                # Otherwise, Axbasic handles multi-dimensional arrays with lists inside lists. Each
+                #   list represents a dimension and contains the lower bound, followed by an
+                #   optional list of value. (In multi-dimensional arrays, all dimensions have at
+                #   least one value)
+                # Create a list of indices, each referring to a value in a dimension. The ->getCell
+                #   function takes account of the first item in every dimension, which is the lower
+                #   bound, hence the minimum index for each dimension is 0
+                for (my $i = 1; $i <= $arrayExp->varObj->dimCount; $i++) {
+
+                    push (@indexList, 0);
+                }
+
+                # The NEXT statement increments the array index/indices, until we reach the end of
+                #   the array
+                $self->ivAdd('parseDataHash', 'index_list_ref', \@indexList);
+
+                # Retrieve the variable that's the first element of the array, and set the iterator
+                #   with its value. Ignore the cell numbered 0 - FOR EACH assumes the first
+                #   significant cell is #1
+                $elementVar = $arrayExp->varObj->getCell(@indexList);
+                if (! $elementVar) {
+
+                    return $self->scriptObj->setError(
+                        'empty_array_in_FOR_EACH_statement',
+                        $self->_objClass . '->implement',
+                    );
+
+                } else {
+
+                    $iterVar->set($elementVar->value);
+                }
+            }
         }
 
         # Add this 'for' statement to the code block stack for the current subroutine
@@ -7184,12 +7657,15 @@
     );
 
     # IF condition THEN statement [ : statement ...] [ ELSE statement [ : statement ...]]
+    # IF condition THEN statement [ : statement ...] [ ELSEIF condition [ : statement ...]]
     # IF condition THEN expression [ ELSE expression ]
     #
     # IF condition THEN
     #    statement
     #    statement
     # ELSE IF condition THEN
+    #    statement
+    # ELSEIF condition THEN
     #    statement
     # ELSE
     #    statement
@@ -7214,7 +7690,7 @@
         # Local variables
         my (
             $condition, $newTokenGroup, $previousStatement, $thenStatement, $elseStatement,
-            $otherStatement, $subObj,
+            $otherStatement, $subObj, $token,
         );
 
         # Check for improper arguments
@@ -7264,10 +7740,10 @@
 
         } else {
 
-            # Import all the tokens until the 'else' statement (if there is no 'else', just import
-            #   all the tokens)
+            # Import all the tokens until the ELSE or ELSEIF statement (if there is no ELSE of ELSE
+            #   IF, just import all the tokens)
             $newTokenGroup = Language::Axbasic::TokenGroup->new($self->scriptObj);
-            $newTokenGroup->importTokens($self->tokenGroupObj, 'else');
+            $newTokenGroup->importTokens($self->tokenGroupObj, 'else', 'elseif');
 
             # Create a new statement to parse the 'then' clause, and parse the statement
             # 'line_num_ok' tells the new statement that it's parsing a 'then/else', so that
@@ -7311,8 +7787,26 @@
             # Make sure we don't do the 'else' after the 'then'!
             $previousStatement->set_nextStatement(undef);
 
-            # If there is anything left in $self->tokenGroup, it's the 'else' clause
-            if (defined $self->tokenGroupObj->shiftMatchingToken('else')) {
+            # If there is anything left in $self->tokenGroup, it's the ELSE / ELSEIF clause
+            # If we find an initial ELSEIF token, the following code is much simpler if we pretend
+            #   that it was two tokens, ELSE and IF
+            $token = $self->tokenGroupObj->shiftMatchingToken('else');
+            if (! defined $token) {
+
+                $token = $self->tokenGroupObj->lookAhead();
+                if (defined $token && $token->tokenText eq 'elseif') {
+
+                    # Pretend we have shifted an ELSE token, and convert the first remaining token
+                    #   to an IF
+                    $token->set_tokenText('if');
+
+                } else {
+
+                    $token = undef;
+                }
+            }
+
+            if (defined $token) {
 
                 # Use up all the remaining tokens
                 $elseStatement = Language::Axbasic::Statement->new(
@@ -7463,12 +7957,13 @@
                 #   end of the IF..END IF code block
                 if (defined $endIfStatement->nextStatement) {
 
-                    $self->scriptObj->set_nextStatement($endIfStatement->nextStatement);
+                    # LA::Script->nextStatement is currently set to this statement; continue
+                    #   execution as if this were the END statement
+                    $self->scriptObj->set_nextStatement($endIfStatement);
 
                 } else {
 
-                    # The END IF statement was the last (or only) statement on the line: use the
-                    #   next line
+                    $self->scriptObj->set_nextStatement(undef);
                     $self->scriptObj->set_nextLine($endIfStatement->lineObj->procLineNum + 1);
                 }
 
@@ -7479,15 +7974,15 @@
                 $subObj = $self->scriptObj->returnCurrentSub();
                 $subObj->push_blockStackList($self);
 
-                # Resume execution after the ELSE IF or ELSE statement
                 if (defined $nextStatement->nextStatement) {
 
-                    $self->scriptObj->set_nextStatement($nextStatement->nextStatement);
+                    # LA::Script->nextStatement is currently set to this statement; continue
+                    #   execution as if this were the ELSE statement
+                    $self->scriptObj->set_nextStatement($nextStatement);
 
                 } else {
 
-                    # The ELSE IF/ELSE statement was the last (or only) statement on the line: use
-                    #   the next line
+                    $self->scriptObj->set_nextStatement(undef);
                     $self->scriptObj->set_nextLine($nextStatement->lineObj->procLineNum + 1);
                 }
             }
@@ -7785,11 +8280,23 @@
                 #       10 print "tell me";
                 #       20 input a$
                 # ...which forces Axmud to display unrelated text on the same line as the prompt
-                # NB The prompt is displayed both in the 'main' window, and in the dialogue box
-                if ($prompt) {
-                    $self->scriptObj->session->writeText($prompt . '? ', 'echo');
+                # NB The prompt is displayed both in the dialogue box, and also in the 'main' or
+                #   task window
+                if ($taskObj && $taskObj->taskWinFlag) {
+
+                    if ($prompt) {
+                        $taskObj->insertPrint($prompt . '? ');
+                    } else {
+                        $taskObj->insertPrint('? ');
+                    }
+
                 } else {
-                    $self->scriptObj->session->writeText('? ', 'echo');
+
+                    if ($prompt) {
+                        $self->scriptObj->session->writeText($prompt . '? ', 'echo');
+                    } else {
+                        $self->scriptObj->session->writeText('? ', 'echo');
+                    }
                 }
 
                 # Use dialogue boxes - one for each value expected
@@ -7825,7 +8332,10 @@
                     if (! defined $result) {
 
                         # User clicked 'cancel' or closed the window
-                        $self->scriptObj->session->writeText(' ');  # Cancel the earlier 'echo'
+                        if (! $taskObj || ! $taskObj->taskWinFlag) {
+
+                            $self->scriptObj->session->writeText(' ');  # Cancel the earlier 'echo'
+                        }
 
                         return $self->scriptObj->setError(
                             'user_declined_input_error',
@@ -7837,8 +8347,12 @@
                         # Set the variable
                         $varObj->set($result);
 
-                        # Also display it in the 'main' window
-                        $self->scriptObj->session->writeText($result);
+                        # Also display it in the 'main' / task window
+                        if ($taskObj && $taskObj->taskWinFlag) {
+                            $taskObj->insertPrint($result, 'echo');
+                        } else {
+                            $self->scriptObj->session->writeText($result);
+                        }
 
                     } else {
 
@@ -7850,7 +8364,10 @@
                         }
 
                         # Cancel the earlier 'echo' in the 'main' window
-                        $self->scriptObj->session->writeText(' ');
+                        if (! $taskObj || ! $taskObj->taskWinFlag) {
+
+                            $self->scriptObj->session->writeText(' ');
+                        }
                     }
                 }
             }
@@ -7875,6 +8392,12 @@
     );
 
     # [LET] variable-name = expression
+    # [LET] variable-name = CALL subroutine-name
+    # [LET] variable-name = CALL subroutine-name ( [ expression [ , expression ... ] ] )
+    # [LET] variable-name = DIMENSIONS array-variable
+    # [LET] variable-name = LOWER array-variable
+    # [LET] variable-name = SIZE array-variable
+    # [LET] variable-name = UPPER array-variable
 
     ##################
     # Methods
@@ -7895,7 +8418,7 @@
         my ($self, $check) = @_;
 
         # Local variables
-        my ($lvalue, $token, $subNameToken, $argListObj, $expression);
+        my ($lvalue, $token, $subNameToken, $argListObj, $arrayExp, $scalarExp);
 
         # Check for improper arguments
         if (defined $check) {
@@ -7927,9 +8450,13 @@
             );
         }
 
-        # The rest of the statement is either an expression, the value of which should be assigned
-        #   to the variable, or a subroutine call or PEEK statement, the return value of which
-        #   should be assigned to the variable
+        # The rest of the statement is either:
+        #   1. A subroutine call as a CALL statement, the return value of which should be assigned
+        #       to the scalar variable
+        #   2. The keywords DIMENSIONS, LOWER, SIZE or UPPER followed by an array variable; the
+        #       value is assigned to the scalar variable (only DIMENSIONS can be used with
+        #       multi-dimensional arrays)
+        #   3. A scalar expression, the value of which should be assigned to the variable
         $token = $self->tokenGroupObj->lookAhead();
         if (! defined $token) {
 
@@ -7939,7 +8466,6 @@
             );
         }
 
-        # If the first token is a recognised Axbasic keyword...
         if ($token->tokenText eq 'call') {
 
             # Eat the 'call' token
@@ -7951,14 +8477,61 @@
             # Save the variable object. LA::Statement::call->implement will use it
             $self->ivAdd('parseDataHash', 'call_var', $lvalue->varObj);
 
-        } else {
+        } elsif (
+            $token->tokenText eq 'dimensions'
+            || $token->tokenText eq 'lower'
+            || $token->tokenText eq 'size'
+            || $token->tokenText eq 'upper'
+        ) {
+            # Eat the keyword token
+            $token = $self->tokenGroupObj->shiftToken();
 
-            $expression = Language::Axbasic::Expression::Arithmetic->new(
+            # Abuse the IV that allows undeclared variables to be created by hijacking it to tell
+            #   LA::Variable->lookup that we're intentionally referring to an array variable, such
+            #   as that created by
+            #       DIM var (10)
+            #   ...by a variable name that looks like a scalar, i.e.
+            #       SORT var
+            $self->scriptObj->set_declareMode('simple');
+
+            # Get the variable name
+            $arrayExp = Language::Axbasic::Expression::Lvalue->new(
                 $self->scriptObj,
                 $self->tokenGroupObj,
             );
 
-            if (! defined $expression) {
+            if (! defined $arrayExp) {
+
+                return $self->scriptObj->setError(
+                    'missing_or_illegal_variable',
+                    $self->_objClass . '->parse',
+                );
+            }
+
+            # Reset the temporary IV
+            $self->scriptObj->set_declareMode('default');
+
+            # Save the scalar variable and the array expression so $self->implement can use them,
+            #   if it is called
+            $self->ivAdd('parseDataHash', 'lvalue', $lvalue);
+            if ($token->tokenText eq 'dimensions') {
+                $self->ivAdd('parseDataHash', 'dims_exp', $arrayExp);
+            } elsif ($token->tokenText eq 'lower') {
+                $self->ivAdd('parseDataHash', 'lower_exp', $arrayExp);
+            } elsif ($token->tokenText eq 'size') {
+                $self->ivAdd('parseDataHash', 'size_exp', $arrayExp);
+            } else {
+                $self->ivAdd('parseDataHash', 'upper_exp', $arrayExp);
+            }
+
+        } else {
+
+            $scalarExp = Language::Axbasic::Expression::Arithmetic->new(
+                $self->scriptObj,
+                $self->tokenGroupObj,
+            );
+
+            if (! defined $scalarExp) {
 
                 return $self->scriptObj->setError(
                     'missing_or_illegal_expression',
@@ -7966,10 +8539,10 @@
                 );
             }
 
-            # Save the variable object and expression object so $self->implement can use them, if it
+            # Save the variable and the scalar expression so $self->implement can use them, if it
             #   is called
             $self->ivAdd('parseDataHash', 'lvalue', $lvalue);
-            $self->ivAdd('parseDataHash', 'expression', $expression);
+            $self->ivAdd('parseDataHash', 'scalar_exp', $scalarExp);
         }
 
         # Parsing complete
@@ -7990,7 +8563,7 @@
         my ($self, $check) = @_;
 
         # Local variables
-        my ($lvalue, $expression, $value, $variable);
+        my ($lvalue, $assignVar, $arrayExp, $scalarExp, $value);
 
         # Check for improper arguments
         if (defined $check) {
@@ -7998,29 +8571,109 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->implement', @_);
         }
 
+        # LET var$ = CALL subname
         # LET var$ = CALL subname (arglist)
         if ($self->ivExists('parseDataHash', 'call_var')) {
 
             # Process the subroutine call using code from the CALL statement
             Language::Axbasic::Statement::call->implement($self);
 
-        # LET var$ = <expression>
+        # LET var$ = DIMENSIONS arrayname
+        # LET var$ = LOWER arrayname
+        # LET var$ = SIZE arrayname
+        # LET var$ = UPPER arrayname
+        # LET var$ = expression
         } else {
 
-            # Get the values stored by $self->parse
+            # Get the assignment variable stored by $self->parse
             $lvalue = $self->ivShow('parseDataHash', 'lvalue');
-            $expression = $self->ivShow('parseDataHash', 'expression');
 
-            $variable = $lvalue->variable;
-            if (! defined $variable) {
+            $assignVar = $lvalue->variable;
+            if (! defined $assignVar) {
 
                 # Subscript out of bounds, or similar error, has already been set
                 return undef;
             }
 
-            # Set the variable's value
-            $value = $expression->evaluate();
-            $variable->set($value);
+            # LET var$ = DIMENSIONS arrayname
+            if ($self->ivExists('parseDataHash', 'dims_exp')) {
+
+                # Get the other value stored by $self->parse
+                $arrayExp = $self->ivShow('parseDataHash', 'dims_exp');
+                # Set the variable's value
+                $assignVar->set($arrayExp->varObj->dimCount);
+
+            # LET var$ = LOWER arrayname
+            } elsif ($self->ivExists('parseDataHash', 'lower_exp')) {
+
+                # Get the other value stored by $self->parse
+                $arrayExp = $self->ivShow('parseDataHash', 'lower_exp');
+
+                if ($arrayExp->varObj->dimCount > 1) {
+
+                    return $self->scriptObj->setError(
+                        'LOWER_cannot_operate_on_multi-dimensional_array',
+                        $self->_objClass . '->implement',
+                    );
+
+                } else {
+
+                    # Set the variable's value
+                    $assignVar->set($arrayExp->varObj->ivIndex('cellList', 0));
+                }
+
+            # LET var$ = SIZE arrayname
+            } elsif ($self->ivExists('parseDataHash', 'size_exp')) {
+
+                # Get the other value stored by $self->parse
+                $arrayExp = $self->ivShow('parseDataHash', 'size_exp');
+
+                if ($arrayExp->varObj->dimCount > 1) {
+
+                    return $self->scriptObj->setError(
+                        'SIZE_cannot_operate_on_multi-dimensional_array',
+                        $self->_objClass . '->implement',
+                    );
+
+                } else {
+
+                    # Set the variable's value, taking account of the first item in ->cellList,
+                    #   which is the lower bound
+                    $assignVar->set((scalar ($arrayExp->varObj->cellList)) - 1);
+                }
+
+            # LET var$ = UPPER arrayname
+            } elsif ($self->ivExists('parseDataHash', 'upper_exp')) {
+
+                # Get the other value stored by $self->parse
+                $arrayExp = $self->ivShow('parseDataHash', 'upper_exp');
+
+                if ($arrayExp->varObj->dimCount > 1) {
+
+                    return $self->scriptObj->setError(
+                        'UPPER_cannot_operate_on_multi-dimensional_array',
+                        $self->_objClass . '->implement',
+                    );
+
+                } else {
+
+                    # Set the variable's value, taking account of the first item in ->cellList,
+                    #   which is the lower bound
+                    $assignVar->set(
+                        $arrayExp->varObj->ivIndex('cellList', 0)
+                        + (scalar ($arrayExp->varObj->cellList)) - 2
+                    );
+                }
+
+            # LET var$ = expression
+            } else {
+
+                # Get the other value stored by $self->parse
+                $scalarExp = $self->ivShow('parseDataHash', 'scalar_exp');
+                # Set the variable's value
+                $value = $scalarExp->evaluate();
+                $assignVar->set($value);
+            }
         }
 
         # Implementation complete
@@ -8297,20 +8950,13 @@
         my ($self, $check) = @_;
 
         # Local variables
-        my ($whileStatement, $subObj, $topStatement);
+        my ($subObj, $whileStatement);
 
         # Check for improper arguments
         if (defined $check) {
 
             return $axmud::CLIENT->writeImproper($self->_objClass . '->implement', @_);
         }
-
-        # Retrieve the paired WHILE statement
-        $whileStatement = $self->ivShow('parseDataHash', 'while_statement');
-
-        # Skip to the beginning of the WHILE..LOOP code block
-        $self->scriptObj->set_nextLine($whileStatement->lineObj->procLineNum);
-        $self->scriptObj->set_nextStatement(undef);
 
         # Remove this code block from the standard code block stack. (The WHILE statement puts it
         #   straight back, if the code block is to be executed again.)
@@ -8321,24 +8967,25 @@
                 'LOOP_statement_without_matching_WHILE',
                 $self->_objClass . '->implement',
             );
-
-        } else {
-
-            $topStatement = $subObj->pop_blockStackList();
-
-            # The statement at the top of the stack must be a WHILE statement, not another kind of
-            #   code block
-            if ($topStatement->keyword ne 'while') {
-
-                return $self->scriptObj->setError(
-                    'LOOP_statement_without_matching_WHILE',
-                    $self->_objClass . '->implement',
-                );
-            }
         }
 
-        # Implementation complete
-        return 1;
+        $whileStatement = $subObj->pop_blockStackList();
+
+        # The statement at the top of the stack must be a WHILE statement, not another kind of code
+        #   block
+        if ($whileStatement->keyword ne 'while') {
+
+            return $self->scriptObj->setError(
+                'LOOP_statement_without_matching_WHILE',
+                   $self->_objClass . '->implement',
+            );
+        }
+
+        # Nothing records a statement's previous statement on the same line (if any), so just
+        #   re-implement the WHILE statement, as if it had been called directly from
+        #   LA::Script->implement
+        $self->scriptObj->set_nextStatement($whileStatement);
+        return $whileStatement->implement();
     }
 }
 
@@ -8607,12 +9254,13 @@
                 $self->_objClass . '->parse',
             );
 
-        } elsif ($lvalue->isa('Language::Axbasic::Expression::String')) {
-
-            return $self->scriptObj->setError(
-                'missing_or_illegal_iterator',
-                $self->_objClass . '->parse',
-            );
+        # v1.2.120 Removed for FOR EACH statements
+#        } elsif ($lvalue->isa('Language::Axbasic::Expression::String')) {
+#
+#            return $self->scriptObj->setError(
+#                'missing_or_illegal_iterator',
+#                $self->_objClass . '->parse',
+#            );
 
         } else {
 
@@ -8648,8 +9296,9 @@
 
         # Local variables
         my (
-            $lvalue, $subObj, $forStatement, $exitFlag, $forLvalue, $forTermExp, $forStepExp, $term,
-            $step, $var, $value,
+            $lvalue, $subObj, $forStatement, $exitFlag, $forEachFlag, $forTermExp, $forStepExp,
+            $forArrayExp, $forArrayIndex, $term, $step, $var, $value, $iterVar, $elementVar,
+            $loopFlag, $indexListRef, $dim, $termFlag,
         );
 
         # Check for improper arguments
@@ -8697,49 +9346,130 @@
         }
 
         # Import the stored data from the matching FOR statement
-        $forLvalue = $forStatement->ivShow('parseDataHash', 'lvalue');
+        $forEachFlag = $forStatement->ivShow('parseDataHash', 'each_flag');
         $forTermExp = $forStatement->ivShow('parseDataHash', 'term_exp');
         $forStepExp = $forStatement->ivShow('parseDataHash', 'step_exp');
+        $forArrayExp = $forStatement->ivShow('parseDataHash', 'array_exp');
 
-        # Evaluate the termination and step expressions. Store them so that, during a FOR..NEXT
-        #    loop, we only have to evaluate the expressions once
-        if (! $self->ivExists('parseDataHash', 'term_value')) {
+        # There are two formats for a FOR statement
+        if (! $forEachFlag) {
 
-            $term = $forTermExp->evaluate();
-            $step = $forStepExp->evaluate();
+            # First type: FOR variable-name = expression TO expression [ STEP expression ]
 
-            $self->ivAdd('parseDataHash', 'term_value', $term);
-            $self->ivAdd('parseDataHash', 'step_value', $step);
+            # Evaluate the termination and step expressions. Store them so that, during a FOR..NEXT
+            #    loop, we only have to evaluate the expressions once
+            if (! $self->ivExists('parseDataHash', 'term_value')) {
+
+                $term = $forTermExp->evaluate();
+                $step = $forStepExp->evaluate();
+
+                $self->ivAdd('parseDataHash', 'term_value', $term);
+                $self->ivAdd('parseDataHash', 'step_value', $step);
+
+            } else {
+
+                $term = $self->ivShow('parseDataHash', 'term_value');
+                $step = $self->ivShow('parseDataHash', 'step_value');
+            }
+
+            # Increment the iterator variable
+            $var = $lvalue->variable;
+            $value = $var->value;
+            $value += $step;
+            $var->set($value);
+
+            # Termination test
+            if (($step > 0 && $value <= $term) || ($step < 0 && $value >= $term)) {
+
+                # Perform another iteration of the loop
+                $loopFlag = TRUE;
+            }
 
         } else {
 
-            $term = $self->ivShow('parseDataHash', 'term_value');
-            $step = $self->ivShow('parseDataHash', 'step_value');
+            # Second type: FOR EACH variable-name IN variable-name
+
+            # On the next FOR loop, we will use the next element in the sequence
+            $indexListRef = $forStatement->ivShow('parseDataHash', 'index_list_ref');
+            # The array variable might be multi-dimensional, in which case we have multiple indexes,
+            #   one for each dimension. Increment the index(es) from the bottom up
+            # e.g. For a 3x3 array, [1, 1], then [1, 2], [1, 3], [2, 1], [2, 2]...
+            # Check each dimension in turn, starting with the last one
+            $dim = scalar @$indexListRef;
+            $exitFlag = FALSE;
+
+            OUTER: do {
+
+                $dim--;
+
+                # Increment the index
+                # e.g. In a 3x3 array, on the first spin of this loop, $dim is 2, and [1, 1]
+                #   becomes [1, 2]
+                $$indexListRef[$dim] = $$indexListRef[$dim] + 1;
+                # But on a later spin, [1, 3] becomes [1, 4], which does not exist in the array.
+                #   In that case, [1, 3] becomes [2, 1]
+                my $cellVar = $forArrayExp->varObj->testCell(@$indexListRef);
+
+                if (defined $cellVar) {
+
+                    # The cell now described by $indexListRef is valid, so we can proceed with the
+                    #   next iteration of the FOR EACH loop
+                    $exitFlag = TRUE;
+
+                } else {
+
+                    # The cell now described by $indexListRef is not valid
+                    if (! $dim) {
+
+                        # At the end of the array (e.g. [3, 3] ), so terminate the FOR EACH loop
+                        $termFlag = TRUE;
+                        $exitFlag = TRUE;
+
+                    } else {
+
+                        # Increment the indices, e.g. [1, 3] becomes [2, 1]
+                        $$indexListRef[$dim] = 1;
+                    }
+                }
+
+            } until ($exitFlag || ! $dim);
+
+            # Termination test
+            if (! $termFlag) {
+
+                # Update the stored indices (commented out as not necessary for a list reference)
+#                $forStatement->ivAdd('parseDataHash', 'index_list_ref', $indexListRef);
+
+                # Retrieve the variable that's the next element of the array, and set the iterator
+                #   with its value
+                $iterVar = $lvalue->variable;
+                $elementVar = $forArrayExp->varObj->getCell(@$indexListRef);
+                $iterVar->set($elementVar->value);
+
+                # Perform another iteration of the loop
+                $loopFlag = TRUE;
+            }
         }
 
-        # Increment the iterator variable
-        $var = $lvalue->variable;
-        $value = $var->value;
-        $value += $step;
-        $var->set($value);
-
-        # Termination test
-        if (($step > 0 && $value <= $term) || ($step < 0 && $value >= $term)) {
+        if ($loopFlag) {
 
             # Perform another iteration of the loop. Go to the statement immediately after the
             #   corresponding FOR statement
             if (defined $forStatement->nextStatement) {
 
-                $self->scriptObj->set_nextStatement($forStatement->nextStatement);
+                # LA::Script->nextStatement is currently set to this statement; continue execution
+                #   as if this were the GOSUB statement
+                $self->scriptObj->set_nextStatement($forStatement);
 
             } else {
 
                 # The FOR statement was the last (or only) statement on the line: use the next line
+                $self->scriptObj->set_nextStatement(undef);
                 $self->scriptObj->set_nextLine($forStatement->lineObj->procLineNum + 1);
             }
 
-            # Put the corresponding 'for' statement back into the current subroutine's code block
-            #   stack
+            # Put the corresponding 'for' statement back into the current subroutine's code
+            #   block stack
             $subObj->push_blockStackList($forStatement);
         }
 
@@ -13115,7 +13845,7 @@
             } else {
 
                 @cellList = $varObj->cellList;
-                # Axbasic arrays don't use element 0, so dispense with the unusable $cellList[0]
+                # Take account of the first item in ->cellList, which is the lower bound
                 shift @cellList;
 
                 foreach my $arrayVar (@cellList) {
@@ -15893,6 +16623,164 @@
     }
 }
 
+{ package Language::Axbasic::Statement::pop;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    @Language::Axbasic::Statement::pop::ISA = qw(
+        Language::Axbasic
+        Language::Axbasic::Statement
+    );
+
+    # POP array-name [ , variable-name ]
+
+    ##################
+    # Methods
+
+    sub parse {
+
+        # Called by LA::Line->parse directly after a call to LA::Statement->new
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if there is an error
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my ($arrayExp, $scalarExp);
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->parse', @_);
+        }
+
+        # Abuse the IV that allows undeclared variables to be created by hijacking it to tell
+        #   LA::Variable->lookup that we're intentionally referring to an array variable, such as
+        #   that created by
+        #       DIM var (10)
+        #   ...by a variable name that looks like a scalar, i.e.
+        #       SORT var
+        $self->scriptObj->set_declareMode('simple');
+
+        # Get the array variable name
+        $arrayExp = Language::Axbasic::Expression::Lvalue->new(
+            $self->scriptObj,
+            $self->tokenGroupObj,
+        );
+
+        if (! defined $arrayExp) {
+
+            return $self->scriptObj->setError(
+                'missing_or_illegal_array_variable',
+                $self->_objClass . '->parse',
+            );
+        }
+
+        # Reset the temporary IV
+        $self->scriptObj->set_declareMode('default');
+
+        # Extract the optional scalar variable name
+        if (defined $self->tokenGroupObj->shiftMatchingToken(',')) {
+
+            $scalarExp = Language::Axbasic::Expression::Lvalue->new(
+                $self->scriptObj,
+                $self->tokenGroupObj,
+            );
+
+            if (! defined $scalarExp) {
+
+                return $self->scriptObj->setError(
+                    'missing_or_illegal_expression',
+                    $self->_objClass . '->parse',
+                );
+            }
+        }
+
+        if (! $self->tokenGroupObj->testStatementEnd()) {
+
+            return $self->scriptObj->setError(
+                'unexpected_keywords,_operators_or_expressions',
+                $self->_objClass . '->parse',
+            );
+        }
+
+        # Save the expression objects so $self->implement can use them, if it is called
+        $self->ivAdd('parseDataHash', 'array_exp', $arrayExp);
+        $self->ivAdd('parseDataHash', 'scalar_exp', $scalarExp);
+
+        # Parsing complete
+        return 1;
+    }
+
+    sub implement {
+
+        # Called by LA::Line->implement directly after a call to $self->parse
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my ($arrayExp, $scalarExp, $removedVar);
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->implement', @_);
+        }
+
+        # Retrieve the variables stored by ->parse
+        $arrayExp = $self->ivShow('parseDataHash', 'array_exp');
+        $scalarExp = $self->ivShow('parseDataHash', 'scalar_exp');
+
+        # Only 1-dimensional arrays (e.g. DIM var (5) ) can be popped. Multi-dimensional arrays
+        #   (e.g. DIM var (5, 5, 2) ) can't be popped
+        if ($arrayExp->varObj->dimCount > 1) {
+
+            return $self->scriptObj->setError(
+                'POP_statement_cannot_operate_on_multi-dimensional_array',
+                $self->_objClass . '->implement',
+            );
+        }
+
+        # Cannot use a numeric array with a string scalar, and vice-versa
+        if (
+            ((ref ($arrayExp->varObj) =~ m/String/) && (ref ($scalarExp->varObj) =~ m/Numeric/))
+            || ((ref ($arrayExp->varObj) =~ m/Numeric/) && (ref ($scalarExp->varObj) =~ m/String/))
+        ) {
+            return $self->scriptObj->setError(
+                'type_mismatch_error',
+                $self->_objClass . '->implement',
+            );
+        }
+
+        # Pop the stack, and use the popped value to set the variable. (If the array is empty, we
+        #   get an empty string or zero, as appropriate)
+        $removedVar = $arrayExp->varObj->doPop();
+        if ($removedVar) {
+
+            $scalarExp->varObj->set($removedVar->value);
+        }
+
+        # Implementation complete
+        return 1;
+    }
+}
+
 { package Language::Axbasic::Statement::print;
 
     use strict;
@@ -15926,7 +16814,7 @@
         my ($self, $check) = @_;
 
         # Local variables
-        my ($tokenGroupObj, $token, $channel, $expression, $endChar);
+        my ($tokenGroupObj, $token, $channel);
 
         # Check for improper arguments
         if (defined $check) {
@@ -15997,18 +16885,41 @@
 
         do {
 
-            # Convert the <print> argument into an expression
-            $expression = Language::Axbasic::Expression::Arithmetic->new(
-                $self->scriptObj,
-                $tokenGroupObj,
-            );
+            my ($argListObj, $expression, $endChar);
 
-            if (! defined $expression) {
+            # Handle the pseudo-function TAB (), implemented in Axbasic as a weak keyword
+            if (defined $tokenGroupObj->shiftMatchingToken('tab')) {
 
-                return $self->scriptObj->setError(
-                    'missing_or_illegal_expression',
-                    $self->_objClass . '->parse',
+                # Get an argument list, which should contain exactly 1 argument
+                $argListObj = Language::Axbasic::Expression::ArgList->new(
+                    $self->scriptObj,
+                    $tokenGroupObj,
                 );
+
+                if (! defined $argListObj || (scalar $argListObj->argList) != 1) {
+
+                    return $self->scriptObj->setError(
+                        'missing_or_invalid_argument_list',
+                        $self->_objClass . '->parse',
+                    );
+                }
+
+            # Otherwise, the next token is an expression
+            } else {
+
+                # Convert the <print> argument into an expression
+                $expression = Language::Axbasic::Expression::Arithmetic->new(
+                    $self->scriptObj,
+                    $tokenGroupObj,
+                );
+
+                if (! defined $expression) {
+
+                    return $self->scriptObj->setError(
+                        'missing_or_illegal_expression',
+                        $self->_objClass . '->parse',
+                    );
+                }
             }
 
             # Look for a comma or semicolon
@@ -16032,9 +16943,13 @@
                 );
             }
 
-            # Save the expression and the end character (comma or semicolon) so that
+            # Save the arglist/expression and the end character (comma or semicolon) so that
             #   $self->implement can use it, if it is called
-            $self->ivPush('parseDataList', $expression, $endChar);
+            if (defined $argListObj) {
+                $self->ivPush('parseDataList', $argListObj, $endChar);
+            } else {
+                $self->ivPush('parseDataList', $expression, $endChar);
+            }
 
         } until (defined $tokenGroupObj->testStatementEnd());
 
@@ -16156,26 +17071,89 @@
 
         } else {
 
-            # Otherwise, display the expressions
+            # Otherwise, display the expressions, one after the other
             while (@printList) {
 
-                my ($expression, $endChar, $string, $before, $after);
+                my ($expression, $argListObj, $arg, $columns, $endChar, $string, $before, $after);
 
                 $expression = shift @printList;
                 $endChar = shift @printList;
 
-                # Evaluate the expression. If there's been an error, ->setError should already have
-                #   been called to display the error message (and $string) will be 'undef')
-                $string = $expression->evaluate();
-                if (! defined $string) {
+                # In the case of TAB (n), the expression could be a LA::Expression::ArgList
+                if ($expression->isa('Language::Axbasic::Expression::ArgList')) {
 
-                    # Implementation complete
-                    return 1;
+                    # Evaluate the first item in the arglist, n, which should be an integer
+                    # The documentation is a little inconsistent about what should happen for
+                    #   non-integer values, and the authors have tested old BASIC programmes which
+                    #   produce them
+                    # For that reason, round down any floating point numbers, and any use column 1
+                    #   for any value less than one (the latter suggested by the True BASIC docs)
+                    $arg = $expression->ivIndex('argList', 0);
+                    $columns = $arg->evaluate();
+
+                    if (! ($columns =~ m/^[-]?\d+(\.\d*)?$/)) {
+
+                        return $self->scriptObj->setError(
+                            'invalid_TAB_column_NUM',
+                            $self->_objClass . '->implement',
+                            'NUM', $columns,
+                        );
+
+                    } elsif ($columns < 1) {
+
+                        $columns = 1;
+
+                    } else {
+
+                        $columns = int($columns);
+                    }
+
+                    # $columns is a column number. Decrement it so it uses the same column numbering
+                    #   system as LA::Script->column
+                    $columns--;
+                    if ($columns > $self->scriptObj->column) {
+
+                        # Move the cursor by adding some space characters on the current line
+                        $string = ' ' x ($columns - $self->scriptObj->column);
+
+                    } elsif ($columns == $self->scriptObj->column) {
+
+                        # Cursor is already at the correct position
+                        $string = '';
+
+                    } else {
+
+                        # Skip to the next line, and add some space characters there
+                        $string = ' ' x $columns;
+
+                        if ($self->scriptObj->forcedWinFlag) {
+                            $taskObj->insertPrint('');
+                        } else {
+                            $session->writeText('');
+                        }
+                    }
+
+                } else {
+
+
+                    # Evaluate the expression. If there's been an error, ->setError should already
+                    #   have been called to display the error message (and $string) will be 'undef')
+                    $string = $expression->evaluate();
+                    if (! defined $string) {
+
+                        # Implementation complete
+                        return 1;
+                    }
                 }
 
-                # In 'forced window' mode, a space is added after the number (just as many BASIC
-                #   dialects did). Otherwise, no extra space is added
-                if ($self->scriptObj->forcedWinFlag && ref($expression) =~ m/Numeric/) {
+                # In the original BASIC dialects, numerical values are preceded by a minus sign or
+                #   a leading space; and always followed by a trailing space
+                if (ref($expression) =~ m/Numeric/) {
+
+                    if ($string >= 0) {
+
+                        $string = ' ' . $string;
+                    }
 
                     $string .= ' ';
                 }
@@ -16397,6 +17375,164 @@
     }
 }
 
+{ package Language::Axbasic::Statement::push;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    @Language::Axbasic::Statement::push::ISA = qw(
+        Language::Axbasic
+        Language::Axbasic::Statement
+    );
+
+    # PUSH array-name , expression
+
+    ##################
+    # Methods
+
+    sub parse {
+
+        # Called by LA::Line->parse directly after a call to LA::Statement->new
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if there is an error
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my ($arrayExp, $scalarExp);
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->parse', @_);
+        }
+
+        # Abuse the IV that allows undeclared variables to be created by hijacking it to tell
+        #   LA::Variable->lookup that we're intentionally referring to an array variable, such as
+        #   that created by
+        #       DIM var (10)
+        #   ...by a variable name that looks like a scalar, i.e.
+        #       SORT var
+        $self->scriptObj->set_declareMode('simple');
+
+        # Get the array variable name
+        $arrayExp = Language::Axbasic::Expression::Lvalue->new(
+            $self->scriptObj,
+            $self->tokenGroupObj,
+        );
+
+        if (! defined $arrayExp) {
+
+            return $self->scriptObj->setError(
+                'missing_or_illegal_array_variable',
+                $self->_objClass . '->parse',
+            );
+        }
+
+        # Reset the temporary IV
+        $self->scriptObj->set_declareMode('default');
+
+        if (! defined $self->tokenGroupObj->shiftMatchingToken(',')) {
+
+            return $self->scriptObj->setError(
+                'syntax_error',
+                $self->_objClass . '->parse',
+            );
+        }
+
+        # Extract the non-optional scalar expression
+        $scalarExp = Language::Axbasic::Expression::Arithmetic->new(
+            $self->scriptObj,
+            $self->tokenGroupObj,
+        );
+
+        if (! defined $scalarExp) {
+
+            return $self->scriptObj->setError(
+                'missing_or_illegal_expression',
+                $self->_objClass . '->parse',
+            );
+        }
+
+        if (! $self->tokenGroupObj->testStatementEnd()) {
+
+            return $self->scriptObj->setError(
+                'unexpected_keywords,_operators_or_expressions',
+                $self->_objClass . '->parse',
+            );
+        }
+
+        # Save the expression objects so $self->implement can use them, if it is called
+        $self->ivAdd('parseDataHash', 'array_exp', $arrayExp);
+        $self->ivAdd('parseDataHash', 'scalar_exp', $scalarExp);
+
+        # Parsing complete
+        return 1;
+    }
+
+    sub implement {
+
+        # Called by LA::Line->implement directly after a call to $self->parse
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my ($arrayExp, $scalarExp, $removedVar);
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->implement', @_);
+        }
+
+        # Retrieve the variables stored by ->parse
+        $arrayExp = $self->ivShow('parseDataHash', 'array_exp');
+        $scalarExp = $self->ivShow('parseDataHash', 'scalar_exp');
+
+        # Only 1-dimensional arrays (e.g. DIM var (5) ) can be pushed. Multi-dimensional arrays
+        #   (e.g. DIM var (5, 5, 2) ) can't be pushed
+        if ($arrayExp->varObj->dimCount > 1) {
+
+            return $self->scriptObj->setError(
+                'PUSH_statement_cannot_operate_on_multi-dimensional_array',
+                $self->_objClass . '->implement',
+            );
+        }
+
+        # Cannot use a numeric array with a string scalar, and vice-versa
+        if (
+            ((ref ($arrayExp->varObj) =~ m/String/) && (ref ($scalarExp) =~ m/Numeric/))
+            || ((ref ($arrayExp->varObj) =~ m/Numeric/) && (ref ($scalarExp) =~ m/String/))
+        ) {
+            return $self->scriptObj->setError(
+                'type_mismatch_error',
+                $self->_objClass . '->implement',
+            );
+        }
+
+        # Evaluate the expression, and push it to the stack
+        $arrayExp->varObj->doPush($scalarExp->evaluate());
+
+        # Implementation complete
+        return 1;
+    }
+}
+
 { package Language::Axbasic::Statement::randomize;
 
     use strict;
@@ -16602,10 +17738,25 @@
 
         my ($self, $check) = @_;
 
+        # Local variables
+        my $specialFlag;
+
         # Check for improper arguments
         if (defined $check) {
 
             return $axmud::CLIENT->writeImproper($self->_objClass . '->parse', @_);
+        }
+
+        if ($self->scriptObj->executionMode eq 'line_num') {
+
+            # In programmes with line numbers, we don't allow DIM .. (10 TO 20)
+            $specialFlag = FALSE;
+
+        } else {
+
+            # A TRUE argument tells LA::Expression::Lvalue->new to attempt to extract an
+            #   LA::Expression::SpecialArgList, rather than an an LA::Expression::ArgList
+            $specialFlag = TRUE;
         }
 
         # Process each array in turn (if several appear on the same line, they are separated by
@@ -16615,6 +17766,7 @@
             my $expression = Language::Axbasic::Expression::Lvalue->new(
                 $self->scriptObj,
                 $self->tokenGroupObj,
+                $specialFlag,
             );
 
             if (! defined $expression) {
@@ -16661,13 +17813,10 @@
         # Import the list of expressions saved by $self->parse
         @expList = $self->parseDataList;
 
-        # Redefine each array in turn
+        # Redimension each array in turn
         foreach my $expression (@expList) {
 
-            my (
-                $varObj,
-                @indices,
-            );
+            my (@upperList, @boundList, @flatList);
 
             # If the $expression appeared in a line like REDIM var, rather than the correct REDIM
             #   var(10), then ->argListObj won't be defined
@@ -16679,33 +17828,81 @@
                 );
             }
 
-            $varObj = $expression->varObj;
+            if ($self->scriptObj->executionMode eq 'line_num') {
 
-            # Set up the array
-            @indices = $expression->argListObj->evaluate();
-            if (! @indices) {
+                # Set up the array. ->evaluate returns a list of upper bounds
+                @upperList = $expression->argListObj->evaluate();
 
-                # DIM var() statements not allowed
-                return $self->scriptObj->setError(
-                    'invalid_expression_in_REDIM_statement',
-                    $self->_objClass . '->implement',
-                );
+                # Convert that to a flat list in groups of two, in the form
+                #   (lower, upper, lower, upper...)
+                # For programmes with line numbers, the lower bound is always 0 (see the explanatory
+                #   comments in LA::Variable::Array->new)
+                # For any expression that could not be evaluated, an 'undef' value was placed in
+                #   @boundList, so we need to check for that too
+                foreach my $value (@upperList) {
 
-            } elsif (scalar @indices == 1 && $indices[0] == 0) {
+                    if (! defined $value || $value =~ m/\D/) {
 
-                # LA::Variable::Array allows empty one-dimensional arrays, which PEEK and PEEK...
-                #   statements need, but we can't create an empty one-dimensional array with REDIM
-                #   statements
-                return $self->scriptObj->setError(
-                    'invalid_array_dimension_size_NUM',
-                    $self->_objClass . '->implement',
-                    'NUM', $indices[0],
-                );
+                        return $self->scriptObj->setError(
+                            'invalid_bound_for_array_dimension',
+                            $self->_objClass . '->implement',
+                        );
+
+                    } else {
+
+                        push (@flatList, 0, $value);
+                    }
+                }
 
             } else {
 
-                $varObj->dimension(@indices);
+                # Set up the array. ->evaluate returns a list of list references. Each list
+                #   reference represents a dimension and specifies the bounds of that dimension;
+                #   either in the form (upper) or (lower, upper)
+                @boundList = $expression->argListObj->evaluate();
+
+                # Convert that to a flat list in groups of two, in the form
+                #   (lower, upper, lower, upper...)
+                # For programmes without line numbers, we use 1 as the lower bound, if not
+                #   specified
+                # For any expression that could not be evaluated, an 'undef' value was placed in
+                #   @boundList, so we need to check for that too
+                foreach my $listRef (@boundList) {
+
+                    foreach my $value (@$listRef) {
+
+                        if (! defined $value || ! ($value =~ m/^[-]?\d+$/)) {
+
+                            return $self->scriptObj->setError(
+                                'invalid_bound_for_array_dimension',
+                                $self->_objClass . '->implement',
+                            );
+                        }
+                    }
+
+                    if (scalar (@$listRef) == 1) {
+
+                        # If the lower bound is not specified, it is 1; therefore in that case, the
+                        #   upper bound cannot be less than 1)
+                        if ($$listRef[0] < 1) {
+
+                            return $self->scriptObj->setError(
+                                'invalid_bound_for_array_dimension',
+                                $self->_objClass . '->implement',
+                            );
+
+                        } else {
+
+                            push (@flatList, 1);
+                        }
+                    }
+
+                    push (@flatList, @$listRef);
+                }
             }
+
+            # Redimension the array
+            $expression->varObj->dimension(@flatList);
         }
 
         # Implementation complete
@@ -17273,8 +18470,9 @@
             # The next statement to execute is the statement after that
             if (defined $callStatement->nextStatement) {
 
-                $self->scriptObj->set_nextStatement($callStatement->nextStatement);
-                $self->scriptObj->set_nextLine($callStatement->lineObj->procLineNum);
+                # LA::Script->nextStatement is currently set to this statement; continue execution
+                #   as if this were the GOSUB statement
+                $self->scriptObj->set_nextStatement($statementObj);
 
             } else {
 
@@ -17306,8 +18504,7 @@
             # The next statement (or line) to be executed is the one after the gosub statement
             if (defined $statementObj->nextStatement) {
 
-                $self->scriptObj->set_nextStatement($statementObj->nextStatement);
-                $self->scriptObj->set_nextLine($statementObj->lineObj->procLineNum);
+                $self->scriptObj->set_nextStatement($statementObj);
 
             } else {
 
@@ -17368,7 +18565,7 @@
         #       DIM path$ (10)
         #   ...by a variable name that looks like a scalar, i.e.
         #       REVPATH path$
-        $self->scriptObj->set_declareMode('sort');
+        $self->scriptObj->set_declareMode('simple');
 
         # Get the variable name
         $lvalue = Language::Axbasic::Expression::Lvalue->new(
@@ -17444,7 +18641,7 @@
         # Import the values stored in the array, reverse them, and store them back in the array
         @cellList = $varObj->cellList;
 
-        # Ignore the cell numbered 0 - REVPATH assumes the first significant cell is #1
+        # Take account of the first item in ->cellList, which is the lower bound
         shift @cellList;
 
         if (@cellList) {
@@ -17633,12 +18830,13 @@
                 # The next statement to execute is the one after CASE ELSE
                 if (defined $caseElseStatement->nextStatement) {
 
-                    $self->scriptObj->set_nextStatement($caseElseStatement->nextStatement);
+                    # LA::Script->nextStatement is currently set to this statement; continue
+                    #   execution as if this were the SELECT statement
+                    $self->scriptObj->set_nextStatement($caseElseStatement);
 
                 } else {
 
-                    # The case statement was the last (or only) statement on the line: use the next
-                    #   line
+                    $self->scriptObj->set_nextStatement(undef);
                     $self->scriptObj->set_nextLine($caseElseStatement->lineObj->procLineNum + 1);
                 }
 
@@ -17655,12 +18853,12 @@
             # The next statement to execute is the one after $matchStatement
             if (defined $matchStatement->nextStatement) {
 
-                $self->scriptObj->ivPoke('nextStatement', $matchStatement->nextStatement);
+                $self->scriptObj->ivPoke('nextStatement', $matchStatement);
 
             } else {
 
-                # The case statement was the last (or only) statement on the line: use the next line
-                $self->scriptObj->set_nextStatement($matchStatement->lineObj->procLineNum + 1);
+                $self->scriptObj->set_nextStatement(undef);
+                $self->scriptObj->set_nextLine($matchStatement->lineObj->procLineNum + 1);
             }
         }
 
@@ -17830,6 +19028,126 @@
         }
 
         $self->scriptObj->session->worldCmd($newCmd);
+
+        # Implementation complete
+        return 1;
+    }
+}
+
+{ package Language::Axbasic::Statement::setalias;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    @Language::Axbasic::Statement::setalias::ISA = qw(
+        Language::Axbasic
+        Language::Axbasic::Statement
+    );
+
+    # SETALIAS expression [ , expression ]
+
+    ##################
+    # Methods
+
+    sub parse {
+
+        # Called by LA::Line->parse directly after a call to LA::Statement->new
+        #   when the first token in the statement is the keyword 'setalias'
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if there is an error
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->parse', @_);
+        }
+
+        # Extract tokens. If the extraction is successful, they are stored in $self->parseDataList,
+        #   ready for $self->implement to access
+        if (! $self->parseSetInterface()) {
+
+            # ($self->scriptObj->setError has already been called)
+            return undef;
+        }
+
+        # Parsing complete
+        return 1;
+    }
+
+    sub implement {
+
+        # Called by LA::Line->implement directly after a call to $self->parse
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if there is an error
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my ($stimulusExp, $stimulus, $newScriptExp, $newScript, $interfaceObj);
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->implement', @_);
+        }
+
+        # Retrieve the arguments stored by $self->parse
+        $stimulusExp = $self->ivShow('parseDataHash', 'stimulus');
+        $newScriptExp = $self->ivShow('parseDataHash', 'new_script');   # May be 'undef'
+
+        # If the Axbasic script isn't being run from within an Axmud task and assuming there isn't a
+        #   new script to call, ignore this statement altogether
+        if ((! $self->scriptObj->parentTask) && (! $newScriptExp)) {
+
+            # Implementation complete. Execution resumes from the next statement
+            return 1;
+        }
+
+        # Otherwise, evaluate the expressions
+        $stimulus = $stimulusExp->evaluate();
+        if (defined $newScriptExp) {
+
+            $newScript = $newScriptExp->evaluate();
+        }
+
+        # Create the (dependent) alias
+        $interfaceObj = $self->scriptObj->session->createDependentInterface(
+            'alias',
+            $stimulus,
+            $self->scriptObj->parentTask,
+            'aliasNotifySeen',
+        );
+
+        if (defined $interfaceObj) {
+
+            # Store the name of the new script to execute in the interface object
+            $interfaceObj->ivAdd('propertyHash', 'new_script', $newScript);
+
+            # Add this alias to the list of interfaces created during the execution of the Axbasic
+            #   script
+            $self->scriptObj->push_depInterfaceList($interfaceObj->name);
+            $self->scriptObj->set_depInterfaceName($interfaceObj->name);
+
+        } else {
+
+            # Store the fact that creation of the interface failed
+            $self->scriptObj->set_depInterfaceName(undef);
+        }
 
         # Implementation complete
         return 1;
@@ -18019,6 +19337,246 @@
     }
 }
 
+{ package Language::Axbasic::Statement::sethook;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    @Language::Axbasic::Statement::sethook::ISA = qw(
+        Language::Axbasic
+        Language::Axbasic::Statement
+    );
+
+    # SETHOOK expression [ , expression ]
+
+    ##################
+    # Methods
+
+    sub parse {
+
+        # Called by LA::Line->parse directly after a call to LA::Statement->new
+        #   when the first token in the statement is the keyword 'sethook'
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if there is an error
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->parse', @_);
+        }
+
+        # Extract tokens. If the extraction is successful, they are stored in $self->parseDataList,
+        #   ready for $self->implement to access
+        if (! $self->parseSetInterface()) {
+
+            # ($self->scriptObj->setError has already been called)
+            return undef;
+        }
+
+        # Parsing complete
+        return 1;
+    }
+
+    sub implement {
+
+        # Called by LA::Line->implement directly after a call to $self->parse
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if there is an error
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my ($stimulusExp, $stimulus, $newScriptExp, $newScript, $interfaceObj);
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->implement', @_);
+        }
+
+        # Retrieve the arguments stored by $self->parse
+        $stimulusExp = $self->ivShow('parseDataHash', 'stimulus');
+        $newScriptExp = $self->ivShow('parseDataHash', 'new_script');   # May be 'undef'
+
+        # If the Axbasic script isn't being run from within an Axmud task and assuming there isn't a
+        #   new script to call, ignore this statement altogether
+        if ((! $self->scriptObj->parentTask) && (! $newScriptExp)) {
+
+            # Implementation complete. Execution resumes from the next statement
+            return 1;
+        }
+
+        # Otherwise, evaluate the expressions
+        $stimulus = $stimulusExp->evaluate();
+        if (defined $newScriptExp) {
+
+            $newScript = $newScriptExp->evaluate();
+        }
+
+        # Create the (dependent) hook
+        $interfaceObj = $self->scriptObj->session->createDependentInterface(
+            'hook',
+            $stimulus,
+            $self->scriptObj->parentTask,
+            'hookNotifySeen',
+        );
+
+        if (defined $interfaceObj) {
+
+            # Store the name of the new script to execute in the interface object
+            $interfaceObj->ivAdd('propertyHash', 'new_script', $newScript);
+
+            # Add this hook to the list of interfaces created during the execution of the Axbasic
+            #   script
+            $self->scriptObj->push_depInterfaceList($interfaceObj->name);
+            $self->scriptObj->set_depInterfaceName($interfaceObj->name);
+
+        } else {
+
+            # Store the fact that creation of the interface failed
+            $self->scriptObj->set_depInterfaceName(undef);
+        }
+
+        # Implementation complete
+        return 1;
+    }
+}
+
+{ package Language::Axbasic::Statement::setmacro;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    @Language::Axbasic::Statement::setmacro::ISA = qw(
+        Language::Axbasic
+        Language::Axbasic::Statement
+    );
+
+    # SETMACRO expression [ , expression ]
+
+    ##################
+    # Methods
+
+    sub parse {
+
+        # Called by LA::Line->parse directly after a call to LA::Statement->new
+        #   when the first token in the statement is the keyword 'setmacro'
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if there is an error
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->parse', @_);
+        }
+
+        # Extract tokens. If the extraction is successful, they are stored in $self->parseDataList,
+        #   ready for $self->implement to access
+        if (! $self->parseSetInterface()) {
+
+            # ($self->scriptObj->setError has already been called)
+            return undef;
+        }
+
+        # Parsing complete
+        return 1;
+    }
+
+    sub implement {
+
+        # Called by LA::Line->implement directly after a call to $self->parse
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if there is an error
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my ($stimulusExp, $stimulus, $newScriptExp, $newScript, $interfaceObj);
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->implement', @_);
+        }
+
+        # Retrieve the arguments stored by $self->parse
+        $stimulusExp = $self->ivShow('parseDataHash', 'stimulus');
+        $newScriptExp = $self->ivShow('parseDataHash', 'new_script');   # May be 'undef'
+
+        # If the Axbasic script isn't being run from within an Axmud task and assuming there isn't a
+        #   new script to call, ignore this statement altogether
+        if ((! $self->scriptObj->parentTask) && (! $newScriptExp)) {
+
+            # Implementation complete. Execution resumes from the next statement
+            return 1;
+        }
+
+        # Otherwise, evaluate the expressions
+        $stimulus = $stimulusExp->evaluate();
+        if (defined $newScriptExp) {
+
+            $newScript = $newScriptExp->evaluate();
+        }
+
+        # Create the (dependent) macro
+        $interfaceObj = $self->scriptObj->session->createDependentInterface(
+            'macro',
+            $stimulus,
+            $self->scriptObj->parentTask,
+            'macroNotifySeen',
+        );
+
+        if (defined $interfaceObj) {
+
+            # Store the name of the new script to execute in the interface object
+            $interfaceObj->ivAdd('propertyHash', 'new_script', $newScript);
+
+            # Add this macro to the list of interfaces created during the execution of the Axbasic
+            #   script
+            $self->scriptObj->push_depInterfaceList($interfaceObj->name);
+            $self->scriptObj->set_depInterfaceName($interfaceObj->name);
+
+        } else {
+
+            # Store the fact that creation of the interface failed
+            $self->scriptObj->set_depInterfaceName(undef);
+        }
+
+        # Implementation complete
+        return 1;
+    }
+}
+
 { package Language::Axbasic::Statement::setstatus;
 
     use strict;
@@ -18202,7 +19760,7 @@
     }
 }
 
-{ package Language::Axbasic::Statement::settrig;
+{ package Language::Axbasic::Statement::settimer;
 
     use strict;
     use warnings;
@@ -18210,12 +19768,12 @@
 
     use Glib qw(TRUE FALSE);
 
-    @Language::Axbasic::Statement::settrig::ISA = qw(
+    @Language::Axbasic::Statement::settimer::ISA = qw(
         Language::Axbasic
         Language::Axbasic::Statement
     );
 
-    # SETTRIG expression [ , expression ]
+    # SETTIMER expression [ , expression ]
 
     ##################
     # Methods
@@ -18223,7 +19781,7 @@
     sub parse {
 
         # Called by LA::Line->parse directly after a call to LA::Statement->new
-        #   when the first token in the statement is the keyword 'settrig'
+        #   when the first token in the statement is the keyword 'settimer'
         #
         # Expected arguments
         #   (none besides $self)
@@ -18234,62 +19792,19 @@
 
         my ($self, $check) = @_;
 
-        # Local variables
-        my ($stimulusExp, $newScriptExp, $token);
-
         # Check for improper arguments
         if (defined $check) {
 
             return $axmud::CLIENT->writeImproper($self->_objClass . '->parse', @_);
         }
 
-        # Convert the stimulus string into an expression
-        $stimulusExp = Language::Axbasic::Expression::Arithmetic->new(
-            $self->scriptObj,
-            $self->tokenGroupObj,
-        );
+        # Extract tokens. If the extraction is successful, they are stored in $self->parseDataList,
+        #   ready for $self->implement to access
+        if (! $self->parseSetInterface()) {
 
-        if (! defined $stimulusExp) {
-
-            return $self->scriptObj->setError(
-                'missing_or_illegal_expression',
-                $self->_objClass . '->parse',
-            );
+            # ($self->scriptObj->setError has already been called)
+            return undef;
         }
-
-        # Get the new script name, if specified
-        if (defined $self->tokenGroupObj->shiftMatchingToken(',')) {
-
-            $token = $self->tokenGroupObj->lookAhead();
-            if (defined $token) {
-
-                $newScriptExp = Language::Axbasic::Expression::Arithmetic->new(
-                    $self->scriptObj,
-                    $self->tokenGroupObj,
-                );
-
-                if (! defined $newScriptExp) {
-
-                    return $self->scriptObj->setError(
-                        'missing_or_illegal_expression',
-                        $self->_objClass . '->parse',
-                    );
-                }
-            }
-        }
-
-        # Check that nothing follows the expression(s)
-        if (! $self->tokenGroupObj->testStatementEnd()) {
-
-            return $self->scriptObj->setError(
-                'unexpected_keywords,_operators_or_expressions',
-                $self->_objClass . '->parse',
-            );
-        }
-
-        # Store the expression(s), so $self->implement can retrieve them
-        $self->ivAdd('parseDataHash', 'stimulus', $stimulusExp);
-        $self->ivAdd('parseDataHash', 'new_script', $newScriptExp);
 
         # Parsing complete
         return 1;
@@ -18336,33 +19851,21 @@
             $newScript = $newScriptExp->evaluate();
         }
 
-        # Create the trigger
-        if (! $newScriptExp) {
-
-            $interfaceObj = $self->scriptObj->session->createInterface(
-                'trigger',
-                $stimulus,
-                $self->scriptObj->parentTask,
-                'notifyPatternSeen',
-            );
-
-        } else {
-
-            $interfaceObj = $self->scriptObj->session->createInterface(
-                'trigger',
-                $stimulus,
-                $self->scriptObj->parentTask,
-                'execPatternSeen',
-            );
-        }
+        # Create the (dependent) timer
+        $interfaceObj = $self->scriptObj->session->createDependentInterface(
+            'timer',
+            $stimulus,
+            $self->scriptObj->parentTask,
+            'timerNotifySeen',
+        );
 
         if (defined $interfaceObj) {
 
             # Store the name of the new script to execute in the interface object
             $interfaceObj->ivAdd('propertyHash', 'new_script', $newScript);
 
-            # Add this trigger to the list of interfaces created during the execution of the
-            #   Axbasic script
+            # Add this timer to the list of interfaces created during the execution of the Axbasic
+            #   script
             $self->scriptObj->push_depInterfaceList($interfaceObj->name);
             $self->scriptObj->set_depInterfaceName($interfaceObj->name);
 
@@ -18370,6 +19873,284 @@
 
             # Store the fact that creation of the interface failed
             $self->scriptObj->set_depInterfaceName(undef);
+        }
+
+        # Implementation complete
+        return 1;
+    }
+}
+
+{ package Language::Axbasic::Statement::settrig;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    @Language::Axbasic::Statement::settrig::ISA = qw(
+        Language::Axbasic
+        Language::Axbasic::Statement
+    );
+
+    # SETTRIG expression [ , expression ]
+
+    ##################
+    # Methods
+
+    sub parse {
+
+        # Called by LA::Line->parse directly after a call to LA::Statement->new
+        #   when the first token in the statement is the keyword 'settrig'
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if there is an error
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->parse', @_);
+        }
+
+        # Extract tokens. If the extraction is successful, they are stored in $self->parseDataList,
+        #   ready for $self->implement to access
+        if (! $self->parseSetInterface()) {
+
+            # ($self->scriptObj->setError has already been called)
+            return undef;
+        }
+
+        # Parsing complete
+        return 1;
+    }
+
+    sub implement {
+
+        # Called by LA::Line->implement directly after a call to $self->parse
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if there is an error
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my ($stimulusExp, $stimulus, $newScriptExp, $newScript, $interfaceObj);
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->implement', @_);
+        }
+
+        # Retrieve the arguments stored by $self->parse
+        $stimulusExp = $self->ivShow('parseDataHash', 'stimulus');
+        $newScriptExp = $self->ivShow('parseDataHash', 'new_script');   # May be 'undef'
+
+        # If the Axbasic script isn't being run from within an Axmud task and assuming there isn't a
+        #   new script to call, ignore this statement altogether
+        if ((! $self->scriptObj->parentTask) && (! $newScriptExp)) {
+
+            # Implementation complete. Execution resumes from the next statement
+            return 1;
+        }
+
+        # Otherwise, evaluate the expressions
+        $stimulus = $stimulusExp->evaluate();
+        if (defined $newScriptExp) {
+
+            $newScript = $newScriptExp->evaluate();
+        }
+
+        # Create the (dependent) trigger
+        $interfaceObj = $self->scriptObj->session->createDependentInterface(
+            'trigger',
+            $stimulus,
+            $self->scriptObj->parentTask,
+            'triggerNotifySeen',
+        );
+
+        if (defined $interfaceObj) {
+
+            # Store the name of the new script to execute in the interface object
+            $interfaceObj->ivAdd('propertyHash', 'new_script', $newScript);
+
+            # Add this trigger to the list of interfaces created during the execution of the Axbasic
+            #   script
+            $self->scriptObj->push_depInterfaceList($interfaceObj->name);
+            $self->scriptObj->set_depInterfaceName($interfaceObj->name);
+
+        } else {
+
+            # Store the fact that creation of the interface failed
+            $self->scriptObj->set_depInterfaceName(undef);
+        }
+
+        # Implementation complete
+        return 1;
+    }
+}
+
+{ package Language::Axbasic::Statement::shift;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    @Language::Axbasic::Statement::shift::ISA = qw(
+        Language::Axbasic
+        Language::Axbasic::Statement
+    );
+
+    # SHIFT array-name [ , variable-name ]
+
+    ##################
+    # Methods
+
+    sub parse {
+
+        # Called by LA::Line->parse directly after a call to LA::Statement->new
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if there is an error
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my ($arrayExp, $scalarExp);
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->parse', @_);
+        }
+
+        # Abuse the IV that allows undeclared variables to be created by hijacking it to tell
+        #   LA::Variable->lookup that we're intentionally referring to an array variable, such as
+        #   that created by
+        #       DIM var (10)
+        #   ...by a variable name that looks like a scalar, i.e.
+        #       SORT var
+        $self->scriptObj->set_declareMode('simple');
+
+        # Get the array variable name
+        $arrayExp = Language::Axbasic::Expression::Lvalue->new(
+            $self->scriptObj,
+            $self->tokenGroupObj,
+        );
+
+        if (! defined $arrayExp) {
+
+            return $self->scriptObj->setError(
+                'missing_or_illegal_array_variable',
+                $self->_objClass . '->parse',
+            );
+        }
+
+        # Reset the temporary IV
+        $self->scriptObj->set_declareMode('default');
+
+        # Extract the optional scalar variable name
+        if (defined $self->tokenGroupObj->shiftMatchingToken(',')) {
+
+            $scalarExp = Language::Axbasic::Expression::Lvalue->new(
+                $self->scriptObj,
+                $self->tokenGroupObj,
+            );
+
+            if (! defined $scalarExp) {
+
+                return $self->scriptObj->setError(
+                    'missing_or_illegal_expression',
+                    $self->_objClass . '->parse',
+                );
+            }
+        }
+
+        if (! $self->tokenGroupObj->testStatementEnd()) {
+
+            return $self->scriptObj->setError(
+                'unexpected_keywords,_operators_or_expressions',
+                $self->_objClass . '->parse',
+            );
+        }
+
+        # Save the expression objects so $self->implement can use them, if it is called
+        $self->ivAdd('parseDataHash', 'array_exp', $arrayExp);
+        $self->ivAdd('parseDataHash', 'scalar_exp', $scalarExp);
+
+        # Parsing complete
+        return 1;
+    }
+
+    sub implement {
+
+        # Called by LA::Line->implement directly after a call to $self->parse
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my ($arrayExp, $scalarExp, $removedVar);
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->implement', @_);
+        }
+
+        # Retrieve the variables stored by ->parse
+        $arrayExp = $self->ivShow('parseDataHash', 'array_exp');
+        $scalarExp = $self->ivShow('parseDataHash', 'scalar_exp');
+
+        # Only 1-dimensional arrays (e.g. DIM var (5) ) can be shifted. Multi-dimensional arrays
+        #   (e.g. DIM var (5, 5, 2) ) can't be shifted
+        if ($arrayExp->varObj->dimCount > 1) {
+
+            return $self->scriptObj->setError(
+                'SHIFT_statement_cannot_operate_on_multi-dimensional_array',
+                $self->_objClass . '->implement',
+            );
+        }
+
+        # Cannot use a numeric array with a string scalar, and vice-versa
+        if (
+            ((ref ($arrayExp->varObj) =~ m/String/) && (ref ($scalarExp->varObj) =~ m/Numeric/))
+            || ((ref ($arrayExp->varObj) =~ m/Numeric/) && (ref ($scalarExp->varObj) =~ m/String/))
+        ) {
+            return $self->scriptObj->setError(
+                'type_mismatch_error',
+                $self->_objClass . '->implement',
+            );
+        }
+
+        # Shift the stack, and use the shifted value to set the variable. (If the array is empty, we
+        #   get an empty string or zero, as appropriate)
+        $removedVar = $arrayExp->varObj->doShift();
+        if ($removedVar) {
+
+            $scalarExp->varObj->set($removedVar->value);
         }
 
         # Implementation complete
@@ -18527,7 +20308,7 @@
         #       DIM var (10)
         #   ...by a variable name that looks like a scalar, i.e.
         #       SORT var
-        $self->scriptObj->set_declareMode('sort');
+        $self->scriptObj->set_declareMode('simple');
 
         # Get the variable name
         $expression = Language::Axbasic::Expression::Lvalue->new(
@@ -18576,7 +20357,7 @@
 
         # Local variables
         my (
-            $expression, $varObj, $elementZero,
+            $expression, $varObj, $lowerBound,
             @list, @sortedList,
         );
 
@@ -18603,8 +20384,8 @@
         # Import the values stored in the array, sort them, and store them back in the  array
         @list = $varObj->cellList;
 
-        # Ignore the cell numbered 0 - SORT assumes the first significant cell is #1
-        $elementZero = shift @list;
+        # Take account of the first item in ->cellList, which is the lower bound
+        $lowerBound = shift @list;
 
         if (ref($varObj) =~ m/Numeric/) {
 
@@ -18617,8 +20398,8 @@
             @sortedList = sort {$a->value cmp $b->value} (@list);
         }
 
-        # Restore the 0th element to its previous place
-        unshift(@sortedList, $elementZero);
+        # Restore the lower bound to its previous place
+        unshift(@sortedList, $lowerBound);
         $varObj->ivPoke('cellList', @sortedList);
 
         # Implementation complete
@@ -18672,7 +20453,7 @@
         #       DIM var (10)
         #   ...by a variable name that looks like a scalar, i.e.
         #       SORT var
-        $self->scriptObj->set_declareMode('sort');
+        $self->scriptObj->set_declareMode('simple');
 
         # Get the variable name
         $expression = Language::Axbasic::Expression::Lvalue->new(
@@ -18721,7 +20502,7 @@
 
         # Local variables
         my (
-            $expression, $varObj, $elementZero,
+            $expression, $varObj, $lowerBound,
             @list, @sortedList,
         );
 
@@ -18748,8 +20529,8 @@
         # Import the values stored in the array, sort them, and store them back in the  array
         @list = $varObj->cellList;
 
-        # Ignore the cell numbered 0 - SORTCASE assumes the first significant cell is #1
-        $elementZero = shift @list;
+        # Take account of the first item in ->cellList, which is the lower bound
+        $lowerBound = shift @list;
 
         if (ref($varObj) =~ m/Numeric/) {
 
@@ -18762,8 +20543,8 @@
             @sortedList = sort {lc($a->value) cmp ($b->value)} (@list);
         }
 
-        # Restore the 0th element to its previous place
-        unshift(@sortedList, $elementZero);
+        # Restore the lower bound to its previous place
+        unshift(@sortedList, $lowerBound);
         $varObj->ivPoke('cellList', @sortedList);
 
         # Implementation complete
@@ -18817,7 +20598,7 @@
         #       DIM var (10)
         #   ...by a variable name that looks like a scalar, i.e.
         #       SORT var
-        $self->scriptObj->set_declareMode('sort');
+        $self->scriptObj->set_declareMode('simple');
 
         # Get the variable name
         $expression = Language::Axbasic::Expression::Lvalue->new(
@@ -18866,7 +20647,7 @@
 
         # Local variables
         my (
-            $expression, $varObj, $elementZero,
+            $expression, $varObj, $lowerBound,
             @list, @sortedList,
         );
 
@@ -18893,8 +20674,8 @@
         # Import the values stored in the array, sort them, and store them back in the array
         @list = $varObj->cellList;
 
-        # Ignore the cell numbered 0 - SORTCASER assumes the first significant cell is #1
-        $elementZero = shift @list;
+        # Take account of the first item in ->cellList, which is the lower bound
+        $lowerBound = shift @list;
 
         if (ref($varObj) =~ m/Numeric/) {
 
@@ -18907,8 +20688,8 @@
             @sortedList = sort {lc($b->value) cmp lc($a->value)} (@list);
         }
 
-        # Restore the 0th element to its previous place
-        unshift(@sortedList, $elementZero);
+        # Restore the lower bound to its previous place
+        unshift(@sortedList, $lowerBound);
         $varObj->ivPoke('cellList', @sortedList);
 
         # Implementation complete
@@ -18962,7 +20743,7 @@
         #       DIM var (10)
         #   ...by a variable name that looks like a scalar, i.e.
         #       SORT var
-        $self->scriptObj->set_declareMode('sort');
+        $self->scriptObj->set_declareMode('simple');
 
         # Get the variable name
         $expression = Language::Axbasic::Expression::Lvalue->new(
@@ -19011,7 +20792,7 @@
 
         # Local variables
         my (
-            $expression, $varObj, $elementZero,
+            $expression, $varObj, $lowerBound,
             @list, @sortedList,
         );
 
@@ -19038,8 +20819,8 @@
         # Import the values stored in the array, sort them, and store them back in the array
         @list = $varObj->cellList;
 
-        # Ignore the cell numbered 0 - SORT assumes the first significant cell is #1
-        $elementZero = shift @list;
+        # Take account of the first item in ->cellList, which is the lower bound
+        $lowerBound = shift @list;
 
         if (ref($varObj) =~ m/Numeric/) {
 
@@ -19052,8 +20833,8 @@
             @sortedList = sort {$b->value cmp $a->value} (@list);
         }
 
-        # Restore the 0th element to its previous place
-        unshift(@sortedList, $elementZero);
+        # Restore the lower bound to its previous place
+        unshift(@sortedList, $lowerBound);
         $varObj->ivPoke('cellList', @sortedList);
 
         # Implementation complete
@@ -19566,8 +21347,9 @@
         # The next statement to execute is the statement after that
         if (defined $endStatement->nextStatement) {
 
-            $self->scriptObj->set_nextStatement($endStatement->nextStatement);
-            $self->scriptObj->set_nextLine($endStatement->lineObj->procLineNum);
+            # LA::Script->nextStatement is currently set to this statement; continue execution
+            #   as if this were the END statement
+            $self->scriptObj->set_nextStatement($endStatement);
 
         } else {
 
@@ -19782,6 +21564,164 @@
     }
 }
 
+{ package Language::Axbasic::Statement::unshift;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    @Language::Axbasic::Statement::unshift::ISA = qw(
+        Language::Axbasic
+        Language::Axbasic::Statement
+    );
+
+    # UNSHIFT array-name , expression
+
+    ##################
+    # Methods
+
+    sub parse {
+
+        # Called by LA::Line->parse directly after a call to LA::Statement->new
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if there is an error
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my ($arrayExp, $scalarExp);
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->parse', @_);
+        }
+
+        # Abuse the IV that allows undeclared variables to be created by hijacking it to tell
+        #   LA::Variable->lookup that we're intentionally referring to an array variable, such as
+        #   that created by
+        #       DIM var (10)
+        #   ...by a variable name that looks like a scalar, i.e.
+        #       SORT var
+        $self->scriptObj->set_declareMode('simple');
+
+        # Get the array variable name
+        $arrayExp = Language::Axbasic::Expression::Lvalue->new(
+            $self->scriptObj,
+            $self->tokenGroupObj,
+        );
+
+        if (! defined $arrayExp) {
+
+            return $self->scriptObj->setError(
+                'missing_or_illegal_array_variable',
+                $self->_objClass . '->parse',
+            );
+        }
+
+        # Reset the temporary IV
+        $self->scriptObj->set_declareMode('default');
+
+        if (! defined $self->tokenGroupObj->shiftMatchingToken(',')) {
+
+            return $self->scriptObj->setError(
+                'syntax_error',
+                $self->_objClass . '->parse',
+            );
+        }
+
+        # Extract the non-optional scalar expression
+        $scalarExp = Language::Axbasic::Expression::Arithmetic->new(
+            $self->scriptObj,
+            $self->tokenGroupObj,
+        );
+
+        if (! defined $scalarExp) {
+
+            return $self->scriptObj->setError(
+                'missing_or_illegal_expression',
+                $self->_objClass . '->parse',
+            );
+        }
+
+        if (! $self->tokenGroupObj->testStatementEnd()) {
+
+            return $self->scriptObj->setError(
+                'unexpected_keywords,_operators_or_expressions',
+                $self->_objClass . '->parse',
+            );
+        }
+
+        # Save the expression objects so $self->implement can use them, if it is called
+        $self->ivAdd('parseDataHash', 'array_exp', $arrayExp);
+        $self->ivAdd('parseDataHash', 'scalar_exp', $scalarExp);
+
+        # Parsing complete
+        return 1;
+    }
+
+    sub implement {
+
+        # Called by LA::Line->implement directly after a call to $self->parse
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my ($arrayExp, $scalarExp, $removedVar);
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->implement', @_);
+        }
+
+        # Retrieve the variables stored by ->parse
+        $arrayExp = $self->ivShow('parseDataHash', 'array_exp');
+        $scalarExp = $self->ivShow('parseDataHash', 'scalar_exp');
+
+        # Only 1-dimensional arrays (e.g. DIM var (5) ) can be unshifted. Multi-dimensional arrays
+        #   (e.g. DIM var (5, 5, 2) ) can't be unshifted
+        if ($arrayExp->varObj->dimCount > 1) {
+
+            return $self->scriptObj->setError(
+                'UNSHIFT_statement_cannot_operate_on_multi-dimensional_array',
+                $self->_objClass . '->implement',
+            );
+        }
+
+        # Cannot use a numeric array with a string scalar, and vice-versa
+        if (
+            ((ref ($arrayExp->varObj) =~ m/String/) && (ref ($scalarExp) =~ m/Numeric/))
+            || ((ref ($arrayExp->varObj) =~ m/Numeric/) && (ref ($scalarExp) =~ m/String/))
+        ) {
+            return $self->scriptObj->setError(
+                'type_mismatch_error',
+                $self->_objClass . '->implement',
+            );
+        }
+
+        # Evaluate the expression, and unshift it from the stack
+        $arrayExp->varObj->doUnshift($scalarExp->evaluate());
+
+        # Implementation complete
+        return 1;
+    }
+}
+
 { package Language::Axbasic::Statement::until;
 
     use strict;
@@ -19942,17 +21882,16 @@
         # Evaluate the condition expression
         if (! $condition->evaluate()) {
 
-            # The condition expression is false, so we need to repeat the loop
-
-            # Perform another iteration of the loop. Go to the statement immediately after the
-            #   corresponding DO statement
+            # The condition expression is false, so we need to perform another iteration of the loop
             if (defined $doStatement->nextStatement) {
 
-                $self->scriptObj->set_nextStatement($doStatement->nextStatement);
+                # LA::Script->nextStatement is currently set to this statement; continue execution
+                #   as if this were the DO statement
+                $self->scriptObj->set_nextStatement($doStatement);
 
             } else {
 
-                # The DO statement was the last (or only) statement on the line: use the next line
+                $self->scriptObj->set_nextStatement(undef);
                 $self->scriptObj->set_nextLine($doStatement->lineObj->procLineNum + 1);
             }
 
@@ -20089,6 +22028,86 @@
 
         # Halt execution of the Axbasic script to allow control to be passed back to the parent task
         $self->scriptObj->set_scriptStatus('wait_active');
+
+        # Implementation complete
+        return 1;
+    }
+}
+
+{ package Language::Axbasic::Statement::waitalias;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    @Language::Axbasic::Statement::waitalias::ISA = qw(
+        Language::Axbasic
+        Language::Axbasic::Statement
+    );
+
+    # WAITALIAS expression [ , expression ]
+
+    ##################
+    # Methods
+
+    sub parse {
+
+        # Called by LA::Line->parse directly after a call to LA::Statement->new
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if there is an error
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->parse', @_);
+        }
+
+        # Extract tokens. If the extraction is successful, they are stored in $self->parseDataList,
+        #   ready for $self->implement to access
+        if (! $self->parseWaitInterface()) {
+
+            # ($self->scriptObj->setError has already been called)
+            return undef;
+        }
+
+        # Parsing complete
+        return 1;
+    }
+
+    sub implement {
+
+        # Called by LA::Line->implement directly after a call to $self->parse
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if there is an error
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->implement', @_);
+        }
+
+        # Implement the statement, haveing parsed it
+        if (! $self->implementWaitInterface('alias')) {
+
+            # ($self->scriptObj->setError has already been called)
+            return undef;
+        }
 
         # Implementation complete
         return 1;
@@ -20859,6 +22878,86 @@
     }
 }
 
+{ package Language::Axbasic::Statement::waithook;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    @Language::Axbasic::Statement::waithook::ISA = qw(
+        Language::Axbasic
+        Language::Axbasic::Statement
+    );
+
+    # WAITHOOK expression [ , expression ]
+
+    ##################
+    # Methods
+
+    sub parse {
+
+        # Called by LA::Line->parse directly after a call to LA::Statement->new
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if there is an error
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->parse', @_);
+        }
+
+        # Extract tokens. If the extraction is successful, they are stored in $self->parseDataList,
+        #   ready for $self->implement to access
+        if (! $self->parseWaitInterface()) {
+
+            # ($self->scriptObj->setError has already been called)
+            return undef;
+        }
+
+        # Parsing complete
+        return 1;
+    }
+
+    sub implement {
+
+        # Called by LA::Line->implement directly after a call to $self->parse
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if there is an error
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->implement', @_);
+        }
+
+        # Implement the statement, haveing parsed it
+        if (! $self->implementWaitInterface('hook')) {
+
+            # ($self->scriptObj->setError has already been called)
+            return undef;
+        }
+
+        # Implementation complete
+        return 1;
+    }
+}
+
 { package Language::Axbasic::Statement::waithp;
 
     use strict;
@@ -21019,6 +23118,86 @@
 
         # Halt execution of the Axbasic script to allow control to be passed back to the parent task
         $self->scriptObj->set_scriptStatus('wait_status');
+
+        # Implementation complete
+        return 1;
+    }
+}
+
+{ package Language::Axbasic::Statement::waitmacro;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    @Language::Axbasic::Statement::waitmacro::ISA = qw(
+        Language::Axbasic
+        Language::Axbasic::Statement
+    );
+
+    # WAITMACRO expression [ , expression ]
+
+    ##################
+    # Methods
+
+    sub parse {
+
+        # Called by LA::Line->parse directly after a call to LA::Statement->new
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if there is an error
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->parse', @_);
+        }
+
+        # Extract tokens. If the extraction is successful, they are stored in $self->parseDataList,
+        #   ready for $self->implement to access
+        if (! $self->parseWaitInterface()) {
+
+            # ($self->scriptObj->setError has already been called)
+            return undef;
+        }
+
+        # Parsing complete
+        return 1;
+    }
+
+    sub implement {
+
+        # Called by LA::Line->implement directly after a call to $self->parse
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if there is an error
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->implement', @_);
+        }
+
+        # Implement the statement, haveing parsed it
+        if (! $self->implementWaitInterface('macro')) {
+
+            # ($self->scriptObj->setError has already been called)
+            return undef;
+        }
 
         # Implementation complete
         return 1;
@@ -22223,6 +24402,86 @@
     }
 }
 
+{ package Language::Axbasic::Statement::waittimer;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    @Language::Axbasic::Statement::waittimer::ISA = qw(
+        Language::Axbasic
+        Language::Axbasic::Statement
+    );
+
+    # WAITTIMER expression [ , expression ]
+
+    ##################
+    # Methods
+
+    sub parse {
+
+        # Called by LA::Line->parse directly after a call to LA::Statement->new
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if there is an error
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->parse', @_);
+        }
+
+        # Extract tokens. If the extraction is successful, they are stored in $self->parseDataList,
+        #   ready for $self->implement to access
+        if (! $self->parseWaitInterface()) {
+
+            # ($self->scriptObj->setError has already been called)
+            return undef;
+        }
+
+        # Parsing complete
+        return 1;
+    }
+
+    sub implement {
+
+        # Called by LA::Line->implement directly after a call to $self->parse
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if there is an error
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->implement', @_);
+        }
+
+        # Implement the statement, haveing parsed it
+        if (! $self->implementWaitInterface('timer')) {
+
+            # ($self->scriptObj->setError has already been called)
+            return undef;
+        }
+
+        # Implementation complete
+        return 1;
+    }
+}
+
 { package Language::Axbasic::Statement::waittotalxp;
 
     use strict;
@@ -22422,58 +24681,19 @@
 
         my ($self, $check) = @_;
 
-        # Local variables
-        my ($stimulusExp, $timeoutExp);
-
         # Check for improper arguments
         if (defined $check) {
 
             return $axmud::CLIENT->writeImproper($self->_objClass . '->parse', @_);
         }
 
-        # Convert the pattern string into an expression
-        $stimulusExp = Language::Axbasic::Expression::Arithmetic->new(
-            $self->scriptObj,
-            $self->tokenGroupObj,
-        );
+        # Extract tokens. If the extraction is successful, they are stored in $self->parseDataList,
+        #   ready for $self->implement to access
+        if (! $self->parseWaitInterface()) {
 
-        if (! defined $stimulusExp) {
-
-            return $self->scriptObj->setError(
-                'missing_or_illegal_expression',
-                $self->_objClass . '->parse',
-            );
+            # ($self->scriptObj->setError has already been called)
+            return undef;
         }
-
-        # Get the timeout, if specified, and convert it into an expression
-        if (defined $self->tokenGroupObj->shiftMatchingToken(',')) {
-
-            $timeoutExp = Language::Axbasic::Expression::Arithmetic->new(
-                $self->scriptObj,
-                $self->tokenGroupObj,
-            );
-
-            if (! defined $timeoutExp) {
-
-                return $self->scriptObj->setError(
-                    'missing_or_illegal_expression',
-                    $self->_objClass . '->parse',
-                );
-            }
-        }
-
-        # Check that nothing follows the expression(s)
-        if (! $self->tokenGroupObj->testStatementEnd()) {
-
-            return $self->scriptObj->setError(
-                'unexpected_keywords,_operators_or_expressions',
-                $self->_objClass . '->parse',
-            );
-        }
-
-        # Store the expression(s), so $self->implement can retrieve them
-        $self->ivAdd('parseDataHash', 'pattern', $stimulusExp);
-        $self->ivAdd('parseDataHash', 'timeout', $timeoutExp);
 
         # Parsing complete
         return 1;
@@ -22492,88 +24712,17 @@
 
         my ($self, $check) = @_;
 
-        # Local variables
-        my ($stimulusExp, $stimulus, $timeoutExp, $timeout, $interfaceObj);
-
         # Check for improper arguments
         if (defined $check) {
 
             return $axmud::CLIENT->writeImproper($self->_objClass . '->implement', @_);
         }
 
-        # If the Axbasic script isn't being run from within an Axmud task, ignore the statement
-        if (! $self->scriptObj->parentTask) {
+        # Implement the statement, haveing parsed it
+        if (! $self->implementWaitInterface('trigger')) {
 
-            # Implementation complete. Execution resumes from the next statement
-            return 1;
-        }
-
-        # Otherwise, retrieve the argument(s) stored by $self->parse
-        $stimulusExp = $self->ivShow('parseDataHash', 'pattern');
-        $timeoutExp = $self->ivShow('parseDataHash', 'timeout');
-
-        # Evaluate the expression(s)
-        $stimulus = $stimulusExp->evaluate();
-
-        if (defined $timeoutExp) {
-
-            $timeout = $timeoutExp->evaluate();
-
-            if (! ($timeout =~  /^\d+$/)) {
-
-                return $self->scriptObj->setError(
-                    'invalid_integer',
-                    $self->_objClass . '->implement',
-                );
-
-            } elsif ($timeout < 1) {
-
-                return $self->scriptObj->setError(
-                    'number_NUM_out_of_range',
-                    $self->_objClass . '->implement',
-                    'NUM', $timeout,
-                );
-            }
-        }
-
-        # Create the trigger, which will call a function in this script's parent task when it fires
-        $interfaceObj = $self->scriptObj->session->createInterface(
-            'trigger',
-            $stimulus,
-            $self->scriptObj->parentTask,
-            'waitPatternSeen',
-            'temporary',
-            1,
-        );
-
-        if (defined $interfaceObj) {
-
-            # Add this trigger to the list of interfaces created during the execution of the Axbasic
-            #   script
-            $self->scriptObj->push_depInterfaceList($interfaceObj->name);
-            $self->scriptObj->set_depInterfaceName($interfaceObj->name);
-
-            # Mark this script as paused
-            $self->scriptObj->set_scriptStatus('paused');
-            # Tell the task that it's waiting for a trigger, so that the interface can be deleted,
-            #   the first time the trigger fires...
-            $self->scriptObj->parentTask->ivPoke('waitForInterface', $interfaceObj->name);
-            # ...and then mark the task as paused
-            if (defined $timeoutExp) {
-
-                $self->scriptObj->parentTask->pauseUntil(
-                    ($self->scriptObj->session->sessionTime + $timeout),
-                );
-
-            } else {
-
-                $self->scriptObj->parentTask->pauseUntil();
-            }
-
-        } else {
-
-            # Store the fact that creation of the interface failed
-            $self->scriptObj->set_depInterfaceName(undef);
+            # ($self->scriptObj->setError has already been called)
+            return undef;
         }
 
         # Implementation complete
@@ -22998,11 +25147,13 @@
 
             if (defined $loopStatement->nextStatement) {
 
-                $self->scriptObj->set_nextStatement($loopStatement->nextStatement);
+                # LA::Script->nextStatement is currently set to this statement; continue execution
+                #   as if this were the LOOP statement
+                $self->scriptObj->set_nextStatement($loopStatement);
 
             } else {
 
-                # The LOOP statement was the last (or only) statement on the line: use the next line
+                $self->scriptObj->set_nextStatement(undef);
                 $self->scriptObj->set_nextLine($loopStatement->lineObj->procLineNum + 1),
             }
 

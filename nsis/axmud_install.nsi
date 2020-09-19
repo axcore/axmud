@@ -1,6 +1,6 @@
-# Axmud v1.2.041 installer script for MS Windows
+# Axmud v1.3.0 installer script for MS Windows
 #
-# Copyright (C) 2011-2019 A S Lewis
+# Copyright (C) 2011-2020 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -43,6 +43,21 @@
 #   - Copy the installer to the same folder, e.g. the standard Downloads folder
 #   - Rename it to 'setup_espeak'
 #
+#   - Download both the 32bit and 64bit installers for the espeak-ng engine from
+#
+#       https://github.com/espeak-ng/espeak-ng/releases
+#
+#   - Copy the installers to the same folder, e.g. the standard Downloads folder
+#   - Rename them to 'espeak-ng-x64.msi' and 'espeak-ng-x86.msi'
+#
+#   - Download the build for the Festival engine (e.g. 'festival-2.5-win.7z'
+#       from
+#
+#       https://sourceforge.net/projects/e-guidedog/files/related-third-party-software/0.3/
+#
+#   - Extract the .7z file into the standard Downloads folder, and rename the
+#       extracted folder as 'festival' (must be lower case)
+#
 #   - Download the Axmud source code (the file ending .tar.gz) from
 #       https://sourceforge.io/projects/axmud/
 #   - Extract the .tar.gz file to a convenient location, e.g. the standard
@@ -66,7 +81,7 @@
 #
 #       cpan Archive::Extract IO::Socket::INET6 IPC::Run Net::OpenSSH Path::Tiny Regexp::IPv6
 #       cpanm --force --build-args SHELL=cmd.exe --install-args SHELL=cmd.exe File::ShareDir::Install
-#      	ppm set repository sisyphusion http://sisyphusion.tk/ppm
+#       ppm set repository sisyphusion http://sisyphusion.tk/ppm
 #       ppm set save
 #       ppm install Glib Gtk3 GooCanvas2
 #
@@ -80,6 +95,13 @@
 #   - Copy the file ...\strawberry\perl\site\lib\auto\Cairo\s1sfontconfig-1.dll
 #       into the folder ...\strawberry\perl\bin
 #
+#   - For the Festival engine, the code for IPC::Run must be modified. Find these files:
+#
+#       ../strawberry\perl\vendor\lib\IPC\Run.pm
+#       ../strawberry\perl\vendor\lib\IPC\Run\Win32Helper.pm
+#
+#   - ...and replace them with the equivalent files in ../axmud/nsis/ipc_run
+#
 #   - Using the same command prompt, navigate into the Axmud folder
 #   - Install Axmud in the usual way
 #
@@ -92,7 +114,7 @@
 #   - The Axmud folder contains an \nsis folder, which contains this file
 #   - In this file, update the version number just below, e.g.
 #
-#       OutFile "install-axmud-1.2.041.exe"
+#       OutFile "install-axmud-1.3.0.exe"
 #
 #   - Compile the installer (e.g. by right-clicking this file and selecting
 #       'Compile NSIS script file')
@@ -102,13 +124,14 @@
 
     !include "MUI2.nsh"
     !include "Sections.nsh"
+    !include "x64.nsh"
 
 # General
 # -------------------------------
 
     ;Name and file
     Name "Axmud"
-    OutFile "install-axmud-1.2.041.exe"
+    OutFile "install-axmud-1.3.0.exe"
 
     ;Default installation folder
     InstallDir "$LOCALAPPDATA\Axmud"
@@ -205,6 +228,28 @@ Section "Axmud" SecClient
 
 SectionEnd
 
+Section "Festival" SecFestival
+
+    SetOutPath "C:"
+
+    File /r ..\..\festival
+
+SectionEnd
+
+Section "espeak-ng" SecSpeakNG
+
+    SetOutPath "$TEMP"
+
+    ${If} ${RunningX64}
+        File "..\..\espeak-ng-x64.msi"
+        ExecWait 'msiexec /i "$TEMP\espeak-ng-x64.msi"'
+    ${Else}
+        File "..\..\espeak-ng-x64.msi"
+        ExecWait 'msiexec /i "$TEMP\espeak-ng-x86.msi"'
+    ${EndIf}
+
+SectionEnd
+
 Section "eSpeak" SecSpeak
 
     SetOutPath "$TEMP"
@@ -220,8 +265,12 @@ SectionEnd
 
 !insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
     !insertmacro MUI_DESCRIPTION_TEXT ${SecClient} "The Axmud client itself"
+    !insertmacro MUI_DESCRIPTION_TEXT ${SecFestival} \
+        "Install the Festival text-to-speech engine"
+    !insertmacro MUI_DESCRIPTION_TEXT ${SecSpeakNG} \
+        "Install the espeak-ng text-to-speech engine (does not work Windows 7)"
     !insertmacro MUI_DESCRIPTION_TEXT ${SecSpeak} \
-        "Install the eSpeak engine if you need text-to-speech"
+        "Install the eSpeak text-to-speech engine"
 !insertmacro MUI_FUNCTION_DESCRIPTION_END
 
 # Uninstaller sections

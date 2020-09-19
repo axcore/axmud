@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2019 A S Lewis
+# Copyright (C) 2011-2020 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -358,7 +358,7 @@
         my ($self, $check) = @_;
 
         # Local variables
-        my $mode;
+        my ($mode, $choice);
 
         # Check for improper arguments
         if (defined $check) {
@@ -414,6 +414,8 @@
             }
         });
         $menuColumn_world->append($menuItem_connect);
+        # (Desensitised only when the setup wizwin is open)
+        $self->ivAdd('menuItemHash', 'connect', $menuItem_connect);
 
         my $menuItem_reconnect = Gtk3::ImageMenuItem->new('_Reconnect');
         my $menuImg_reconnect = Gtk3::Image->new_from_stock('gtk-connect', 'menu');
@@ -577,17 +579,24 @@
         $menuItem_stopSession->set_image($menuImg_stopSession);
         $menuItem_stopSession->signal_connect('activate' => sub {
 
-            # If the current session's status isn't 'offline' or 'disconnected' or if there are
-            #   any unsaved files (both for the session, and for the client), prompt the user
-            #   before stopping the session (which closes the tab); otherwise, stop the session
-            #   right away
             if (
-                $axmud::CLIENT->checkSessions($self->winObj->visibleSession)
-                || $self->promptUser(
-                    'Confirm stop session',
-                    'Are you sure you want to stop this session?',
-                )
+                $self->winObj->visibleSession->status eq 'connected'
+                && $axmud::CLIENT->confirmCloseMenuFlag
             ) {
+                $choice = $self->winObj->showMsgDialogue(
+                    'Stop session',
+                    'question',
+                    'This session is connected to a world. Are you sure you want to stop it?',
+                    'yes-no',
+                );
+
+                if ($choice eq 'yes') {
+
+                    $self->winObj->visibleSession->pseudoCmd('stopsession', $mode);
+                }
+
+            } else {
+
                 $self->winObj->visibleSession->pseudoCmd('stopsession', $mode);
             }
         });
@@ -621,6 +630,8 @@
             }
         });
         $menuColumn_world->append($menuItem_stopClient);
+        # (Desensitised only when the setup wizwin is open)
+        $self->ivAdd('menuItemHash', 'stop_client', $menuItem_stopClient);
 
         # Setup complete
         return $menuColumn_world;
@@ -1864,6 +1875,8 @@
             $self->winObj->visibleSession->pseudoCmd('testpattern', $mode);
         });
         $menuColumn_edit->append($menuItem_patternTest);
+        # (Desensitised only when the setup wizwin is open)
+        $self->ivAdd('menuItemHash', 'test_pattern', $menuItem_patternTest);
 
         # Setup complete
         return $menuColumn_edit;
@@ -4177,6 +4190,8 @@
             }
         });
         $menuColumn_help->append($menuItem_help);
+        # (Desensitised only when the setup wizwin is open)
+        $self->ivAdd('menuItemHash', 'help', $menuItem_help);
 
         $menuColumn_help->append(Gtk3::SeparatorMenuItem->new());   # Separator
 
@@ -4211,6 +4226,8 @@
             }
         });
         $menuColumn_help->append($menuItem_about);
+        # (Desensitised only when the setup wizwin is open)
+        $self->ivAdd('menuItemHash', 'about', $menuItem_about);
 
         my $menuItem_credits = Gtk3::MenuItem->new('_Credits...');
         $menuItem_credits->signal_connect('activate' => sub {
@@ -4241,6 +4258,8 @@
             }
         });
         $menuColumn_help->append($menuItem_credits);
+        # (Desensitised only when the setup wizwin is open)
+        $self->ivAdd('menuItemHash', 'credits', $menuItem_credits);
 
         my $menuItem_license = Gtk3::MenuItem->new('_Licenses...');
         $menuItem_license->signal_connect('activate' => sub {
@@ -4271,6 +4290,8 @@
             }
         });
         $menuColumn_help->append($menuItem_license);
+        # (Desensitised only when the setup wizwin is open)
+        $self->ivAdd('menuItemHash', 'license', $menuItem_license);
 
         $menuColumn_help->append(Gtk3::SeparatorMenuItem->new());   # Separator
 
@@ -4339,7 +4360,7 @@
         #   (none besides $self)
         #
         # Optional arguments
-        #   @widgetList - A list of widget names, matching keys in GA::Win::Internal->menuItemHash
+        #   @widgetList - A list of widget names, matching keys in $self->menuItemHash
         #                   (e.g. 'move_up_level')
         #
         # Return values
@@ -4370,7 +4391,7 @@
         #   (none besides $self)
         #
         # Optional arguments
-        #   @widgetList - A list of widget names, matching keys in GA::Win::Internal->menuItemHash
+        #   @widgetList - A list of widget names, matching keys in $self->menuItemHash
         #                   (e.g. 'move_up_level')
         #
         # Return values
@@ -4922,7 +4943,7 @@
         # Each toolbar button is a GA::Obj::Toolbar object
         foreach my $buttonName ($axmud::CLIENT->toolbarList) {
 
-            my ($separator, $buttonObj, $path, $label, $iconName);
+            my ($separator, $buttonObj, $path, $label, $iconName, $choice);
 
             if ($buttonName eq 'separator') {
 
@@ -4975,13 +4996,56 @@
                 $toolButton_item->set_tooltip_text($buttonObj->descrip);
                 $toolButton_item->signal_connect('clicked' => sub {
 
-                    if ($self->winObj->visibleSession) {
+                    # The icons for ';connect', ';openaboutwindow -h' and ';stopsession' are
+                    #   sensitised even when there is no current session. Since we can't call
+                    #   ->doInstruct, process those commands directly
+
+                    # Special case: prompt the user before stopping an active session (if the flag
+                    #   is set)
+                    if ($buttonObj->instruct eq ';stopsession') {
+
+                        if ($self->winObj->visibleSession) {
+
+                            if (
+                                $self->winObj->visibleSession->status eq 'connected'
+                                && $axmud::CLIENT->confirmCloseToolButtonFlag
+                            ) {
+                                $choice = $self->winObj->showMsgDialogue(
+                                    'Close tab',
+                                    'question',
+                                    'This session is connected to a world. Are you sure you want'
+                                    . ' to close it?',
+                                    'yes-no',
+                                );
+
+                                if ($choice eq 'yes') {
+
+                                    $self->winObj->visibleSession->pseudoCmd(
+                                        'stopsession',
+                                        $self->winObj->pseudoCmdMode,
+                                    );
+                                }
+
+                            } else {
+
+                                $self->winObj->visibleSession->pseudoCmd(
+                                    'stopsession',
+                                    $self->winObj->pseudoCmdMode,
+                                );
+                            }
+
+                        } else {
+
+                            # No sessions open, so terminate the client
+                            $axmud::CLIENT->stop();
+                        }
+
+                    # If a session is open, then we can call ->doInstruct, as normal
+                    } elsif ($self->winObj->visibleSession) {
 
                         $self->winObj->visibleSession->doInstruct($buttonObj->instruct);
 
-                    # The icons for ';connect' and ';openaboutwindow -h' are sensitised even when
-                    #   there is no current session. Since we can't call ->doInstruct, process these
-                    #   commands directly
+                    # Process commands directly
                     } elsif ($buttonObj->instruct eq ';connect') {
 
                         # Check that the Connections window isn't already open
@@ -5105,15 +5169,14 @@
 
     sub sensitiseWidgets {
 
-        # Can be called by anything, but usually called by GA::Win::Internal->restrictMenuBars
-        # Given a list of Gtk3 widgets (all of them menu bar items), sets them as sensitive
+        # Can be called by anything, but usually called by GA::Win::Internal->restrictToolbars
+        # Given a list of Gtk3 widgets (all of them toolbar items), sets them as sensitive
         #
         # Expected arguments
         #   (none besides $self)
         #
         # Optional arguments
-        #   @widgetList - A list of widget names, matching keys in GA::Win::Internal->menuItemHash
-        #                   (e.g. 'move_up_level')
+        #   @widgetList - A list of widget names from $self->toolbarWidgetList (e.g. 'connect_me')
         #
         # Return values
         #   1
@@ -5143,15 +5206,14 @@
 
     sub desensitiseWidgets {
 
-        # Can be called by anything, but usually called by GA::Win::Internal->restrictMenuBars
-        # Given a list of Gtk3 widgets (all of them menu bar items), sets them as insensitive
+        # Can be called by anything, but usually called by GA::Win::Internal->restrictToolbars
+        # Given a list of Gtk3 widgets (all of them toolbar items), sets them as insensitive
         #
         # Expected arguments
         #   (none besides $self)
         #
         # Optional arguments
-        #   @widgetList - A list of widget names, matching keys in GA::Win::Internal->menuItemHash
-        #                   (e.g. 'move_up_level')
+        #   @widgetList - A list of widget names from $self->toolbarWidgetList (e.g. 'connect_me')
         #
         # Return values
         #   1
@@ -5360,7 +5422,6 @@
             # ---------
 
             # Gtk3 widgets to draw the table
-            vBox                        => undef,       # Gtk3::VBox
             table                       => undef,       # Gtk3::Grid
 
             # The table size actually used
@@ -5380,6 +5441,13 @@
             # Number of table objects ever created for this Gtk3::Grid (used to give every table
             #   object a number unique to the Gtk3::Grid)
             tableObjCount               => 0,
+
+            # The current value for spacing between table objects (actually applied as a border
+            #   around each table object; set from $self->initHash by $self->objEnable)
+            currentSpacing              => 0,
+            # The current value for the border at the edge of the table (set from $self->initHash by
+            #   $self->objEnable)
+            currentBorder               => 0,
         };
 
         # Bless the object into existence
@@ -5419,37 +5487,31 @@
 
         # Interpret $self->initHash, replacing any invalid values
         $spacing = $self->ivShow('initHash', 'spacing');
-        if (! defined $spacing || ! $axmud::CLIENT->intCheck($spacing, 0, 10)) {
+        if (defined $spacing && $axmud::CLIENT->intCheck($spacing, 0, 10)) {
 
-            $self->ivAdd('initHash', 'spacing', 0);
+            $self->ivPoke('currentSpacing', $spacing);
         }
 
         $border = $self->ivShow('initHash', 'border');
-        if (! defined $border || ! $axmud::CLIENT->intCheck($border, 0, 10)) {
+        if (defined $border && $axmud::CLIENT->intCheck($border, 0, 10)) {
 
-            $self->ivAdd('initHash', 'border', 0);
+            $self->ivPoke('currentBorder', $border);
         }
 
         # Create a packing box (a scroller rather than a VBox/HBox, in this case)
         my $scroller = Gtk3::ScrolledWindow->new();
         $scroller->set_policy('automatic', 'automatic');
 
-        # Create a Gtk3::Grid whose columns and rows are equally-spaced
-        my $vBox = Gtk3::VBox->new(FALSE, 0);
-        $vBox->set_border_width($self->ivShow('initHash', 'border'));
-        $scroller->add_with_viewport($vBox);
-
-        my $table = Gtk3::Grid->new();
-        $vBox->pack_start($table, TRUE, TRUE, 0),
-        # To avoid unfortunate textview scrolling problems, the spacing specified in $self->initHash
-        #   is only applied when there are two or more table objects in the table
-        $table->set_column_spacing(0);
-        $table->set_row_spacing(0);
+        # Create a Gtk3::Grid
+        my $grid = Gtk3::Grid->new();
+        $scroller->add_with_viewport($grid);
+        $grid->set_border_width($border);
+        $grid->set_column_spacing(0);
+        $grid->set_row_spacing(0);
 
         # Update IVs
         $self->ivPoke('packingBox', $scroller);
-        $self->ivPoke('vBox', $vBox);
-        $self->ivPoke('table', $table);
+        $self->ivPoke('table', $grid);
         $self->ivPoke('tableSize', $winmapObj->tableSize);
 
         return 1;
@@ -5589,7 +5651,7 @@
         my ($self, $packageName, $left, $right, $top, $bottom, $objName, %initHash) = @_;
 
         # Local variables
-        my ($string, $zoneObj, $tableObj, $count);
+        my ($string, $zoneObj, $tableObj);
 
         # Check for improper arguments
         if (
@@ -5718,10 +5780,6 @@
             return undef;
         }
 
-        # Add the new table object to this strip's Gtk3::Grid
-        $tableObj->packingBox->set_hexpand(TRUE);
-        $tableObj->packingBox->set_vexpand(TRUE);
-
         $self->table->attach(
             $tableObj->packingBox,
             $zoneObj->left,
@@ -5737,29 +5795,19 @@
         $self->ivAdd('tableObjHash', $tableObj->number, $tableObj);
         $self->ivIncrement('tableObjCount');
 
-        # To avoid unfortunate Gtk3 spacing issues, the spacing specified in $self->initHash is
-        #   only applied when there are two or more simple list/textview/pane objects in the table
-        $count = 0;
-        foreach my $otherObj ($self->ivValues('tableObjHash')) {
-
-            if (
-                $otherObj->type eq 'simple_list'
-                || $otherObj->type eq 'text_view'
-                || $otherObj->type eq 'pane'
-            ) {
-                $count++;
-            }
-        }
-
-        if ($count <= 1) {
-
-            $self->table->set_column_spacing(0);
-            $self->table->set_row_spacing(0);
-
+        # Cannot call $self->table->set_column_spacing(), etc, as that would add spacing to all
+        #   60 columns (etc). Instead, add a border area around the table widget
+        # In certain circumstances, approve the aesthetics by not using a border at all
+        if (
+            $self->ivPairs('tableObjHash') < 2
+            && (
+                $self->winObj->winType eq 'main'
+                || $self->winObj->ivPairs('stripHash') < 2
+            )
+        ) {
+            $tableObj->packingBox->set_border_width(0);
         } else {
-
-            $self->table->set_column_spacing($self->ivShow('initHash', 'spacing'));
-            $self->table->set_row_spacing($self->ivShow('initHash', 'spacing'));
+            $tableObj->packingBox->set_border_width($self->currentSpacing);
         }
 
         # Notify all of this window's strip objects of the new table object's birth
@@ -5850,31 +5898,6 @@
         # Update IVs
         $self->ivDelete('tableObjHash', $tableObj->number);
         $self->ivDelete('tablezoneHash', $tableObj->zoneObj->number);
-
-        # To avoid unfortunate Gtk3 spacing issues, the spacing specified in $self->initHash is
-        #   only applied when there are two or more simple list/textview/pane objects in the table
-        $count = 0;
-        foreach my $otherObj ($self->ivValues('tableObjHash')) {
-
-            if (
-                $otherObj->type eq 'simple_list'
-                || $otherObj->type eq 'text_view'
-                || $otherObj->type eq 'pane'
-            ) {
-                $count++;
-            }
-        }
-
-        if ($count <= 1) {
-
-            $self->table->set_column_spacing(0);
-            $self->table->set_row_spacing(0);
-
-        } else {
-
-            $self->table->set_column_spacing($self->ivShow('initHash', 'spacing'));
-            $self->table->set_row_spacing($self->ivShow('initHash', 'spacing'));
-        }
 
         # Notify all of this window's strip objects of the table object's demise
         foreach my $stripObj (
@@ -6084,9 +6107,6 @@
 
         # Resize the table object
         $axmud::CLIENT->desktopObj->removeWidget($self->table, $tableObj->packingBox);
-
-        $tableObj->packingBox->set_hexpand(TRUE);
-        $tableObj->packingBox->set_vexpand(TRUE);
 
         $self->table->attach(
             $tableObj->packingBox,
@@ -6332,14 +6352,72 @@
         }
     }
 
+    sub changeSpacing {
+
+        # Can be called by anything to update the spacing around table objects. The same spacing is
+        #   added around future table objects, as they added
+        #
+        # Expected arguments
+        #   $spacing    - The new spacing (should be an integer, 0 or above)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $spacing, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $spacing || defined $check) {
+
+             return $axmud::CLIENT->writeImproper($self->_objClass . '->changeSpacing', @_);
+        }
+
+        if (! ($spacing =~ m/\D/) && $spacing >= 0) {
+
+            $self->ivPoke('currentSpacing', $spacing);
+            foreach my $tableObj ($self->ivValues('tableObjHash')) {
+
+                $tableObj->packingBox->set_border_width($spacing);
+            }
+        }
+
+        return 1;
+    }
+
+    sub changeBorder {
+
+        # Can be called by anything to update the border around the edge of the table
+        #
+        # Expected arguments
+        #   $border    - The new border (should be an integer, 0-10)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $border, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $border || defined $check) {
+
+             return $axmud::CLIENT->writeImproper($self->_objClass . '->changeBorder', @_);
+        }
+
+        if (! ($border =~ m/\D/) && $border >= 0 && $border <= 10) {
+
+            $self->ivPoke('currentBorder', $border);
+            $self->table->set_border_width($border);
+        }
+
+        return 1;
+    }
+
     ##################
     # Accessors - set
 
     ##################
     # Accessors - get
 
-    sub vBox
-        { $_[0]->{vBox} }
     sub table
         { $_[0]->{table} }
 
@@ -6354,6 +6432,11 @@
         { my $self = shift; return %{$self->{tableObjHash}}; }
     sub tableObjCount
         { $_[0]->{tableObjCount} }
+
+    sub currentSpacing
+        { $_[0]->{currentSpacing} }
+    sub currentBorder
+        { $_[0]->{currentBorder} }
 }
 
 { package Games::Axmud::Strip::GaugeBox;
@@ -9633,7 +9716,10 @@
         # Deal with user pressing their ENTER key
         $self->entry->signal_connect('activate' => sub {
 
-            my ($instruct, $thisFuncRef, $preText, $postText, $successFlag, $type);
+            my (
+                $instruct, $thisFuncRef, $preText, $postText, $successFlag, $type,
+                @instructList,
+            );
 
             $instruct = $self->entry->get_text();
             $thisFuncRef = $self->funcRef;
@@ -9679,15 +9765,32 @@
                         }
                     }
 
-                    ($successFlag, $type) = $self->winObj->visibleSession->doInstruct(
-                        $instruct,
-                        undef,
-                        $preText,
-                        $postText,
-                    );
+                    # The user may have copied a set of instructions, separated by newline
+                    #   characters (for example from a text editor). If so, split them up into
+                    #   indiviual instructions
+                    # Because $instruct might well be an empty string (if the user just pressed
+                    #   RETURN), then we cannot do a Perl split in all cases
+                    if ($instruct =~ m/\n/) {
+                        @instructList = split(/\n/, $instruct);
+                    } else {
+                        push (@instructList, $instruct);
+                    }
 
+                    foreach my $thisInstruct (@instructList) {
+
+                        ($successFlag, $type) = $self->winObj->visibleSession->doInstruct(
+                            $thisInstruct,
+                            undef,
+                            $preText,
+                            $postText,
+                        );
+                    }
+
+                    # Deal with the new contents of the entry box
                     if (
                         defined $type
+                        # (If $instruct was ';stopsession', there will be no visible session now)
+                        && $self->winObj->visibleSession
                         && $self->winObj->visibleSession->echoMode ne 'client_agree'
                         && (
                             (

@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2019 A S Lewis
+# Copyright (C) 2011-2020 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -971,7 +971,6 @@
             #   'set alternative keypad' mode. The current mode, set to 'numeric' (default) or
             #   'alternate'
             ctrlKeypadMode              => 'numeric',
-            #   and '
 
             # Task loop
             # ---------
@@ -1340,6 +1339,7 @@
             #   'no_invite' - The server has not suggested MSDP yet, but the client is willing
             #   'client_agree' - The server has suggested MSDP, and the client has agreed
             #   'client_refuse' - The client refuses to use MSDP
+            #   'client_ignore' - Axmud ignores incoming MSDP data, because earlier data is invalid
             msdpMode                    => 'no_invite',
             # Hash of generic MSDP commands supported by the server (returned after LIST COMMANDS)
             msdpGenericCmdHash          => {},          # Set below
@@ -5298,7 +5298,8 @@
 
         # Can be called by anything
         # This function deletes an active interface that's not based on an inactive interface
-        #   (created by a call to $self->createIndepInterface or $self->createInterface)
+        #   (created by a call to $self->createIndependentInterface or
+        #   $self->createDependentInterface)
         # (There is no Axmud command to delete active interfaces - but since the code can create
         #   them, we also need a way for the code to delete them)
         #
@@ -5428,7 +5429,8 @@
         # Called by $self->injectInterface or ->setupInterface
         # Adds an active interface from this GA::Session's registries
         # Should not be called by anything else (the correct way to add an active interface is
-        #   to call $self->injectInterface, ->createIndepInterface or ->createInterface)
+        #   to call $self->injectInterface, ->createIndependentInterface or
+        #   ->createDependentInterface)
         #
         # Expected arguments
         #   $interfaceObj    - The active interface object to add
@@ -5692,8 +5694,8 @@
         if (! $inactiveObj) {
 
             # The active interface, $interfaceObj, doesn't have an inactive parent (because it was
-            #   created by a call to $self->createIndepInterface or $self->createInterface), so it
-            #   can be positioned at the end of the registry
+            #   created by a call to $self->createIndependentInterface or
+            #   $self->createDependentInterface), so it can be positioned at the end of the registry
             $self->ivPush($iv, $interfaceObj->number);
 
         } elsif (
@@ -5852,7 +5854,7 @@
         return 1;
     }
 
-    sub createIndepInterface {
+    sub createIndependentInterface {
 
         # Can be called by anything to create an independent active interface whose attributes
         #   aren't copied from an existing inactive interface, stored in some cage
@@ -5860,9 +5862,9 @@
         #   to a 'stimulus'.
         #
         # 'Dependent' interfaces call an object method as their 'response', and are created by a
-        #   call to ->createInterface. Both this function and ->createIndepInterface pass their
-        #   arguments to ->setupInterface; we use three functions instead of one so it's clear, in
-        #   the task code, what sort of interface is being created
+        #   call to ->createDependentInterface. Both this function and ->createDependentInterface
+        #   pass their arguments to ->setupInterface; we use three functions instead of one so it's
+        #   clear, in the task code, what sort of interface is being created
         # To create an active interface using attributes copied from an existing inactive interface,
         #   stored in a cage, call ->injectInterface
         #
@@ -5894,7 +5896,10 @@
         # Check for improper arguments
         if (! defined $type || ! defined $stimulus || ! defined $response) {
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->createIndepInterface', @_);
+            return $axmud::CLIENT->writeImproper(
+                $self->_objClass . '->createIndependentInterface',
+                @_,
+            );
         }
 
         # Carry out a few basic checks
@@ -5902,7 +5907,7 @@
 
             return $self->writeError(
                 'Missing value in attribute/value pair',
-                $self->_objClass . '->createIndepInterface',
+                $self->_objClass . '->createIndependentInterface',
             );
 
         } elsif (
@@ -5911,7 +5916,7 @@
         ) {
             return $self->writeError(
                 'Unrecognised interface type \'' . $type . '\'',
-                $self->_objClass . '->createIndepInterface',
+                $self->_objClass . '->createIndependentInterface',
             );
 
         } elsif ($self->status eq 'disconnected') {
@@ -5919,7 +5924,7 @@
             # Can't create this kind of interface after a disconnection
             return $self->writeError(
                 'Can\'t create independent active interfaces after disconnection',
-                $self->_objClass . '->createInterface',
+                $self->_objClass . '->createDependentInterface',
             );
 
         } else {
@@ -5935,7 +5940,7 @@
         }
     }
 
-    sub createInterface {
+    sub createDependentInterface {
 
         # Can be called by anything to create a dependent active interface whose attributes
         #   aren't copied from an existing inactive interface, stored in some cage
@@ -5945,9 +5950,9 @@
         #   ->triggerSeen, for this sort of call)
         #
         # 'Independent' interfaces define their own 'response', and are created by a call to
-        #   ->createIndepInterface. Both this function and ->createIndepInterface pass their
-        #   arguments to ->setupInterface; we use three functions instead of one so it's clear, in
-        #   the task code, what sort of interface is being created
+        #   ->createIndependentInterface. Both this function and ->createIndependentInterface pass
+        #   their arguments to ->setupInterface; we use three functions instead of one so it's
+        #   clear, in the task code, what sort of interface is being created
         # To create an active interface using attributes copied from an existing inactive interface,
         #   stored in a cage, call ->injectInterface
         #
@@ -5980,7 +5985,10 @@
         if (
             ! defined $type || ! defined $stimulus || ! defined $callClass || ! defined $callMethod
         ) {
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->createInterface', @_);
+            return $axmud::CLIENT->writeImproper(
+                $self->_objClass . '->createDependentInterface',
+                @_,
+            );
         }
 
         # Carry out a few basic checks
@@ -5988,7 +5996,7 @@
 
             return $self->writeError(
                 'Unrecognised call class \'' . $callClass . '\' (must be a blessed reference)',
-                $self->_objClass . '->createInterface',
+                $self->_objClass . '->createDependentInterface',
             );
 
         } elsif (
@@ -5997,14 +6005,14 @@
         ) {
             return $self->writeError(
                 'Unrecognised interface type \'' . $type . '\'',
-                $self->_objClass . '->createInterface',
+                $self->_objClass . '->createDependentInterface',
             );
 
         } elsif (@args > 0 && @args % 2 == 1) {
 
             return $self->writeError(
                 'Missing value in attribute/value pair',
-                $self->_objClass . '->createInterface',
+                $self->_objClass . '->createDependentInterface',
             );
 
         } elsif ($self->status eq 'disconnected') {
@@ -6012,7 +6020,7 @@
             # Can't create this kind of interface after a disconnection
             return $self->writeError(
                 'Can\'t create dependent active interfaces after disconnection',
-                $self->_objClass . '->createInterface',
+                $self->_objClass . '->createDependentInterface',
             );
 
         } else {
@@ -6031,8 +6039,9 @@
 
     sub setupInterface {
 
-        # Called by $self->createInterface and ->createIndepInterface with a list of arguments that
-        #   has already undergone basic checks (must not be called by any other function)
+        # Called by $self->createDependentInterface and ->createIndependentInterface with a list of
+        #   arguments that has already undergone basic checks (must not be called by any other
+        #   function)
         # Creates the GA::Interface::Active object, sets its attributes, and adds the object to this
         #   GA::Session's active interface registries
         #
@@ -7441,7 +7450,7 @@
                     # Call the specified function
                     $class = $obj->callClass;
                     $method = $obj->callMethod;
-                    $class->$method($self, $number, @grpStringList);
+                    $class->$method($self, $number, $originalCmd, @grpStringList);
 
                     # Should we continue checking other aliases?
                     if ($obj->ivShow('attribHash', 'keep_checking')) {
@@ -7710,7 +7719,7 @@
                         $class = $obj->callClass;
                         $method = $obj->callMethod;
 
-                        $class->$method($self, $obj->number, $thisTime, $sessionTime);
+                        $class->$method($self, $obj->number, $sessionTime, $thisTime);
                     }
 
                     # Set the timer's repeat count
@@ -7844,7 +7853,7 @@
                         $class = $obj->callClass;
                         $method = $obj->callMethod;
 
-                        $class->$method($self, $obj->number, $thisClock, $sessionTime);
+                        $class->$method($self, $obj->number, $sessionTime, $thisClock);
                     }
 
                     # If the 'temporary' attribute is TRUE, delete the timer
@@ -7868,6 +7877,14 @@
 
         # Called by various functions for various hook events
         #
+        # There are two types of hook event: standard hook events, and custom hook events. All
+        #   standard hook events are listed below
+        # Custom hook events are of limited use, but are provided in case the user needs them. Its
+        #   name must begin with an underline, followed by an alphanumeric character, e.g.
+        #   '_myevent' (to prevent clashes with new standard hook events in future versions of
+        #   Axmud). A custom hook event has no hook data
+        #
+        # List of standard hook events
         # NB If the list below is modified, GA::InterfaceModel::Hook->new and
         #   GA::Cmd::SimulateHook->do must be updated, too
         #
@@ -8043,7 +8060,7 @@
                         $class = $obj->callClass;
                         $method = $obj->callMethod;
 
-                        $class->$method($self, $obj->number, $hookVar, $hookVal);
+                        $class->$method($self, $obj->number, $obj->stimulus, $hookVar, $hookVal);
                     }
 
                     # If hook data was specified, it's no longer needed
@@ -9508,10 +9525,20 @@
 
             } elsif ($self->loginWarningTime < $self->sessionTime) {
 
-                $self->writeText(
-                    'The character is not marked as \'logged in\' yet (use the \';login\' command'
-                    . ' to override the automatic login process)',
-                );
+                if ($axmud::BLIND_MODE_FLAG) {
+
+                    $self->writeText(
+                        'Please tell me when you have finished logging in. Type a semicolon'
+                        . ' followed by the word login, without any spaces. Then press return.',
+                    );
+
+                } else {
+
+                    $self->writeText(
+                        'The character is not marked as \'logged in\' yet (use the \';login\''
+                        . ' command to override the automatic login process)',
+                    );
+                }
 
                 # Only show the warning once
                 $self->ivUndef('loginWarningTime');
@@ -9735,8 +9762,13 @@
             && $self->autoSaveCheckTime < $self->sessionTime
             && $self->mxpRelocateMode eq 'none'
         ) {
-            # Perform the auto-save
-            $self->pseudoCmd('save');
+            # Perform the auto-save. In blind mode, don't read out the completion message
+            if ($axmud::BLIND_MODE_FLAG) {
+                $self->pseudoCmd('save', 'hide_complete');
+            } else {
+                $self->pseudoCmd('save');
+            }
+
             $self->ivPoke('autoSaveLastTime', $self->sessionTime);
             # Set the time at which the next auto-save will occur
             $self->resetAutoSave();
@@ -12404,6 +12436,12 @@
         if (! $flag) {
 
             $self->writeText('Connection terminated by host');
+            # If TTS is enabled, provide an audio confirmation too, interrupting any other text
+            #   which is currently being converted to speech
+            if ($axmud::CLIENT->systemAllowTTSFlag) {
+
+                $axmud::CLIENT->ttsAddUrgentJob('You have been disconnected');
+            }
         }
 
         if ($axmud::CLIENT->offlineOnDisconnectFlag) {
@@ -13508,9 +13546,10 @@
         # Tokenises the text received from the world, producing a list in groups of two, in the form
         #   (type, argument, type, argument...)
         # Where 'type' is one of the strings 'nl', 'ga', 'esc', 'inv', 'ctrl', 'seq', 'bsp', 'msp',
-        #   'mxp', 'ent', 'pueblo' or 'text', and 'argument' is usually the token, but in the case
-        #   of an escape sequence is a reference to a list of values, the first of which is the
-        #   token
+        #   'mxp', 'ent', 'pueblo', 'mcp', 'nomcp' or 'text', and 'argument' is usually the token,
+        #   but in the case of an escape sequence is a reference to a list of values. In that list,
+        #   the first value is the token, the second is an argument, and the third is one of the
+        #   sequence types 'osc', 'mxp', 'sqr', 'vt', 'xterm', 'trcol_fg' or 'trcol_bg'
         #
         # The list is stored in $self->currentTokenList, rather than in a local variable in the
         #   calling function
@@ -13668,7 +13707,8 @@
 
                             # Escape sequence that doesn't require undisplayed text to be displayed
                             #   immediately
-                            # ($seqType is 'osc', 'mxp', 'sgr', 'vt' or 'xterm'
+                            # ($seqType is 'osc', 'mxp', 'sgr', 'vt', 'xterm', 'trcol_fg' or
+                            #   'trcol_bg')
                             push (@tokenList, 'seq', [$token, $data, $seqType]);
                             $text = substr($text, length($token));
                             $self->ivPoke('lastTokenType', 'seq');
@@ -15594,8 +15634,10 @@
         #   - OSC colour palette escape sequences, in the form: ESC [ P xxxxxxx
         #   - MXP escape sequences in the form: ESC [ # z
         #   - VT100 SGR (Select Graphic Rendition) escape sequences (most of which are implemented)
-        #   - Other VT100 escape sequences (many of which are recognised, but not implemented)
         #   - xterm titlebar escape sequences in the form: ESC ] 0 ; xxx BEL
+        #   - xterm trucolor foreground escape sequences in the form: ESC [ 38 ; 2 ; r ; g ; b m
+        #   - xterm trucolor background escape sequences in the form: ESC [ 48 ; 2 ; r ; g ; b m
+        #   - Other VT100 escape sequences (many of which are recognised, but not implemented)
         #
         # Expected arguments
         #   $text   - The remaining portion of the received text, which in this case starts with an
@@ -15606,7 +15648,7 @@
         #   Otherwise, returns a list in the form (token, data, seq_type), where 'token' is the
         #       complete escape sequence token, 'data' is the escape sequence token with some of the
         #       initial characters removed, and 'seq_type' is one of the strings 'osc', 'mxp',
-        #       'sgr', 'vt' or 'xterm'
+        #       'sgr', 'vt', 'xterm', 'trcol_fg' or 'trcol_bg'
 
         my ($self, $text, $check) = @_;
 
@@ -15645,31 +15687,47 @@
         #   z                   - Final z character
         } elsif ($self->mxpMode eq 'client_agree' && $text =~ m/^((\x1b\x5b)(\d+)z)/) {
 
-            # $3 is the token, with the initial ESC [ removed
+            # $3 is the token, with the initial ESC [ removed and final z removed
             return ($1, $3, 'mxp');
 
-        # VT100 SGR (Select Graphic Rendition) escape sequences
-        #   (...)               - Group substring contains the whole escape sequence
-        #   \x1b\x5b            - The escape character (ASCII 27) + [
-        #   \x9b                - ASCII 155
-        #   [\d\;]*             - The middle section, in the form 'Value;Value;Value...'
-        #   m                   - The final character, always 'm'
-        } elsif ($text =~ m/^((\x1b\x5b|\x9b)([\d\;]*m))/) {
-
-            # $3 is the token, with the initial ESC [ removed
-            return ($1, $3, 'sgr');
-
-        # xterm escape sequences
+        # xterm titlebar sequences
         #   (...)               - Group substring contains the whole escape sequence
         #   \x1b\x5d\0\;        - The escape character (ASCII 27) + ]0;
         #   .*                  - The middle section
         #   ?                   - Ungreedy match of the final character...
         #   \x{7}               - ...which is the BEL character (wrapped in {..} to prevent a
         #                           Perl error)
-        } elsif ($text =~ m/((\x21\x5d\0\;)(.*?)\x{7})/) {
+        } elsif ($text =~ m/^((\x21\x5d\0\;)(.*?)\x{7})/) {
 
-            # $3 is the token, with the initial ESC ] 0 ; removed
+            # $3 is the token, with the initial ESC ] 0 ; and final BEL removed
             return ($1, $3, 'xterm');
+
+        # xterm trucolor sequences
+        #   (...)               - Group substring contains the whole escape sequence
+        #   \x1b\x5b            - The escape character (ASCII 27) + [
+        #   [3|4]8;2;           - Foreground/background identifier
+        #   [\d\;]*             - The middle section, in the form 'Value;Value;Value;'
+        #   m                   - Final m character
+        } elsif ($text =~ m/^((\x1b\x5b)([3|4]8;2;)([\d\;]*m))/) {
+
+            # $3 specifies a foreground or background colour
+            # $4 is the token, with the initial ESC ] 0 ; (but not the final m) removed
+            if ($3 eq '38;2;') {
+                return ($1, $4, 'trcol_fg');
+            } else {
+                return ($1, $4, 'trcol_bg');
+            }
+
+        # VT100 SGR (Select Graphic Rendition) escape sequences
+        #   (...)               - Group substring contains the whole escape sequence
+        #   \x1b\x5b            - The escape character (ASCII 27) + [
+        #   \x9b                - ASCII 155
+        #   [\d\;]*             - The middle section, in the form 'Value;Value;Value...'
+        #   m                   - Final m character
+        } elsif ($text =~ m/^((\x1b\x5b|\x9b)([\d\;]*m))/) {
+
+            # $3 is the token, with the initial ESC [ (but not the final m) removed
+            return ($1, $3, 'sgr');
 
         # Other VT100 escape sequences, including VT52 compatibility mode
         #   (...)               - Group substring contains the whole escape sequence
@@ -16194,11 +16252,11 @@
                 $self->ivUndef('mxpCurrentSend');
             }
 
-            # All outstanding tags are closed after a newline character (but not after a line
+            # All outstanding 'open' tags are closed after a newline character (but not after a line
             #   spacing tag like <BR>, any only in 'open line mode')
             if ($type eq 'nl' && $self->mxpLineMode == 0) {
 
-                push (@tagList, $self->emptyMxpStack());
+                push (@tagList, $self->partiallyEmptyMxpStack());
             }
 
             # Newline characters cause the MXP line mode to be reset to the default mode (but line
@@ -16335,6 +16393,7 @@
         # For VT100 SGR (Select Graphic Rendition) escape sequences, converts the sequence into a
         #   list of Axmud colour/style tags
         # For xterm titlebar escape sequences, updates IVs
+        # For xterm trucolor escape sequences, converts the seequences into an Axmud colour tag
         #
         # NB If we're in the middle of an MXP <V>...</V> construction, a valid escape sequence
         #   doesn't abnormally terminate the construction (but an invalid escape sequence does,
@@ -16344,7 +16403,8 @@
         #   $token  - An extracted token containing the escape sequence
         #   $data   - The middle portion of the escape sequence, after the initial (compulsory)
         #               characters have been removed
-        #   $type   - The type of escape sequence: 'osc', 'mxp', 'sgr', 'xterm'
+        #   $type   - The type of escape sequence: 'osc', 'mxp', 'sgr', 'xterm', 'trcol_fg' or
+        #               'trcol_bg'
         #
         # Return values
         #   An empty list on improper arguments or if the escape sequence is invalid
@@ -16629,6 +16689,36 @@
                 # The tab title must be updated (the routine call to $self->checkTabLabels by
                 #   $self->spinMaintainLoop will handle it)
                 $self->ivPoke('showXTermTitleFlag', TRUE);
+            }
+
+        } elsif ($type eq 'trcol_fg' || $type eq 'trcol_bg') {
+
+            # xterm trucolor escape sequences in the form 'ESC[38;2;r;g;bm' (for foreground colours)
+            #   or 'ESC[48;2;r;g;bm' (for background colours)
+
+            # Extract the value(s)
+            # A list of integers separated by ';' characters
+            $data = substr($data, 0, (length($data) - 1));
+
+            # $data is in the form 'Value;Value;Value'. where Value is in the range 0-255
+            @valueList = split(/;/, $data);
+            # It's valid to use 'Value's with leading 0s. Remove the leading zeros
+            foreach my $value (@valueList) {
+
+                if ($value =~ m/^\d+$/) {
+
+                    $value += 0;
+                }
+            }
+
+            # Convert the values into an Axmud RGB tag, in the form '#000000'
+            # NB As for SGR, use 'eq' rather than '==' to prevent a Perl error for invalid
+            #   non-numerical characters
+            $tag = sprintf("%02lx%02lx%02lx", $valueList[0], $valueList[1], $valueList[2]);
+            if ($type eq 'trcol_fg') {
+                push (@tagList, '#' . uc($tag));                    # e.g. '#FFFFFF'
+            } else {
+                push (@tagList, 'u#' . uc($tag));                   # e.g. 'u#FFFFFF'
             }
         }
 
@@ -22725,13 +22815,16 @@
                 #   GA::Obj::TextView->add_incompleteLink as soon as it's ready
                 $self->ivPush('mxpTempLinkList', $linkObj);
 
-                # Process any &text; entities (e.g. <!ELEMENT Item '<send href="buy &text;">'> ),
-                #   but not for clickable images
+                # Process any entities. The MXP documentation documents the use of &text; but some
+                #   MUDs might choose to use any entity in their <SEND>...</SEND> constructions
+                # Don't process entities for clickable images
                 $href = $linkObj->href;
                 $text = $linkObj->text;
                 if ($href && $text && $linkObj->type ne 'image') {
 
                     $href =~ s/\&text\;/$text/g;
+                    $href = $self->replaceMxpEntities($href);
+
                     $linkObj->ivPoke('href', $href);
                 }
 
@@ -22739,12 +22832,16 @@
                 foreach my $item ($linkObj->popupCmdList) {
 
                     $item =~ s/\&text\;/$text/g;
+                    $item = $self->replaceMxpEntities($item);
+
                     push (@cmdList, $item);
                 }
 
                 foreach my $item ($linkObj->popupItemList) {
 
                     $item =~ s/\&text\;/$text/g;
+                    $item = $self->replaceMxpEntities($item);
+
                     push (@optionList, $item);
                 }
 
@@ -22892,7 +22989,7 @@
         my (
             $textViewObj, $url, $urlRegex, $height, $width, $align, $path, $file, $dir, $ext,
             $convertFlag, $fetchObj, $pixbuf, $pixbuf2, $pbw, $pbh, $horiz, $vert, $hFactor,
-            $vFactor, $moveX, $moveY, $rgba,
+            $vFactor, $moveX, $moveY, $rgba, $padWidth, $padHeight, $charWidth, $charHeight,
             @emptyList, @origList, @checkList,
             %checkHash, %ivHash,
         );
@@ -22906,6 +23003,18 @@
 
         # Import IVs (for convenience)
         $textViewObj = $self->currentTabObj->textViewObj;
+
+        # The calling function may have processed some text tokens which haven't been displayed yet;
+        #   if so, display them now so that they're displayed either side of the image
+        if ($self->processStripLine) {
+
+            $self->respondIncomingData(
+                'part',
+                $self->processOrigLine,
+                $self->processStripLine,
+                $self->processTagHash,
+            );
+        }
 
         # <IMAGE FName URL=url T=type H=height W=width HSPACE=hspace VSPACE=vspace
         #       ALIGN=left|right|top|middle|bottom ISMAP>
@@ -22945,11 +23054,14 @@
             't'         => undef,
             'h'         => undef,
             'w'         => undef,
-            'hspace'    => FALSE,
-            'vspace'    => FALSE,
-            'align'     => undef,       # Cannot be implemented in Gtk3 - text tags broken
+            'hspace'    => undef,
+            'vspace'    => undef,
+            'align'     => undef,       # (Cannot be implemented in Gtk3 - text tags broken)
             'ismap'     => FALSE,
         );
+
+        # The default padding size (when required) is the size of a character
+        ($charWidth, $charHeight) = $textViewObj->getCharSize();
 
         if (@argList) {
 
@@ -22971,7 +23083,20 @@
 
                     return @emptyList;
 
-                } elsif ($argName eq 'hspace' || $argName eq 'vspace' || $argName eq 'ismap') {
+                } elsif ($argName eq 'hspace' || $argName eq 'vspace') {
+
+                    # It's not clear from the documentation, whether hspace and vspace should take
+                    #   an argument value, or not. Cover both eventualities; if no argument value
+                    #   is specified, use a default one
+                    if (defined $argValue) {
+                        $ivHash{$argName} = $argValue;
+                    } elsif ($argName eq 'hspace') {
+                        $ivHash{$argName} = $charWidth;
+                    } else {
+                        $ivHash{$argName} = $charHeight;
+                    }
+
+                } elsif ($argName eq 'ismap') {
 
                     $ivHash{$argName} = TRUE;
 
@@ -22981,6 +23106,14 @@
                 }
 
             } until (! @argList);
+        }
+
+        # The fname argument is compulsory
+        if (! $ivHash{'fname'}) {
+
+            $self->mxpDebug($origToken, 'Malformed element', 3203);
+
+            return @emptyList;
         }
 
         # Check any specified argument values are valid. In some cases, give up; in other cases,
@@ -22995,8 +23128,9 @@
 
             } else {
 
-                # Currently (v1.0.836), File::Fetch doesn't support https:// addresses, so
-                #   substitute in http:// and hope for the best
+                # File::Fetch doesn't support https:// addresses, and it does not seem likely that
+                #   the module will ever be updated
+                # Therefore, substitute in http:// and hope for the best
                 $url =~ s/^https\:/http\:/;
             }
         }
@@ -23017,20 +23151,34 @@
             $width = $self->convertMxpImageSize($width, 'width');
         }
 
-        $align = $ivHash{'align'};
-        if (defined $align) {
+        # Now do the same for the hspace and vspace attributes
+        $padHeight = $ivHash{'vspace'};
+        if (defined $padHeight && $padHeight =~ m/^\d+[\%c]?/) {
 
-            $align = lc($align);
-            if (
-                $align ne 'left'
-                && $align ne 'right'
-                && $align ne 'top'
-                && $align ne 'middle'
-                && $align ne 'bottom'
-            ) {
-                $align = undef;
-            }
+            $padHeight = $self->convertMxpImageSize($padHeight, 'height');
         }
+
+        $padWidth = $ivHash{'hspace'};
+        if (defined $padWidth && $padWidth =~ m/^\d+[\%c]?/) {
+
+            $padWidth = $self->convertMxpImageSize($padWidth, 'width');
+        }
+
+        # (Cannot be implemented in Gtk3 - text tags broken)
+#        $align = $ivHash{'align'};
+#        if (defined $align) {
+#
+#            $align = lc($align);
+#            if (
+#                $align ne 'left'
+#                && $align ne 'right'
+#                && $align ne 'top'
+#                && $align ne 'middle'
+#                && $align ne 'bottom'
+#            ) {
+#                $align = undef;
+#            }
+#        }
 
         # Convert FName into a full filepath (must a relative filepath, pointing at a directory used
         #   to store images for the current world)
@@ -23111,7 +23259,13 @@
         }
 
         # Convert the image file to a pixbuf
-        if (! defined $width || ! defined $height) {
+        if ($path =~ m/\.gif$/) {
+
+            # Unfortunately, .gif images cannot be easily scaled, so ignore the width and height
+            #   arguments
+            $pixbuf = Gtk3::Gdk::PixbufAnimation->new_from_file($path);
+
+        } elsif (! defined $width || ! defined $height) {
 
             $pixbuf = Gtk3::Gdk::Pixbuf->new_from_file($path);
             if ($pixbuf) {
@@ -23132,61 +23286,6 @@
 
         if ($pixbuf) {
 
-            # Add some padding, if specified (increase the image size by 20%, without increasing the
-            #   image itself)
-            if ($ivHash{'hspace'} || $ivHash{'vspace'}) {
-
-                if ($ivHash{'hspace'}) {
-                    $hFactor = 1.2;
-                } else {
-                    $hFactor = 1;
-                }
-
-                if ($ivHash{'vspace'}) {
-                    $vFactor = 1.2;
-                } else {
-                    $vFactor = 1;
-                }
-
-                $pixbuf2 = Gtk3::Gdk::Pixbuf->new(
-                    'GDK_COLORSPACE_RGB',
-                    FALSE,
-                    $pixbuf->get_bits_per_sample(),
-                    ($width * $hFactor),
-                    ($height * $vFactor),
-                );
-
-                # Need to specify an RGBA colour to use as padding. Would like to specify a 0 alpha
-                #   value, so that $pixbuf2's 'colour' automatically matches the background, but it
-                #   doesn't work for some reason
-                $rgba = $axmud::CLIENT->returnRGBColour($textViewObj->backgroundColour);
-                $rgba =~ s/^#//;
-                $rgba = ((hex $rgba) * 256) + 255;
-                $pixbuf2->fill($rgba);
-
-                $moveX = (($width * $hFactor) - $width) / 2;        # May be 0
-                $moveY = (($height * $vFactor) - $height) / 2;
-
-                $pixbuf->composite(
-                    $pixbuf2,
-                    $moveX,
-                    $moveY,
-                    $width,
-                    $height,
-                    $moveX,
-                    $moveY,
-                    1,
-                    1,
-                    'GDK_INTERP_BILINEAR',
-                    255,
-                );
-
-                $pixbuf = $pixbuf2;
-            }
-        }
-
-        if ($pixbuf) {
-
             # Handle clickable images. Ignore ISMAP if the <IMAGE> tag doesn't appear between
             #   <SEND>...</SEND>, or if anything else (such as some text) appears between
             #   <SEND>...</SEND>
@@ -23195,7 +23294,14 @@
                 && $self->mxpCurrentSend
                 && ! $self->mxpCurrentSend->text
             ) {
-                $textViewObj->showImage($pixbuf, $self->mxpCurrentSend, 'echo');
+                $textViewObj->showImage(
+                    $pixbuf,
+                    $self->mxpCurrentSend,
+                    $padWidth,
+                    $padHeight,
+                    'echo',
+                );
+
                 # Update the GA::Obj::Link object, setting its type to 'image' so that
                 #   $self->processMxpSendElement knows not to complain that there's no clickable
                 #   text
@@ -23214,7 +23320,7 @@
             # Non-clickable images
             } else {
 
-                $textViewObj->showImage($pixbuf, undef, 'echo');
+                $textViewObj->showImage($pixbuf, undef, $padWidth, $padHeight, 'echo');
             }
 
             # $self->processImageLine must be updated for all processed images
@@ -25113,7 +25219,7 @@
                 $self->ivUnshift('currentTokenList', 'go', undef);
             }
 
-            # Operation compelte
+            # Operation complete
             return @emptyList;
         }
     }
@@ -25308,7 +25414,7 @@
                 $string x scalar ($self->puebloStackList) . $bullet,
         );
 
-        # Operation compelte
+        # Operation complete
         return @emptyList;
     }
 
@@ -26870,14 +26976,14 @@
 
         # Called by $self->updateEndLine, ->processEscSequence and ->checkMxpSecureMode
         # Sets a new value for $self->mxpLineMode
-        # Also closes any open tags when open mode changes to secure mode (and vice versa)
+        # Also closes any open tags when open mode changes to secure mode
         #
         # Expected arguments
         #   $newMode   - The new MXP line mode (a value in the range 0-2)
         #
         # Optional arguments
         #   $tempFlag    - Used when turning on/off temp secure mode. When TRUE, this function
-        #                   doesn't call $self->emptyMxpStack; FALSE (or 'undef') when
+        #                   doesn't call $self->partiallyEmptyMxpStack; FALSE (or 'undef') when
         #                   $self->mxpLineMode is being set for any other reason
         #
         # Return values
@@ -26897,15 +27003,28 @@
             return @emptyList;
         }
 
-        if (
-            ! $tempFlag
-            && (
-                ($self->mxpLineMode == 1 && $newMode == 0)
-                || ($self->mxpLineMode == 0 && $newMode == 1)
-            )
-        ) {
-            # Switching between open/secure mode closes any open tags
-            @tagList = $self->emptyMxpStack();
+#        if (
+#            ! $tempFlag
+#            && (
+#                ($self->mxpLineMode == 1 && $newMode == 0)
+#                || ($self->mxpLineMode == 0 && $newMode == 1)
+#            )
+#        ) {
+#            # Switching between open/secure mode closes any open tags
+#            @tagList = $self->emptyMxpStack();
+#        }
+
+        # v2.1.061. Code in previous versions did not handle switching modes correctly. Clients are
+        #   supposed to close 'open' tags such as <B> when switching from line mode 0 to line mode
+        #   1/2; the previous code closed both 'open' and 'secure' tags when line mode changed in
+        #   any direction
+        # Unfortunately, selectively popping tags from the MXP stack would not be possible without
+        #   a significant redesign
+        # As a compromise, we'll pop any 'open' tags from the MXP stack (which clears all tags
+        #   higher up the stack, both 'open' and 'secure')
+        if (! $tempFlag && $self->mxpLineMode == 0 && $newMode != 0) {
+
+            @tagList = $self->partiallyEmptyMxpStack();
         }
 
         # Update the IV
@@ -27279,10 +27398,73 @@
         return @tagList;
     }
 
+    sub partiallyEmptyMxpStack {
+
+        # Called by $self->updateEndLine and ->setMxpLineMode
+        # Modified version of $self->emptyMxpStack. This function pops any 'open' tags (which
+        #   automatically pops any tags higher in the stack). Any 'secure' tags at the bottom of the
+        #   stack remain unpopped
+        # (For the reasons why this is done, see the comments in $self->setMxpLineMode)
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   An empty list on improper arguments
+        #   Otherwise, returns a list of Axmud colour/style tags restoring the text attributes that
+        #       applied before any of the existing open tags were processed
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my (
+            $textViewObj, $popFlag,
+            @emptyList, @tagList,
+        );
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            $axmud::CLIENT->writeImproper($self->_objClass . '->partiallyEmptyMxpStack', @_);
+            return @emptyList;
+        }
+
+        # Import the current textview object (for convenience)
+        $textViewObj = $self->currentTabObj->textViewObj;
+
+        if ($textViewObj->mxpModalStackList) {
+
+            do {
+
+                $popFlag = FALSE;
+
+                # Import the current stack of MXP modal tags (actually a list of
+                #   GA::Mxp::StackObj objects), and look for the first open tag
+                my @stackList = $textViewObj->mxpModalStackList;
+
+                OUTER: foreach my $stackObj (@stackList) {
+
+                    # (The only tags allowed in open line mode - which are the tags we need to close
+                    #   now - are those specified in this hash)
+                    if ($axmud::CLIENT->ivExists('constMxpModalHash', $stackObj->keyword)) {
+
+                        # This is an open tag, so close it
+                        @tagList = $self->popMxpStack($stackObj->keyword);
+                        $popFlag = TRUE;
+                        last OUTER;
+                    }
+                }
+
+            } until (! $popFlag);
+        }
+
+        # Operation complete
+        return @tagList;
+    }
+
     sub emptyMxpStack {
 
-        # Called by $self->reactDisconnect, ->updateEndLine, ->processEscChar, ->processEscSequence
-        #   and ->setMxpLineMode
+        # Called by $self->reactDisconnect, ->processEscChar and ->processEscSequence
         # Empties the current textview's stack of GA::Mxp::StackObj objects by calling
         #   $self->popMxpStack for each one in turn
         # This has the effect of closing all open MXP tags
@@ -28282,6 +28464,83 @@
 
             return $path;
         }
+    }
+
+    sub replaceMxpEntities {
+
+        # Called by $self->processMxpSendElement()
+        # A modified version of $self->processMxpEntity()
+        # A <SEND>...</SEND> construction may contain one or more entities. The MXP documentation
+        #   specifies a special purpose for %text; but some MUDs might want to use other entities
+        # Given a string for which %text; has already been substituted for its values, look for
+        #   more entities and, if found, substitute them for their values
+        #
+        # NB To avoid unfortunate accidents, this function ignore invalid entities, rather than
+        #   issuing an error via a call to $self->mxpDebug
+        #
+        # Expected arguments
+        #   $string     - The string containing zero, one or more entities
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   Otherwise returns the modified value of $string (or the original value, if no valid
+        #       entities are found)
+
+        my ($self, $string, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $string || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->replaceMxpEntities', @_);
+        }
+
+        # Handle entities in the form '&#nnn;'
+        while ($string =~ m/(\&\#([0-9]{1,3})\;)/) {
+
+            my ($enText, $enNum, $enReplace);
+
+            $enText = $1;
+            $enNum = $2;
+            # We'll assume that 'nnn' can be '064' as well as '64'. Convert it to a numeric value
+            $enNum = $enNum += 0;
+
+            # Ignore numbers not in the range 32-255
+            if ($enNum >= 32 && $enNum <= 255) {
+
+                $enReplace = chr($enNum);
+                $string =~ s/$enText/$enReplace/g;
+            }
+        }
+
+        # Handle entities in the form '&NAME;'
+        while ($string =~ m/(\&([A-Za-z][A-Za-z0-9_]*)\;)/) {
+
+            my ($enText, $enName, $enReplace, $entityObj);
+
+            $enText = $1;
+            $enName = $2;
+
+            # Does an entity called $enName exist?
+            if (! $self->ivExists('mxpEntityHash', $enName)) {
+
+                # Standard entity names don't have their own GA::Mxp::Entity object
+                if ($axmud::CLIENT->ivExists('constMxpEntityHash', $enName)) {
+
+                    $enReplace = $axmud::CLIENT->ivShow('constMxpEntityHash', $enName);
+                    $string =~ s/$enText/$enReplace/g;
+                }
+
+            } else {
+
+                # Replace the named entity with its value
+                $entityObj = $self->ivShow('mxpEntityHash', $enName);
+                $enReplace = $entityObj->value;
+                $string =~ s/$enText/$enReplace/g;
+            }
+        }
+
+        # Operation complete
+        return $string;
     }
 
     sub generateMcpKey {
@@ -29625,6 +29884,17 @@
         #   Server: IAC DO TELOPT_NEW_ENVIRON
         #   Client: IAC WONT TELOPT_NEW_ENVIRON
         #
+        # MNES (MUD NEW-ENVIRON Standard - https://tintin.mudhalla.net/protocols/mnes/)
+        #
+        #   Server: IAC DO TELOPT_NEW_ENVIRON
+        #   Client: IAC WILL TELOPT_NEW_ENVIRON
+        #   Server: IAC SB NEW-ENVIRON SEND [ type ... [ type ... [ ... ] ] ] IAC SE
+        #   Client: IAC SB NEW-ENVIRON IS type ... [ VALUE ... ] [ type ... [ VALUE ... ] [ ... ] ]
+        #               IAC SE
+        #   ...
+        #
+        #   Server: IAC DO TELOPT_NEW_ENVIRON
+        #   Client: IAC WONT TELOPT_NEW_ENVIRON
         if ($self->currentWorld->ivExists('telnetOverrideHash', 'new_environ')) {
             $newEnvironFlag = FALSE;
         } else {
@@ -30098,8 +30368,12 @@
         # Strictly speaking a standard, not a protocol; Axmud implements it alongside TTYPE
         #   negotiatons
 
+        # MNES (MUD NEW-ENVIRON Standard)
+        # Strictly speaking a standard, not a protocol; Axmud implements it alongside NEW-ENVIRON
+        #   negotiatons
+
         # MCP (Mud Client Protocol - http://www.moo.mud.org/mcp/)
-        # NOT IMPLEMENTED
+        # Implemented, but not handled out-of-bounds
 
         return 1;
     }
@@ -30112,7 +30386,7 @@
         #
         # Expected arguments
         #   $protocol   - The protocol to disable; one of 'msdp', 'mssp', 'mccp', 'msp', 'mxp',
-        #                   'pueblo', 'zmp', 'aard102', 'atcp', 'gmcp', 'mtts', 'mcp'.
+        #                   'pueblo', 'zmp', 'aard102', 'atcp', 'gmcp', 'mtts', 'mnes', 'mcp'.
         #               - Other values are ignored, since the calling function should have checked
         #                   $protocol already. 'mcp' haS not been
         #                   implemented, and are also ignored. MTTS is handled alongside TTYPE
@@ -30205,15 +30479,14 @@
 
             $self->optSendDont($telConstHash{'TELOPT_GMCP'});
             $self->ivPoke('gmcpMode', 'client_refuse');
-
-        # MTTS (Mud Terminal Type Standard - http://tintin.sourceforge.io/mtts/)
-        } elsif ($protocol eq 'mtts') {
-
-            # (Nothing to do - $self->prepareTTypeData checks GA::Client->useMttsFlag)
         }
 
+        # MTTS (Mud Terminal Type Standard - http://tintin.sourceforge.io/mtts/)
+        # (Nothing to do - $self->prepareTTypeData checks GA::Client->useMttsFlag)
+        # MNES (MUD NEW-ENVIRON Standard - https://tintin.mudhalla.net/protocols/mnes/)
+        # (Nothing to do - $self->processNewEnvironData checks GA::Client->useMnesFlag)
         # MCP (Mud Client Protocol - http://www.moo.mud.org/mcp/)
-        # NOT IMPLEMENTED
+        # Implemented, but not handled out-of-bounds
 
         return 1;
     }
@@ -30411,6 +30684,7 @@
             }
 
         # NEW-ENVIRON (New Environment option - RFC 1572, http://www.ietf.org/rfc/rfc1572.txt)
+        # MNES (MUD NEW-ENVIRON Standard - https://tintin.mudhalla.net/protocols/mnes/)
         } elsif ($option == $telConstHash{'TELOPT_NEW_ENVIRON'}) {
 
             # Client: IAC WILL TELOPT_NEW_ENVIRON
@@ -30573,9 +30847,10 @@
 
         # MTTS (Mud Terminal Type Standard - http://tintin.sourceforge.io/mtts/)
         # Handled above alongside TTYPE
-
+        # MNES (MUD NEW-ENVIRON Standard - https://tintin.mudhalla.net/protocols/mnes/)
+        # Handled above alongise NEW-ENVIRON
         # MCP (Mud Client Protocol - http://www.moo.mud.org/mcp/)
-        # NOT IMPLEMENTED
+        # Implemented, but not handled out-of-bounds
 
         # Record the time at which the last out-of-bounds communication was received
         $self->ivPoke('lastOutBoundsTime', $self->sessionTime);
@@ -30672,11 +30947,16 @@
         # MSDP (Mud Server Data Protocol - http://tintin.sourceforge.io/msdp/)
         } elsif ($option == $telConstHash{'TELOPT_MSDP'}) {
 
-            # (There's a lot of stuff to process, so use a separate function)
-            %msdpHash = $self->extractMsdpData($parameters);
-            if (%msdpHash) {
+            # There's a lot of stuff to process, so use a separate function
+            # If processed MSDP data was garbage, $self->msdpMode has been set to 'client_ignore',
+            #   so we check for that here
+            if ($self->msdpMode ne 'client_ignore') {
 
-                $self->processMsdpData(%msdpHash);
+                %msdpHash = $self->extractMsdpData($parameters);
+                if (%msdpHash) {
+
+                    $self->processMsdpData(%msdpHash);
+                }
             }
 
         # MSSP (Mud Server Status Protocol - http://tintin.sourceforge.io/mssp/)
@@ -31189,7 +31469,7 @@
     sub optSendNewEnviron {
 
         # Called by $self->processNewEnvironData
-        # Sends environment variables to the server
+        # Sends environment variables/MNES to the server
         #
         # Expected arguments
         #   (none besides $self)
@@ -32599,7 +32879,6 @@
         # Local variables
         my (
             $termTypeMode, $customClientName, $customClientVersion, $useCtrlSeqFlag, $termType,
-            $bitVector,
             @termList, @itemList,
         );
 
@@ -32739,42 +33018,21 @@
                 )
             ) {
                 push (@itemList, uc($termType));
+
             } else {
-                push (@itemList, 'XTERM');
+
+                # Default value best matching Axmud capabilities; also used by MNES
+                if ($useCtrlSeqFlag) {
+                    push (@itemList, 'VT100-TRUECOLOR');
+                } else {
+                    push (@itemList, 'ANSI-TRUECOLOR');
+                }
             }
 
-            # MTTS bitvector:
-            #     1 "ANSI"              Client supports all ANSI color codes. . Supporting blink and
-            #                               underline is optional
-            $bitVector = 1;
-            #     2 "VT100"             Client supports most VT100 codes
-            if ($useCtrlSeqFlag) {
+            # MTTS bitvector
+            push (@itemList, 'MTTS ' . $self->compileMTTSBitVector($useCtrlSeqFlag));
 
-                $bitVector += 2;
-            }
-            #     4 "UTF-8"             Client is using UTF-8 character encoding
-            if ($self->sessionCharSet =~ m/utf/i) {
-
-                $bitVector += 4;
-            }
-            #     8 "256 COLORS"        Client supports all xterm 256 color codes
-            $bitVector += 8;
-            #    16 "MOUSE TRACKING"    Client supports xterm mouse tracking
-            #    32 "OSC COLOR PALETTE" Client supports the OSC color palette
-            if ($axmud::CLIENT->oscPaletteFlag) {
-
-                $bitVector += 32;
-            }
-            #    64 "SCREEN READER"     Client is using a screen reader
-            if ($axmud::BLIND_MODE_FLAG) {
-
-                $bitVector += 64;
-            }
-            #   128 "PROXY"             Client is a proxy allowing different users to connect from
-            #                            the same IP address
-
-            push (@itemList, 'MTTS ' . $bitVector);
-
+            # All done
             $self->ivPoke('sendTTypeList', @itemList);
             $self->ivPoke('specifiedTType', $itemList[1]);
         }
@@ -32782,13 +33040,99 @@
         return 1;
     }
 
+    sub compileMTTSBitVector {
+
+        # Called by $self->prepareTTypeData (and also by ->processCharSetData)
+        # Compiles the bitvector used by the MTTS standard (and re-used by the MNES standard)
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Optional arguments
+        #   $useCtrlSeqFlag     - Flag matching GA::Client->useCtrlSeqFlag. If not defined, then
+        #                           this function finds it
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   A bitvector in the range 0-1023, otherwise (as described in
+        #       http://tintin.sourceforge.io/mtts/)
+
+        my ($self, $useCtrlSeqFlag, $check) = @_;
+
+        # Local variables
+        my $bitVector;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->compileMTTSBitVector', @_);
+        }
+
+        # If not supplied by the calling function, then check that VT100 control sequences are
+        #   enabled
+        if ($self->currentWorld->ivExists('termOverrideHash', 'useCtrlSeqFlag')) {
+            $useCtrlSeqFlag = $self->currentWorld->ivShow('termOverrideHash', 'useCtrlSeqFlag');
+        } else {
+            $useCtrlSeqFlag = $axmud::CLIENT->useCtrlSeqFlag;
+        }
+
+        # MTTS bitvector:
+        $bitVector = 0;
+
+        #     1 "ANSI"              Client supports all ANSI color codes. . Supporting blink and
+        #                               underline is optional
+        $bitVector += 1;
+        #     2 "VT100"             Client supports most VT100 codes
+        if ($useCtrlSeqFlag) {
+
+            $bitVector += 2;
+        }
+        #     4 "UTF-8"             Client is using UTF-8 character encoding
+        if ($self->sessionCharSet =~ m/utf/i) {
+
+            $bitVector += 4;
+        }
+        #     8 "256 COLORS"        Client supports all xterm 256 color codes
+        $bitVector += 8;
+        #    16 "MOUSE TRACKING"    Client supports xterm mouse tracking
+        #    32 "OSC COLOR PALETTE" Client supports the OSC color palette
+        if ($axmud::CLIENT->oscPaletteFlag) {
+
+            $bitVector += 32;
+        }
+        #    64 "SCREEN READER"     Client is using a screen reader
+        if ($axmud::BLIND_MODE_FLAG) {
+
+            $bitVector += 64;
+        }
+        #   128 "PROXY"             Client is a proxy allowing different users to connect from the
+        #                               same IP address
+        #   256 "TRUECOLOR"         Client supports truecolor codes using semicolon notation
+        $bitVector += 256;
+        #   512 "MNES"              Client supports the Mud New Environment Standard for information
+        #                               exchange.
+
+        return $bitVector;
+    }
+
     sub processNewEnvironData {
+
+        # Called by $self->subOptCallback
+        # Handles NEW-ENVIRON and MNES communications (explained in full below)
+        #
+        # Expected arguments
+        #   $parameters     - A NEW-ENVIRON or MNES data string to process
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
 
         my ($self, $parameters, $check) = @_;
 
         # Local variables
         my (
-            $cmd, $data,
+            $mnesFlag, $cmd, $data, $modSessionType, $termTypeMode, $customClientName,
+            $customClientVersion, $localIP, $useCtrlSeqFlag,
             @knownList, @customList, @argList,
             %teloptHash, %envHash,
         );
@@ -32812,7 +33156,7 @@
 
         # A hash of 'well-known' environment variables. If Axmud can send a value, it's added to
         #   the hash; otherwise a key's corresponding value is 'undef'
-        # Axmud doesn't have use NEW-ENVIRON "user-defined" environment variables
+        # Axmud doesn't have NEW-ENVIRON "user-defined" environment variables
         if (! $self->currentChar) {
 
             $envHash{'USER'} = undef;
@@ -32842,6 +33186,153 @@
         $envHash{'JOB'} = undef;
         $envHash{'PRINTER'} = undef;
         $envHash{'DISPLAY'} = undef;
+
+        # MNES (MUD NEW-ENVIRON Standard - https://tintin.mudhalla.net/protocols/mnes/)
+        # Implemented here alongside NEW-ENVIRON
+        if ($self->currentWorld->ivExists('telnetOverrideHash', 'mnes')) {
+            $mnesFlag = FALSE;
+        } else {
+            $mnesFlag = $axmud::CLIENT->useMnesFlag;
+        }
+
+        if ($mnesFlag) {
+
+            # CHARSET - Character set
+            # -----------------------
+
+            # The default MNES values are specified by GA::Client->constMnesCharsetList
+            # The value used in IVs like $self->charSet, GA::Session->worldCharset and
+            #   GA::Profile::World->worldCharSet is generally provided by the system, and might be
+            #   longer than the default MNES values (for example, 'koi8-r' instead of the MNES
+            #   value, 'KOI-8')
+            # Therefore we try to find a close match, rather than an exact match, by removing the
+            #   hyphens, and looking for an MNES value which starts with $self->sessionCharSet
+            # (For example, the MNES value 'KOI-8' becomes 'KOI8', $self->sessionCharset becomes
+            #   'koi8r'; the latter contains the former, so that's a match)
+            # Exception: the ISO codes must be specified exactly (so 'ISO-8859-11' does not match
+            #   'ISO-8859-1')
+            # If we don't find a match, use the MNES value 'ASCII' as a default
+            $envHash{'CHARSET'} = 'ASCII';
+
+            $modSessionType = uc($self->sessionCharSet);
+            $modSessionType =~ s/\-//g;
+
+            OUTER: foreach my $item ($axmud::CLIENT->constMnesCharsetList) {
+
+                my $modClientType = $item;
+                $modClientType =~ s/\-//g;
+
+                if (uc(substr($modSessionType, 0, 3) eq 'ISO')) {
+
+                    if ($modClientType eq $modSessionType) {
+
+                        $envHash{'CHARSET'} = $item;
+                        last OUTER;
+                    }
+
+                } elsif (index($modClientType, $modSessionType) == 0) {
+
+                    $envHash{'CHARSET'} = $item;
+                    last OUTER;
+                }
+            }
+
+            # CLIENT_NAME - Name of the client
+            # CLIENT_VERSION - Version of the client
+            # --------------------------------------
+
+            # (Use the same rules about disclosing this client's identity, as are used in
+            #   TTYPE negotiations)
+            if ($self->currentWorld->ivExists('termOverrideHash', 'termTypeMode')) {
+                $termTypeMode = $self->currentWorld->ivShow('termOverrideHash', 'termTypeMode');
+            } else {
+                $termTypeMode = $axmud::CLIENT->termTypeMode;
+            }
+
+            if ($self->currentWorld->ivExists('termOverrideHash', 'customClientName')) {
+
+                $customClientName
+                    = $self->currentWorld->ivShow('termOverrideHash', 'customClientName');
+
+            } else {
+
+                $customClientName = $axmud::CLIENT->customClientName;
+            }
+
+            if ($self->currentWorld->ivExists('termOverrideHash', 'customClientVersion')) {
+
+                $customClientVersion
+                    = $self->currentWorld->ivShow('termOverrideHash', 'customClientVersion');
+
+            } else {
+
+                $customClientVersion = $axmud::CLIENT->customClientVersion;
+            }
+
+            if ($termTypeMode eq 'send_client') {
+
+                $envHash{'CLIENT_NAME'} = $axmud::NAME_SHORT;
+                # (User has opted out of displaying the actual client version, so just use a generic
+                #   version)
+                $envHash{'CLIENT_VERSION'} = '1.0.0';
+
+            } elsif ($termTypeMode eq 'send_client_version') {
+
+                $envHash{'CLIENT_NAME'} = $axmud::NAME_SHORT;
+                $envHash{'CLIENT_VERSION'} = $axmud::VERSION;
+
+            } elsif ($termTypeMode eq 'send_custom_client') {
+
+                if ($customClientName) {
+
+                    $envHash{'CLIENT_NAME'} = $customClientName;
+
+                    if ($customClientVersion) {
+                        $envHash{'CLIENT_VERSION'} = $customClientVersion;
+                    } else {
+                        $envHash{'CLIENT_VERSION'} = '1.0.0';
+                    }
+                }
+            }
+
+            # "IPADDRESS" - The client's IP address
+            # -------------------------------------
+
+            # Providing the user's real IP address, any proxy notwithstanding, is in the authors'
+            #   view a breach of the user's privacy. Hence, the user must opt-in. If not, the same
+            #   generic IP address sent by the Chat Task is used
+            $envHash{'IPADDRESS'} = '127.0.0.1';
+            if ($axmud::CLIENT->allowMnesSendIPFlag) {
+
+                $localIP = $axmud::CLIENT->ipv4Get();
+                if ($localIP) {
+
+                    $envHash{'IPADDRESS'} = $localIP;
+                }
+            }
+
+            # MTTS - bitvector
+            # ----------------
+
+            $envHash{'MTTS'} = $self->compileMTTSBitVector();
+
+            # TERMINAL_TYPE - name
+            # --------------------
+
+            # Check that VT100 control sequences are enabled
+            if ($self->currentWorld->ivExists('termOverrideHash', 'useCtrlSeqFlag')) {
+                $useCtrlSeqFlag = $self->currentWorld->ivShow('termOverrideHash', 'useCtrlSeqFlag');
+            } else {
+                $useCtrlSeqFlag = $axmud::CLIENT->useCtrlSeqFlag;
+            }
+
+            # Default value best matching Axmud capabilities; also used by MTTS
+            if ($useCtrlSeqFlag) {
+                $envHash{'TERMINAL_TYPE'} = 'VT100-TRUECOLOR';
+            } else {
+                $envHash{'TERMINAL_TYPE'} = 'ANSI-TRUECOLOR';
+            }
+        }
 
         # $parameters is in the form <cmd_char><data>
         $cmd = substr($parameters, 0, 1);
@@ -33097,9 +33588,14 @@
                     . ', ' . $axmud::SCRIPT . ' v' . $axmud::VERSION . ') to the authors.',
                 );
 
-                # Disable MSDP for this session
-                $self->optSendDont($telConstHash{'TELOPT_MSDP'});
-                $self->ivPoke('msdpMode', 'client_refuse');
+#                # Disable MSDP for this session
+#                $self->optSendDont($telConstHash{'TELOPT_MSDP'});
+#                $self->ivPoke('msdpMode', 'client_refuse');
+#                $self->ivUndef('msdpSanityNum');
+                # v1.2.103 The code above caused a disconnection issue at Evennia. That is now
+                #   fixed, but the MSDP spec contains no mention of the client sending IAC DONT MSDP
+                # Instead, we'll ignore any more MSDP data for this session
+                $self->ivPoke('msdpMode', 'client_ignore');
                 $self->ivUndef('msdpSanityNum');
 
                 return %emptyHash;
@@ -39731,6 +40227,8 @@
                                         => 'startDateString',
                 'client.delay.prompt'   => 'promptWaitTime',
                 'client.delay.login'    => 'loginWarningTime',
+                'client.iv'             => 'constIVHash',
+                'client.reserved'       => 'constReservedHash',
             );
 
             if (exists $globalHash{$string}) {
@@ -41964,6 +42462,7 @@
             # F protocol.atcp
             # F protocol.gmcp
             # F protocol.mtts
+            # F protocol.mnes
             # F protocol.mcp
             #
             # F protocol.msp.multiple
@@ -42005,6 +42504,7 @@
                 'protocol.atcp'         => 'useAtcpFlag',
                 'protocol.gmcp'         => 'useGmcpFlag',
                 'protocol.mtts'         => 'useMttsFlag',
+                'protocol.mnes'         => 'useMnesFlag',
                 'protocol.mcp'          => 'useMcpFlag',
 
                 'protocol.msp.multiple' => 'allowMspMultipleFlag',

@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2019 A S Lewis
+# Copyright (C) 2011-2020 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # Lesser Public License as published by the Free Software Foundation, either version 3 of the
@@ -1557,11 +1557,17 @@
         #   $scriptObj      - Blessed reference to the parent LA::Script
         #   $tokenGroupObj  - Blessed reference of the line's token group
         #
+        # Optional arguments
+        #   $specialFlag    - TRUE when called by a DIM or REDIM statement, in which case we attempt
+        #       to extract an LA::Expression::SpecialArgList after the identifier. FALSE (or
+        #       'undef') when called by anything else, in which case we attempt to extract a normal
+        #       LA::Expression::SpecialArgList after the identifier
+        #
         # Return values
         #   'undef' on improper arguments, or for an error
         #   Otherwise returns either a LA::Expression::Lvalue:: subclass, or 'undef'
 
-        my ($class, $scriptObj, $tokenGroupObj, $check) = @_;
+        my ($class, $scriptObj, $tokenGroupObj, $specialFlag, $check) = @_;
 
         # Local variables
         my ($token, $varName, $argListObj, $varObj);
@@ -1620,7 +1626,20 @@
 
         # Test whether the variable refers to a cell in an array (e.g. A(5,6) ) by trying to extract
         #   an argument list
-        $argListObj = Language::Axbasic::Expression::ArgList->new($scriptObj, $tokenGroupObj);
+        if (! $specialFlag) {
+
+            $argListObj = Language::Axbasic::Expression::ArgList->new(
+                $scriptObj,
+                $tokenGroupObj,
+            );
+
+        } else{
+
+            $argListObj = Language::Axbasic::Expression::SpecialArgList->new(
+                $scriptObj,
+                $tokenGroupObj,
+            );
+        }
 
         # Lookup the variable name in variable storage (and create it, if it doesn't exist)
         $varObj = Language::Axbasic::Variable->lookup($scriptObj, $varName, $argListObj);
@@ -2319,7 +2338,7 @@
         #   $tokenGroupObj  - Blessed reference of the line's token group
         #
         # Optional arguments
-        #   $implicitFlag   - If TRUE, a non-existent argulist is acceptable, i.e. a token group
+        #   $implicitFlag   - If TRUE, a non-existent arglist is acceptable, i.e. a token group
         #                       with no more tokens is treated the same as an empty arglist token,
         #                       namely '()'. If FALSE or 'undef', an empty arglist (at the very
         #                       least) is expected
@@ -2360,17 +2379,17 @@
             # IVs
             # ---
 
-            # The arguments from the arglist, stored as a Perl list
+            # The arguments of the arglist, stored as a Perl list
             argList                     => [],
         };
 
         if (! $implicitFlag || $tokenGroupObj->lookAhead()) {
 
-            # The argument list, if explicitly specified, must start with a left parenthesis
+            # The arglist, if explicitly specified, must start with a left parenthesis
             $token = $tokenGroupObj->shiftTokenIfCategory('left_paren');
             if (! defined $token) {
 
-                # Not an argument list
+                # Not an arglist
                 return undef;
             }
 
@@ -2395,7 +2414,7 @@
 
                 } while ($tokenGroupObj->shiftMatchingToken(','));
 
-                # The argument list must end with a right parenthesis
+                # The arglist must end with a right parenthesis
                 $token = $tokenGroupObj->shiftTokenIfCategory('right_paren');
                 if (! defined $token) {
 
@@ -2406,7 +2425,7 @@
                 }
             }
 
-            # Store the argument list, and bless this object
+            # Store the arglist, and bless this object
             $self->{'argList'} = \@args;
         }
 
@@ -2426,13 +2445,15 @@
         #   (none besides $self)
         #
         # Return values
-        #   'undef' on improper arguments
-        #   Otherwise returns a list of values from the argument list
+        #   An empty list on improper arguments
+        #   Otherwise returns a list of values from the arglist. The values will be 'undef' for any
+        #       expression that could not be evaluated; it's up to the calling function to check for
+        #       that
 
         my ($self, $check) = @_;
 
         # Local variables
-        my @values;
+        my (@emptyList, @values);
 
         # Check for improper arguments
         if (defined $check) {
@@ -2440,18 +2461,214 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->evaluate', @_);
         }
 
-        # Evaluate each argument, transforming the list of arguments into a list of values
+        # Evaluate each argument, transforming the arglist into a list of values
         foreach my $arg ($self->argList) {
 
-            my $result = $arg->evaluate();
-            if (! defined $result) {
+            push (@values, $arg->evaluate());
+        }
 
-                return undef;
+        # Return the list of values
+        return @values;
+    }
 
-            } else {
+    ##################
+    # Accessors - set
 
-                push (@values, $result);
+    ##################
+    # Accessors - get
+
+    sub scriptObj
+        { $_[0]->{scriptObj} }
+
+    sub argList
+        { my $self = shift; return @{$self->{argList}}; }
+}
+
+{ package Language::Axbasic::Expression::SpecialArgList;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    @Language::Axbasic::Expression::SpecialArgList::ISA = qw(
+        Language::Axbasic::Expression
+    );
+
+    ##################
+    # Constructors
+
+    sub new {
+
+        # Called by LA::Statement::xxx->parse or LA::Statement::xxx->implement
+        # A modified form of LA::Expression::ArgList, for use with DIM statements
+        # The arglist can be a simple list of expressions (A, B, C...). Each expression is expected
+        #   to be an integer
+        # Any of the expressions can be replaced with a pair of numeric expressions representing the
+        #   lower and upper bounds of the dimension. The pair is expressed in the form 'lower TO
+        #   upper'. Both expressions are expected to be integers, and 'lower' is expected to be less
+        #   than 'upper'
+        # Thus we could use any of the following special arglists in a DIM statement:
+        #
+        #   DIM data (2, 5, 10)
+        #   DIM data (0 TO 2, 0 TO 5, 10 TO 20)
+        #   DIM data (2, 5, 10 TO 20)
+        #
+        # Expected arguments
+        #   $scriptObj      - Blessed reference to the parent LA::Script
+        #   $tokenGroupObj  - Blessed reference of the line's token group
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   Returns either the LA::Expression::Arglist created, or 'undef'
+
+        my ($class, $scriptObj, $tokenGroupObj, $check) = @_;
+
+        # Local variables
+        my (
+            $token,
+            @args,
+        );
+
+        # Check for improper arguments
+        if (
+            ! defined $class || ! defined $scriptObj || ! defined $tokenGroupObj || defined $check
+        ) {
+            return $axmud::CLIENT->writeImproper($class . '->new', @_);
+        }
+
+        # Setup
+        my $self = {
+            _objName                    => $class,      # Name Axbasic objects after their class
+            _objClass                   => $class,
+            _parentFile                 => undef,       # No parent file object
+            _parentWorld                => undef,       # No parent file object
+            _privFlag                   => TRUE,        # All IVs are private
+
+            # Perl object components
+            # ----------------------
+
+            # The parent LA::Script
+            scriptObj                   => $scriptObj,
+
+            # IVs
+            # ---
+
+            # The arguments of the special arglist. Each single argument (or pair of arguments) is
+            #   stored as a list reference
+            argList                     => [],
+        };
+
+        # The special arglist must start with a left parenthesis
+        $token = $tokenGroupObj->shiftTokenIfCategory('left_paren');
+        if (! defined $token) {
+
+            # Not an arglist
+            return undef;
+        }
+
+        # Check for an empty arglist
+        $token = $tokenGroupObj->shiftTokenIfCategory('right_paren');
+        if (! defined $token) {
+
+            # Go through the list, extracting single arguments orpairs of arguments
+            do {
+
+                my (
+                    $arg, $arg2,
+                    @miniList,
+                );
+
+                $arg = Language::Axbasic::Expression::Arithmetic->new(
+                    $scriptObj,
+                    $tokenGroupObj,
+                );
+
+                if (! defined $arg || ! (ref ($arg) =~ m/Numeric/)) {
+                    return undef;
+                } else {
+                    push (@miniList, $arg);
+                }
+
+                if (defined $tokenGroupObj->shiftMatchingToken('to')) {
+
+                    $arg2 = Language::Axbasic::Expression::Arithmetic->new(
+                        $scriptObj,
+                        $tokenGroupObj,
+                    );
+
+                    if (! defined $arg2 || ! (ref ($arg2) =~ m/Numeric/)) {
+                        return undef;
+                    } else {
+                        push (@miniList, $arg2);
+                    }
+                }
+
+                push (@args, \@miniList);
+
+            } while ($tokenGroupObj->shiftMatchingToken(','));
+
+            # The arglist must end with a right parenthesis
+            $token = $tokenGroupObj->shiftTokenIfCategory('right_paren');
+            if (! defined $token) {
+
+                return $scriptObj->setError(
+                    'mismatched_parentheses_error',
+                    $class . '->new',
+                );
             }
+        }
+
+        # Store the arglist, and bless this object
+        $self->{'argList'} = \@args;
+
+
+        # Bless the object into existence
+        bless $self, $class;
+        return $self;
+    }
+
+    ##################
+    # Methods
+
+    sub evaluate {
+
+        # Called by LA::Statement::xxx->implement
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   An empty list on improper arguments
+        #   Otherwise evaluates the expressions in the arglist, and returns them as a list with the
+        #       same structure (a list of list references, with each list reference containing
+        #       either a single value or a pair of values). The value(s) will be 'undef' for any
+        #       expression that could not be evaluated; it's up to the calling function to check for
+        #       that
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my (@emptyList, @values);
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->evaluate', @_);
+        }
+
+        # Evaluate each expression, transforming the arglist into a list of values
+        foreach my $listRef ($self->argList) {
+
+            my @miniList;
+
+            foreach my $arg (@$listRef) {
+
+                push (@miniList, $arg->evaluate());
+            }
+
+            push (@values, \@miniList);
         }
 
         # Return the list of values

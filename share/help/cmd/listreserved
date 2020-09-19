@@ -1,7 +1,7 @@
-lrs / listreserved            Lists all reserved names
+lrd / listreserved            Lists all reserved names
 
    Format:
-      ;lrs                    Lists reserved names
+      ;lrd                    Lists reserved names
 
    Notes:
       Reserved names are a list of words that can't be used as names for
@@ -10,4 +10,4 @@ lrs / listreserved            Lists all reserved names
          itself a reserved name.
 
    User commands:
-      lrs / listreserved
+      lrd / listrd / listreserved

@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2019 A S Lewis
+# Copyright (C) 2011-2020 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -164,9 +164,8 @@
 
             # The container widget(s) for this table object; both IVs are always set to the same
             #   widget
-            packingBox                  => undef,       # Gtk3::HBox, ::VBox, ::ScrolledWindow,
-                                                        #   ::Frame
-            packingBox2                 => undef,       # ditto
+            packingBox                  => undef,       # Gtk3::Grid
+            packingBox2                 => undef,       # Gtk3::Grid
 
             # Other IVs
             # ---------
@@ -218,10 +217,14 @@
         }
 
         # Create the packing box, depending on $type
-        my $packingBox = Gtk3::VBox->new(FALSE, 0);
+        my $packingBox = Gtk3::Grid->new();
 
         # For this table object, ->packingBox and ->packingBox2 always refer to the same widget
         my $packingBox2 = $packingBox;
+
+        # Set expansion
+        $packingBox->set_hexpand(TRUE);
+        $packingBox->set_vexpand(TRUE);
 
         # Update IVs
         $self->ivPoke('packingBox', $packingBox);
@@ -297,16 +300,22 @@
         #                   of the key-value pairs in the hash, if there are any
         #               - This type of table object recognises these initialisation settings:
         #
-        #                   'type' - 'horizontal'/'hbox' for a Gtk3::HBox, 'vertical'/'vbox' for a
-        #                       Gtk3::VBox, 'scroll'/'scroller' for a Gtk3::ScrolledWindow, 'frame'
-        #                       for a Gtk3::Frame. If an invalid 'type' or if 'type' is not
-        #                       specified, 'vertical' is used
+        #                   'type' - 'grid' for a Gtk3::Grid, 'horizontal'/'hbox' for a Gtk3::HBox,
+        #                       'vertical'/'vbox' for a Gtk3::VBox, 'scroll'/'scroller' for a
+        #                       Gtk3::ScrolledWindow, 'frame' for a Gtk3::Frame. If an invalid
+        #                       'type' or if 'type' is not specified, 'grid' is used
+        #                   'expand_horizontal_flag' - Ignored if 'type' is 'horizontal' or
+        #                       'vertical'. If TRUE or not specified, the table object expands
+        #                       horizontally; if FALSE, it doesn't
+        #                   'expand_vertical_flag' - Ignored if 'type' is 'horizontal' or
+        #                       'vertical'. If TRUE or not specified, the table object expands
+        #                       vertically; if FALSE, it doesn't
         #                   'equal_flag' - Ignored if 'type' is not 'horizontal' or 'vertical'.
         #                       If TRUE, sets the container's homogeneity flag to TRUE; if FALSE,
         #                       'undef' or not specified, sets it to FALSE
-        #                   'spacing' - Ignored if 'type' is not 'horizontal' or 'vertical'. Sets
-        #                       the spacing between widgets packed into the box. If specified, must
-        #                       be an integer, >= 0
+        #                   'spacing' - Ignored if 'type' is not 'grid', 'horizontal' or 'vertical'.
+        #                       Sets the spacing between widgets packed into the box. If specified,
+        #                       must be an integer, >= 0
         #                   'scroll_horizontal' - Ignored if 'type' is not 'scroll' or 'scroller'.
         #                       Sets the horizontal scrolling policy; the value must be 'always',
         #                       'automatic' or 'never'. If 'undef', not specified or an invalid
@@ -350,7 +359,9 @@
 
         # Default initialisation settings
         %modHash = (
-            'type'                      => 'vertical',
+            'type'                      => 'grid',
+            'expand_horizontal_flag'    => TRUE,
+            'expand_vertical_flag'      => TRUE,
             'equal_flag'                => FALSE,
             'spacing'                   => 0,
             'scroll_horizontal'         => 'automatic',
@@ -363,7 +374,7 @@
 
             if (exists $initHash{$key}) {
 
-                if ($key eq 'equal_flag') {
+                if ($key =~ m/flag$/) {
 
                     if ($initHash{$key}) {
                         $modHash{$key} = TRUE;
@@ -435,8 +446,8 @@
 
             # The container widget(s) for this table object; both IVs are always set to the same
             #   widget
-            packingBox                  => undef,       # Gtk3::HBox, ::VBox, ::ScrolledWindow,
-                                                        #   ::Frame
+            packingBox                  => undef,       # Gtk3::Grid, Gtk3::HBox, ::VBox,
+                                                        #   ::ScrolledWindow, ::Frame
             packingBox2                 => undef,       # ditto
 
             # Other IVs
@@ -473,7 +484,7 @@
         my ($self, $check) = @_;
 
         # Local variables
-        my ($type, $equalFlag, $spacing, $hScroll, $vScroll, $label);
+        my ($type, $hExpandFlag, $vExpandFlag, $equalFlag, $spacing, $hScroll, $vScroll, $label);
 
         # Check for improper arguments
         if (defined $check) {
@@ -492,9 +503,11 @@
         } elsif ($type eq 'frame') {
             $type = 'frame';
         } else {
-            $type = 'vertical';
+            $type = 'grid';
         }
 
+        $hExpandFlag = $self->testFlag($self->ivShow('initHash', 'expand_horizontal_flag'));
+        $vExpandFlag = $self->testFlag($self->ivShow('initHash', 'expand_vertical_flag'));
         $equalFlag = $self->testFlag($self->ivShow('initHash', 'equal_flag'));
         $spacing = $self->testInt($self->ivShow('initHash', 'spacing'), 0, 0);
 
@@ -518,7 +531,13 @@
 
         # Create the packing box, depending on $type
         my ($packingBox, $packingBox2);
-        if ($type eq 'horizontal' || $type eq 'hbox') {
+        if ($type eq 'grid') {
+
+            $packingBox = Gtk3::Grid->new();
+            $packingBox->set_row_spacing($spacing);
+            $packingBox->set_column_spacing($spacing);
+
+        } elsif ($type eq 'horizontal' || $type eq 'hbox') {
 
             $packingBox = Gtk3::HBox->new($equalFlag, $spacing);
             $type = 'horizontal';
@@ -541,6 +560,18 @@
             } else {
                 $packingBox = Gtk3::Frame->new($label);
             }
+        }
+
+        # Set expansion
+        if ($type eq 'grid' || $type eq 'scroll' || $type eq 'frame') {
+
+            $packingBox->set_hexpand($hExpandFlag);
+            $packingBox->set_vexpand($vExpandFlag);
+
+        } else {
+
+            $packingBox->set_hexpand(TRUE);
+            $packingBox->set_vexpand(TRUE);
         }
 
         # For this table object, ->packingBox and ->packingBox2 always refer to the same widget
@@ -1053,6 +1084,10 @@
         #                   'row_spacing' - Sets the vertical spacing between table widgets, in
         #                       pixels (must be an integer, >= 0). If not specified or an invalid
         #                       value, a spacing of 0 is used
+        #                   'expand_horizontal_flag' - If TRUE or not specified, the table object
+        #                       expands horizontally; if FALSE, it doesn't
+        #                   'expand_vertical_flag' - If TRUE or not specified, the table object
+        #                       expands vertically; if FALSE, it doesn't
         #
         # Return values
         #   'undef' on improper arguments
@@ -1087,6 +1122,8 @@
             'row_equal_flag'            => FALSE,
             'column_spacing'            => 0,
             'row_spacing'               => 0,
+            'expand_horizontal_flag'    => TRUE,
+            'expand_vertical_flag'      => TRUE,
         );
 
         # Interpret the initialisation settings in %initHash, if any
@@ -1094,7 +1131,7 @@
 
             if (exists $initHash{$key}) {
 
-                if ($key eq 'row_equal_flag' || $key eq 'column_equal_flag') {
+                if ($key =~ m/flag$/) {
 
                     if ($initHash{$key}) {
                         $modHash{$key} = TRUE;
@@ -1201,7 +1238,7 @@
         my ($self, $check) = @_;
 
         # Local variables
-        my ($colEqualFlag, $rowEqualFlag, $colSpacing, $rowSpacing);
+        my ($colEqualFlag, $rowEqualFlag, $colSpacing, $rowSpacing, $hExpandFlag, $vExpandFlag);
 
         # Check for improper arguments
         if (defined $check) {
@@ -1214,6 +1251,8 @@
         $rowEqualFlag = $self->testFlag($self->ivShow('initHash', 'row_equal_flag'));
         $colSpacing = $self->testInt($self->ivShow('initHash', 'column_spacing'), 0, 0);
         $rowSpacing = $self->testInt($self->ivShow('initHash', 'row_spacing'), 0, 0);
+        $hExpandFlag = $self->testFlag($self->ivShow('initHash', 'expand_horizontal_flag'));
+        $vExpandFlag = $self->testFlag($self->ivShow('initHash', 'expand_vertical_flag'));
 
         # Create the packing box
         my ($packingBox, $packingBox2);
@@ -1222,6 +1261,10 @@
         $packingBox2->set_row_homogeneous($rowEqualFlag);
         $packingBox2->set_column_spacing($colSpacing);
         $packingBox2->set_row_spacing($rowSpacing);
+
+        # Set expansion
+        $packingBox->set_hexpand($hExpandFlag);
+        $packingBox->set_vexpand($vExpandFlag);
 
         # Update IVs
         $self->ivPoke('packingBox', $packingBox);
@@ -1520,6 +1563,11 @@
         #                   'align_x', 'align_y' - the Gtk3::Label's alignment, values in the range
         #                       0-1. If not specified, 'align_x' is set to 0, 'align_y' is set to
         #                       0.5. Ignored if 'text' is not specified
+        #                   'expand_horizontal_flag' - If TRUE or unspecified, the table object
+        #                       expands horizontally; if FALSE, it doesn't. Note that typically,
+        #                       alignment does not work unless expansion is enabled
+        #                   'expand_vertical_flag' - If TRUE or unspecified, the table object
+        #                       expands vertically; if FALSE, it doesn't
         #
         # Return values
         #   'undef' on improper arguments
@@ -1556,6 +1604,8 @@
             'tooltips'                  => undef,
             'align_x'                   => 0,
             'align_y'                   => 0.5,
+            'expand_horizontal_flag'    => TRUE,
+            'expand_vertical_flag'      => TRUE,
         );
 
         # Interpret the initialisation settings in %initHash, if any
@@ -1563,7 +1613,7 @@
 
             if (exists $initHash{$key}) {
 
-                if ($key eq 'underline_flag') {
+                if ($key =~ m/flag$/) {
 
                     if ($initHash{$key}) {
                         $modHash{$key} = TRUE;
@@ -1634,8 +1684,8 @@
             funcID                      => '',
 
             # The container widget(s) for this table object
-            packingBox                  => undef,       # Gtk3::HBox or Gtk3::Frame
-            packingBox2                 => undef,       # Gtk3::HBox
+            packingBox                  => undef,       # Gtk3::Grid
+            packingBox2                 => undef,       # Gtk3::Grid
 
             # Other IVs
             # ---------
@@ -1670,7 +1720,10 @@
         my ($self, $check) = @_;
 
         # Local variables
-        my ($text, $noTextFlag, $justify, $underlineFlag, $tooltips, $alignX, $alignY);
+        my (
+            $text, $noTextFlag, $justify, $underlineFlag, $tooltips, $alignX, $alignY, $hExpandFlag,
+            $vExpandFlag,
+        );
 
         # Check for improper arguments
         if (defined $check) {
@@ -1691,13 +1744,15 @@
         $tooltips = $self->ivShow('initHash', 'tooltips');
         $alignX = $self->testAlign($self->ivShow('initHash', 'align_x'), 0);
         $alignY = $self->testAlign($self->ivShow('initHash', 'align_y'), 0.5);
+        $hExpandFlag = $self->testFlag($self->ivShow('initHash', 'expand_horizontal_flag'));
+        $vExpandFlag = $self->testFlag($self->ivShow('initHash', 'expand_vertical_flag'));
 
         # Create packing box(es)
-        my ($packingBox, $packingBox2) = $self->setupPackingBoxes(Gtk3::HBox->new(FALSE, 0));
+        my ($packingBox, $packingBox2) = $self->setupPackingBoxes(Gtk3::Grid->new());
 
         # Create the Gtk3::Label
         my $label = Gtk3::Label->new();
-        $packingBox2->pack_start($label, FALSE, FALSE, 0);
+        $packingBox2->attach($label, 0, 0, 1, 1);
         $label->set_markup($self->ivShow('initHash', 'text'));
 
         if (! $noTextFlag) {
@@ -1711,6 +1766,10 @@
 
             $label->set_tooltip_markup($tooltips);
         }
+
+        # Set expansion
+        $label->set_hexpand($hExpandFlag);
+        $label->set_vexpand($vExpandFlag);
 
         # Update IVs
         $self->ivPoke('packingBox', $packingBox);
@@ -1994,9 +2053,12 @@
         #                   'normal_flag' - If TRUE (or not specified), the button's state is
         #                       'normal'. If FALSE, the button's state is 'insensitive' (nothing can
         #                       interact with it)
-        #                   'expand_flag' - If TRUE, the button expands and contracts to fill the
-        #                       window, even when the window is resized. If FALSE (or not
-        #                       specified), the button is a fixed size
+        #                   'expand_horizontal_flag' - If TRUE or unspecified, the table object
+        #                       expands horizontally; if FALSE, it doesn't. Note that typically,
+        #                       alignment does not work unless expansion is enabled
+        #                   'expand_vertical_flag' - If TRUE or unspecified, the table object
+        #                       expands vertically; if FALSE, it doesn't
+        #                   'expand_flag' - Deprecated since v1.2.170; ignored if specified
         #
         # Return values
         #   'undef' on improper arguments
@@ -2037,7 +2099,9 @@
             'align_x'                   => 0.5,
             'align_y'                   => 0.5,
             'normal_flag'               => TRUE,
-            'expand_flag'               => FALSE,
+            'expand_horizontal_flag'    => TRUE,
+            'expand_vertical_flag'      => TRUE,
+            'expand_flag'               => FALSE,       # Deprecated since v1.2.170
         );
 
         # Interpret the initialisation settings in %initHash, if any
@@ -2045,7 +2109,7 @@
 
             if (exists $initHash{$key}) {
 
-                if ($key eq 'underline_flag' || $key eq 'normal_flag' || $key eq 'expand_flag') {
+                if ($key =~ m/flag$/) {
 
                     if ($initHash{$key}) {
                         $modHash{$key} = TRUE;
@@ -2120,8 +2184,8 @@
             funcID                      => '',
 
             # The container widget(s) for this table object
-            packingBox                  => undef,       # Gtk3::VBox or Gtk3::Frame
-            packingBox2                 => undef,       # Gtk3::VBox
+            packingBox                  => undef,       # Gtk3::Grid
+            packingBox2                 => undef,       # Gtk3::Grid
 
 
             # Other IVs
@@ -2159,7 +2223,7 @@
         # Local variables
         my (
             $funcRef, $funcID, $text, $stock, $image, $underlineFlag, $tooltips, $alignX, $alignY,
-            $normalFlag, $expandFlag,
+            $normalFlag, $hExpandFlag, $vExpandFlag,
         );
 
         # Check for improper arguments
@@ -2179,10 +2243,11 @@
         $alignX = $self->testAlign($self->ivShow('initHash', 'align_x'), 0.5);
         $alignY = $self->testAlign($self->ivShow('initHash', 'align_y'), 0.5);
         $normalFlag = $self->testFlag($self->ivShow('initHash', 'normal_flag'));
-        $expandFlag = $self->testFlag($self->ivShow('initHash', 'expand_flag'));
+        $hExpandFlag = $self->testFlag($self->ivShow('initHash', 'expand_horizontal_flag'));
+        $vExpandFlag = $self->testFlag($self->ivShow('initHash', 'expand_vertical_flag'));
 
         # Create packing box(es)
-        my ($packingBox, $packingBox2) = $self->setupPackingBoxes(Gtk3::VBox->new(FALSE, 0));
+        my ($packingBox, $packingBox2) = $self->setupPackingBoxes(Gtk3::Grid->new());
 
         # Create the Gtk3::Button
         my $button;
@@ -2194,7 +2259,7 @@
             $button = Gtk3::Button->new();
         }
 
-        $packingBox2->pack_start($button, $expandFlag, $expandFlag, 0);
+        $packingBox2->attach($button, 0, 0, 1, 1);
 
         if (defined $text && $text ne '') {
 
@@ -2215,6 +2280,10 @@
 
             $button->set_state('insensitive');
         }
+
+        # Set expansion
+        $button->set_hexpand($hExpandFlag);
+        $button->set_vexpand($vExpandFlag);
 
         # Update IVs
         $self->ivPoke('funcRef', $funcRef);
@@ -2530,6 +2599,11 @@
         #                   'normal_flag' - If TRUE (or not specified), the button's state is
         #                       'normal'. If FALSE, the button's state is 'insensitive' (nothing can
         #                       interact with it)
+        #                   'expand_horizontal_flag' - If TRUE or unspecified, the table object
+        #                       expands horizontally; if FALSE, it doesn't. Note that typically,
+        #                       alignment does not work unless expansion is enabled
+        #                   'expand_vertical_flag' - If TRUE or unspecified, the table object
+        #                       expands vertically; if FALSE, it doesn't
         #
         # Return values
         #   'undef' on improper arguments
@@ -2568,6 +2642,8 @@
             'align_y'                   => 0.5,
             'select_flag'               => FALSE,
             'normal_flag'               => TRUE,
+            'expand_horizontal_flag'    => TRUE,
+            'expand_vertical_flag'      => TRUE,
         );
 
         # Interpret the initialisation settings in %initHash, if any
@@ -2575,7 +2651,7 @@
 
             if (exists $initHash{$key}) {
 
-                if ($key eq 'select_flag' || $key eq 'normal_flag') {
+                if ($key =~ m/flag$/) {
 
                     if ($initHash{$key}) {
                         $modHash{$key} = TRUE;
@@ -2650,8 +2726,8 @@
             funcID                      => '',
 
             # The container widget(s) for this table object
-            packingBox                  => undef,       # Gtk3::VBox or Gtk3::Frame
-            packingBox2                 => undef,       # Gtk3::VBox
+            packingBox                  => undef,       # Gtk3::Grid
+            packingBox2                 => undef,       # Gtk3::Grid
 
 
             # Other IVs
@@ -2687,7 +2763,10 @@
         my ($self, $check) = @_;
 
         # Local variables
-        my ($funcRef, $funcID, $text, $tooltips, $alignX, $alignY, $selectFlag, $normalFlag);
+        my (
+            $funcRef, $funcID, $text, $tooltips, $alignX, $alignY, $selectFlag, $normalFlag,
+            $hExpandFlag, $vExpandFlag,
+        );
 
         # Check for improper arguments
         if (defined $check) {
@@ -2704,9 +2783,11 @@
         $alignY = $self->testAlign($self->ivShow('initHash', 'align_y'), 0.5);
         $selectFlag = $self->testFlag($self->ivShow('initHash', 'select_flag'));
         $normalFlag = $self->testFlag($self->ivShow('initHash', 'normal_flag'));
+        $hExpandFlag = $self->testFlag($self->ivShow('initHash', 'expand_horizontal_flag'));
+        $vExpandFlag = $self->testFlag($self->ivShow('initHash', 'expand_vertical_flag'));
 
         # Create packing box(es)
-        my ($packingBox, $packingBox2) = $self->setupPackingBoxes(Gtk3::VBox->new(FALSE, 0));
+        my ($packingBox, $packingBox2) = $self->setupPackingBoxes(Gtk3::Grid->new());
 
         # Create the Gtk3::CheckButton
         my $button;
@@ -2716,7 +2797,7 @@
             $button = Gtk3::CheckButton->new();
         }
 
-        $packingBox2->pack_start($button, FALSE, FALSE, 0);
+        $packingBox2->attach($button, 0, 0, 1, 1);
 
         if (defined $text && $text ne '') {
 
@@ -2733,6 +2814,10 @@
 
             $button->set_state('insensitive');
         }
+
+        # Set expansion
+        $button->set_hexpand($hExpandFlag);
+        $button->set_vexpand($vExpandFlag);
 
         # Update IVs
         $self->ivPoke('funcRef', $funcRef);
@@ -3059,6 +3144,11 @@
         #                       GA::Table::RadioButton object (and stored in its ->group IV). If
         #                       not specified or 'undef', this is the first radio button in its
         #                       group
+        #                   'expand_horizontal_flag' - If TRUE or unspecified, the table object
+        #                       expands horizontally; if FALSE, it doesn't. Note that typically,
+        #                       alignment does not work unless expansion is enabled
+        #                   'expand_vertical_flag' - If TRUE or unspecified, the table object
+        #                       expands vertically; if FALSE, it doesn't
         #
         # Return values
         #   'undef' on improper arguments
@@ -3098,6 +3188,8 @@
             'select_flag'               => FALSE,
             'normal_flag'               => TRUE,
             'group'                     => undef,
+            'expand_horizontal_flag'    => TRUE,
+            'expand_vertical_flag'      => TRUE,
         );
 
         # Interpret the initialisation settings in %initHash, if any
@@ -3105,7 +3197,7 @@
 
             if (exists $initHash{$key}) {
 
-                if ($key eq 'select_flag' || $key eq 'normal_flag') {
+                if ($key =~ m/flag$/) {
 
                     if ($initHash{$key}) {
                         $modHash{$key} = TRUE;
@@ -3180,8 +3272,8 @@
             funcID                      => '',
 
             # The container widget(s) for this table object
-            packingBox                  => undef,       # Gtk3::VBox or Gtk3::Frame
-            packingBox2                 => undef,       # Gtk3::VBox
+            packingBox                  => undef,       # Gtk3::Grid
+            packingBox2                 => undef,       # Gtk3::Grid
 
             # Other IVs
             # ---------
@@ -3219,6 +3311,7 @@
         # Local variables
         my (
             $funcRef, $funcID, $text, $tooltips, $alignX, $alignY, $selectFlag, $normalFlag, $group,
+            $hExpandFlag, $vExpandFlag,
         );
 
         # Check for improper arguments
@@ -3237,13 +3330,15 @@
         $selectFlag = $self->testFlag($self->ivShow('initHash', 'select_flag'));
         $normalFlag = $self->testFlag($self->ivShow('initHash', 'normal_flag'));
         $group = $self->ivShow('initHash', 'group');
+        $hExpandFlag = $self->testFlag($self->ivShow('initHash', 'expand_horizontal_flag'));
+        $vExpandFlag = $self->testFlag($self->ivShow('initHash', 'expand_vertical_flag'));
 
         # Create packing box(es)
-        my ($packingBox, $packingBox2) = $self->setupPackingBoxes(Gtk3::VBox->new(FALSE, 0));
+        my ($packingBox, $packingBox2) = $self->setupPackingBoxes(Gtk3::Grid->new());
 
         # Create the Gtk3::RadioButton
         my $button = Gtk3::RadioButton->new();
-        $packingBox2->pack_start($button, FALSE, FALSE, 0);
+        $packingBox2->attach($button, 0, 0, 1, 1);
 
         if (defined $text && $text ne '') {
 
@@ -3266,6 +3361,10 @@
 
             $button->set_state('insensitive');
         }
+
+        # Set expansion
+        $button->set_hexpand($hExpandFlag);
+        $button->set_vexpand($vExpandFlag);
 
         # Update IVs
         $self->ivPoke('funcRef', $funcRef);
@@ -3583,10 +3682,11 @@
         #                   'normal_flag' - If TRUE (or not specified), the entry's state is
         #                       'normal'. If FALSE, the button's state is 'insensitive' (nothing can
         #                       interact with it)
-        #                   'expand_flag' - If TRUE (or unspecified), the entry box expands to the
-        #                       full available length. If FALSE (or unspecified), it will be
-        #                       whatever length Gtk gives it (which is, in turn, influenced by
-        #                       'width_chars' and 'max_chars')
+        #                   'expand_flag' - Deprecated since v1.2.170; ignored if specified
+        #                   'expand_horizontal_flag' - If TRUE or unspecified, the table object
+        #                       expands horizontally; if FALSE, it doesn't
+        #                   'expand_vertical_flag' - If TRUE or unspecified, the table object
+        #                       expands vertically; if FALSE, it doesn't
         #                   'check_flag' - If specified, the entry contains a stock icon which
         #                       indicates whether the entry's text is acceptable. The function
         #                       specified by 'func' will then only be called when the user presses
@@ -3655,7 +3755,9 @@
             'max_chars'                 => 0,
             'tooltips'                  => undef,
             'normal_flag'               => TRUE,
-            'expand_flag'               => TRUE,
+            'expand_flag'               => TRUE,        # Deprecated since v1.2.170
+            'expand_horizontal_flag'    => TRUE,
+            'expand_vertical_flag'      => TRUE,
             'check_flag'                => FALSE,
             'check_yes'                 => 'gtk-yes',
             'check_no'                  => 'gtk-no',
@@ -3670,7 +3772,7 @@
 
             if (exists $initHash{$key}) {
 
-                if ($key eq 'normal_flag' || $key eq 'expand_flag' || $key eq 'check_flag') {
+                if ($key =~ m/flag$/) {
 
                     if ($initHash{$key}) {
                         $modHash{$key} = TRUE;
@@ -3745,8 +3847,8 @@
             funcID                      => '',
 
             # The container widget(s) for this table object
-            packingBox                  => undef,       # Gtk3::HBox or Gtk3::Frame
-            packingBox2                 => undef,       # Gtk3::HBox
+            packingBox                  => undef,       # Gtk3::Grid
+            packingBox2                 => undef,       # Gtk3::Grid
 
             # Other IVs
             # ---------
@@ -3792,8 +3894,9 @@
 
         # Local variables
         my (
-            $funcRef, $funcID, $text, $widthChars, $maxChars, $tooltips, $normalFlag, $expandFlag,
-            $checkFlag, $checkYes, $checkNo, $checkFunc, $checkType, $checkMin, $checkMax,
+            $funcRef, $funcID, $text, $widthChars, $maxChars, $tooltips, $normalFlag, $hExpandFlag,
+            $vExpandFlag, $checkFlag, $checkYes, $checkNo, $checkFunc, $checkType, $checkMin,
+            $checkMax,
         );
 
         # Check for improper arguments
@@ -3810,7 +3913,8 @@
         $maxChars = $self->testInt($self->ivShow('initHash', 'max_chars'), 0, 0);
         $tooltips = $self->ivShow('initHash', 'tooltips');
         $normalFlag = $self->testFlag($self->ivShow('initHash', 'normal_flag'));
-        $expandFlag = $self->testFlag($self->ivShow('initHash', 'expand_flag'));
+        $hExpandFlag = $self->testFlag($self->ivShow('initHash', 'expand_horizontal_flag'));
+        $vExpandFlag = $self->testFlag($self->ivShow('initHash', 'expand_vertical_flag'));
         $checkFlag = $self->testFlag($self->ivShow('initHash', 'check_flag'));
 
         if ($checkFlag) {
@@ -3864,11 +3968,11 @@
         }
 
         # Create packing box(es)
-        my ($packingBox, $packingBox2) = $self->setupPackingBoxes(Gtk3::HBox->new(FALSE, 0));
+        my ($packingBox, $packingBox2) = $self->setupPackingBoxes(Gtk3::Grid->new());
 
         # Create the Gtk3::Entry
         my $entry = Gtk3::Entry->new();
-        $packingBox2->pack_start($entry, $expandFlag, $expandFlag, 0);
+        $packingBox2->attach($entry, 0, 0, 1, 1);
         if (defined $text && $text ne '') {
 
             $entry->set_text($text);
@@ -3902,6 +4006,10 @@
 
             $entry->set_state('insensitive');
         }
+
+        # Set expansion
+        $entry->set_hexpand($hExpandFlag);
+        $entry->set_vexpand($vExpandFlag);
 
         # Update IVs
         $self->ivPoke('funcRef', $funcRef);
@@ -4397,10 +4505,11 @@
         #                   'normal_flag' - If TRUE (or not specified), the button's state is
         #                       'normal'. If FALSE, the button's state is 'insensitive' (nothing can
         #                       interact with it)
-        #                   'expand_flag' - If TRUE (or unspecified), the combobox expands to the
-        #                       full available length. If FALSE (or unspecified), it will be
-        #                       whatever length Gtk gives it (which is, in turn, influenced by
-        #                       the title and items in the list)
+        #                   'expand_flag' - Deprecated since v1.2.170; ignored if specified
+        #                   'expand_horizontal_flag' - If TRUE or unspecified, the table object
+        #                       expands horizontally; if FALSE, it doesn't
+        #                   'expand_vertical_flag' - If TRUE or unspecified, the table object
+        #                       expands vertically; if FALSE, it doesn't
         #
         # Return values
         #   'undef' on improper arguments
@@ -4437,7 +4546,9 @@
             'title'                     => undef,
             'tooltips'                  => undef,
             'normal_flag'               => TRUE,
-            'expand_flag'               => TRUE,
+            'expand_flag'               => TRUE,        # Deprecated since v1.2.170
+            'expand_horizontal_flag'    => TRUE,
+            'expand_vertical_flag'      => TRUE,
         );
 
         # Interpret the initialisation settings in %initHash, if any
@@ -4445,7 +4556,7 @@
 
             if (exists $initHash{$key}) {
 
-                if ($key eq 'normal_flag' || $key eq 'expand_flag') {
+                if ($key =~ m/flag$/) {
 
                     if ($initHash{$key}) {
                         $modHash{$key} = TRUE;
@@ -4520,8 +4631,8 @@
             funcID                      => '',
 
             # The container widget(s) for this table object
-            packingBox                  => undef,       # Gtk3::HBox or Gtk3::Frame
-            packingBox2                 => undef,       # Gtk3::HBox
+            packingBox                  => undef,       # Gtk3::Grid
+            packingBox2                 => undef,       # Gtk3::Grid
 
             # Other IVs
             # ---------
@@ -4560,7 +4671,9 @@
         my ($self, $check) = @_;
 
         # Local variables
-        my ($funcRef, $funcID, $listRef, $title, $tooltips, $normalFlag, $expandFlag);
+        my (
+            $funcRef, $funcID, $listRef, $title, $tooltips, $normalFlag, $hExpandFlag, $vExpandFlag,
+        );
 
         # Check for improper arguments
         if (defined $check) {
@@ -4575,14 +4688,15 @@
         $title = $self->ivShow('initHash', 'title');
         $tooltips = $self->ivShow('initHash', 'tooltips');
         $normalFlag = $self->testFlag($self->ivShow('initHash', 'normal_flag'));
-        $expandFlag = $self->testFlag($self->ivShow('initHash', 'expand_flag'));
+        $hExpandFlag = $self->testFlag($self->ivShow('initHash', 'expand_horizontal_flag'));
+        $vExpandFlag = $self->testFlag($self->ivShow('initHash', 'expand_vertical_flag'));
 
         # Create packing box(es)
-        my ($packingBox, $packingBox2) = $self->setupPackingBoxes(Gtk3::HBox->new(FALSE, 0));
+        my ($packingBox, $packingBox2) = $self->setupPackingBoxes(Gtk3::Grid->new());
 
         # Create the Gtk3::ComboBox
         my $comboBox = Gtk3::ComboBoxText->new();
-        $packingBox2->pack_start($comboBox, $expandFlag, $expandFlag, 0);
+        $packingBox2->attach($comboBox, 0, 0, 1, 1);
         if (defined $title) {
 
             $comboBox->append_text($title);
@@ -4605,6 +4719,10 @@
 
             $comboBox->set_state('insensitive');
         }
+
+        # Set expansion
+        $comboBox->set_hexpand($hExpandFlag);
+        $comboBox->set_vexpand($vExpandFlag);
 
         # Update IVs
         $self->ivPoke('funcRef', $funcRef);
@@ -4919,6 +5037,10 @@
         #                       (a, b, a, b...) is expected. If there are 3 columns, a list in the
         #                       form (a, b, c, a, b, c) is expected. If 'undef' or an empty list,
         #                       nothing is added to the simple list
+        #                   'expand_horizontal_flag' - If TRUE or not specified, the table object
+        #                       expands horizontally; if FALSE, it doesn't
+        #                   'expand_vertical_flag' - If TRUE or not specified, the table object
+        #                       expands vertically; if FALSE, it doesn't
         #
         # Return values
         #   'undef' on improper arguments
@@ -4954,6 +5076,8 @@
             'id'                        => '',
             'column_ref'                => undef,
             'data_ref'                  => undef,
+            'expand_horizontal_flag'    => TRUE,
+            'expand_vertical_flag'      => TRUE,
         );
 
         # Interpret the initialisation settings in %initHash, if any
@@ -4961,7 +5085,15 @@
 
             if (exists $initHash{$key}) {
 
-                if ($key eq 'id' && ! defined $initHash{$key}) {
+                if ($key =~ m/flag$/) {
+
+                    if ($initHash{$key}) {
+                        $modHash{$key} = TRUE;
+                    } else {
+                        $modHash{$key} = FALSE;
+                    }
+
+                } elsif ($key eq 'id' && ! defined $initHash{$key}) {
 
                     $modHash{$key} = '';        # 'id' value must not be 'undef'
 
@@ -5068,7 +5200,8 @@
 
         # Local variables
         my (
-            $funcRef, $funcID, $columnListRef, $dataListRef, $numColumns, $count,
+            $funcRef, $funcID, $columnListRef, $dataListRef, $hExpandFlag, $vExpandFlag,
+            $numColumns, $count,
             @columnList, @dataList,
         );
 
@@ -5083,6 +5216,8 @@
         $funcID = $self->ivShow('initHash', 'id');
         $columnListRef = $self->ivShow('initHash', 'column_ref');
         $dataListRef = $self->ivShow('initHash', 'data_ref');
+        $hExpandFlag = $self->testFlag($self->ivShow('initHash', 'expand_horizontal_flag'));
+        $vExpandFlag = $self->testFlag($self->ivShow('initHash', 'expand_vertical_flag'));
 
         if (defined $columnListRef) {
 
@@ -5138,6 +5273,10 @@
 
         # Fill the simple list
         @{$slWidget->{data}} = @dataList;
+
+        # Set expansion
+        $slWidget->set_hexpand($hExpandFlag);
+        $slWidget->set_vexpand($vExpandFlag);
 
         # Update IVs
         $self->ivPoke('funcRef', $funcRef);
@@ -5373,6 +5512,10 @@
         #                   'spacing' - The size (in pixels) of the gap between the textview itself
         #                       and its containing Gtk3::Frame. A value in the range 0-100. If
         #                       'undef', not specified or an invalid value, a value of 0 is used
+        #                   'expand_horizontal_flag' - If TRUE or not specified, the table object
+        #                       expands horizontally; if FALSE, it doesn't
+        #                   'expand_vertical_flag' - If TRUE or not specified, the table object
+        #                       expands vertically; if FALSE, it doesn't
         #
         # Return values
         #   'undef' on improper arguments
@@ -5411,6 +5554,8 @@
             'system_flag'               => FALSE,
             'colour_scheme'             => undef,
             'spacing'                   => 0,
+            'expand_horizontal_flag'    => TRUE,
+            'expand_vertical_flag'      => TRUE,
         );
 
         # Interpret the initialisation settings in %initHash, if any
@@ -5418,7 +5563,7 @@
 
             if (exists $initHash{$key}) {
 
-                if ($key eq 'edit_flag' || $key eq 'system_flag') {
+                if ($key =~ m/flag$/) {
 
                     if ($initHash{$key}) {
                         $modHash{$key} = TRUE;
@@ -5493,8 +5638,8 @@
             funcID                      => '',
 
             # The container widget(s) for this table object
-            packingBox                  => undef,       # Gtk3::VBox or Gtk3::Frame
-            packingBox2                 => undef,       # Gtk3::VBox
+            packingBox                  => undef,       # Gtk3::Grid or Gtk3::Frame
+            packingBox2                 => undef,       # Gtk3::Grid
 
             # Other IVs
             # ---------
@@ -5532,7 +5677,10 @@
         my ($self, $check) = @_;
 
         # Local variables
-        my ($funcRef, $funcID, $text, $editFlag, $systemFlag, $colourScheme, $spacing, $winType);
+        my (
+            $funcRef, $funcID, $text, $editFlag, $systemFlag, $colourScheme, $spacing, $hExpandFlag,
+            $vExpandFlag, $winType,
+        );
 
         # Check for improper arguments
         if (defined $check) {
@@ -5553,9 +5701,11 @@
         $systemFlag = $self->testFlag($self->ivShow('initHash', 'system_flag'));
         $colourScheme = $self->ivShow('initHash', 'colour_scheme');
         $spacing = $self->testInt($self->ivShow('initHash', 'spacing'), 0, 0);
+        $hExpandFlag = $self->testFlag($self->ivShow('initHash', 'expand_horizontal_flag'));
+        $vExpandFlag = $self->testFlag($self->ivShow('initHash', 'expand_vertical_flag'));
 
         # Create packing box(es)
-        my ($packingBox, $packingBox2) = $self->setupPackingBoxes(Gtk3::VBox->new(FALSE, 0));
+        my ($packingBox, $packingBox2) = $self->setupPackingBoxes(Gtk3::Grid->new());
 
         # Create the Gtk3::TextView inside a Gtk3::Frame and Gtk3::ScrolledWindow. However, if
         #   $packingBox is itself a Gtk3::Frame, don't create a second one
@@ -5563,9 +5713,7 @@
         if (! $packingBox->isa('Gtk3::Frame')) {
 
             $frame = Gtk3::Frame->new(undef);
-            # (Using TRUE, TRUE rather than the usual FALSE, FALSE forces the Gtk3::TextView to take
-            #   up its full allocated size in the Gtk3::Grid)
-            $packingBox2->pack_start($frame, TRUE, TRUE, 0);
+            $packingBox2->attach($frame, 0, 0, 1, 1);
             $frame->set_border_width($spacing);
 
             $scroll = Gtk3::ScrolledWindow->new(undef, undef);
@@ -5574,10 +5722,10 @@
         } else {
 
             my $scroll = Gtk3::ScrolledWindow->new(undef, undef);
-            $packingBox2->pack_start($scroll, TRUE, TRUE, 0);
+            $packingBox2->attach($scroll, 0, 0, 1, 1);
         }
 
-        $scroll->set_shadow_type('etched-out');
+        $scroll->set_shadow_type($axmud::CLIENT->constShadowType);
         $scroll->set_policy('automatic', 'automatic');
         $scroll->set_border_width($spacing);
 
@@ -5610,6 +5758,10 @@
         }
 
         $buffer->set_text($text);
+
+        # Set expansion
+        $textView->set_hexpand($hExpandFlag);
+        $textView->set_vexpand($vExpandFlag);
 
         # Update IVs
         $self->ivPoke('funcRef', $funcRef);
@@ -5947,7 +6099,7 @@
 
             if (exists $initHash{$key}) {
 
-                if ($key eq 'entry_flag' || $key eq 'can_close_flag') {
+                if ($key =~ m/flag$/) {
 
                     if ($initHash{$key}) {
                         $modHash{$key} = TRUE;
@@ -6204,6 +6356,10 @@
             $hBox->pack_start($entry, TRUE, TRUE, $axmud::CLIENT->constGridSpacingPixels);
         }
 
+        # Set expansion
+        $packingBox->set_hexpand(TRUE);
+        $packingBox->set_vexpand(TRUE);
+
         # Update IVs
         $self->ivPoke('funcRef', $self->ivShow('initHash', 'func'));
         $self->ivPoke('funcID', $self->ivShow('initHash', 'id'));
@@ -6378,12 +6534,12 @@
                     if ($choice && $choice eq 'yes') {
 
                         # ->stopSession calls this object's ->removeSessionTab
-                        $axmud::CLIENT->stopSession($session);
+                        $session->pseudoCmd('stopsession', $self->winObj->pseudoCmdMode);
                     }
 
                 } else {
 
-                    $axmud::CLIENT->stopSession($session);
+                    $session->pseudoCmd('stopsession', $self->winObj->pseudoCmdMode);
                 }
 
             } else {
@@ -7121,7 +7277,7 @@
             $oldTabObj->session->set_currentTabObj($newTabObj);
         }
 
-        # Operation compelte
+        # Operation complete
         $self->ivPoke('tabConvertFlag', FALSE);
 
         return 1;
@@ -7218,7 +7374,7 @@
             $oldTabObj->session->set_currentTabObj($newTabObj);
         }
 
-        # Operation compelte
+        # Operation complete
         $self->ivPoke('tabConvertFlag', FALSE);
 
         return 1;
@@ -8511,6 +8667,10 @@
             # Code to replace the pseudo-window object's ->winEnable
             $winObj->set_enabledFlag(TRUE);
         }
+
+        # Set expansion
+        $packingBox->set_hexpand(TRUE);
+        $packingBox->set_vexpand(TRUE);
 
         # Update IVs for this table object
         $self->ivPoke('packingBox', $packingBox);

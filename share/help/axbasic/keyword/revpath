@@ -25,12 +25,12 @@ REVPATH variable-name
 
    Examples:
       DATA "north", "northwest", "up", "east"
-      DIM myarray$ (4)
+      DIM stuff$ (4)
       FOR a = 1 TO 4
-         READ myarray$ (a)
+         READ stuff$ (a)
       NEXT a
 
-      REVPATH myarray$
+      REVPATH stuff$
       FOR a = 1 TO 4
-         PRINT myarray$ (a)
+         PRINT stuff$ (a)
       NEXT a

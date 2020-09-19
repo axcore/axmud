@@ -41,6 +41,10 @@ stt / settermtype             Sets the data sent during TTYPE/MTTS negotiations
          client <name> or the '-v' switch to set a customised client <version>.
          If you don't specify the <name> or <version>, Axmud's real name and 
          version are used.
-         
+
+      Note that the terminal type, custom client name and version set by this 
+         command is also send to the world using several other protocols (all 
+         enabled by default). The protocols include MXP, ZMP and MNES.
+                  
    User commands:
       stt / setterm / settermtype

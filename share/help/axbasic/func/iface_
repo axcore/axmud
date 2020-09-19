@@ -2,7 +2,7 @@ Iface$ ()
 
    Synopsis:
       Returns the name of the active interface created as a result of the most
-         recent SETTRIG statement
+         recent SETTRIG, SETALIAS, SETMACRO, SETTIMER or SETHOOK statement
 
    Notes:
       If no such interface has been created, or if the most recent statement

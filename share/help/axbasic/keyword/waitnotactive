@@ -29,6 +29,11 @@ WAITNOTACTIVE expression
       If there is no matching task in the current tasklist, or if the matching
          task is already disactivated, the script resumes execution immediately.
       See also the help for WAITTACTIVE.
+
+   Requires:
+      If the script is not being run as a task, the WAITNOTACTIVE statement is
+         ignored (and no error message is generated). Execution continues with
+         the next statement.
          
    Examples:
       WAITNOTACTIVE "condition"

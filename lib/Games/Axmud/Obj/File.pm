@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2019 A S Lewis
+# Copyright (C) 2011-2020 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -963,10 +963,16 @@
                 $self->convert($client->customAllowTTSFlag),
             '# Apply TTS smoothing',
                 $self->convert($client->ttsSmoothFlag),
+            '# Hijack cursor (etc) keys in blind mode',
+                $self->convert($client->ttsHijackFlag),
+            '# Hijack cursor (etc) keys when not in blind mode',
+                $self->convert($client->ttsForceHijackFlag),
             '# Use TTS for received text',
                 $self->convert($client->ttsReceiveFlag),
             '# Don\'t use TTS for received text before login (except prompts)',
                 $self->convert($client->ttsLoginFlag),
+            '# Don\'t use TTS for recognised prompts in received text after a login',
+                $self->convert($client->ttsPromptFlag),
             '# Use TTS for system messages',
                 $self->convert($client->ttsSystemFlag),
             '# Use TTS for system error messages',
@@ -979,8 +985,6 @@
                 $self->convert($client->ttsTaskFlag),
             '# Port for Festival server',
                 $client->ttsFestivalServerPort,
-            '# Start Festival server when required',
-                $self->convert($client->ttsStartServerFlag),
             '@@@ eos',
         );
 
@@ -1010,6 +1014,8 @@
                 $self->convert($client->useMsspFlag),
             '# Use MTTS',
                 $self->convert($client->useMttsFlag),
+            '# Use MNES',
+                $self->convert($client->useMnesFlag),
             '# Use MXP',
                 $self->convert($client->useMxpFlag),
             '# Use MSP',
@@ -1057,8 +1063,10 @@
                 $self->convert($client->allowMspMultipleFlag),
             '# Allow MSP to download sound files',
                 $self->convert($client->allowMspLoadSoundFlag),
-            '# Allow fleximble MSP tag placement (not recommended)',
+            '# Allow flexible MSP tag placement (not recommended)',
                 $self->convert($client->allowMspFlexibleFlag),
+            '# Allow MNES to send user\'s IP address',
+                $self->convert($client->allowMnesSendIPFlag),
             '# TELNET OPTION NEGOTIATION CUSTOMISATION',
             '# Sending termtype mode',
                 $client->termTypeMode,
@@ -1117,6 +1125,9 @@
                 $client->commifyMode,
             '# Detect short weblinks',
                 $self->convert($client->shortUrlFlag),
+            '# List of IP lookup services',
+                scalar $client->ipLookupList,
+                $client->ipLookupList,
             '# Prompt wait time (seconds)',
                 $client->promptWaitTime,
             '# Login warning time (seconds)',
@@ -1169,6 +1180,10 @@
                 $self->convert($client->confirmCloseMainWinFlag),
             '# Prompt user before closing \'main\' window tabs',
                 $self->convert($client->confirmCloseTabFlag),
+            '# Prompt user before closing session from the \'main\' window menu',
+                $self->convert($client->confirmCloseMenuFlag),
+            '# Prompt user before closing session from the \'main\' window toolbar',
+                $self->convert($client->confirmCloseToolButtonFlag),
             '# Character set',
                 $client->charSet,
             '# Maximum concurrent sessions',
@@ -1624,6 +1639,7 @@
             $failFlag = $self->readHash($failFlag, \%dataHash, 'store_grid_posn_hash');
         }
         if ($self->scriptConvertVersion >= 1_000_800) {
+
             $failFlag = $self->readValue($failFlag, \%dataHash, 'init_workspace_dir');
             $failFlag = $self->readHash($failFlag, \%dataHash, 'init_workspace_hash');
         }
@@ -1705,15 +1721,30 @@
 
             $failFlag = $self->readFlag($failFlag, \%dataHash, 'allow_tts_flag');
             $failFlag = $self->readFlag($failFlag, \%dataHash, 'tts_smooth_flag');
+            if ($self->scriptConvertVersion >= 1_002_073) {
+
+                $failFlag = $self->readFlag($failFlag, \%dataHash, 'tts_hijack_flag');
+            }
+            if ($self->scriptConvertVersion >= 1_002_213) {
+
+                $failFlag = $self->readFlag($failFlag, \%dataHash, 'tts_force_hijack_flag');
+            }
             $failFlag = $self->readFlag($failFlag, \%dataHash, 'tts_receive_flag');
             $failFlag = $self->readFlag($failFlag, \%dataHash, 'tts_login_flag');
+            if ($self->scriptConvertVersion >= 1_002_212) {
+
+                $failFlag = $self->readFlag($failFlag, \%dataHash, 'tts_prompt_flag');
+            }
             $failFlag = $self->readFlag($failFlag, \%dataHash, 'tts_system_flag');
             $failFlag = $self->readFlag($failFlag, \%dataHash, 'tts_system_error_flag');
             $failFlag = $self->readFlag($failFlag, \%dataHash, 'tts_world_cmd_flag');
             $failFlag = $self->readFlag($failFlag, \%dataHash, 'tts_dialogue_flag');
             $failFlag = $self->readFlag($failFlag, \%dataHash, 'tts_task_flag');
             $failFlag = $self->readValue($failFlag, \%dataHash, 'tts_festival_server_port');
-            $failFlag = $self->readFlag($failFlag, \%dataHash, 'tts_start_server_flag');
+            if ($self->scriptConvertVersion < 1_002_185) {
+
+                $failFlag = $self->readFlag($failFlag, \%dataHash, 'discard_me');
+            }
             $failFlag = $self->readEndOfSection($failFlag, $fileHandle);
         }
 
@@ -1744,6 +1775,10 @@
             $failFlag = $self->readFlag($failFlag, \%dataHash, 'use_msdp_flag');
             $failFlag = $self->readFlag($failFlag, \%dataHash, 'use_mssp_flag');
             $failFlag = $self->readFlag($failFlag, \%dataHash, 'use_mtts_flag');
+        }
+        if ($self->scriptConvertVersion >= 1_002_095) {
+
+            $failFlag = $self->readFlag($failFlag, \%dataHash, 'use_mnes_flag');
         }
         $failFlag = $self->readFlag($failFlag, \%dataHash, 'use_mxp_flag');
         $failFlag = $self->readFlag($failFlag, \%dataHash, 'use_msp_flag');
@@ -1795,6 +1830,10 @@
         if ($self->scriptConvertVersion >= 1_000_886) {
 
             $failFlag = $self->readFlag($failFlag, \%dataHash, 'allow_msp_flexible_flag');
+        }
+        if ($self->scriptConvertVersion >= 1_002_095) {
+
+            $failFlag = $self->readFlag($failFlag, \%dataHash, 'allow_mnes_send_ip_flag');
         }
         # Read telnet option negotiation customisation IVs
         if ($self->scriptConvertVersion >= 1_000_160) {
@@ -1872,6 +1911,10 @@
 
             $failFlag = $self->readValue($failFlag, \%dataHash, 'discard_me');
         }
+        if ($self->scriptConvertVersion >= 1_002_166) {
+
+            $failFlag = $self->readList($failFlag, \%dataHash, 'ip_lookup_list');
+        }
         $failFlag = $self->readValue($failFlag, \%dataHash, 'prompt_wait_time');
         $failFlag = $self->readValue($failFlag, \%dataHash, 'login_warning_time');
         if ($self->scriptConvertVersion >= 1_000_331) {
@@ -1940,6 +1983,11 @@
 
             $failFlag = $self->readFlag($failFlag, \%dataHash, 'confirm_close_main_win_flag');
             $failFlag = $self->readFlag($failFlag, \%dataHash, 'confirm_close_tab_flag');
+        }
+        if ($self->scriptConvertVersion >= 1_002_102) {
+
+            $failFlag = $self->readValue($failFlag, \%dataHash, 'confirm_close_menu_flag');
+            $failFlag = $self->readValue($failFlag, \%dataHash, 'confirm_close_tool_button_flag');
         }
         if ($self->scriptConvertVersion >= 1_000_185) {
 
@@ -2352,15 +2400,31 @@
             }
 
             $client->ivPoke('ttsSmoothFlag', $dataHash{'tts_smooth_flag'});
+            if ($self->scriptConvertVersion >= 1_002_073) {
+
+                $client->ivPoke('ttsHijackFlag', $dataHash{'tts_hijack_flag'});
+            }
+            if ($self->scriptConvertVersion >= 1_002_213) {
+
+                $client->ivPoke('ttsForceHijackFlag', $dataHash{'tts_force_hijack_flag'});
+            }
             $client->ivPoke('ttsReceiveFlag', $dataHash{'tts_receive_flag'});
             $client->ivPoke('ttsLoginFlag', $dataHash{'tts_login_flag'});
+            if ($self->scriptConvertVersion >= 1_002_212) {
+
+                $client->ivPoke('ttsPromptFlag', $dataHash{'tts_prompt_flag'});
+            }
             $client->ivPoke('ttsSystemFlag', $dataHash{'tts_system_flag'});
             $client->ivPoke('ttsSystemErrorFlag', $dataHash{'tts_system_error_flag'});
             $client->ivPoke('ttsWorldCmdFlag', $dataHash{'tts_world_cmd_flag'});
             $client->ivPoke('ttsDialogueFlag', $dataHash{'tts_dialogue_flag'});
             $client->ivPoke('ttsTaskFlag', $dataHash{'tts_task_flag'});
-            $client->ivPoke('ttsFestivalServerPort', $dataHash{'tts_festival_server_port'});
-            $client->ivPoke('ttsStartServerFlag', $dataHash{'tts_start_server_flag'});
+            # (Prefer an 'undef' value over an empty string)
+            if ($dataHash{'tts_festival_server_port'} eq '') {
+                $client->ivUndef('ttsFestivalServerPort');
+            } else {
+                $client->ivPoke('ttsFestivalServerPort', $dataHash{'tts_festival_server_port'});
+            }
         }
 
         # Set telnet option negotiation flags
@@ -2391,6 +2455,10 @@
             $client->ivPoke('useMsdpFlag', $dataHash{'use_msdp_flag'});
             $client->ivPoke('useMsspFlag', $dataHash{'use_mssp_flag'});
             $client->ivPoke('useMttsFlag', $dataHash{'use_mtts_flag'});
+        }
+        if ($self->scriptConvertVersion >= 1_002_095) {
+
+            $client->ivPoke('useMnesFlag', $dataHash{'use_mnes_flag'});
         }
         $client->ivPoke('useMxpFlag', $dataHash{'use_mxp_flag'});
         $client->ivPoke('useMspFlag', $dataHash{'use_msp_flag'});
@@ -2442,6 +2510,10 @@
         if ($self->scriptConvertVersion >= 1_000_886) {
 
             $client->ivPoke('allowMspFlexibleFlag', $dataHash{'allow_msp_flexible_flag'});
+        }
+        if ($self->scriptConvertVersion >= 1_002_095) {
+
+            $client->ivPoke('allowMnesSendIPFlag', $dataHash{'allow_mnes_send_ip_flag'});
         }
         # Set telnet option negotiation customisation IVs
         if ($self->scriptConvertVersion >= 1_000_160) {
@@ -2513,6 +2585,10 @@
 
             $client->ivPoke('shortUrlFlag', $dataHash{'short_url_flag'});
         }
+        if ($self->scriptConvertVersion >= 1_002_166) {
+
+            $client->ivPoke('ipLookupList', @{$dataHash{'ip_lookup_list'}});
+        }
         $client->ivPoke('promptWaitTime', $dataHash{'prompt_wait_time'});
         $client->ivPoke('loginWarningTime', $dataHash{'login_warning_time'});
         if ($self->scriptConvertVersion >= 1_000_331) {
@@ -2582,6 +2658,14 @@
 
             $client->ivPoke('confirmCloseMainWinFlag', $dataHash{'confirm_close_main_win_flag'});
             $client->ivPoke('confirmCloseTabFlag', $dataHash{'confirm_close_tab_flag'});
+        }
+        if ($self->scriptConvertVersion >= 1_002_102) {
+
+            $client->ivPoke('confirmCloseMenuFlag', $dataHash{'confirm_close_menu_flag'});
+            $client->ivPoke(
+                'confirmCloseToolButtonFlag',
+                $dataHash{'confirm_close_tool_button_flag'},
+            );
         }
         if ($self->scriptConvertVersion >= 1_000_185) {
 
@@ -7233,6 +7317,39 @@
                 }
             }
 
+            if ($version < 1_002_056) {
+
+                # Update world profiles with new IVs
+                foreach my $profObj ($axmud::CLIENT->ivValues('worldProfHash')) {
+
+                    if (! exists $profObj->{mxpRoomTagStart}) {
+
+                        $profObj->{mxpRoomTagStart} = undef;
+                        $profObj->ivUndef('mxpRoomTagStart');
+                        $profObj->{mxpRoomTagStop} = undef;
+                        $profObj->ivUndef('mxpRoomTagStop');
+                    }
+                }
+            }
+
+            if ($version < 1_002_109 && $self->session) {
+
+                # This version corrects a misspelled standard hook event
+                foreach my $cage ($self->session->ivValues('cageHash')) {
+
+                    if ($cage->{cageType} eq 'hook') {
+
+                        foreach my $interfaceObj ($cage->ivValues('interfaceHash')) {
+
+                            if ($interfaceObj->stimulus eq 'change_vivible') {
+
+                                $interfaceObj->ivPoke('stimulus', 'change_visible');
+                            }
+                        }
+                    }
+                }
+            }
+
         ### worldmodel ###########################################################################
 
         } elsif ($self->fileType eq 'worldmodel') {
@@ -8641,7 +8758,7 @@
                             $mapLabelObj->{style} = undef;
 
                             $mapLabelObj->{textColour} = undef;
-                            $mapLabelObj->ivPoke('textColour', $wmObj->mapLabelColour);
+                            $mapLabelObj->ivPoke('textColour', $wmObj->defaultMapLabelColour);
                             $mapLabelObj->{underlayColour} = undef;
                             $mapLabelObj->ivUndef('underlayColour');
                             $mapLabelObj->{italicsFlag} = undef;
@@ -9419,6 +9536,96 @@
 
                     $wmObj->{modelSaveFileCount} = undef;
                     $wmObj->ivPoke('modelSaveFileCount', 0);
+                }
+            }
+
+            if ($version < 1_002_091) {
+
+                # This version adds new IVs to the world model
+                if (! exists $wmObj->{obscuredExitFlag}) {
+
+                    $wmObj->{obscuredExitFlag} = undef;
+                    $wmObj->ivPoke('obscuredExitFlag', FALSE);
+                    $wmObj->{obscuredExitRadius} = undef;
+                    $wmObj->ivPoke('obscuredExitRadius', 3);
+                    $wmObj->{maxObscuredExitRadius} = undef;
+                    $wmObj->ivPoke('maxObscuredExitRadius', 9);
+                    $wmObj->{obscuredExitRedrawFlag} = undef;
+                    $wmObj->ivPoke('obscuredExitRedrawFlag', FALSE);
+                }
+
+                # ...and to regionmaps
+                foreach my $regionmapObj ($wmObj->ivValues('regionmapHash')) {
+
+                    if (! exists $regionmapObj->{obscuredExitFlag}) {
+
+                        $regionmapObj->{obscuredExitFlag} = undef;
+                        $regionmapObj->ivPoke('obscuredExitFlag', FALSE);
+                        $regionmapObj->{obscuredExitRadius} = undef;
+                        $regionmapObj->ivPoke('obscuredExitRadius', 3);
+
+                        $regionmapObj->{drawOrnamentsFlag} = undef;
+                        if ($wmObj->drawExitMode eq 'ask_regionmap') {
+                            $regionmapObj->ivPoke('drawOrnamentsFlag', $wmObj->drawOrnamentsFlag);
+                        } else {
+                            $regionmapObj->ivPoke('drawOrnamentsFlag', FALSE);
+                        }
+
+                        $regionmapObj->{obscuredExitRedrawFlag} = undef;
+                        $regionmapObj->ivPoke('obscuredExitRedrawFlag', FALSE);
+                    }
+                }
+
+            }
+
+            if ($version < 1_002_150) {
+
+                # This version adds region schemes
+                if (! exists $wmObj->{regionSchemeHash}) {
+
+                    # Remove colour IVs from the world model, and transfer them to a new 'default'
+                    #   region scheme
+                    $wmObj->{regionSchemeHash} = {};
+
+                    $wmObj->{defaultSchemeObj} = undef;
+                    $wmObj->ivPoke(
+                        'defaultSchemeObj',
+                        Games::Axmud::Obj::RegionScheme->new($self->session, $wmObj, 'default'),
+                    );
+
+                    $wmObj->ivAdd('regionSchemeHash', 'default', $wmObj->defaultSchemeObj);
+
+                    foreach my $iv (
+                        qw(
+                            backgroundColour roomColour roomTextColour selectBoxColour borderColour
+                            currentBorderColour currentFollowBorderColour currentWaitBorderColour
+                            currentSelectBorderColour lostBorderColour lostSelectBorderColour
+                            ghostBorderColour ghostSelectBorderColour selectBorderColour
+                            roomAboveColour roomBelowColour roomTagColour selectRoomTagColour
+                            roomGuildColour selectRoomGuildColour exitColour selectExitColour
+                            selectExitTwinColour selectExitShadowColour randomExitColour
+                            impassableExitColour mysteryExitColour checkedDirColour dragExitColour
+                            exitTagColour selectExitTagColour mapLabelColour selectMapLabelColour
+                        )
+                    ) {
+                        # (All but on IV is copied to the new scheme object)
+                        if ($iv ne 'noBackgroundColour') {
+
+                            $wmObj->defaultSchemeObj->{$iv} = $wmObj->{$iv};
+                        }
+
+                        delete $wmObj->{$iv};
+                    }
+
+                    # Add a new IV to regionmaps
+                    foreach my $regionmapObj ($wmObj->ivValues('regionmapHash')) {
+
+                        if (! exists $regionmapObj->{regionScheme}) {
+
+                            $regionmapObj->{regionScheme} = undef;
+                            $regionmapObj->ivUndef('regionScheme');
+                        }
+                    }
                 }
             }
         }
@@ -11018,6 +11225,22 @@
                     }
                 }
             }
+
+            if ($version < 1_002_058 && $self->session) {
+
+                # This version updated the Locator task with new IVs. Update all initial/custom
+                #   tasks
+                foreach my $taskObj ($self->compileTasks('locator_task')) {
+
+                    if (! exists $taskObj->{mxpPropCurrentHash}) {
+
+                        $taskObj->{mxpPropCurrentHash} = {};
+                        $taskObj->ivEmpty('mxpPropCurrentHash');
+                        $taskObj->{mxpPropStartLine} = undef;
+                        $taskObj->ivUndef('mxpPropStartLine');
+                    }
+                }
+            }
         }
 
         ### scripts ###############################################################################
@@ -12076,6 +12299,12 @@
             }
         }
 
+
+        if ($world eq 'archipelago' && $fileVersion < 1_003_000) {
+
+            $worldObj->ivPoke('referURL', 'http://mudstats.com/World/ArchipelagoMUD');
+        }
+
         if (
             (
                 $world eq 'achaea' || $world eq 'aetolia' || $world eq 'imperian'
@@ -12161,6 +12390,18 @@
                         ';login',
                 );
             }
+        }
+
+        if ($world eq 'darkrealms' && $fileVersion < 1_003_000) {
+
+            $worldObj->ivPoke('ipv4', '64.227.89.30 1138');
+            $worldObj->ivPoke('worldURL', 'http://darkrealmscos.com/');
+        }
+
+        if ($world eq 'dawn' && $fileVersion < 1_003_000) {
+
+            $worldObj->ivPoke('dns', 'dawnmud.com');
+            $worldObj->ivPoke('ipv4', '76.91.216.39');
         }
 
         if (
@@ -12441,17 +12682,41 @@
             }
         }
 
-        if ($world eq 'dunemud' && $fileVersion < 1_002_0) {
+        if ($world eq 'dunemud' && $fileVersion < 1_002_000) {
 
-            # Change of DNS/IP address, replacing dunemud.com 4200
             $worldObj->ivPoke('dns', 'dunemud.net');
             $worldObj->ivPoke('ipv4', '68.183.23.43');
         }
 
+        if ($world eq 'edmud' && $fileVersion < 1_003_000) {
 
-        if ($world eq 'islands' && $fileVersion < 1_002_0) {
+            $worldObj->ivPoke('dns', 'eternaldarkness.net');
+            $worldObj->ivPoke('ipv4', '216.136.9.8');
+            $worldObj->ivPoke('worldURL', 'eternaldarkness.net');
+        }
 
-            # Change of DNS/IP address, replacing islands.genesismuds.com 3000
+        if ($world eq 'fkindgoms' && $fileVersion < 1_003_000) {
+
+            $worldObj->ivPoke('port', 4000);
+        }
+        
+        if ($world eq 'forestsedge' && $fileVersion < 1_003_000) {
+
+            $worldObj->ivPoke('dns', 'mud.theforestsedge.com');
+            $worldObj->ivPoke('ipv4', '167.114.137.18');
+            $worldObj->ivPoke('port', 4000);
+        }
+
+        if ($world eq 'icesus' && $fileVersion < 1_003_000) {
+
+            $worldObj->ivPoke('dns', 'naga.icesus.org');
+            $worldObj->ivPoke('ipv4', '95.216.243.162');
+            $worldObj->ivPoke('port', 4000);
+            $worldObj->ivPoke('worldURL', 'http://www.icesus.org/');
+        }
+
+        if ($world eq 'islands' && $fileVersion < 1_002_000) {
+
             $worldObj->ivPoke('dns', 'play.islands-game.live');
             $worldObj->ivPoke('ipv4', '45.79.14.59');
         }
@@ -12476,27 +12741,33 @@
                         3,
                         'energy_points',
                         'show',
-                    'Hitpoints\:\s(\d+)\s\/\s(\d+)\s+Mana\:\s(\d+)\s\/\s(\d+)\s+Stamina\:\s(\d+)\s\/\s(\d+)',
+                    'Hitpoints\:\s(\d+)\s\/\s(\d+)\s+Mana\:\s(\d+)\s\/\s(\d+)\s+Stamina\:\s'
+                        . '(\d+)\s\/\s(\d+)',
                         1,
                         'health_points',
                         'show',
-                    'Hitpoints\:\s(\d+)\s\/\s(\d+)\s+Mana\:\s(\d+)\s\/\s(\d+)\s+Stamina\:\s(\d+)\s\/\s(\d+)',
+                    'Hitpoints\:\s(\d+)\s\/\s(\d+)\s+Mana\:\s(\d+)\s\/\s(\d+)\s+Stamina\:\s'
+                        . '(\d+)\s\/\s(\d+)',
                         2,
                         'health_points_max',
                         'show',
-                    'Hitpoints\:\s(\d+)\s\/\s(\d+)\s+Mana\:\s(\d+)\s\/\s(\d+)\s+Stamina\:\s(\d+)\s\/\s(\d+)',
+                    'Hitpoints\:\s(\d+)\s\/\s(\d+)\s+Mana\:\s(\d+)\s\/\s(\d+)\s+Stamina\:\s'
+                        . '(\d+)\s\/\s(\d+)',
                         3,
                         'magic_points',
                         'show',
-                    'Hitpoints\:\s(\d+)\s\/\s(\d+)\s+Mana\:\s(\d+)\s\/\s(\d+)\s+Stamina\:\s(\d+)\s\/\s(\d+)',
+                    'Hitpoints\:\s(\d+)\s\/\s(\d+)\s+Mana\:\s(\d+)\s\/\s(\d+)\s+Stamina\:\s'
+                        . '(\d+)\s\/\s(\d+)',
                         4,
                         'magic_points_max',
                         'show',
-                    'Hitpoints\:\s(\d+)\s\/\s(\d+)\s+Mana\:\s(\d+)\s\/\s(\d+)\s+Stamina\:\s(\d+)\s\/\s(\d+)',
+                    'Hitpoints\:\s(\d+)\s\/\s(\d+)\s+Mana\:\s(\d+)\s\/\s(\d+)\s+Stamina\:\s'
+                        . '(\d+)\s\/\s(\d+)',
                         5,
                         'energy_points',
                         'show',
-                    'Hitpoints\:\s(\d+)\s\/\s(\d+)\s+Mana\:\s(\d+)\s\/\s(\d+)\s+Stamina\:\s(\d+)\s\/\s(\d+)',
+                    'Hitpoints\:\s(\d+)\s\/\s(\d+)\s+Mana\:\s(\d+)\s\/\s(\d+)\s+Stamina\:\s'
+                        . '(\d+)\s\/\s(\d+)',
                         6,
                         'energy_points_max',
                         'show',
@@ -12722,7 +12993,6 @@
 
         if ($world eq 'pict' && $fileVersion < 1_001_174) {
 
-            # Change of DNS/IP address, replacing pict.genesismuds.com 4200
             $worldObj->ivPoke('dns', undef);
             $worldObj->ivPoke('ipv4', '136.62.89.155');
         }

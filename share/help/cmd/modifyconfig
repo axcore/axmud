@@ -10,9 +10,9 @@ mcf / modifyconfig            Modifies text-to-speech configurations
    Notes:
       If you have one or more of the text-to-speech (TTS) engines installed on
          your system, Axmud can use them to convert text to speech.
-      The TTS engines currently supported on MS Windows are eSpeak, espeak-ng
-         and Swift. The engines that are generally supported on Linux are
-         eSpeak, espeak-ng, Flite, Festival and Swift.
+      The engines currently supported on MS Windows are eSpeak, espeak-ng,
+         Festival and Swift. The engines supported on Linux are eSpeak,
+         espeak-ng, Flite, Festival and Swift.
       Axmud also uses a dummy engine, called 'none'. If Axmud tries to convert
          text to speech using the dummy engine, you'll hear nothing.
 
@@ -58,17 +58,16 @@ mcf / modifyconfig            Modifies text-to-speech configurations
                                  Must be in the range 0-100
          speed                Resets the word speed (a default value is used)
 
-         rate <num>           Sets the word rate to <num> (Festival and Swift on
-                                 Linux only). Must be in the range 0-100
+         rate <num>           Sets the word rate to <num> (Festival, and Swift 
+                                 on Linux only). Must be in the range 0-100
          rate                 Resets the word rate (a default value of is used)
 
          pitch <num>          Sets the word pitch to <num> (eSpeak, espeak-ng
                                  and Swift only). Must be in the range 0-100
          pitch                Resets the pitch (a default value is used)
 
-         volume <num>         Sets the volume to <num> (espeak-ng and Swift on
-                                 all systems, Festival on Linux only). Must be
-                                 in the range 0-100
+         volume <num>         Sets the volume to <num> (espeak-ng, Festival and
+                                 Swift only).  Must be in the range 0-100
          volume               Resets the volume (a default value is used)
 
          use <pattern>        Adds an exclusive pattern. If one or more

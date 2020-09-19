@@ -15,16 +15,16 @@ SORTCASE variable-name
 
    Examples:
       DATA 'ant', 'Bat', 'cat', 'Dog', 'eagle'
-      DIM myarray (5)
+      DIM stuff (5)
 
       ! Display the unsorted array
       FOR a = 1 TO 5
-         READ myarray (a)
-         PRINT myarray (a)
+         READ stuff (a)
+         PRINT stuff (a)
       NEXT a
 
       ! Display the sorted array
-      SORTCASE myarray
+      SORTCASE stuff
       FOR a = 1 TO 5
-         PRINT myarray (a)
+         PRINT stuff (a)
       NEXT a

@@ -1,4 +1,11 @@
 [LET] variable-name = expression
+[LET] variable-name = CALL subroutine-name
+[LET] variable-name
+   = CALL subroutine-name ( [ expression [ , expression ... ] ] )
+[LET] variable-name = DIMENSIONS array-variable
+[LET] variable-name = LOWER array-variable
+[LET] variable-name = SIZE array-variable
+[LET] variable-name = UPPER array-variable
 
    Synopsis:
       Assigns the value of a (scalar) variable
@@ -8,13 +15,52 @@
          LET, unless an OPTION NOLET statement appears in the script.
       In scripts with line numbers, the LET keyword is optional.
 
+      In its most basic form, LET assigns a scalar value to a scalar variable.
+
+      LET can be used together with a CALL statement. Compare the following two
+         lines, the first of which discards a function's return value, the
+         second of which assigns the return value to a variable.
+
+         PRINT 10 * (CALL MySub (...))         
+         LET result = CALL MySub (...)
+
+      LET can also be used together with some other keywords, in order to
+         retrieve more information about an array variable.
+      SIZE retrieves the size of the array (the number of things it contains).
+         LOWER and UPPER retries its lower and upper bounds, respectively (see
+         the help for DIM).
+      DIMENSIONS retrieves the the number of dimensions in an array (for
+         example, 2 for a 10x10 grid).
+      If you try to use SIZE, LOWER or UPPER with a multi-dimensional array,
+         you'll get an error.
+
    Examples:
+      ! Basic forms of LET 
       LET greeting$ = "Hello world!"
-      LET myarray (5) = 100
+      LET stuff (5) = 100
 
       OPTION NOLET
       greeting$ = "Hello world!"
-      myarray (5) = 100
+      stuff (5) = 100
 
       10 a$ = "hello world!"
       10 LET a$ = "hello world!"
+
+      ! Don't discard the return value of a function
+      LET number1 = 2
+      LET number2 = 5
+      LET result = CALL Multiply (number1, number2)
+      PRINT result
+      END
+
+      SUB NUMERIC Multiply (val1, val2)
+         RETURN (val1 * val2)
+      END SUB
+
+      ! Get the size of an array (100, in this example)
+      DIM stuff$ (100)
+      LET number = SIZE stuff$
+
+      ! Get the dimensions of an array (3, in this example)
+      DIM cube$ (10, 10, 10)
+      LET dims$ = DIMENSIONS cube$

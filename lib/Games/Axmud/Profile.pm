@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2019 A S Lewis
+# Copyright (C) 2011-2020 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -194,6 +194,7 @@
 #               'atcp'                  => undef,           # GA::Client->useAtcpFlag
 #               'gmcp'                  => undef,           # GA::Client->useGmcpFlag
 #               'mtts'                  => undef,           # GA::Client->useMttsFlag
+#               'mnes'                  => undef,           # GA::Client->useMnesFlag
 #               'mcp'                   => undef,           # GA::Client->useMcpFlag
             },
             # A hash which overrides the values of certain GA::Client flags related to MXP
@@ -1377,6 +1378,27 @@
             verboseFinalPattern         => undef,
             shortFinalPattern           => undef,
             briefFinalPattern           => undef,
+
+            # For worlds using MXP's standard tag properties 'RoomName', 'RoomDesc', 'RoomExit' and
+            #   'RoomNum', the Locator task is dumb, by default. It has to assume that the end of
+            #   the received text is the end of a statement; but if there has been a delay, a room
+            #   statement may be split between packets
+            # These IVs can help, in that situation. For a group of tag properties representing a
+            #   single room statement, they represent the first/last tag property of the group. One
+            #   or both values can be set to the values 'RoomName', 'RoomDesc', 'RoomExit' and
+            #   'RoomNum'. If both values are set to the same value, only that tag property is used
+            # The tag property marking the start of the group. If the tag property marking the end
+            #   of the group is also set, the Locator Task will wait to receive it, before handling
+            #   the room statement. If not, the Locator Task will obey the usual rules (such as
+            #   waiting for a repeating tag property, or the end of the received text)
+            # NB A new room statement cannot begin on the same line as the previous room statement
+            #   ended. If two sections of tagged text occur on the same line, they are combined
+            mxpRoomTagStart             => undef,
+            # The tag property marking the end of the group. If the tag property marking the
+            #   beginning of the group is not set, the Locator task will check previous lines for
+            #   other tag properties belonging to the same group, stopping only when a previous
+            #   anchor line/duplicate tag property is found (max lines checked: 32)
+            mxpRoomTagStop              => undef,
         };
 
         # Bless the object into existence
@@ -1493,7 +1515,7 @@
             worldURL                    => $self->worldURL,
             referURL                    => $self->referURL,
             worldDescrip                => $self->worldDescrip,
-            worldHint                       => $self->worldHint,
+            worldHint                   => $self->worldHint,
             worldCharSet                => $self->worldCharSet,
 
             termType                    => $self->termType,
@@ -1711,6 +1733,9 @@
             verboseFinalPattern         => $self->verboseFinalPattern,
             shortFinalPattern           => $self->shortFinalPattern,
             briefFinalPattern           => $self->briefFinalPattern,
+
+            mxpRoomTagStart             => $self->mxpRoomTagStart,
+            mxpRoomTagStop              => $self->mxpRoomTagStop,
         };
 
         # Bless the cloned object into existence
@@ -2267,6 +2292,9 @@
         $self->ivPoke('verboseFinalPattern', $otherObj->verboseFinalPattern);
         $self->ivPoke('shortFinalPattern', $otherObj->shortFinalPattern);
         $self->ivPoke('briefFinalPattern', $otherObj->briefFinalPattern);
+
+        $self->ivPoke('mxpRoomTagStart', $otherObj->mxpRoomTagStart);
+        $self->ivPoke('mxpRoomTagStop', $otherObj->mxpRoomTagStop);
 
         # If the importable world profile was saved by a previous version of Axmud, we may need to
         #   modify some of the data imported into this profile to work with the current version of
@@ -2915,6 +2943,11 @@
         { $_[0]->{shortFinalPattern} }
     sub briefFinalPattern
         { $_[0]->{briefFinalPattern} }
+
+    sub mxpRoomTagStart
+        { $_[0]->{mxpRoomTagStart} }
+    sub mxpRoomTagStop
+        { $_[0]->{mxpRoomTagStop} }
 }
 
 { package Games::Axmud::Profile::Guild;

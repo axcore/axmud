@@ -14,16 +14,16 @@ SORT variable-name
 
    Examples:
       DATA 40, 200, 77, 10
-      DIM myarray (4)
+      DIM stuff (4)
 
       ! Display the unsorted array
       FOR a = 1 TO 4
-         READ myarray (a)
-         PRINT myarray (a)
+         READ stuff (a)
+         PRINT stuff (a)
       NEXT a
 
       ! Display the sorted array
-      SORT myarray
+      SORT stuff
       FOR a = 1 TO 4
-         PRINT myarray (a)
+         PRINT stuff (a)
       NEXT a

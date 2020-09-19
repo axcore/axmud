@@ -19,8 +19,11 @@ ahk / addhook                 Adds a hook
 
       All interfaces have four standard attributes:
          'name'      - A name for the hook
-         'stimulus'  - What causes the hook to 'fire'. The stimulus is one of 
-                          the following 'hook events':
+         'stimulus'  - What causes the hook to 'fire'. The stimulus is a 'hook
+                          event'. You can specify a custom hook event, whose
+                          name must begin with an underline, followed by a
+                          letter/number, e.g. '_myevent'. Otherwise, the
+                          stimulus must be one of Axmud's standard hook events:
                      - 'connect' (fires when a session connects to a world)
                      - 'disconnect' (fires when a session disconnects from its
                           world)

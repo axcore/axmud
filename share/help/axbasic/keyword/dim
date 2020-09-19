@@ -6,31 +6,101 @@ DIM LOCAL variable-name [ arg-list ] [ , variable-name [ arg-list ] ... ]
       Creates array variable(s) with the specified size and dimensions
 
    Notes:
-      In scripts without primitive line numbers, all arrays are global by
-         default, so DIM and DIM GLOBAL statements are interchangeable.
-      In scripts with primitive line numbers, arrays are always global and only
-         DIM statements can be used to created them.
-         
-      In scripts without line numbers, DIM GLOBAL and DIM LOCAL can be used as
-         well as DIM. Since arrays are global by default, DIM GLOBAL and DIM
-         statements are interchangeable.
-      An array must be created with a DIM statement before it can be used in
-         your script.
-      The expressions in the argument list(s) must evaluate to positive integers 
-         (so, Axbasic numbers its cells from 1, unlike most programming 
-         languages which number their cells from 0).
-      Axbasic arrays have a maximum size of 1,000,000 cells.
+      Axbasic arrays have a maximum size of 1,000,000 cells across all
+         dimensions. When an array is created, its values are initially zeroes
+         (in numeric arrays) or empty strings (in string arrays).
+      Axbasic arrays are handled in two different ways, depending on whether the
+         script is using primitive line numbers, or not.
 
+      In scripts without line numbers, arrays are handled in a way very similar
+         to True BASIC.
+         
+      All arrays are global by default, so DIM and DIM GLOBAL statements are
+         interchangeable. DIM LOCAL can also be used.
+      An array must be created with a DIM statement before it can be used by
+         your script. (An exception is the family of PEEK statements, which will
+         create an array that doesn't already exist.)
+      Expressions in the argument list must evaluate to integers. By default, an
+         array starts at cell #1, therefore the following statement will create
+         an array of cells in the range 1 to 10.
+
+         DIM stuff (10)
+
+      An empty one-dimensional array (stack) can be created by omitting all
+         arguments.
+
+         DIM stuff ()
+
+      Empty one-dimensional arrays can then be populated with the PUSH and
+         UNSHIFT statements.
+
+      Arrays may be created with any number of dimensions, however a fixed limit
+         of 1,000,000 cells per array always applies. Multi-dimensional arrays
+         cannot be empty in any dimension. By default, each dimension starts at
+         cell #1, therefore the following statement will create a 3D array
+         containing a total of 27 cells.
+
+         DIM stuff (3, 3, 3)
+
+      PUSH, POP, SHIFT and UNSHIFT cannot be used with multi-dimensional arrays.
+
+      Each expression in the arglist specifies the upper bound (highest cell
+         number) for each dimension. By default, the lower bound is 1. You can
+         specify the lower and upper bounds for any dimension by using the
+         keyword TO.
+
+         DIM stuff (10 TO 20, 0 TO 100)
+         
+      In scripts with line numbers, arrays are handled in a way very similar to
+         the original Dartmouth BASIC.
+         
+      Arrays are always global. An array is created as soon as it is used by
+         your script. If you don't specify the size of the array using a DIM
+         statement, then each dimension has cells in the range 0 to 10.
+      Expressions in the argument list must evaluate to positive integers, or
+         zero. By default, an array starts at cell #0, therefore the following
+         statement will create an array of cells in the range 0 to 10.
+
+         DIM stuff (10)
+
+      An empty one-dimensional array (stack) can be created by omitting all
+         arguments.
+
+         DIM stuff ()
+
+      Empty one-dimensional arrays can then be populated with the PUSH and
+         UNSHIFT statements.
+
+      Each expression in the arglist specifies the upper bound (highest cell
+         number) for each dimension. The lower bound is always 0, and you cannot
+         specify a different lower bound using the keyword TO.
+         
    Examples:
       ! An array containing 5 cells
-      DIM myarray (5)
+      DIM stuff (5)
       ! Store a value in the first cell
-      LET myarray (1) = 3.14
+      LET stuff (1) = 3.14
+
+      10 REM An array containing 6 cells
+      20 DIM stuff (6)
+      30 REM Store a value in the first cell
+      40 LET stuff (0) = 3.14
 
       ! A two-dimensional (10x10) array containing 100 cells
-      DIM LOCAL newarray (10, 10)
-      LET newarray (1, 2) = 99
+      DIM LOCAL grid (10, 10)
+      LET grid (1, 2) = 99
 
       ! The biggest array Axbasic allows
       LET limit = 1000
       DIM GLOBAL bigarray (limit, limit)
+
+      ! Create several arrays on one line
+      DIM firstarray (10), secondarray (20)
+
+      ! Create an array of schoolchildren, sorted by their year of birth
+      ! (Every year has no more than 100 children)
+      DIM children$ (1985 to 1990, 100)
+
+      10 REM Create a 10x10 array without using a DIM statement
+      20 REM In a numeric array, all values are initially zero
+      30 PRINT stuff (9, 9)

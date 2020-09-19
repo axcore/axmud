@@ -8,7 +8,12 @@ WAITTASK expression
          terminated, before resuming execution.
       The expression is the name of the new task. It can be a task label (e.g.
          "stat", "status") or its formal name (e.g. "status_task").
-         
+
+   Requires:
+      If the script is not being run as a task, the WAITTASK statement is
+         ignored (and no error message is generated). Execution continues with
+         the next statement.
+                  
    Examples:
       WAITTASK "advance"
       PRINT "I'm back, baby!"

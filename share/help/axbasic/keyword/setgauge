@@ -18,6 +18,11 @@ SETGAUGE expression , expression , expression
          ADDCONGAUGE statement, the sum of the two numbers is expected (but not
          required) to be constant, at least in the short term.
 
+   Requires:
+      If the script is not being run as a task, the SETGAUGE statement is
+         ignored (and no error message is generated). Execution continues with
+         the next statement.
+         
    Examples:
       ! Character's health points are at 50%
       ADDGAUGE 1, "HP", "RED", "red", "WHITE"

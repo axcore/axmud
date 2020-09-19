@@ -15,12 +15,12 @@ SORTCASER variable-name
 
    Examples:
       DATA 'ant', 'Bat', 'cat', 'Dog', 'eagle'
-      DIM myarray (5)
+      DIM stuff (5)
       FOR a = 1 TO 5
-         READ myarray (a)
+         READ stuff (a)
       NEXT a
 
-      SORTCASER myarray
+      SORTCASER stuff
       FOR a = 1 TO 5
-         PRINT myarray (a)
+         PRINT stuff (a)
       NEXT a

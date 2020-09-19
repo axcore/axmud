@@ -6,9 +6,9 @@ lcf / listconfig              Shows a list of text-to-speech configurations
    Notes:
       If you have one or more of the text-to-speech engines installed on your
          system, Axmud can use them to convert text to speech.
-      The engines currently supported on MS Windows are eSpeak, espeak-ng and
-         Swift. The engines supported on Linux are eSpeak, espeak-ng, Flite,
-         Festival and Swift.
+      The engines currently supported on MS Windows are eSpeak, espeak-ng,
+         Festival and Swift. The engines supported on Linux are eSpeak,
+         espeak-ng, Flite, Festival and Swift.
       Axmud also uses a dummy engine, called 'none'. If Axmud tries to convert
          text to speech using the dummy engine, you'll hear nothing.
          

@@ -37,6 +37,11 @@ ADDGAUGE expression , expression [ , expression ] [ , expression ]
       See also the help for the ADDCONGAUGE, ADDSTATUS and ADDCONSTATUS 
          statements.
 
+   Requires:
+      If the script is not being run as a task, the ADDGAUGE statement is
+         ignored (and no error message is generated). Execution continues with
+         the next statement.
+         
    Examples:
       OPTION NEEDTASK
       OPTION NOLET

@@ -41,6 +41,7 @@ shk / simulatehook            Simulates an Axmud hook event
       ;shk -mm                Simulates the 'map_rescue_merge' hook event
       ;shk -mf                Simulates the 'map_rescue_off' hook event
 
+      ;shk <event>            Simulates the specified hook <event>
       ;shk <event> <var>      Simulates the specified hook <event>
       ;shk <event> <var> <val>
                               Simulates the specified hook <event>
@@ -116,6 +117,11 @@ shk / simulatehook            Simulates an Axmud hook event
          
             ;simulatehook -s jump
             ;simulatehook send_cmd jump
+            
+      Custom hook events, of course, must be specified (see the help for
+         ;addhook):
+      
+            ;simulatehook _myevent
             
       If <prompt>, <text>, <cmd>, <var>, <val>, <data> or <num> contain spaces, 
          you must surround the with diamond brackets <...>, e.g.

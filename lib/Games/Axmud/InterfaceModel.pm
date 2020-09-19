@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2019 A S Lewis
+# Copyright (C) 2011-2020 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -597,8 +597,11 @@
                 'cooldown'              => 'cd',
             },
 
-            # Available hook events. The key is the hook event name, the corresponding value is the
+            # Standard hook events. The key is the hook event name, the corresponding value is the
             #   number of hook data items to expect
+            # Any hook event not represented in this hash is a custom hook event. To prevent clashes
+            #   with future releases, custom hooks must have names beginning with an underline
+            #   followed by an alphanumeric character, e.g. '_myevent'
             hookEventHash               => {
                 # Fired by GA::Session->connectionComplete when the first text is received from the
                 #   world (meaning we're connected)
@@ -711,7 +714,7 @@
                 # Fired in every session by GA::Win::Internal->setVisibleSession when a 'main'
                 #   window's visible session changes
                 # (Hook data: the new current session's ->number)
-                'change_vivible'        => 1,
+                'change_visible'        => 1,
                 # Fired by GA::Session->textViewSizeUpdate when a textview object is resized
                 #   (including when its scrollbars are made visible or invisible)
                 # (Hook data: the textview object's number, GA::Obj::TextView->number)

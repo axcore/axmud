@@ -30,6 +30,11 @@ ADDSTATUS expression , expression
       See also the help for the ADDCONSTATUS, ADDGAUGE and ADDCONGAUGE 
          statements.
 
+   Requires:
+      If the script is not being run as a task, the ADDSTATUS statement is
+         ignored (and no error message is generated). Execution continues with
+         the next statement.
+         
    Examples:
       OPTION NEEDTASK
       OPTION NOLET

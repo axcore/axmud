@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2019 A S Lewis
+# Copyright (C) 2011-2020 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -499,7 +499,7 @@
                 } else {
 
                     # Create a trigger
-                    $triggerObj = $session->createInterface(
+                    $triggerObj = $session->createDependentInterface(
                         'trigger',
                         $cmd,       # A pattern
                         $self,
@@ -544,7 +544,7 @@
                 }
 
                 # Create a timer that counts once, then deletes itself
-                $timerObj = $session->createInterface(
+                $timerObj = $session->createDependentInterface(
                     'timer',
                     $cmd,       # A time interval
                     $self,
@@ -612,13 +612,19 @@
 
                 # It's an instruction to send the character's name, password or associated account
                 #   name (for missions being used as a login script)
+                # In blind mode, and when the character is not yet marked as logged in, don't annoy
+                #   a blind user by reading out these error messages
                 if ($session->loginFlag) {
 
-                    $session->writeWarning(
-                        'Current mission ignored a request to send the character\'s login details'
-                        . ' to the world - character is already marked as \'logged in\'',
-                        $self->_objClass . 'continueMission',
-                    );
+                    if (! $axmud::BLIND_MODE_FLAG) {
+
+                        $session->writeWarning(
+                            'Current mission ignored a request to send the character\'s login'
+                            . ' details to the world - character is already marked as'
+                            . ' \'logged in\'',
+                            $self->_objClass . 'continueMission',
+                        );
+                    }
 
                     $self->completeMission($session);
 
@@ -626,11 +632,14 @@
 
                 } elsif ( ! $session->currentChar) {
 
-                    $session->writeWarning(
-                        'Current mission ignored a request to send the character\'s login details'
-                        . ' to the world - no current character set',
-                        $self->_objClass . 'continueMission',
-                    );
+                    if (! $axmud::BLIND_MODE_FLAG || $session->loginFlag) {
+
+                        $session->writeWarning(
+                            'Current mission ignored a request to send the character\'s login'
+                            . ' details to the world - no current character set',
+                            $self->_objClass . 'continueMission',
+                        );
+                    }
 
                     $self->completeMission($session);
 
@@ -652,11 +661,14 @@
 
                         # (If password not set, don't send any of the character's login details -
                         #   not the name, password or the associated account name)
-                        $session->writeWarning(
-                            'Current mission ignored a request to send the character\'s login'
-                            . ' details to the world - no password set',
-                            $self->_objClass . '->continueMission',
-                        );
+                        if (! $axmud::BLIND_MODE_FLAG || $session->loginFlag) {
+
+                            $session->writeWarning(
+                                'Current mission ignored a request to send the character\'s login'
+                                . ' details to the world - no password set',
+                                $self->_objClass . '->continueMission',
+                            );
+                        }
 
                         $self->completeMission($session);
 
@@ -666,11 +678,14 @@
 
                         # (If associated account not set but the mission wants to send it to the
                         #   world, we also have to end the mission here)
-                        $session->writeWarning(
-                            'Current mission ignored a request to send the character\'s associated'
-                            . ' account name - no account name set',
-                            $self->_objClass . '->continueMission',
-                        );
+                        if (! $axmud::BLIND_MODE_FLAG || $session->loginFlag) {
+
+                            $session->writeWarning(
+                                'Current mission ignored a request to send the character\'s'
+                                . ' associated account name - no account name set',
+                                $self->_objClass . '->continueMission',
+                            );
+                        }
 
                         $self->completeMission($session);
 
@@ -1077,25 +1092,25 @@
         # Expected arguments (standard args from GA::Session->checkTimers)
         #   $session        - The calling function's GA::Session
         #   $interfaceNum   - The number of the active timer interface that fired
-        #   $dueTime        - The time (matches GA::Session->sessionTime) at which the timer was due
-        #                       to fire, in seconds
         #   $actualTime     - The time (matches GA::Session->sessionTime) at which the timer
         #                       actually fired, in seconds
+        #   $dueTime        - The time (matches GA::Session->sessionTime) at which the timer was due
+        #                       to fire, in seconds
         #
         # Return values
         #   'undef' on improper arguments, or if $session is the wrong session, or if the interface
         #       object can't be found
         #   Otherwise returns the result of the call to $self->continueMission ('undef', 1 or 2)
 
-        my ($self, $session, $interfaceNum, $dueTime, $actualTime, $check) = @_;
+        my ($self, $session, $interfaceNum, $actualTime, $dueTime, $check) = @_;
 
         # Local variables
         my $obj;
 
         # Check for improper arguments
         if (
-            ! defined $session || ! defined $interfaceNum || ! defined $dueTime
-            || ! defined $actualTime || defined $check
+            ! defined $session || ! defined $interfaceNum || ! defined $actualTime
+            || ! defined $dueTime || defined $check
         ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->timerSeen', @_);
         }

@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2019 A S Lewis
+# Copyright (C) 2011-2020 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -794,7 +794,7 @@
         # Advance success patterns
         OUTER: foreach my $pattern ($worldObj->advanceSuccessPatternList) {
 
-            my $interfaceObj = $self->session->createInterface(
+            my $interfaceObj = $self->session->createDependentInterface(
                 'trigger',
                 $pattern,
                 $self,
@@ -816,7 +816,7 @@
         # Advance fail patterns
         OUTER: foreach my $pattern ($worldObj->advanceFailPatternList) {
 
-            my $interfaceObj = $self->session->createInterface(
+            my $interfaceObj = $self->session->createDependentInterface(
                 'trigger',
                 $pattern,
                 $self,
@@ -1485,7 +1485,7 @@
             }
 
             # Create the dependent trigger interface
-            $interfaceObj = $self->session->createInterface(
+            $interfaceObj = $self->session->createDependentInterface(
                 'trigger',
                 $pattern,
                 $self,
@@ -1564,7 +1564,7 @@
             }
 
             # Create the dependent trigger interface
-            $interfaceObj = $self->session->createInterface(
+            $interfaceObj = $self->session->createDependentInterface(
                 'trigger',
                 $pattern,
                 $self,
@@ -1614,7 +1614,7 @@
             }
 
             # Create the dependent trigger interface
-            $interfaceObj = $self->session->createInterface(
+            $interfaceObj = $self->session->createDependentInterface(
                 'trigger',
                 $pattern,
                 $self,
@@ -1664,7 +1664,7 @@
             }
 
             # Create the dependent trigger interface
-            $interfaceObj = $self->session->createInterface(
+            $interfaceObj = $self->session->createDependentInterface(
                 'trigger',
                 $pattern,
                 $self,
@@ -1714,7 +1714,7 @@
             }
 
             # Create the dependent trigger interface
-            $interfaceObj = $self->session->createInterface(
+            $interfaceObj = $self->session->createDependentInterface(
                 'trigger',
                 $pattern,
                 $self,
@@ -3053,7 +3053,7 @@
                 $flag = shift @channelList;
 
                 # Create dependent trigger
-                $interfaceObj = $self->session->createInterface(
+                $interfaceObj = $self->session->createDependentInterface(
                     'trigger',
                     $pattern,
                     $self,
@@ -4908,7 +4908,7 @@
         }
 
         # Create two hooks, initially disabled, to allow snooping
-        $receiveObj = $self->session->createInterface(
+        $receiveObj = $self->session->createDependentInterface(
             'hook',
             'receive_text',         # Stimulus
             $self,
@@ -4922,7 +4922,7 @@
             return undef;
         }
 
-        $sendObj = $self->session->createInterface(
+        $sendObj = $self->session->createDependentInterface(
             'hook',
             'send_cmd',             # Stimulus
             $self,
@@ -4966,7 +4966,7 @@
         }
 
         # Create a timer, initially enabled, to watch out for idle users
-        $timerObj = $self->session->createInterface(
+        $timerObj = $self->session->createDependentInterface(
             'timer',
             $self->idleCheckTime,   # Stimulus
             $self,
@@ -5291,7 +5291,7 @@
                 } else {
 
                     # Display the smiley icon
-                    $self->showImage($pixbuf, undef, $nlString);
+                    $self->showImage($pixbuf, undef, undef, undef, $nlString);
                 }
             }
 
@@ -11289,6 +11289,7 @@
         # Expected arguments (standard args from GA::Session->checkHooks)
         #   $session        - The calling function's GA::Session
         #   $interfaceNum   - The number of the active hook interface that fired
+        #   $hookEvent      - The hook event, which should be 'receive_text' or 'send_cmd'
         #
         # Optional arguments
         #   $hookVar       - The line of text received, or the command sent. An optional argument
@@ -11302,14 +11303,15 @@
         #       object can't be found
         #   1 otherwise
 
-        my ($self, $session, $interfaceNum, $hookVar, $hookVal, $check) = @_;
+        my ($self, $session, $interfaceNum, $hookEvent, $hookVar, $hookVal, $check) = @_;
 
         # Local variables
         my ($obj, $opCode);
 
         # Check for improper arguments
-        if (! defined $session || ! defined $interfaceNum || defined $check) {
-
+        if (
+            ! defined $session || ! defined $interfaceNum || ! defined $hookEvent || defined $check
+        ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->hookCallback', @_);
         }
 
@@ -11361,17 +11363,17 @@
         # Expected arguments (standard args from GA::Session->checkTimers)
         #   $session        - The calling function's GA::Session
         #   $interfaceNum   - The number of the active timer interface that fired
-        #   $dueTime        - The time (matches GA::Session->sessionTime) at which the timer was
-        #                       due to fire, in seconds
         #   $actualTime     - The time (matches GA::Session->sessionTime) at which the timer
         #                       actually fired, in seconds
+        #   $dueTime        - The time (matches GA::Session->sessionTime) at which the timer was
+        #                       due to fire, in seconds
         #
         # Return values
         #   'undef' on improper arguments, or if $session is the wrong session or if the interface
         #       object can't be found
         #   1 otherwise
 
-        my ($self, $session, $interfaceNum, $dueTime, $actualTime, $check) = @_;
+        my ($self, $session, $interfaceNum, $actualTime, $dueTime, $check) = @_;
 
         # Local variables
         my (
@@ -11381,8 +11383,8 @@
 
         # Check for improper arguments
         if (
-            ! defined $session || ! defined $interfaceNum || ! defined $dueTime
-            || ! defined $actualTime || defined $check
+            ! defined $session || ! defined $interfaceNum || ! defined $actualTime
+            || ! defined $dueTime || defined $check
         ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->timerCallback', @_);
         }
@@ -12278,7 +12280,7 @@
             if (defined $standardDir) {
 
                 # Create the independent macro interface
-                $interfaceObj = $self->session->createIndepInterface(
+                $interfaceObj = $self->session->createIndependentInterface(
                     'macro',
                     $standardKeycode,                                   # Stimulus
                     $dictObj->ivShow('primaryDirHash', $standardDir),   # Response
@@ -12334,7 +12336,7 @@
                 if ($cmd) {
 
                     # Create the independent macro interface
-                    $interfaceObj = $self->session->createIndepInterface(
+                    $interfaceObj = $self->session->createIndependentInterface(
                         'macro',
                         $standardKeycode,       # Stimulus
                         $cmd,                   # Response
@@ -12409,6 +12411,10 @@
         %keypadHintHash = $self->keypadHintHash;
         %keypadCmdHash = $self->keypadCmdHash;
 
+        # Reduce the standard spacing between table objects (5 pixels around each button is too
+        #   much)
+        $self->winObj->tableStripObj->changeSpacing(2);
+
         # Create buttons for each of the ten main primary directions (ignoring 'northnorthwest',
         #   etc), and store the buttons in a hash
         @list = (
@@ -12448,11 +12454,10 @@
                 $left, $right, $top, $bottom,
                 undef,
                 # Init settings
-                'func'          => $self->getMethodRef('compassCallback'),
-                'id'            => $keycode,
-                'text'          => $self->shortenText($abbrevHash{$dir}, 3),
-                'expand_flag'   => TRUE,
-                'tooltips'      => $tooltips,
+                'func'                      => $self->getMethodRef('compassCallback'),
+                'id'                        => $keycode,
+                'text'                      => $self->shortenText($abbrevHash{$dir}, 3),
+                'tooltips'                  => $tooltips,
             );
 
             $compassHash{$thisTableObj} = $dir;
@@ -12507,11 +12512,10 @@
                 $left, $right, $top, $bottom,
                 undef,
                 # Init settings
-                'func'          => $self->getMethodRef('cmdCallback'),
-                'id'            => $keycode,
-                'text'          => $self->shortenText($cmd, 12),
-                'expand_flag'   => TRUE,
-                'tooltips'      => $tooltips,
+                'func'                      => $self->getMethodRef('cmdCallback'),
+                'id'                        => $keycode,
+                'text'                      => $self->shortenText($cmd, 12),
+                'tooltips'                  => $tooltips,
             );
 
             $cmdHash{$thisTableObj} = $cmd;
@@ -13754,7 +13758,7 @@
         # Set up triggers for ignorable patterns
         OUTER: foreach my $pattern ($self->session->currentWorld->conditionIgnorePatternList) {
 
-            my $interfaceObj = $self->session->createInterface(
+            my $interfaceObj = $self->session->createDependentInterface(
                 'trigger',
                 $pattern,
                 $self,
@@ -13816,7 +13820,7 @@
             }
 
             # Create the dependent trigger interface
-            $interfaceObj = $self->session->createInterface(
+            $interfaceObj = $self->session->createDependentInterface(
                 'trigger',
                 $pattern,
                 $self,
@@ -14729,7 +14733,7 @@
             }
 
             # Create the dependent macro interface
-            $interfaceObj = $self->session->createInterface(
+            $interfaceObj = $self->session->createDependentInterface(
                 'macro',
                 $keycodeString,
                 $self,
@@ -15287,7 +15291,6 @@
             'func'          => $self->getMethodRef('startCallback'),
             'id'            => 'start',
             'text'          => 'Start',
-            'expand_flag'   => TRUE,
             'tooltips'      => 'Start the clock',
         );
 
@@ -15301,7 +15304,6 @@
             'text'          => 'Pause',
             'tooltips'      => 'Pause the clock',
             'normal_flag'   => FALSE,
-            'expand_flag'   => TRUE,
         );
 
         my $buttonTableObj3 = $self->winObj->tableStripObj->addTableObj(
@@ -15314,7 +15316,6 @@
             'text'          => 'Stop',
             'tooltips'      => 'Stop the clock',
             'normal_flag'   => FALSE,
-            'expand_flag'   => TRUE,
         );
 
         # Store the table objects for the benefit of various functions
@@ -16560,7 +16561,7 @@
                 $flag = shift @channelList;
 
                 # Create dependent trigger
-                $interfaceObj = $self->session->createInterface(
+                $interfaceObj = $self->session->createDependentInterface(
                     'trigger',
                     $pattern,
                     $self,
@@ -18425,7 +18426,7 @@
             }
 
             # Create the dependent trigger interface
-            $interfaceObj = $self->session->createInterface(
+            $interfaceObj = $self->session->createDependentInterface(
                 'trigger',
                 $pattern,
                 $self,
@@ -18492,7 +18493,7 @@
             }
 
             # Create the dependent trigger interface
-            $interfaceObj = $self->session->createInterface(
+            $interfaceObj = $self->session->createDependentInterface(
                 'trigger',
                 $pattern,
                 $self,
@@ -18537,7 +18538,7 @@
             $self->session->worldCmd($cmd);
 
             # Create independent timers to send the command to the world every few seconds
-            $interfaceObj = $self->session->createIndepInterface(
+            $interfaceObj = $self->session->createIndependentInterface(
                 'timer',
                 $interval,          # Stimulus
                 $cmd,               # Response
@@ -19926,7 +19927,6 @@
             'text'          => 'New script',
             'tooltips'      => 'Add a new script to this list',
             'align_x'       => 0.5,
-            'expand_flag'   => TRUE,
         );
 
         $self->winObj->tableStripObj->addTableObj(
@@ -19938,7 +19938,6 @@
             'text'          => 'Edit script',
             'tooltips'      => 'Edits the selected script',
             'align_x'       => 0.5,
-            'expand_flag'   => TRUE,
         );
 
         $self->winObj->tableStripObj->addTableObj(
@@ -19950,7 +19949,6 @@
             'text'          => 'Delete script',
             'tooltips'      => 'Deletes the selected script',
             'align_x'       => 0.5,
-            'expand_flag'   => TRUE,
         );
 
         $self->winObj->tableStripObj->addTableObj(
@@ -19962,7 +19960,6 @@
             'text'          => 'Run script',
             'tooltips'      => 'Runs the selected script',
             'align_x'       => 0.5,
-            'expand_flag'   => TRUE,
         );
 
         $self->winObj->tableStripObj->addTableObj(
@@ -19974,7 +19971,6 @@
             'text'          => 'Run as task',
             'tooltips'      => 'Runs the selected script as a task',
             'align_x'       => 0.5,
-            'expand_flag'   => TRUE,
         );
 
         $self->winObj->tableStripObj->addTableObj(
@@ -19986,7 +19982,6 @@
             'text'          => 'Refresh list',
             'tooltips'      => 'Refreshes the list of scripts',
             'align_x'       => 0.5,
-            'expand_flag'   => TRUE,
         );
 
         # Store the simple list's table object, so that callbacks can access it
@@ -20674,15 +20669,28 @@
         #   'RoomExit' and 'RoomNum', this flag is set to TRUE (and the task searches for these
         #   tag properties rather than searching for anchor lines as usual)
         $self->{useMxpFlag}             = FALSE;
-        # A hash of the standard tag properties the Locator task recognises. At the moment, it
-        #   contains all four; a user could conceivably remove one or more of them, if they don't
-        #   want the task to use those tag properties
+        # A hash of MXP standard tag properties. The keys are the four properties recognised by the
+        #   Locator Task
+        # The Locator task expects the tags to be used in a group, representing a single room
+        #   statement. The way the group is handled, by default is unsophisticated: for example, if
+        #   the task sees two successive 'RoomName' tags, that must represent two room statements.
+        #   Likewise, if the task has analysed all of the received text, that must represent the end
+        #   of the room statement, even if all four types of tag were not found
+        # The world profile can optionally specify the tags marking the beginning and/or end of the
+        #   group. If either (or both) are defined, the handling is a little more robust
         $self->{mxpPropHash}            = {
             'RoomName'                  => undef,
             'RoomDesc'                  => undef,
             'RoomExit'                  => undef,
             'RoomNum'                   => undef,
         };
+        # The tagged text, when received, is stored temporarily in this hash. The keys are the same
+        #   as those in $self->mxpPropHash; the corresponding values are the tagged text. When a
+        #   room statement is processed, the hash is emptied
+        $self->{mxpPropCurrentHash}     = {};
+        # The line number at which tagged text was added to an empty $self->currentMxpPropHash
+        #   (undef if the hash is empty)
+        $self->{mxpPropStartLine}       = undef;
 
         # On some worlds, the part of the room statement containing the verbose description can
         #   contain lines that are actually part of the room's contents, for example the third line
@@ -20872,6 +20880,8 @@
 
         $clone->{useMxpFlag}            = $self->useMxpFlag;
         $clone->{mxpPropHash}           = {$self->mxpPropHash};
+        $clone->{mxpPropCurrentHash}    = {$self->mxpPropCurrentHash};
+        $clone->{mxpPropStartLine}      = $self->mxpPropStartLine;
 
         $clone->{tempContentsList}      = [$self->tempContentsList];
 
@@ -21405,7 +21415,7 @@
                 #   room and unspecified room patterns
                 do {
 
-                    my ($lineNum, $bufferObj, $cmdObj, $roomObj, $destRoomObj);
+                    my ($lineNum, $bufferObj, $cmdObj, $roomObj, $destRoomObj, $result);
 
                     $lineNum = shift @sortedList;
                     $bufferObj = $self->session->ivShow('displayBufferHash', $lineNum);
@@ -21450,22 +21460,29 @@
                         $self->writeDebug('LOCATOR 121: Processing line ' . $lineNum);
                     }
 
-                    if (
-                        ! $self->processLine(
-                            $worldObj,
-                            $modelObj,
-                            $lineNum,
-                            $bufferObj,
-                            $stopLineNum,
-                            $restartLine,
-                            $roomObj,               # May be 'undef'
-                            $cmdObj,                # May be 'undef'
-                            $destRoomObj,           # May be 'undef'
-                        )
-                    ) {
+                    $result = $self->processLine(
+                        $worldObj,
+                        $modelObj,
+                        $lineNum,
+                        $bufferObj,
+                        $stopLineNum,
+                        $restartLine,
+                        $roomObj,               # May be 'undef'
+                        $cmdObj,                # May be 'undef'
+                        $destRoomObj,           # May be 'undef'
+                    );
+
+                    if (! defined $result) {
+
                         # No more lines should be analysed until some more text is received from
                         #   the world (could also be an error)
                         @sortedList = ();
+
+                    } elsif ($result == -1) {
+
+                        # Repeat this line ($self->processLine can only process one room statement
+                        #   at once, and two have been detected)
+                        unshift(@sortedList, $lineNum);
 
                     } else {
 
@@ -21635,6 +21652,8 @@
         # Return values
         #   'undef' on improper arguments, if there's an error or if no more lines should be
         #       analysed until some more text is received from the world
+        #   -1 if the current line should be processed again, in a new call to this function (see
+        #       PART 12 code for the reasons why)
         #   1 otherwise
 
         my (
@@ -21649,7 +21668,7 @@
             $followAnchorFlag, $newCmdObj, $ghostRoomObj, $exitNum, $exitObj, $updateFlag,
             $tempRoomObj, $anchorFlag, $promptFlag, $missionObj,
             @followPatternList, @followAnchorPatternList, @unspecifiedList, @promptList,
-            %mxpPropHash,
+            %tempMxpPropHash,
         );
 
         # Check for improper arguments
@@ -22318,8 +22337,8 @@
         }
 
         # PART 12
-        # If allowed, look for an MXP tag property (one of the keys in $self->mxpFlagTextHash,
-        #   normally one of 'RoomName', 'RoomDesc', 'RoomExit', 'RoomNum')
+        # If allowed, look for an MXP tag property (one of the keys in $self->mxpPropHash, namely
+        #   'RoomName', 'RoomDesc', 'RoomExit', 'RoomNum')
         if (
             ! $failExitFlag
             && ! $involuntaryExitFlag
@@ -22342,49 +22361,217 @@
                         $self->ivPoke('useMxpFlag', TRUE);
                     }
 
-                    # Update the local hash; as soon as a duplicate property is found on another
-                    #   line, it marks the start of a new statement
-                    # An <ELEMENT>...</ELEMENT> construction could appear more than once on the
-                    #   same line, so watch out for that
-                    if (! defined $mxpPropHash{$prop}) {
+                    # Temporarily store the tagged text. An <ELEMENT>...</ELEMENT> construction
+                    #   could appear more than once on the same line, so watch out for that
+                    if (! defined $tempMxpPropHash{$prop}) {
 
-                        $mxpPropHash{$prop} = $text;
+                        $tempMxpPropHash{$prop} = $text;
 
                     } elsif ($prop eq 'RoomExit') {
 
                         # Tell $self->setRoomFromMxp that these are separate exits by using a
                         #   newline character
-                        $mxpPropHash{$prop} = $mxpPropHash{$prop} . "\n" . $text;
+                        $tempMxpPropHash{$prop} = $tempMxpPropHash{$prop} . "\n" . $text;
 
                     } else {
 
-                        $mxpPropHash{$prop} = $mxpPropHash{$prop} . " " . $text;
+                        $tempMxpPropHash{$prop} = $tempMxpPropHash{$prop} . " " . $text;
                     }
                 }
             }
 
-            if (%mxpPropHash) {
+            # Special case: if no rooms have been processed yet and we're moving through the buffer
+            #   from bottom to top, and if start/stop tags are defined, keep searching for a line
+            #   containing those tags (and in the meantime, store any other tags we find)
+            if (
+                ! $self->roomCount
+                && %tempMxpPropHash
+                && ($worldObj->mxpRoomTagStart || $worldObj->mxpRoomTagStop)
+            ) {
+                foreach my $key (keys %tempMxpPropHash) {
 
+                    $self->ivAdd('mxpPropCurrentHash', $key, $tempMxpPropHash{$key});
+                    if ($worldObj->mxpRoomTagStart && $key eq $worldObj->mxpRoomTagStart) {
+
+                        $self->ivPoke('mxpPropStartLine', $lineNum);
+                    }
+                }
+
+                if (
+                    (
+                        ! $worldObj->mxpRoomTagStart
+                        || $self->ivExists('mxpPropCurrentHash', $worldObj->mxpRoomTagStart)
+                    ) && (
+                        ! $worldObj->mxpRoomTagStop
+                        || $self->ivExists('mxpPropCurrentHash', $worldObj->mxpRoomTagStop)
+                    )
+                ) {
+                    # The start and/or stop tag has just been found, so process the first room
+                    #   statement
+                    $self->prepareMxpProperties($lineNum, $worldObj);
+                    $anchorFlag = TRUE;
+                }
+
+                # (Take no further action in this PART)
+                %tempMxpPropHash = ();
+            }
+
+            # If the current world profile has specified tags marking the beginning and/or end of a
+            #   room statement, the Locator Task is more likely to be able to catch the whole room
+            #   statement (so check for that first)
+            # If not, then proceed with dumb handling of MXP tag properties (we'll do the best we
+            #   can with what we've got)
+            if (
+                %tempMxpPropHash
+                && $worldObj->mxpRoomTagStart
+                && exists $tempMxpPropHash{$worldObj->mxpRoomTagStart}
+            ) {
+                # A room statement starts on this line
+                # If $self->mxpPropCurrentHash is already storing tagged text, then that represents
+                #   a previous room statement, which can now be processed
+                if ($self->mxpPropCurrentHash) {
+
+                    # Process the previous room statement
+                    $self->prepareMxpProperties($lineNum, $worldObj);
+                    # Return -1 to force $self->doStage to call this function for the same line
+                    #   again, this time processing the room statement that starts on this line
+                    return -1;
+                }
+
+                if (! $worldObj->mxpRoomTagStop || ! $self->roomCount) {
+
+                    # Dumb handling of MXP room tags, because the world profile doesn't specify
+                    #   ->mxpRoomTagStart or ->mxpRoomTagStop
+                    $anchorFlag = TRUE;
+
+                    # Search more lines, looking for more MXP tag properties until (1) an identical
+                    #   tag property is found (which means the start of another room statement), or
+                    #   (2) all four tag properties are found (which means the end of the current
+                    #   room statement) or (3) the task runs out of lines (which means the end of
+                    #   the current room statement), or (4) more than 32 lines without a tag
+                    #   property are checked
+                    if (! $self->roomCount) {
+
+                        # (Still looking for first statement, but just for now, don't search lines
+                        #   in reverse order)
+                        $self->processMxpProperties(
+                            $stopLineNum,
+                            $lineNum,
+                            $worldObj,
+                            %tempMxpPropHash,
+                        );
+
+                    } else {
+
+                        $self->processMxpProperties(
+                            $lineNum,
+                            $stopLineNum,
+                            $worldObj,
+                            %tempMxpPropHash,
+                        );
+                    }
+
+                } else {
+
+                    # Store the new tagged text, and wait for the end of the statement
+                    foreach my $key (keys %tempMxpPropHash) {
+
+                        $self->ivAdd('mxpPropCurrentHash', $key, $tempMxpPropHash{$key});
+                    }
+
+                    $self->ivPoke('mxpPropStartLine', $lineNum);
+                }
+
+                # (Take no further action in this PART)
+                %tempMxpPropHash = ();
+            }
+
+            if (
+                %tempMxpPropHash
+                && $worldObj->mxpRoomTagStop
+                && exists $tempMxpPropHash{$worldObj->mxpRoomTagStop}
+            ) {
+                # A room statement stops on this line
+                # If this line contains the same type of tagged text as seen on previous lines,
+                #   then that represents a previous room statement, which can now be processed
+                foreach my $key (keys %tempMxpPropHash) {
+
+                    if ($self->ivExists('mxpPropCurrentHash', $key)) {
+
+                        # Process the previous room statement
+                        $self->prepareMxpProperties($lineNum, $worldObj);
+                        # Return -1 to force $self->doStage to call this function for the same line
+                        #   again, this time processing the room statement that stops on this line
+                        return -1;
+                    }
+                }
+
+                # (This condition will be true, if the room statement starts and stops on the same
+                #   line)
+                if (! $self->mxpPropCurrentHash) {
+
+                    $self->ivPoke('mxpPropStartLine', $lineNum);
+                }
+
+                # Store the new tagged text
+                foreach my $key (keys %tempMxpPropHash) {
+
+                    $self->ivAdd('mxpPropCurrentHash', $key, $tempMxpPropHash{$key});
+                }
+
+                # Process the new room statement
+                $self->prepareMxpProperties($lineNum, $worldObj);
                 $anchorFlag = TRUE;
 
-                if ($axmud::CLIENT->debugLocatorFlag) {
+                # (Take no further action in this PART)
+                %tempMxpPropHash = ();
+            }
 
-                    $self->session->writeDebug(
-                        'LOCATOR 271: Found MXP tag properties '
-                        . join('/', sort {$a cmp $b} (keys %mxpPropHash)),
-                    );
+            if (
+                %tempMxpPropHash
+                && ($worldObj->mxpRoomTagStart || $worldObj->mxpRoomTagStop)
+            ) {
+                # The world profile specifies the tags which mark the beginning and/or end of a room
+                #   statement, but only some of the other MXP tag properties were found on this line
+                OUTER: foreach my $key (keys %tempMxpPropHash) {
+
+                    if ($self->ivExists('mxpPropCurrentHash', $key)) {
+
+                        # Process the previous room statement
+                        $self->prepareMxpProperties($lineNum, $worldObj);
+                        $anchorFlag = TRUE;
+
+                        last OUTER;
+                    }
                 }
+
+                # Store the new tagged text
+                foreach my $key (keys %tempMxpPropHash) {
+
+                    $self->ivAdd('mxpPropCurrentHash', $key, $tempMxpPropHash{$key});
+                }
+
+                # (Take no further action in this PART)
+                %tempMxpPropHash = ();
+            }
+
+            if (%tempMxpPropHash) {
+
+                # Dumb handling of MXP room tags, because the world profile doesn't specify
+                #   ->mxpRoomTagStart or ->mxpRoomTagStop
+                $anchorFlag = TRUE;
 
                 # Search more lines, looking for more MXP tag properties until (1) an identical tag
                 #   property is found (which means the start of another room statement), or (2) all
                 #   four tag properties are found (which means the end of the current room
                 #   statement) or (3) the task runs out of lines (which means the end of the
-                #   current room statement)
+                #   current room statement), or (4) more than 32 lines without a tag property are
+                #   checked
                 $self->processMxpProperties(
                     $lineNum,
                     $stopLineNum,
                     $worldObj,
-                    %mxpPropHash,
+                    %tempMxpPropHash,
                 );
             }
         }
@@ -23010,7 +23197,7 @@
         my ($self, $lineNum, $stopLineNum, $worldObj, %mxpPropHash) = @_;
 
         # Local variables
-        my ($roomObj, $step, $origLineNum, $matchCount, $loopCount, $useLine, $prevProp);
+        my ($roomObj, $step, $maxLines, $origLineNum, $matchCount, $loopCount, $useLine, $prevProp);
 
         # Check for improper arguments
         if (! defined $lineNum || ! defined $stopLineNum || ! defined $worldObj || ! %mxpPropHash) {
@@ -23018,8 +23205,8 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->processMxpProperties', @_);
         }
 
-        # Reset the list of lines to be converted to text-to-speech; this hash should only
-        #   contain the lines that we might want to read out
+        # Reset the list of lines to be converted to text-to-speech; this hash should only contain
+        #   the lines that we might want to read out
         $self->ivEmpty('ttsToReadHash');
 
         # Create a non-model object for this room
@@ -23035,6 +23222,9 @@
         } else {
             $step = 1;
         }
+
+        # Don't carry on forever. (Before v2.1.062, the limit was 8 lines)
+        $maxLines = 32;
 
         # Check each line in turn
         $origLineNum = $lineNum;
@@ -23168,8 +23358,8 @@
                 }
             }
 
-        # Give up after 8 lines without a tag property
-        } until ($matchCount >= 8);
+        # Give up after many lines without a tag property
+        } until ($matchCount >= $maxLines);
 
         # Apply the room statement text we've gathered so far
         $self->setRoomFromMxp($worldObj, $roomObj, %mxpPropHash);
@@ -23196,9 +23386,67 @@
         return $self->confirmMxpProperties($worldObj, $roomObj, %mxpPropHash);
     }
 
+    sub prepareMxpProperties {
+
+        # Simplified version of $self->processMxpProperties()
+        # In some situations, the MXP tag properties defining a whole room statement have been
+        #   captured, so there's no need to check other lines. In that case, this function is
+        #   called instead to process the tagged text we already have
+        #
+        # Expected arguments
+        #   $lineNum        - The display buffer number of the line containing the last MXP tag
+        #                       property for a room statement (matching the line being processed by
+        #                       the calling function, $self->processLine)
+        #   $worldObj       - Shortcut to the current world profile object
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $lineNum, $worldObj, $check) = @_;
+
+        # Local variables
+        my $roomObj;
+
+        # Check for improper arguments
+        if (! defined $lineNum || ! defined $worldObj || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->prepareMxpProperties', @_);
+        }
+
+        # Reset the list of lines to be converted to text-to-speech; this hash should only
+        #   contain the lines that we might want to read out
+        $self->ivEmpty('ttsToReadHash');
+
+        # Create a non-model object for this room
+        $roomObj = Games::Axmud::ModelObj::Room->new(
+            $self->session,
+            'temporary',
+            'non_model',
+        );
+
+        # Apply the room statement text we've gathered so far
+        $self->setRoomFromMxp($worldObj, $roomObj, $self->mxpPropCurrentHash);
+
+        # Store the lines at which the room statement starts/ends
+        # (If the start line isn't known, for some reason, use $lineNum as both a start/stop line,
+        #   as an emergency fallback)
+        if (! defined $self->mxpPropStartLine) {
+            $self->ivPoke('lastStatementStartLine', $lineNum);
+        } else {
+            $self->ivPoke('lastStatementStartLine', $self->mxpPropStartLine);
+        }
+
+        $self->ivPoke('lastStatementEndLine', $lineNum);
+
+        # Do logfiles, TTS, etc
+        return $self->confirmMxpProperties($worldObj, $roomObj, $self->mxpPropCurrentHash);
+    }
+
     sub confirmMxpProperties {
 
-        # Called by $self->processMxpProperties after a room statement is extracted
+        # Called by $self->processMxpProperties and ->prepareMxpProperties, after a room statement
+        #   is extracted
         # Handles logfiles, TTS etc, duplicating code also found in ->processAnchor
         #
         # Expected arguments
@@ -23278,7 +23526,7 @@
 
         # Write details of the verbose description to logfiles (if allowed, and if the verbose
         #   statement was captured)
-        if (exists $mxpPropHash{'RoomDesc'}) {
+        if (defined $mxpPropHash{'RoomDesc'}) {
 
             $axmud::CLIENT->writeLog(
                 $self->session,
@@ -23286,7 +23534,7 @@
                 $mxpPropHash{'RoomDesc'},
                 FALSE,      # Don't precede with a newline character
                 TRUE,       # Use final newline character
-                'descrips',     # Write to this logfile
+                'descrips',  # Write to this logfile
             );
 
             # Add a blank line, so that the logfile isn't a wall of text
@@ -23343,6 +23591,19 @@
         ) {
             $self->ttsQuick($self->ivShow('ttsToReadHash', 'command'));
         }
+
+        # Show debug messages, if required
+        if ($axmud::CLIENT->debugLocatorFlag) {
+
+            $self->session->writeDebug(
+                'LOCATOR 271: Found MXP tag properties '
+                . join('/', sort {$a cmp $b} (keys %mxpPropHash)),
+            );
+        }
+
+        # Reset IVs, ready for the next room statement
+        $self->ivEmpty('mxpPropCurrentHash');
+        $self->ivUndef('mxpPropStartLine');
 
         # Anchor line processing complete
         return 1;
@@ -25908,7 +26169,9 @@
                 )
             ) {
                 $miniListRef = $useOffsetList[-1];
-                if (! defined $miniListRef || ! defined $$miniListRef[1]) {
+                # v1.2.043 - the line below appears to be an error, but I'm not sure yet
+#                if (! defined $miniListRef || ! defined $$miniListRef[1]) {
+                if (! defined $miniListRef || defined $$miniListRef[1]) {
 
                     # This is a 'start'
                     $miniListRef = [$offset, $lineLen];
@@ -29576,6 +29839,10 @@
         { $_[0]->{useMxpFlag} }
     sub mxpPropHash
         { my $self = shift; return %{$self->{mxpPropHash}}; }
+    sub mxpPropCurrentHash
+        { my $self = shift; return %{$self->{mxpPropCurrentHash}}; }
+    sub mxpPropStartLine
+        { $_[0]->{mxpPropStartLine} }
 
     sub tempContentsList
         { my $self = shift; return @{$self->{tempContentsList}}; }
@@ -30372,7 +30639,6 @@
             'func'          => $self->getMethodRef('clipboardCallback'),
             'text'          => 'Paste',
             'tooltips'      => 'Insert any selected text in the session\'s default tab',
-            'expand_flag'   => TRUE,
         );
 
         $self->winObj->tableStripObj->addTableObj(
@@ -30383,7 +30649,6 @@
             'func'          => $self->getMethodRef('emptyCallback'),
             'text'          => 'Empty',
             'tooltips'      => 'Empty the notes for this profile',
-            'expand_flag'   => TRUE,
         );
 
         $self->winObj->tableStripObj->addTableObj(
@@ -30394,7 +30659,6 @@
             'func'          => $self->getMethodRef('restoreCallback'),
             'text'          => 'Restore',
             'tooltips'      => 'Restore the notes that existed when this task started',
-            'expand_flag'   => TRUE,
         );
 
         # Store the widgets created, so that callbacks can access them
@@ -31509,8 +31773,8 @@
         $self->{allowWinFlag}           = TRUE;
         $self->{requireWinFlag}         = FALSE;
         $self->{startWithWinFlag}       = FALSE;
-        $self->{winPreferList}          = ['pseudo', 'grid'];
-        $self->{winmap}                 = 'basic_fill';
+        $self->{winPreferList}          = ['entry', 'grid'];
+        $self->{winmap}                 = 'entry_fill';
         $self->{winUpdateFunc}          = undef;
         $self->{tabMode}                = 'simple';
         $self->{monochromeFlag}         = FALSE;
@@ -31914,7 +32178,7 @@
             # A window must now be open all the time for this task
             $self->ivPoke('requireWinFlag', TRUE);
             # Open an task window with an entry box
-            $self->openWin($self->winmap, 'grid');
+            $self->openWin($self->winmap, 'entry_fill', 'pane', 'grid');
         }
 
         return 1;
@@ -32536,7 +32800,7 @@
     sub resetInterface {
 
         # Called by LA::Statement::deliface->implement, when it deletes an interface
-        # Also called by $self->waitPatternSeen when the (temporary) interface fires
+        # Also called by $self->interfaceWaitSeen when the (temporary) interface fires
         #
         # This function checks whether it's the same interface stored by this task and, if so,
         #   updates IVs
@@ -32547,7 +32811,7 @@
         # Optional arguments
         #   $interfaceObj   - The interface which has been removed. Set when called by
         #                       LA::Statement::deliface->implement, but 'undef' when called by
-        #                       $self->waitPatternSeen
+        #                       $self->interfaceWaitSeen
         #
         # Return values
         #   'undef' on improper arguments
@@ -33191,55 +33455,39 @@
     ##################
     # Response methods
 
-    sub waitPatternSeen {
+    sub interfaceWaitSeen {
 
-        # Called by GA::Session->checkTriggers
+        # Called by GA::Session->processLineSegment, after that function has called ->checkTriggers;
+        #   or by GA::Session->checkAliases, ->checkMacros (etc)
         #
-        # Axbasic statements such as WAITTRIG cause the script to create triggers to wait for a
+        # The Axbasic statement WAITTRIG causes the script to create a trigger to wait for a
         #   particular pattern in the text received from the world
         #      e.g. The door swings open!
         #
-        # When the pattern is found, the script resumes. This function updates IVs and resumes this
-        #   task, which should be paused. Group substrings and the interface's ->propertyHash are
-        #   not used
+        # When the pattern is found, the script resumes. WAITALIAS, WAITMACRO, WAITTIMER and
+        #   WAITHOOK behave in similar ways
+        # This function updates IVs and resumes this task, which should be paused. Group substrings
+        #   (for triggers/aliases) and additional data (for timers/hooks) are ignored
         #
-        # Expected arguments (standard args from GA::Session->checkTriggers)
+        # Expected arguments
         #   $session        - The calling function's GA::Session
         #   $interfaceNum   - The number of the active trigger interface that fired
-        #   $line           - The line of text received from the world
-        #   $stripLine      - $line, with all escape sequences removed
-        #   $modLine        - $stripLine, possibly modified by previously-checked triggers
-        #   $grpStringListRef
-        #                   - Reference to a list of group substrings from the pattern match
-        #                       (equivalent of @_)
-        #   $matchMinusListRef
-        #                   - Reference to a list of matched substring offsets (equivalent of @-)
-        #   $matchPlusListRef
-        #                   - Reference to a list of matched substring offsets (equivalent of @+)
+        #   @ignoreList     - Any other data supplied by the calling function is added to this list
+        #                       and ignored
         #
         # Return values
-        #   'undef' on improper arguments, or if $session is the wrong session or if the interface
-        #       object can't be found
+        #   'undef' on improper arguments or if $session is the wrong session
         #   1 otherwise
 
-        my (
-            $self, $session, $interfaceNum, $line, $stripLine, $modLine, $grpStringListRef,
-            $matchMinusListRef, $matchPlusListRef, $check,
-        ) = @_;
+        my ($self, $session, $interfaceNum, @ignoreList) = @_;
 
         # Local variables
         my $obj;
 
         # Check for improper arguments
-        if (
-            ! defined $session || ! defined $interfaceNum || ! defined $line || ! defined $stripLine
-            || ! defined $modLine || ! defined $grpStringListRef || ! defined $matchMinusListRef
-            || ! defined $matchPlusListRef || defined $check
-        ) {
-            return $axmud::CLIENT->writeImproper(
-                $self->_objClass . '->waitPatternSeen',
-                @_,
-            );
+        if (! defined $session || ! defined $interfaceNum ) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->interfaceWaitSeen', @_);
         }
 
         # Basic check - the trigger should belong to the right session
@@ -33256,10 +33504,10 @@
 #            return undef;
 #        }
 
-        # Respond to the fired trigger
+        # Respond to the fired interface
 
         # Update the AB::Script's list of dependent interfaces to remove the one that has just
-        #   fired (it's a temporary trigger which the GA::Session is going to delete soon)
+        #   fired (it's a temporary interface which the GA::Session is going to delete soon)
         $self->scriptObj->updateInterfaces($self->waitForInterface);
         # After a pause, the script's step count (how many statements to execute before taking a
         #   short break) needs to be reset
@@ -33271,19 +33519,20 @@
         return 1;
     }
 
-    sub notifyPatternSeen {
+    sub triggerNotifySeen {
 
-        # Called by GA::Session->checkTriggers
+        # Called by GA::Session->processLineSegment, after that function has called ->checkTriggers
         #
-        # Axbasic statements such as SETTRIG cause the script (when it is not linked to a second
-        #   Axbasic script) to create triggers to wait for a particular pattern in the text received
-        #   from the world
+        # The Axbasic statement SETTRIG causes the script to create a trigger to notice a particular
+        #   pattern in the text received from the  world
         #      e.g. The orc attacks you
         #
-        # This function notifies the script that the pattern was found.
+        # If SETTRIG specified a second script to run, this function runs it. Otherwise, this
+        #   function notifies the script that the pattern was found
         #
-        # The trigger interfaces have the following properties in ->propertyHash:
-        #   new_script       - The name of the second script to run
+        # The trigger interface has the following properties in ->propertyHash:
+        #   new_script       - The name of the second script to run (only used in calls to
+        #                       $self->triggerExecSeen, 'undef' in calls to this function)
         #
         # Expected arguments (standard args from GA::Session->checkTriggers)
         #   $session        - The calling function's GA::Session
@@ -33292,7 +33541,7 @@
         #   $stripLine      - $line, with all escape sequences removed
         #   $modLine        - $stripLine, possibly modified by previously-checked triggers
         #   $grpStringListRef
-        #                   - Reference to a list of group subsrings from the pattern match
+        #                   - Reference to a list of group substrings from the pattern match
         #                       (equivalent of @_)
         #   $matchMinusListRef
         #                   - Reference to a list of matched substring offsets (equivalent of @-)
@@ -33310,82 +33559,6 @@
         ) = @_;
 
         # Local variables
-        my $obj;
-
-        # Check for improper arguments
-        if (
-            ! defined $session || ! defined $interfaceNum || ! defined $line || ! defined $stripLine
-            || ! defined $modLine || ! defined $grpStringListRef || ! defined $matchMinusListRef
-            || ! defined $matchPlusListRef || defined $check
-        ) {
-            return $axmud::CLIENT->writeImproper(
-                $self->_objClass . '->notifyPatternSeen',
-                @_,
-            );
-        }
-
-        # Basic check - the trigger should belong to the right session
-        if ($session ne $self->session) {
-
-            return undef;
-        }
-
-        # Get the interface object itself
-        $obj = $session->ivShow('interfaceNumHash', $interfaceNum);
-        if (! $obj) {
-
-            return undef;
-        }
-
-        # Respond to the fired trigger
-
-        # Notify the Axbasic programme that one of its dependent triggers has fired
-        $self->scriptObj->interfaceNotification(
-            $obj,
-            $modLine,
-            @$grpStringListRef,
-        );
-
-        return 1;
-    }
-
-    sub execPatternSeen {
-
-        # Called by GA::Session->checkTriggers
-        #
-        # Axbasic statements such as SETTRIG cause the script (when it IS linked to a second Axbasic
-        #   script) to create triggers to wait for a particular pattern in the text received from
-        #   the world
-        #      e.g. The orc attacks you
-        #
-        # This function executes the second Axbasic script immediately. Group substrings and the
-        #   interface's ->propertyHash are not used
-        #
-        # Expected arguments (standard args from GA::Session->checkTriggers)
-        #   $session        - The calling function's GA::Session
-        #   $interfaceNum   - The number of the active trigger interface that fired
-        #   $line           - The line of text received from the world
-        #   $stripLine      - $line, with all escape sequences removed
-        #   $modLine        - $stripLine, possibly modified by previously-checked triggers
-        #   $grpStringListRef
-        #                   - Reference to a list of group substrings from the pattern match
-        #                       (equivalent of @_)
-        #   $matchMinusListRef
-        #                   - Reference to a list of matched substring offsets (equivalent of @-)
-        #   $matchPlusListRef
-        #                   - Reference to a list of matched substring offsets (equivalent of @+)
-        #
-        # Return values
-        #   'undef' on improper arguments, or if $session is the wrong session, if the interface
-        #       object can't be found or if the second script can't be run
-        #   1 otherwise
-
-        my (
-            $self, $session, $interfaceNum, $line, $stripLine, $modLine, $grpStringListRef,
-            $matchMinusListRef, $matchPlusListRef, $check,
-        ) = @_;
-
-        # Local variables
         my ($obj, $scriptName);
 
         # Check for improper arguments
@@ -33394,10 +33567,7 @@
             || ! defined $modLine || ! defined $grpStringListRef || ! defined $matchMinusListRef
             || ! defined $matchPlusListRef || defined $check
         ) {
-            return $axmud::CLIENT->writeImproper(
-                $self->_objClass . '->execPatternSeen',
-                @_,
-            );
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->triggerNotifySeen', @_);
         }
 
         # Basic check - the trigger should belong to the right session
@@ -33414,16 +33584,307 @@
         }
 
         # Respond to the fired trigger
-
-        # Get the name of the second script to execute immediately
         $scriptName = $obj->ivShow('propertyHash', 'new_script');
         if ($scriptName) {
 
+            # SETTRIG statement specified a second script to run
             return $self->session->pseudoCmd('runscript ' . $scriptName);
 
         } else {
 
+            # No second script to to run. Notify the Axbasic programme that one of its dependent
+            #   triggers has fired
+            $self->scriptObj->interfaceNotification($obj, $modLine, @$grpStringListRef);
+
+            return 1;
+        }
+    }
+
+    sub aliasNotifySeen {
+
+        # Called by GA::Session->checkAliases
+        #
+        # The Axbasic statement SETALIAS causes the script to create an alias to notice when a
+        #   particular world command is entered
+        #      e.g. The orc attacks you
+        #
+        # If SETALIAS specified a second script to run, this function runs it. Otherwise, this
+        #   function notifies the script that the matching command was processed. (The world command
+        #   is not sent to the world, as normal)
+        #
+        # The alias interface has the following properties in ->propertyHash:
+        #   new_script       - The name of the second script to run (only used in calls to
+        #                       $self->aliasExecSeen, 'undef' in calls to this function)
+        #
+        # Expected arguments (standard args from GA::Session->checkAliases)
+        #   $session         - The calling function's GA::Session
+        #   $interfaceNum    - The number of the active alias interface that fired
+        #   $worldCmd        - The world command that caused the alias to fire
+        #
+        # Optional arguments
+        #   @groupStringList - A list of group substrings from the pattern match (equivalent of @_,
+        #                       may be an empty list)
+        #
+        # Return values
+        #   'undef' on improper arguments, or if $session is the wrong session or if the interface
+        #       object can't be found
+        #   1 otherwise
+
+        my ($self, $session, $interfaceNum, $worldCmd, @groupStringList) = @_;
+
+        # Local variables
+        my ($obj, $scriptName);
+
+        # Check for improper arguments
+        if (! defined $session || ! defined $interfaceNum || ! defined $worldCmd) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->aliasNotifySeen', @_);
+        }
+
+        # Basic check - the alias should belong to the right session
+        if ($session ne $self->session) {
+
             return undef;
+        }
+
+        # Get the interface object itself
+        $obj = $session->ivShow('interfaceNumHash', $interfaceNum);
+        if (! $obj) {
+
+            return undef;
+        }
+
+        # Respond to the fired alias
+        $scriptName = $obj->ivShow('propertyHash', 'new_script');
+        if ($scriptName) {
+
+            # SETALIAS statement specified a second script to run
+            return $self->session->pseudoCmd('runscript ' . $scriptName);
+
+        } else {
+
+            # No second script to run. Notify the Axbasic programme that one of its dependent
+            #   aliases has fired
+            $self->scriptObj->interfaceNotification($obj, $worldCmd, @groupStringList);
+        }
+
+        return 1;
+    }
+
+    sub macroNotifySeen {
+
+        # Called by GA::Session->checkMacros
+        #
+        # The Axbasic statement SETMACRO causes the script to create a macro to notice a keypress or
+        #   a combination of keypresses
+        #      e.g. 'ctrl f1'
+        #
+        # If SETMACRO specified a second script to run, this function runs it. Otherwise, this
+        #   function notifies the script that the keycode string was processed (and only the script
+        #   will do something in response)
+        #
+        # The macro interface has the following properties in ->propertyHash:
+        #   new_script       - The name of the second script to run (only used in calls to
+        #                       $self->macroExecSeen, 'undef' in calls to this function)
+        #
+        # Expected arguments (standard args from GA::Session->checkMacros)
+        #   $session        - The calling function's GA::Session
+        #   $interfaceNum   - The number of the active macro interface that fired
+        #   $keycodeString  - The keycode string for keypress(es) that caused the macro to fire
+        #
+        # Return values
+        #   'undef' on improper arguments, or if $session is the wrong session or if the interface
+        #       object can't be found
+        #   1 otherwise
+
+        my ($self, $session, $interfaceNum, $keycodeString, $check) = @_;
+
+        # Local variables
+        my ($obj, $scriptName);
+
+        # Check for improper arguments
+        if (
+            ! defined $session || ! defined $interfaceNum || ! defined $keycodeString
+            || defined $check
+        ) {
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->macroNotifySeen', @_);
+        }
+
+        # Basic check - the macro should belong to the right session
+        if ($session ne $self->session) {
+
+            return undef;
+        }
+
+        # Get the interface object itself
+        $obj = $session->ivShow('interfaceNumHash', $interfaceNum);
+        if (! $obj) {
+
+            return undef;
+        }
+
+        # Respond to the fired macro
+        $scriptName = $obj->ivShow('propertyHash', 'new_script');
+        if ($scriptName) {
+
+            # SETMACRO statement specified a second script to run
+            return $self->session->pseudoCmd('runscript ' . $scriptName);
+
+        } else {
+
+            # No second script to to run. Notify the Axbasic programme that one of its dependent
+            #   macros has fired
+            $self->scriptObj->interfaceNotification($obj, $keycodeString);
+
+            return 1;
+        }
+    }
+
+    sub timerNotifySeen {
+
+        # Called by GA::Session->checkTimers
+        #
+        # The Axbasic statement SETTIMER causes the script to notice when a timer it has created has
+        #   fired
+        #
+        # If SETTIMER specified a second script to run, this function runs it. Otherwise, this
+        #   function notifies the script that the timer has fired (and only the script will do
+        #   something in response)
+        #
+        # The timer interfaces have the following properties in ->propertyHash:
+        #   new_script       - The name of the second script to run (only used in calls to
+        #                       $self->timerExecSeen, 'undef' in calls to this function)
+        #
+        # Expected arguments (standard args from GA::Session->checkTimers)
+        #   $session         - The calling function's GA::Session
+        #   $interfaceNum    - The number of the active timer interface that fired
+        #   $sessionTime     - The value of GA::Session->sessionTime when the hook fired
+        #   $otherTime       - For timers whose stimulus is an interval, the time (matches
+        #                       GA::Session->sessionTime) at which the timer was due to fire. This
+        #                       value will be less than or the same as $sessionTime. For timers
+        #                       whose stimulus is a clock time (in the form HH:MM firing once a day,
+        #                       or 99:MM firing once an hour, at MM minutes past the hour), the
+        #                       stimulus itself
+        #
+        # Return values
+        #   'undef' on improper arguments, or if $session is the wrong session or if the interface
+        #       object can't be found
+        #   1 otherwise
+
+        my ($self, $session, $interfaceNum, $sessionTime, $otherTime, $check) = @_;
+
+        # Local variables
+        my ($obj, $scriptName);
+
+        # Check for improper arguments
+        if (
+            ! defined $session || ! defined $interfaceNum || ! defined $sessionTime
+            || ! defined $otherTime || defined $check
+        ) {
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->timerNotifySeen', @_);
+        }
+
+        # Basic check - the timer should belong to the right session
+        if ($session ne $self->session) {
+
+            return undef;
+        }
+
+        # Get the interface object itself
+        $obj = $session->ivShow('interfaceNumHash', $interfaceNum);
+        if (! $obj) {
+
+            return undef;
+        }
+
+        # Respond to the fired timer
+        $scriptName = $obj->ivShow('propertyHash', 'new_script');
+        if ($scriptName) {
+
+            # SETTIMER statement specified a second script to run
+            return $self->session->pseudoCmd('runscript ' . $scriptName);
+
+        } else {
+
+            # No second script to to run. Notify the Axbasic programme that one of its dependent
+            #   timers has fired
+            $self->scriptObj->interfaceNotification($obj, $sessionTime, $otherTime);
+
+            return 1;
+        }
+    }
+
+    sub hookNotifySeen {
+
+        # Called by GA::Session->checkHooks
+        #
+        # The Axbasic statement SETHOOK causes the script to create a hook to notice when a hook
+        #   event has taken place
+        #      e.g. 'system_text'
+        #
+        # If SETHOOK specified a second script to run, this function runs it. Otherwise, this
+        #   function notifies the script that the hook event has occured (and only the script wull
+        #   do something in response)
+        #
+        # The hook interface has the following properties in ->propertyHash:
+        #   new_script       - The name of the second script to run (only used in calls to
+        #                       $self->hookExecSeen, 'undef' in calls to this function)
+        #
+        # Expected arguments (standard args from GA::Session->checkHooks)
+        #   $session         - The calling function's GA::Session
+        #   $interfaceNum    - The number of the active hook interface that fired
+        #   $hookEvent       - The associated hook event
+        #
+        # Optional arguments
+        #   $hookVar         - Hook data for this hook event, or 'undef' if the hook event doesn't
+        #                       provide hook data
+        #   $hookVal         - Additional hook data for this hook event, or 'undef' if the hook
+        #                       even doesn't provide additional data
+        #
+        # Return values
+        #   'undef' on improper arguments, or if $session is the wrong session or if the interface
+        #       object can't be found
+        #   1 otherwise
+
+        my ($self, $session, $interfaceNum, $hookEvent, $hookVar, $hookVal, $check) = @_;
+
+        # Local variables
+        my ($obj, $scriptName);
+
+        # Check for improper arguments
+        if (
+            ! defined $session || ! defined $interfaceNum || ! defined $hookEvent || defined $check
+        ) {
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->hookNotifySeen', @_);
+        }
+
+        # Basic check - the hook should belong to the right session
+        if ($session ne $self->session) {
+
+            return undef;
+        }
+
+        # Get the interface object itself
+        $obj = $session->ivShow('interfaceNumHash', $interfaceNum);
+        if (! $obj) {
+
+            return undef;
+        }
+
+        # Respond to the fired hook
+        $scriptName = $obj->ivShow('propertyHash', 'new_script');
+        if ($scriptName) {
+
+            # SETHOOK statement specified a second script to run
+            return $self->session->pseudoCmd('runscript ' . $scriptName);
+
+        } else {
+
+            # No second script to to run. Notify the Axbasic programme that one of its dependent
+            #   hooks has fired
+            $self->scriptObj->interfaceNotification($obj, $hookEvent, $hookVar, $hookVal);
+
+            return 1;
         }
     }
 
@@ -34974,7 +35435,7 @@
             $self->session->worldCmd($cmd);
 
             # Create independent timers to send the command to the world every few seconds
-            $timerObj = $self->session->createIndepInterface(
+            $timerObj = $self->session->createIndependentInterface(
                 'timer',
                 $interval,          # Stimulus
                 $cmd,           # Response
@@ -35740,7 +36201,7 @@
         }
 
         # Set character variables (stored in the current character)
-        if ($self->ivExists('constCharVarHash', $var)) {
+        if ($charObj && $self->ivExists('constCharVarHash', $var)) {
 
             $iv = $self->ivShow('constCharVarHash', $var);
 
@@ -36130,7 +36591,7 @@
             }
 
             # Create the dependent trigger interface
-            $interfaceObj = $self->session->createInterface(
+            $interfaceObj = $self->session->createDependentInterface(
                 'trigger',
                 $pattern,
                 $self,
@@ -36204,7 +36665,7 @@
             }
 
             # Create the dependent trigger interface
-            $interfaceObj = $self->session->createInterface(
+            $interfaceObj = $self->session->createDependentInterface(
                 'trigger',
                 $pattern,
                 $self,
@@ -36268,7 +36729,7 @@
             }
 
             # Create the dependent trigger interface
-            $interfaceObj = $self->session->createInterface(
+            $interfaceObj = $self->session->createDependentInterface(
                 'trigger',
                 $pattern,
                 $self,
@@ -36334,7 +36795,7 @@
             }
 
             # Create the dependent trigger interface
-            $interfaceObj = $self->session->createInterface(
+            $interfaceObj = $self->session->createDependentInterface(
                 'trigger',
                 $pattern,
                 $self,
@@ -36366,7 +36827,7 @@
         OUTER: foreach my $pattern ($worldObj->agePatternList) {
 
             # Create the dependent trigger interface
-            my $interfaceObj = $self->session->createInterface(
+            my $interfaceObj = $self->session->createDependentInterface(
                 'trigger',
                 $pattern,
                 $self,
@@ -36390,7 +36851,7 @@
         OUTER: foreach my $pattern ($worldObj->timePatternList) {
 
             # Create the dependent trigger interface
-            my $interfaceObj = $self->session->createInterface(
+            my $interfaceObj = $self->session->createDependentInterface(
                 'trigger',
                 $pattern,
                 $self,
@@ -36417,7 +36878,7 @@
             OUTER: foreach my $pattern ($worldObj->statusIgnorePatternList) {
 
                 # Create the dependent trigger interface
-                my $interfaceObj = $self->session->createInterface(
+                my $interfaceObj = $self->session->createDependentInterface(
                     'trigger',
                     $pattern,
                     $self,
@@ -36445,7 +36906,7 @@
         OUTER: foreach my $pattern ($worldObj->fallAsleepPatternList) {
 
             # Create the dependent trigger interface
-            my $interfaceObj = $self->session->createInterface(
+            my $interfaceObj = $self->session->createDependentInterface(
                 'trigger',
                 $pattern,
                 $self,
@@ -36470,7 +36931,7 @@
         OUTER: foreach my $pattern ($worldObj->wakeUpPatternList) {
 
             # Create the dependent trigger interface
-            my $interfaceObj = $self->session->createInterface(
+            my $interfaceObj = $self->session->createDependentInterface(
                 'trigger',
                 $pattern,
                 $self,
@@ -36495,7 +36956,7 @@
         OUTER: foreach my $pattern ($worldObj->passedOutPatternList) {
 
             # Create the dependent trigger interface
-            my $interfaceObj = $self->session->createInterface(
+            my $interfaceObj = $self->session->createDependentInterface(
                 'trigger',
                 $pattern,
                 $self,
@@ -36520,7 +36981,7 @@
         OUTER: foreach my $pattern ($worldObj->comeAroundPatternList) {
 
             # Create the dependent trigger interface
-            my $interfaceObj = $self->session->createInterface(
+            my $interfaceObj = $self->session->createDependentInterface(
                 'trigger',
                 $pattern,
                 $self,
@@ -36545,7 +37006,7 @@
         OUTER: foreach my $pattern ($worldObj->deathPatternList) {
 
             # Create the dependent trigger interface
-            my $interfaceObj = $self->session->createInterface(
+            my $interfaceObj = $self->session->createDependentInterface(
                 'trigger',
                 $pattern,
                 $self,
@@ -36570,7 +37031,7 @@
         OUTER: foreach my $pattern ($worldObj->resurrectPatternList) {
 
             # Create the dependent trigger interface
-            my $interfaceObj = $self->session->createInterface(
+            my $interfaceObj = $self->session->createDependentInterface(
                 'trigger',
                 $pattern,
                 $self,

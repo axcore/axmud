@@ -1,11 +1,13 @@
 ELSE IF condition THEN
+ELSEIF condition THEN
 ELSE
 
    Synopsis:
-      Used in an IF statement or IF..END IF code block
+      Used in an IF statement or an IF..END IF code block
 
    Notes:
       See the help for IF for a full explanation.
+      ELSE IF behaves exactly like ELSEIF.
 
    Availability:
       ELSE..THEN statements are available in scripts with primitive line

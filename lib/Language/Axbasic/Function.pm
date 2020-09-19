@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2019 A S Lewis
+# Copyright (C) 2011-2020 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # Lesser Public License as published by the Free Software Foundation, either version 3 of the
@@ -148,7 +148,7 @@
         # Called by LA::Expression::Function->new
         # Given an LA::Expression::ArgList object, checks the arguments to make sure they are of the
         #   correct number and type
-        # NB unlike original Language::Basic, we give up at the first terror
+        # NB unlike the original Language::Basic, we give up at the first error
         #
         # Expected arguments
         #   $argListObj     - A LA::Expression::ArgList object containing the argument list
@@ -5222,7 +5222,6 @@
         Language::Axbasic::Function::Intrinsic::Numeric
     );
 
-    # Ifacedefined ()
     # Ifacedefined (number)
 
     ##################
@@ -5259,21 +5258,20 @@
                 $self->scriptObj->currentNotification,
             );
 
-            if (
-                ! $obj->grpStringList
+            if (! $obj->dataList
                 || $arg < 1
-                || $obj->ivNumber('grpStringList') > $arg
+                || $obj->ivNumber('dataList') > $arg
             ) {
-                # No group substrings to return
+                # No additional data to return
                 return 0;
 
             } else {
 
-                # If a regex matching a line is in the form (...|...|...), with each ... containing
-                #   its own substrings, ->grpStringList will contain lots of 'undef' values from
-                #   the ... portions that didn't match the line
+                # For triggers and aliases, if a regex matching a line is in the form (...|...|...),
+                #   with each ... containing its own substrings, ->dataList will contain lots of
+                #   'undef' values from the ... portions that didn't match the line
                 # Return 1 if the specified argument is defined, and -1 if it is not defined
-                $substr = $obj->ivIndex('grpStringList', ($arg - 1));
+                $substr = $obj->ivIndex('dataList', ($arg - 1));
                 if (defined $substr) {
                     return 1;
                 } else {
@@ -5416,7 +5414,7 @@
         if (! $self->scriptObj->notificationList || $self->scriptObj->currentNotification < 0) {
 
             # The notification list is empty
-            return -1;
+            return 0;
 
         } else {
 
@@ -5427,7 +5425,7 @@
             );
 
             # Return the number of group substrings stored in it
-            return $obj->ivNumber('grpStringList');
+            return $obj->ivNumber('dataList');
         }
     }
 }
@@ -7364,8 +7362,88 @@
 
         } else {
 
-            # The IV contains the name of the dependent interface
+            # The IV contains the name of the most recently-created dependent interface
             return $self->scriptObj->depInterfaceName;
+        }
+    }
+}
+
+{ package Language::Axbasic::Function::Intrinsic::String::ifacedata;
+
+    use strict;
+    use warnings;
+    use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    @Language::Axbasic::Function::Intrinsic::String::ifacedata::ISA = qw(
+        Language::Axbasic::Function::Intrinsic::String
+    );
+
+    # Ifacedata$ ()
+
+    ##################
+    # Methods
+
+    sub evaluate {
+
+        # Called by LA::Expression::Function->evaluate (using arguments in the form '')
+        #
+        # Expected arguments
+        #   $arg    - The first (and only) argument in the argument list
+        #
+        # Return values
+        #   The return value of the function
+
+        my ($self, $arg) = @_;
+
+        # Local variables
+        my ($obj, $substr);
+
+        # (No improper arguments to check)
+
+        # Evaluate the function and return the value
+        if (! $self->scriptObj->notificationList || $self->scriptObj->currentNotification < 0) {
+
+            # The notification list is empty, so return an empty string
+            return '';
+
+        } else {
+
+            # Get the current notification
+            $obj = $self->scriptObj->ivIndex(
+                'notificationList',
+                $self->scriptObj->currentNotification,
+            );
+
+            # Return the first item in ->dataList. If it's an undefined value, returns an empty
+            #   string instead
+            # For triggers/aliases, it's the first substring (which might be 'undef', which is
+            #   converted to an empty string)
+            # For macros, ->dataList is always empty, so an empty string will be returned
+            # For timers whose stimulus is a clock string (in the form "HH:MM" or "99::MM"), returns
+            #   the clock string, otherwise returns an empty string, returns the
+            # For hooks, if the hook event has hook data, returns it; otherwise returns an empty
+            #   string
+            if (! $obj->dataList) {
+
+                # No meaningful value to return
+                return '';
+
+            } else {
+
+                # If a regex matching a line is in the form (...|...|...), with each ... containing
+                #   its own substrings, ->dataList will contain lots of 'undef' values from
+                #   the ... portions that didn't match the line
+                # We can't return the 'undef' because it will cause an Axbasic 'Undefined function
+                #   error'. Therefore, return an empty string instead
+                $substr = $obj->ivFirst('dataList');
+                if (defined $substr) {
+                    return $substr
+                } else {
+                    return '';
+                }
+            }
         }
     }
 }
@@ -7472,19 +7550,19 @@
                 $self->scriptObj->currentNotification,
             );
 
-            if (! $obj->grpStringList) {
+            if (! $obj->dataList) {
 
-                # No more group substrings to return
+                # No additional data to return
                 return '';
 
             } else {
 
                 # If a regex matching a line is in the form (...|...|...), with each ... containing
-                #   its own substrings, ->grpStringList will contain lots of 'undef' values from
+                #   its own substrings, ->dataList will contain lots of 'undef' values from
                 #   the ... portions that didn't match the line
                 # We can't return the 'undef' because it will cause an Axbasic 'Undefined function
                 #   error'. Therefore, return an empty string instead
-                $substr = $obj->ivPop('grpStringList');
+                $substr = $obj->ivPop('dataList');
                 if (defined $substr) {
                     return $substr
                 } else {
@@ -7543,19 +7621,19 @@
                 $self->scriptObj->currentNotification,
             );
 
-            if (! $obj->grpStringList) {
+            if (! $obj->dataList) {
 
-                # No group substrings to return
+                # No additional data to return
                 return '';
 
             } else {
 
                 # If a regex matching a line is in the form (...|...|...), with each ... containing
-                #   its own substrings, ->grpStringList will contain lots of 'undef' values from
+                #   its own substrings, ->dataList will contain lots of 'undef' values from
                 #   the ... portions that didn't match the line
                 # We can't return the 'undef' because it will cause an Axbasic 'Undefined function
                 #   error'. Therefore, return an empty string instead
-                $substr = $obj->ivIndex('grpStringList', ($arg - 1));
+                $substr = $obj->ivIndex('dataList', ($arg - 1));
                 if (defined $substr) {
                     return $substr
                 } else {
@@ -7614,19 +7692,19 @@
                 $self->scriptObj->currentNotification,
             );
 
-            if (! $obj->grpStringList) {
+            if (! $obj->dataList) {
 
-                # No more group substrings to return
+                # No additional data to return
                 return '';
 
             } else {
 
                 # If a regex matching a line is in the form (...|...|...), with each ... containing
-                #   its own substrings, ->grpStringList will contain lots of 'undef' values from
+                #   its own substrings, ->dataList will contain lots of 'undef' values from
                 #   the ... portions that didn't match the line
                 # We can't return the 'undef' because it will cause an Axbasic 'Undefined function
                 #   error'. Therefore, return an empty string instead
-                $substr = $obj->ivShift('grpStringList');
+                $substr = $obj->ivShift('dataList');
                 if (defined $substr) {
                     return $substr
                 } else {
@@ -7685,8 +7763,8 @@
                 $self->scriptObj->currentNotification,
             );
 
-            # Return its line of text
-            return $obj->text;
+            # Return the cause for the fired interface
+            return $obj->fireBecause;
         }
     }
 }

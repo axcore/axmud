@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2019 A S Lewis
+# Copyright (C) 2011-2020 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # Lesser Public License as published by the Free Software Foundation, either version 3 of the
@@ -64,7 +64,8 @@
         #
         # Optional arguments
         #   $argListObj - For an identifier that refers to a cell in an array, blessed reference to
-        #                   the LA::Expression::Arglist that represents the list
+        #                   the LA::Expression::Arglist or LA::Expression::SpecialArgList that
+        #                   represents the list
         #               - NB Some functions that want to create an array might prefer to pass a
         #                   string like 'fake_arg_list', so that the 'if (! $argListObj)' condition
         #                   that appears in this function is TRUE
@@ -78,7 +79,10 @@
         my ($class, $scriptObj, $varName, $argListObj, $check) = @_;
 
         # Local variables
-        my ($varObj, $currentSub);
+        my (
+            $currentSub, $declareMode, $varObj,
+            @boundList,
+        );
 
         # Check for improper arguments
         if (! defined $scriptObj || ! defined $varName || defined $check) {
@@ -94,9 +98,10 @@
         }
 
         # If it's a scalar variable...
+        $declareMode = $scriptObj->declareMode;
         if (! $argListObj) {
 
-            if ($scriptObj->declareMode eq 'global_scalar') {
+            if ($declareMode eq 'global_scalar') {
 
                 # We're in a GLOBAL statement. Check that this variable hasn't already been declared
                 #   as a global variable
@@ -122,7 +127,7 @@
                     return $varObj;
                 }
 
-            } elsif ($scriptObj->declareMode eq 'local_scalar') {
+            } elsif ($declareMode eq 'local_scalar') {
 
                 # We're in a LOCAL or SUB statement. Check that this variable hasn't already been
                 #   declared as a local variable
@@ -148,12 +153,11 @@
                     return $varObj;
                 }
 
-            } elsif ($scriptObj->declareMode eq 'sort') {
+            } elsif ($declareMode eq 'simple') {
 
-                # We're in a SORT statement (or similar), which is in the form
-                #   SORT var
-                # where the variable is not a scalar, but an array created by
-                #   DIM var (10)
+                # We're in a SORT statement (or similar), or a FOR EACH, POP, PUSH, SHIFT, UNSHIFT
+                #   (or similar) statement in which the variable is not a scalar, but an array
+                #   created by (for example) DIM var (10)
 
                 # We don't create a new scalar variable, but instead return the array variable with
                 #   the same name
@@ -196,7 +200,7 @@
                     # Primitive line-numbered scripts, all variables global
                     $scriptObj->executionMode eq 'line_num'
                     # PEEK or PEEK... statement
-                    || $scriptObj->declareMode eq 'peek_scalar'
+                    || $declareMode eq 'peek_scalar'
                     # Script doesn't specify OPTION TYPO, forcing us to use GLOBAL or LOCAL
                     || ! $scriptObj->ivShow('optionStatementHash', 'typo')
                 ) {
@@ -227,7 +231,7 @@
         # If it's an array variable...
         } else {
 
-            if ($scriptObj->declareMode eq 'global_array') {
+            if ($declareMode eq 'global_array') {
 
                 # We're in a DIM or DIM GLOBAL statement. Check that this variable hasn't already
                 #   been declared as a global array
@@ -253,7 +257,7 @@
                     return $varObj;
                 }
 
-            } elsif ($scriptObj->declareMode eq 'local_array') {
+            } elsif ($declareMode eq 'local_array') {
 
                 # We're in a DIM LOCAL statement. Check that this variable hasn't already been
                 #   declared as a local array
@@ -290,7 +294,7 @@
                 # This variable has already been declared as a global array
                 return $scriptObj->ivShow('globalArrayHash', $varName);
 
-            } elsif ($scriptObj->declareMode eq 'peek_array') {
+            } elsif ($declareMode eq 'peek_array') {
 
                 # We're in a PEEK or PEEK... statement, and there isn't an existing global or
                 #   local array called $varName, so declare a global array
@@ -304,6 +308,33 @@
                     $scriptObj->add_globalArray($varName, $varObj);
 
                     return $varObj;
+                }
+
+            } elsif ($scriptObj->executionMode eq 'line_num') {
+
+                # In programmes with line numbers, undeclared array variables cause the creation of
+                #   the array, as if DIM had been used
+                # Declare a global array
+                $varObj = Language::Axbasic::Variable::Array->new($scriptObj, $varName);
+                if (! $varObj) {
+
+                    return undef;
+
+                } else {
+
+                    $scriptObj->add_globalArray($varName, $varObj);
+
+                    # In this situation, every array dimension is given the bounds 0..10
+                    foreach my $listRef ($argListObj->argList) {
+
+                        push (@boundList, 0, 10);
+                    }
+
+                    if (! $varObj->dimension(@boundList)) {
+                        return undef;
+                    } else {
+                        return $varObj;
+                    }
                 }
 
             } else {
@@ -619,16 +650,39 @@
 
     sub new {
 
-        # Paraphrased from Language::Basic:
+        # Paraphrased from Language::Basic
         # The class that handles an Axbasic array. Each cell in the array is a LA::Variable::Scalar
         #   object
         # Methods include ->dimension, which dimensions the array to a given size (or a default
         #   size) and ->getCell, which returns the LA::Variable::Scalar object in a given array
         #   location
-        # Note that Axbasic arrays start from index #1. Empty one-dimensional arrays are allowed,
-        #   but cannot be created using a DIM or REDIM statement. Multi-dimensional arrays must have
-        #   a size of at least 1 for each dimension. PEEK and PEEK... statements can create empty
-        #   one-dimensional arrays, when they need them.
+        #
+        # Before Axbasic v1.4, array dimensions started at index #1, and empty arrays could not be
+        #   created with a DIM statement (but could be created with statements like PEEK)
+        # Since Axbasic v1.4, arrays are handled in two different ways:
+        #
+        #   Programmes with line numbers:
+        #       Following Dartmouth BASIC, a DIM .. (20) statement creates an array with lower/upper
+        #           bounds of 0..20. DIM statements are not required. If a variable with a
+        #           subscript is referenced, and the array has not been DIMmed, then an array is
+        #           created with each dimension having the bounds 0..10. Unlike Dartmouth BASIC,
+        #           arrays are not limited to two dimensions (but the maximum cell limit still
+        #           applies). Unlike Dartmouth BASIC, DIM .. () creates an empty one-dimensional
+        #           array
+        #
+        #   Programmes without line numbers:
+        #       Following True BASIC, a DIM statement is always required before a variable with a
+        #           subscript can be referenced, or before statements like POP, PUSH (etc) can be
+        #           used. However, statements like PEEK still create an array, if one has not yet
+        #           been DIMmed. DIM .. () creates an empty one-dimensional array (stack). In a
+        #           multi-dimensional array, each dimension must contain at least one cell. A
+        #           DIM .. (20) statement creates an array with lower/upper bounds of 1..20. The
+        #           programme can specify its own lower/upper bounds for each dimension, or not, as
+        #           in the following examples
+        #
+        #           DIM data (2, 5, 10)
+        #           DIM data (0 TO 2, 0 TO 5, 10 TO 20)
+        #           DIM data (2, 5, 10 TO 20)
         #
         # Expected arguments
         #   $scriptObj  - Blessed reference of the parent LA::Script
@@ -667,7 +721,11 @@
             # ----
 
             arrayName                   => $arrayName,
-            # A 2D, 3D or moreD array of cells
+            # A 1D, 2D or moreD array of cells. A 1D array is represented as a simple set of values.
+            #   For a 2D array, ->cellList contains a set of list references, with each list
+            #   reference containing a simple set of values - and so on
+            # Each set of values starts with the lower bound for the dimension, followed by the
+            #   array variables themselves (if any)
             cellList                    => [],
             # The current number of dimensions
             dimCount                    => 0,
@@ -693,89 +751,108 @@
 
     sub dimension {
 
-        # Called by DIM and REDIM statements
+        # Called by DIM and REDIM statements. For programmes with line numbers, also called by
+        #   LA::Variable->lookup
         # Re-dimension the array
         #
         # Expected arguments
-        #   @sizeList   - A list of sizes for each dimension, e.g. for a 1D array, @sizeList = (5)
+        #   (none besides $self)
+        #
+        # Optional arguments
+        #   @boundList - A flat list in groups of two, the lower/upper bounds for each dimension. If
+        #       an empty list, a one-dimensional empty array is created
         #
         # Return values
         #   'undef' on improper arguments or if the array is too big
         #   1 if the redimensioning is successful
 
-        my ($self, @sizeList) = @_;
+        my ($self, @boundList) = @_;
 
         # Local variables
-        my ($size, $subClass, $listRef);
+        my (
+            $size, $subClass, $listRef, $dimCount,
+            @sizeList,
+        );
 
-        # Check for improper arguments
-        if (! @sizeList) {
+        # (No improper arguments to check)
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->dimension', @_);
-        }
+        # Check that each bound is a valid integer, that the lower bound is not less than the higher
+        #   bound
+        $dimCount = 0;
+        if (! @boundList) {
 
-        # Check that each size is a valid integer, greater than 0
+            # Empty one-dimensional array
+            $dimCount = 1;
 
-        # Single-dimensional arrays
-        if (scalar @sizeList == 1) {
-
-            if ($sizeList[0] =~ m/\D/ || $sizeList[0] < 0) {
-
-                return $self->scriptObj->setError(
-                    'invalid_array_dimension_size_NUM',
-                    $self->_objClass . '->dimension',
-                    'NUM', $sizeList[0],
-                );
-            }
-
-        # Multi-dimensional arrays
         } else {
 
-            foreach my $dim (@sizeList) {
+            for (my $i = 0; $i < (scalar @boundList); $i = $i + 2) {
 
-                if ($dim =~ m/\D/ || $dim < 1) {
+                my ($lower, $upper);
+
+                $lower = $boundList[$i];
+                $upper = $boundList[$i + 1];
+                $dimCount++;
+
+                if (! ($lower =~ m/^[-]?\d+$/)) {
 
                     return $self->scriptObj->setError(
                         'invalid_array_dimension_size_NUM',
                         $self->_objClass . '->dimension',
-                        'NUM', $dim,
+                        'NUM', $lower,
+                    );
+
+                } elsif (! ($upper =~ m/^[-]?\d+$/) || $upper < $lower) {
+
+                    return $self->scriptObj->setError(
+                        'invalid_array_dimension_size_NUM',
+                        $self->_objClass . '->dimension',
+                        'NUM', $upper,
                     );
                 }
+
+                push (@sizeList, ($upper - $lower + 1));
             }
         }
 
         # Check that the total size of the array doesn't exceed the maximum size
-
-        # Single-dimensional arrays
-        if (scalar @sizeList == 1) {
-
-            $size = $sizeList[0];
-
-        # Multi-dimensional arrays
-        } else {
+        if (@boundList) {
 
             $size = 1;
             foreach my $dim (@sizeList) {
 
                 $size *= ($dim + 1);
             }
-        }
 
-        if ($size > $self->arrayMaxSize) {
+            if ($size > $self->arrayMaxSize) {
 
-            return $self->scriptObj->setError(
-                'array_exceeds_maximum_size',
-                $self->_objClass . '->dimension',
-            );
+                return $self->scriptObj->setError(
+                    'array_exceeds_maximum_size',
+                    $self->_objClass . '->dimension',
+                );
+            }
         }
 
         # Create a new array, of the right size, full of LA::Scalar::Variable objects
         $subClass = $self->_objClass;
         $subClass =~ s/Array/Scalar/;
 
-        $self->ivPoke('dimCount', scalar @sizeList);
-        $listRef = $self->createListOfLists($subClass, @sizeList);
-        $self->ivPoke('cellList', @$listRef);
+        $self->ivPoke('dimCount', $dimCount);
+
+        if (! @boundList) {
+
+            # Empty one-dimensional array
+            if ($self->scriptObj->executionMode eq 'line_num') {
+                $self->ivPoke('cellList', 0);
+            } else {
+                $self->ivPoke('cellList', 1);
+            }
+
+        } else {
+
+            $listRef = $self->createListOfLists($subClass, @boundList);
+            $self->ivPoke('cellList', @$listRef);
+        }
 
         return 1;
     }
@@ -787,30 +864,34 @@
         #
         # Expected arguments
         #   $subClass   - The class of objects being created
-        #   @sizeList   - The size of each dimension (e.g. for a 2D 10x10 array,
-        #                   @sizeList = (10,10) )
+        #   @boundList - A list in groups of two, the lower/upper bounds for each dimension. If an
+        #       empty list, a one-dimensional empty array is created. ($self->dimension has already
+        #       checked that the contents of @boundList are valid)
         #
         # Return values
         #   Blessed reference to the new subclass (we don't check improper arguments in this
         #       recursive function)
 
-        my ($self, $subClass, @sizeList) = @_;
+        my ($self, $subClass, @boundList) = @_;
 
         # Local variables
         my (
-            $size,
+            $lower, $upper,
             @array,
         );
 
         # (Don't check improper arguments)
 
-        if (@sizeList) {
+        if (@boundList) {
 
             # Recursion
-            $size = shift(@sizeList);
-            @array = map {$self->createListOfLists($subClass, @sizeList)} (1 .. $size);
-            # Axbasic arrays start at index #1; so the Perl array's index 0 must be 'undef'
-            unshift (@array, undef);
+            $lower = shift(@boundList);
+            $upper = shift(@boundList);
+
+            @array = map {$self->createListOfLists($subClass, @boundList)} ($lower .. $upper);
+            # The first value for each dimension is not an array value, but the lower bound
+            # (Thus the upper bound is the lower bound, plus the number of array values, minus 1)
+            unshift (@array, $lower);
 
             return \@array;
 
@@ -852,23 +933,30 @@
             );
         }
 
-        # Set $pointer to the contents of the correct cell by stripping away the dimensions, one by
-        #   one, until only one cell remains
+        # Set $pointer to the correct cell by stripping away the dimensions, one by one, until only
+        #   one cell remains
         $pointer = $self->{'cellList'};
         foreach my $index (@indices) {
 
-            my $size = scalar @$pointer;
+            my ($lower, $size);
 
-            # The index can't be negative or greater than the array size
-            if (! ($index =~ /^\d+$/) || $index < 1 || $index >= $size) {
+            # The first value in each dimension is the lower bound, so take that into account
+            $size = scalar @$pointer - 1;
+            $lower = $$pointer[0];
 
+            # The index can't be outside the lower/upper bounds for this dimension
+            if (
+                ! ($index =~ m/^[-]?\d+$/)
+                || ($index - $lower + 1) < 1
+                || $index > ($lower + $size - 1)
+            ) {
                 return $self->scriptObj->setError(
                     'subscript_out_of_bounds',
                     $self->_objClass . '->getCell',
                 );
             }
 
-            $pointer = $pointer->[$index];
+            $pointer = $pointer->[$index - $lower + 1];
         }
 
         if (! $pointer->isa('Language::Axbasic::Variable::Scalar')) {
@@ -882,6 +970,228 @@
 
             return $pointer;
         }
+    }
+
+    sub testCell {
+
+        # Tests whether a single cell of the array exists, or not
+        # A modified version of $self->getCell, used by statements like FOR EACH ... NEXT to handle
+        #   multi-dimension arrays. That function will throw up an Axbasic error if the cell
+        #   doesn't exist; this one merely returns a true or false value
+        #
+        # Expected arguments
+        #   @indices    - A list of array indices, e.g. (5, 6, 1) to get the value stored in the
+        #                   cell at x=5, y=6, z=1
+        #
+        # Return values
+        #   'undef' on improper arguments or if the cell doesn't exist
+        #   1 if the cell exists
+
+        my ($self, @indices) = @_;
+
+        # Local variables
+        my $pointer;
+
+        # Check for improper arguments
+        if (! @indices) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->testCell', @_);
+        }
+
+        if (scalar @indices != $self->dimCount) {
+
+            return undef;
+        }
+
+        # Set $pointer to the contents of the correct cell by stripping away the dimensions, one by
+        #   one, until only one cell remains
+        $pointer = $self->{'cellList'};
+        foreach my $index (@indices) {
+
+            my ($lower, $size);
+
+            # The first value in each dimension is the lower bound, so take that into account
+            $size = scalar @$pointer - 1;
+            $lower = $$pointer[0];
+
+            # The index can't be outside the lower/upper bounds for this dimension
+            if (
+                ! ($index =~ m/^[-]?\d+$/)
+                || ($index - $lower + 1) < 1
+                || $index > ($lower + $size - 1)
+            ) {
+                return undef;
+            } else {
+                $pointer = $pointer->[$index - $lower + 1];
+            }
+        }
+
+        if (! $pointer->isa('Language::Axbasic::Variable::Scalar')) {
+            return undef;
+        } else {
+            return 1;
+        }
+    }
+
+    # (Called by POP, PUSH, SHIFT and UNSHIFT statements only)
+
+    sub doPop {
+
+        # Pops an item from the stack (i.e. removes an item from the end of the array)
+        # If this is a multi-dimensional array, or if the array is empty, returns an empty string or
+        #   zero, as appropriate
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   The last item in the array, or an empty string/zero
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->doPop', @_);
+        }
+
+        # (Take account the first item in each dimension, which gives the lower bound)
+        if ($self->dimCount > 1 || (scalar $self->cellList) <= 1)  {
+
+            if ($self->isa('Language::Axbasic::Variable::Array::Numeric')) {
+                return 0;
+            } else {
+                return '';
+            }
+
+        } else {
+
+            return $self->ivPop('cellList');
+        }
+    }
+
+    sub doPush {
+
+        # Pushes an item to the stack (i.e. adds an item to the end of the array). Does nothing if
+        #   the array is multi-dimensional
+        #
+        # Expected arguments
+        #   $value      - The value to push to the stack
+        #
+        # Return values
+        #   'undef' on improper arguments, or if the array is multi-dimensional, or if the maximum
+        #       array size has been exceeded
+        #   1 otherwise
+
+        my ($self, $value, $check) = @_;
+
+        # Local variables
+        my ($subClass, $varObj);
+
+        # Check for improper arguments
+        if (! defined $value || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->doPush', @_);
+        }
+
+        if ($self->dimCount > 1 || $self->ivNumber('cellList') > $self->arrayMaxSize) {
+
+            # Stacks cannot be grids
+            return undef;
+        }
+
+        # Create a new variable of the right type (numeric or scalar)
+        $subClass = $self->_objClass;
+        $subClass =~ s/Array/Scalar/;
+        $varObj = $subClass->new($self->scriptObj, $self->arrayName);
+        $varObj->set($value);
+        # ...and push it to the stack
+        $self->ivPush('cellList', $varObj);
+
+        return 1;
+    }
+
+    sub doShift {
+
+        # Shifts an item from the stack (i.e. removes an item from the beginning of the array)
+        # If this is a multi-dimensional array, or if the array is empty, returns an empty string or
+        #   zero, as appropriate
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   The first item in the array, or an empty string/zero
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my @list;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->doShift', @_);
+        }
+
+        # (Take account the first item in each dimension, which gives the lower bound)
+        if ($self->dimCount > 1 || (scalar $self->cellList) <= 1)  {
+
+            if ($self->isa('Language::Axbasic::Variable::Array::Numeric')) {
+                return 0;
+            } else {
+                return '';
+            }
+
+        } else {
+
+            @list = $self->ivSplice('cellList', 1, 1);
+            # (Return a scalar value, not a list of one)
+            return $list[0];
+        }
+    }
+
+    sub doUnshift {
+
+        # Unshifts an item to the stack (i.e. adds an item to the end of the array). Does nothing if
+        #   the array is multi-dimensional
+        #
+        # Expected arguments
+        #   $value      - The value to unshift to the stack
+        #
+        # Return values
+        #   'undef' on improper arguments, or if the array is multi-dimensional
+        #   1 otherwise
+
+        my ($self, $value, $check) = @_;
+
+        # Local variables
+        my ($subClass, $varObj);
+
+        # Check for improper arguments
+        if (! defined $value || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->doUnshift', @_);
+        }
+
+        if ($self->dimCount > 1 || $self->ivNumber('cellList') > $self->arrayMaxSize) {
+
+            # Stacks cannot be grids
+            return undef;
+        }
+
+        # Create a new variable of the right type (numeric or scalar)
+        $subClass = $self->_objClass;
+        $subClass =~ s/Array/Scalar/;
+        $varObj = $subClass->new($self->scriptObj, $self->arrayName);
+        $varObj->set($value);
+        # ...and unshift it to the stack, taking into account the first item in each dimension,
+        #   which gives the lower bound)
+        $self->ivSplice('cellList', 1, 0, $varObj);
+
+        return 1;
     }
 
     ##################

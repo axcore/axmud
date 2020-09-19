@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2019 A S Lewis
+# Copyright (C) 2011-2020 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -397,7 +397,7 @@
         my $frame = Gtk3::Frame->new(undef);
         $vBox->pack_start($frame, FALSE, FALSE, 0);
         $frame->set_size_request(64, 64);
-        $frame->set_shadow_type('etched-in');
+        $frame->set_shadow_type($axmud::CLIENT->constShadowType);
 
         my $image = Gtk3::Image->new_from_file($axmud::CLIENT->getDialogueIcon());
         $frame->add($image);
@@ -505,31 +505,6 @@
 
         # Add the 'changes' tab to the notebook
         $self->addTab($notebook, 'Cha_nges', FALSE, @changesList);
-
-        # Load the INSTALL file
-        $file = $axmud::SHARE_DIR . '/../INSTALL';
-        if (! (-e $file)) {
-
-            push (@peekList, 'Install file missing');
-
-        } else {
-
-            if (! open($fileHandle, $file)) {
-
-                push (
-                    @installList,
-                    'Unable to read install file',
-                );
-
-            } else {
-
-                @installList = <$fileHandle>;
-                close($fileHandle);
-            }
-        }
-
-        # Add the 'install' tab to the notebook
-        $self->addTab($notebook, '_Installation', FALSE, @installList);
 
         # Load the GPL license file
         $file = $axmud::SHARE_DIR . '/../COPYING';
@@ -836,18 +811,16 @@
             vBox                        => undef,       # Gtk3::VBox
             frame                       => undef,       # Gtk3::Frame
             image                       => undef,       # Gtk3::Image
-            frame2                      => undef,       # Gtk3::Frame
-            vBox2                       => undef,       # Gtk3::VBox
-            label                       => undef,       # Gtk3::Label
             hBox                        => undef,       # Gtk3::HBox
             objModel                    => undef,       # Gtk3::TreeStore
             treeView                    => undef,       # Gtk3::TreeView
             treeViewColumn              => undef,       # Gtk3::TreeViewColumn
+            frame2                      => undef,       # Gtk3::Frame
             scroller                    => undef,       # Gtk3::ScrolledWindow
             # Right section widgets
             frame3                      => undef,       # Gtk3::Frame
             scroller2                   => undef,       # Gtk3::ScrolledWindow
-            table                       => undef,       # Gtk3::Grid
+            grid                        => undef,       # Gtk3::Grid
             # Strip widgets
             preConfigButton             => undef,       # Gtk3::RadioToolButton
             otherWorldButton            => undef,       # Gtk3::RadioToolButton
@@ -857,7 +830,7 @@
             searchButton                => undef,       # Gtk3::Button
             cancelSearchButton          => undef,       # Gtk3::Button
             consoleButton               => undef,       # Gtk3::Button
-            # Table widgets
+            # Grid widgets
             entry                       => undef,       # Gtk3::Entry
             entry2                      => undef,       # Gtk3::Entry
             entry3                      => undef,       # Gtk3::Entry
@@ -884,10 +857,10 @@
             # The size of the image containing each world's icon (or the default icon)
             imageWidth                  => 300,
             imageHeight                 => 200,
-            # Standard size of the Gtk3::Grid used (a 12x12 table, with a spare cell around every
+            # Standard size of the Gtk3::Grid used (a 12x12 grid, with a spare cell around every
             #   border)
-            tableWidth                  => 13,
-            tableHeight                 => 13,
+            gridWidth                   => 13,
+            gridHeight                  => 13,
 
             # A hash linking all the world names listed in the treeview to their corresponding
             #   world profile object. Hash in the form
@@ -906,13 +879,13 @@
             #   creating a new world from here, set to 'undef' (even if the entry box for the new
             #   world's name contains text)
             worldObj                    => undef,
-            # The GA::Obj::MiniWorld that stores the changes being made by the user to the table
+            # The GA::Obj::MiniWorld that stores the changes being made by the user to the grid
             #   widgets. For an existing world profile, the mini-world exists in $self->worldHash;
             #   otherwise it's a temporary GA::Obj::MiniWorld that might (or might not) be stored as
             #   a world profile, at some point
             miniWorldObj                => undef,
-            # Flag set to TRUE when $self->resetTableWidgets or $self->updateTableWidgets are
-            #   changing the value displayed in the table widgets; this stops the mini-world object
+            # Flag set to TRUE when $self->resetGridWidgets or $self->updateGridWidgets are
+            #   changing the value displayed in the grid widgets; this stops the mini-world object
             #   from being modified (the mini-world object should only store changes made by the
             #   user)
             updateFlag                  => undef,
@@ -1088,23 +1061,10 @@
         # Create a frame containing an image
         my $frame = Gtk3::Frame->new(undef);
         $vBox->pack_start($frame, FALSE, FALSE, 0);
-        $frame->set_shadow_type('etched-in');
+        $frame->set_shadow_type($axmud::CLIENT->constShadowType);
 
         my $image = Gtk3::Image->new_from_file($self->defaultIcon);
         $frame->add($image);
-
-        # Create a frame containing version/date information
-        my $frame2 = Gtk3::Frame->new(undef);
-        $vBox->pack_start($frame2, FALSE, FALSE, 0);
-        $frame->set_shadow_type('etched-in');
-
-        my $vBox2 = Gtk3::VBox->new(FALSE, 0);
-        $frame2->add($vBox2);
-        $vBox2->set_border_width($self->spacingPixels);
-
-        my $label = Gtk3::Label->new();
-        $vBox2->pack_start($label, FALSE, FALSE, 0);
-        $label->set_text($axmud::SCRIPT . " v" . $axmud::VERSION . ", " . $axmud::DATE);
 
         # Create a strip of buttons
         my $hBox = Gtk3::HBox->new(FALSE, FALSE);
@@ -1134,28 +1094,32 @@
         $treeView->append_column($treeViewColumn);
 
         # Make the treeview scrollable
+        my $frame2 = Gtk3::Frame->new(undef);
+        $vBox->pack_start($frame2, TRUE, TRUE, 0);
+        $frame2->set_shadow_type($axmud::CLIENT->constShadowType);
+
         my $scroller = Gtk3::ScrolledWindow->new();
-        $vBox->pack_start($scroller, TRUE, TRUE, 0);
+        $frame2->add($scroller);
         $scroller->add($treeView);
         $scroller->set_policy(qw/automatic automatic/);
 
         # Respond to clicks on the treeview
         $treeView->get_selection->set_mode('browse');
 
-        # Add a table on the right of the window, inside a scroller
+        # Add a grid on the right of the window, inside a scroller
         my $frame3 = Gtk3::Frame->new(undef);
         $hPaned->add2($frame3);
-        $frame3->set_shadow_type('etched-in');
+        $frame3->set_shadow_type($axmud::CLIENT->constShadowType);
 
         my $scroller2 = Gtk3::ScrolledWindow->new();
         $frame3->add($scroller2);
         $scroller2->set_policy(qw/automatic automatic/);
         $scroller2->set_border_width($self->spacingPixels);
 
-        my $table = Gtk3::Grid->new();
-        $scroller2->add_with_viewport($table);
-        $table->set_column_spacing($self->spacingPixels);
-        $table->set_row_spacing($self->spacingPixels);
+        my $grid = Gtk3::Grid->new();
+        $scroller2->add_with_viewport($grid);
+        $grid->set_column_spacing($self->spacingPixels);
+        $grid->set_row_spacing($self->spacingPixels);
 
         # Store the widgets as IVs
         $self->ivPoke('packingBox', $packingBox);
@@ -1163,22 +1127,20 @@
         $self->ivPoke('vBox', $vBox);
         $self->ivPoke('frame', $frame);
         $self->ivPoke('image', $image);
-        $self->ivPoke('frame2', $frame2);
-        $self->ivPoke('vBox2', $vBox2);
-        $self->ivPoke('label', $label);
         $self->ivPoke('hBox', $hBox);
         $self->ivPoke('objModel', $objModel);
         $self->ivPoke('treeView', $treeView);
         $self->ivPoke('treeViewColumn', $treeViewColumn);
+        $self->ivPoke('frame2', $frame2);
         $self->ivPoke('scroller', $scroller);
         $self->ivPoke('frame3', $frame3);
         $self->ivPoke('scroller2', $scroller2);
-        $self->ivPoke('table', $table);
+        $self->ivPoke('grid', $grid);
 
         # Add buttons to the button strip
         $self->createStripButtons();
         # Add various widgets to the Gtk3::Grid
-        $self->createTableWidgets();
+        $self->createGridWidgets();
 
         return 1;
     }
@@ -1447,10 +1409,10 @@
         return 1;
     }
 
-    sub createTableWidgets {
+    sub createGridWidgets {
 
         # Called by $self->drawWidgets
-        # Draws widgets in the table on the right of the window
+        # Draws widgets in the grid on the right of the window
         #
         # Expected arguments
         #   (none besides $self)
@@ -1464,10 +1426,10 @@
         # Check for improper arguments
         if (defined $check) {
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->createTableWidgets', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->createGridWidgets', @_);
         }
 
-        $self->addLabel($self->table, '<i><u>Connection settings</u></i>',
+        $self->addLabel($self->grid, '<i><u>Connection settings</u></i>',
             1, 8, 1, 2);
         if (@axmud::TEST_MODE_LOGIN_LIST) {
 
@@ -1475,7 +1437,7 @@
             #   contents of /scripts/axmud.pl or /scripts/baxmud.pl, in order to modify the global
             #   variable @TEST_MODE_LOGIN_LIST
             my $testButton = $self->addButton(
-                $self->table,
+                $self->grid,
                 \&testModeCallback,
                 'TEST MODE SETUP',
                 'Use @TEST_MODE_LOGIN_LIST values',
@@ -1483,24 +1445,24 @@
         }
 
         # GA::Profile::World ->name
-        $self->addLabel($self->table, 'Name',
+        $self->addLabel($self->grid, 'Name',
             1, 4, 2, 3);
 
-        my $entry = $self->addEntry($self->table, undef, undef, TRUE,
+        my $entry = $self->addEntry($self->grid, undef, undef, TRUE,
             4, 12, 2, 3);
         $entry->signal_connect('changed' => sub {
 
             # If the text inside the entry changes, we record that fact by creating (or replacing) a
             #   key-value pair in $self->miniWorldObj. If the entry is emptied, we record that by
             #   removing the key-value pair.
-            # However, when $self->resetTableWidgets and ->updateTableWidgets are changing all the
-            #   table widgets (after the user selects a world from the treeview), $self->updateFlag
+            # However, when $self->resetGridWidgets and ->updateGridWidgets are changing all the
+            #   grid widgets (after the user selects a world from the treeview), $self->updateFlag
             #   is set to TRUE, and we don't make any changes to the mini-world object
             if (! $self->updateFlag) {
 
-                my $text = $entry->get_text();
+                my $text = $axmud::CLIENT->trimWhitespace($entry->get_text());
 
-                if ($text) {
+                if ($text ne '') {
                     $self->miniWorldObj->ivAdd('propHash', 'name', $text);
                 } else {
                     $self->miniWorldObj->ivDelete('propHash', 'name');
@@ -1513,17 +1475,17 @@
         );
 
         # ->dns, ->ipv4 or ->ipv6
-        $self->addLabel($self->table, 'Host',
+        $self->addLabel($self->grid, 'Host',
             1, 4, 3, 4);
-        my $entry2 = $self->addEntry($self->table, undef, undef, TRUE,
+        my $entry2 = $self->addEntry($self->grid, undef, undef, TRUE,
             4, 12, 3, 4);
         $entry2->signal_connect('changed' => sub {
 
             if (! $self->updateFlag) {
 
-                my $text = $entry2->get_text();
+                my $text = $axmud::CLIENT->trimWhitespace($entry2->get_text());
 
-                if ($text) {
+                if ($text ne '') {
 
                     $self->miniWorldObj->ivAdd('propHash', 'host', $text);
                     $self->addCharButton->set_sensitive(TRUE);
@@ -1542,18 +1504,18 @@
         $entry2->set_tooltip_text('e.g. \'deathmud.com\'; using IPV4, IPV6 or DNS');
 
         # ->port
-        $self->addLabel($self->table, 'Port',
+        $self->addLabel($self->grid, 'Port',
             1, 4, 4, 5);
-        my $entry3 = $self->addEntry($self->table, undef, undef, TRUE,
+        my $entry3 = $self->addEntry($self->grid, undef, undef, TRUE,
             4, 6, 4, 5, 5, 5);
         $entry3->set_tooltip_text('e.g. 5000');
         $entry3->signal_connect('changed' => sub {
 
             if (! $self->updateFlag) {
 
-                my $text = $entry3->get_text();
+                my $text = $axmud::CLIENT->trimWhitespace($entry3->get_text());
 
-                if ($text) {
+                if ($text ne '') {
                     $self->miniWorldObj->ivAdd('propHash', 'port', $text);
                 } else {
                     $self->miniWorldObj->ivDelete('propHash', 'port');
@@ -1561,22 +1523,22 @@
             }
         });
 
-        $self->addLabel($self->table, 'Protocol',
+        $self->addLabel($self->grid, 'Protocol',
             1, 4, 5, 6);
         my ($group, $radioButton) = $self->addRadioButton(
-            $self->table, undef, undef, 'Default', TRUE, TRUE,
+            $self->grid, undef, undef, 'Default', TRUE, TRUE,
             4, 6, 5, 6);
 
         my ($group2, $radioButton2) = $self->addRadioButton(
-            $self->table, undef, $group, 'Telnet', FALSE, TRUE,
+            $self->grid, undef, $group, 'Telnet', FALSE, TRUE,
             6, 7, 5, 6);
 
         my ($group3, $radioButton3) = $self->addRadioButton(
-            $self->table, undef, $group2, 'SSH', FALSE, TRUE,
+            $self->grid, undef, $group2, 'SSH', FALSE, TRUE,
             7, 8, 5, 6);
 
         my ($group4, $radioButton4) = $self->addRadioButton(
-            $self->table, undef, $group3, 'SSL', FALSE, TRUE,
+            $self->grid, undef, $group3, 'SSL', FALSE, TRUE,
             8, 12, 5, 6);
         # If SSL is disabled, don't allow that button to be selected
         if ($axmud::NO_SSL_FLAG) {
@@ -1586,15 +1548,15 @@
         }
 
         # ->passwordHash, ->accountHash, ->lastConnectChar, ->loginMode (etc)
-        $self->addLabel($self->table, '<i><u>Optional settings</u></i>',
+        $self->addLabel($self->grid, '<i><u>Optional settings</u></i>',
             1, 8, 6, 7);
 
-        $self->addLabel($self->table, 'Character',
+        $self->addLabel($self->grid, 'Character',
             1, 4, 7, 8);
         my $comboBox = $self->resetComboBox();
 
         my $checkButton = $self->addCheckButton(
-            $self->table, 'No auto-login', undef, FALSE, TRUE,
+            $self->grid, 'No auto-login', undef, FALSE, TRUE,
             8, 12, 7, 8);
         $checkButton->signal_connect('toggled' => sub {
 
@@ -1607,30 +1569,30 @@
         });
 
         my $addCharButton = $self->addButton(
-            $self->table,
+            $self->grid,
             \&addCharCallback,
             'Add',
             'Add a new character profile',
             4, 6, 8, 9);
 
         my $editPwdButton = $self->addButton(
-            $self->table,
+            $self->grid,
             \&editPasswordCallback,
             'Set password',
             'Edit the selected character\'s password',
             6, 8, 8, 9);
 
         my $editAccButton = $self->addButton(
-            $self->table,
+            $self->grid,
             \&editAccountCallback,
             'Set account name',
             'Edit the selected character\'s associated account name',
             8, 12, 8, 9);
 
-        $self->addLabel($self->table, '<i><u>World information</u></i>',
+        $self->addLabel($self->grid, '<i><u>World information</u></i>',
             1, 8, 9, 10);
 
-        my $websiteLabel = $self->addLabel($self->table, $self->noWebsiteString,
+        my $websiteLabel = $self->addLabel($self->grid, $self->noWebsiteString,
             1, 12, 10, 11);
         $websiteLabel->signal_connect('activate-link' => sub {
 
@@ -1641,12 +1603,12 @@
             }
         });
 
-        my $connectionLabel = $self->addLabel($self->table, $self->noConnectString,
+        my $connectionLabel = $self->addLabel($self->grid, $self->noConnectString,
             1, 12, 11, 12);
 
         # ->worldDescrip
         my $descripTextView = $self->addTextView(
-            $self->table,
+            $self->grid,
             undef,
             undef,
             undef,
@@ -1658,11 +1620,11 @@
         $descripTextView->set_wrap_mode('word-char');
 
         my $createWorldButton = $self->addButton(
-            $self->table,
+            $self->grid,
             undef,
             'Create world',
             'Create a world profile',
-            1, 5, 13, 14);
+            1, 7, 13, 14);
         $createWorldButton->signal_connect('clicked' => sub {
 
             if (! $self->worldObj || $self->otherWorldButton->get_active()) {
@@ -1673,30 +1635,30 @@
         });
 
         my $resetWorldButton = $self->addButton(
-            $self->table,
+            $self->grid,
             \&resetWorldCallback,
             'Reset world',
-            'Reset the values displayed in this window to those actually stored by the selected'
-            . ' world profile',
-            5, 7, 13, 14);
+            "Reset the values displayed in this window to those\nactually stored by the selected"
+            . " world profile",
+            1, 7, 14, 15);
 
         my $offlineButton = $self->addButton(
-            $self->table,
+            $self->grid,
             undef,
             'Connect offline',
             'Connect to this world in \'offline\' mode',
-            7, 10, 13, 14);
+            7, 12, 13, 14);
         $offlineButton->signal_connect('clicked' => sub {
 
             $self->connectWorldCallback(TRUE);
         });
 
         my $connectButton = $self->addButton(
-            $self->table,
+            $self->grid,
             undef,
             'Connect',
             'Connect to this world',
-            10, 12, 13, 14);
+            7, 12, 14, 15);
         # (Add a bit of padding, so the Connect button isn't much smaller than the other three)
         $connectButton->get_child->set_width_chars(10);
         $connectButton->signal_connect('clicked' => sub {
@@ -1817,7 +1779,7 @@
                     (
                         ! defined $regex
                         || $worldObj->name =~ m/$regex/i
-                        || $worldObj->longName =~ m/$regex/i
+                        || (defined $worldObj->longName && $worldObj->longName =~ m/$regex/i)
                     ) && (
                         ! defined $self->searchLanguage
                         || ($language && (lc($language) eq lc($self->searchLanguage)))
@@ -2085,8 +2047,8 @@
         $self->ivPoke('updateFlag', FALSE);
 
         # Select a world, if one was specified in the calling functions; otherwise select the
-        #   'Create new world' line. This automatically causes $self->updateTableWidgets or
-        #   $self->resetTableWidgets to be called
+        #   'Create new world' line. This automatically causes $self->updateGridWidgets or
+        #   $self->resetGridWidgets to be called
         $treeSelection = $self->treeView->get_selection();
         if ($matchPointer) {
             $treeSelection->select_iter($matchPointer);
@@ -2097,7 +2059,7 @@
         return 1;
     }
 
-    sub resetTableWidgets {
+    sub resetGridWidgets {
 
         # Called by $self->selectWorldCallback when the user clicks on the 'Create new world' line
         #   in the treeview
@@ -2116,7 +2078,7 @@
         # Check for improper arguments
         if (defined $check) {
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->resetTableWidgets', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->resetGridWidgets', @_);
         }
 
         # Reset the IV which stores the currently displayed world
@@ -2124,14 +2086,14 @@
         # Create a temporary GA::Obj::MiniWorld to store the changes
         $self->ivPoke('miniWorldObj', Games::Axmud::Obj::MiniWorld->new());
         # Set a flag to TRUE to stop the mini-world object being updated, as we change the values
-        #   displayed in the table's widgets
+        #   displayed in the grid's widgets
         $self->ivPoke('updateFlag', TRUE);
 
-        # Reset the 'create world' button's label (it gets modified by $self->updateTableWidgets)
+        # Reset the 'create world' button's label (it gets modified by $self->updateGridWidgets)
         $self->createWorldButton->set_label('Create world');
         $self->createWorldButton->set_tooltip_text('Create a world profile');
 
-        # Reset the table widgets
+        # Reset the grid widgets
         $self->entry->set_text('');
         $self->entry2->set_text('');
         $self->entry3->set_text('');
@@ -2148,8 +2110,8 @@
 
         # (These calls eliminate flashing when the screenshot is updated rapidly, for example when
         #   the user scrolls through the list of worlds)
-        $self->winShowAll($self->_objClass . '->resetTableWdigets');
-        $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->resetTableWidgets');
+        $self->winShowAll($self->_objClass . '->resetGridWidgets');
+        $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->resetGridWidgets');
 
         # Update the world screenshot, using the default logo
         # If a logo for this world exists, use it; otherwise use the default logo
@@ -2159,8 +2121,8 @@
         $self->ivPoke('image', $image);
 
         # (A repeat of those calls eliminates it entirely)
-        $self->winShowAll($self->_objClass . '->resetTableWidgets');
-        $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->resetTableWidgets');
+        $self->winShowAll($self->_objClass . '->resetGridWidgets');
+        $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->resetGridWidgets');
 
         # The entry box for the world's name must be made editable
         $self->entry->set_editable(TRUE);
@@ -2181,12 +2143,12 @@
         $self->ivPoke('updateFlag', FALSE);
 
         # The call to ->show_all() causes the image to appear
-        $self->winShowAll($self->_objClass . '->resetTableWidgets');
+        $self->winShowAll($self->_objClass . '->resetGridWidgets');
 
         return 1;
     }
 
-    sub updateTableWidgets {
+    sub updateGridWidgets {
 
         # Called by $self->selectWorldCallback when the user clicks on a line in the treeview
         #   corresponding to a world profile
@@ -2214,7 +2176,7 @@
         # Check for improper arguments
         if (! defined $worldObj || ! defined $line || defined $check) {
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->updateTableWidgets', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->updateGridWidgets', @_);
         }
 
         # Decide which list should be displayed. Default display mode is 'undef', representing
@@ -2229,10 +2191,10 @@
         # Get the equivalent GA::Obj::MiniWorld
         $self->ivPoke('miniWorldObj', $self->ivShow('miniWorldHash', $worldObj->name));
         # Set a flag to TRUE to stop the mini-world object being updated, as we change the values
-        #   displayed in the table's widgets
+        #   displayed in the grid's widgets
         $self->ivPoke('updateFlag', TRUE);
 
-        # Modify the 'create world' button's label (it gets reset by $self->resetTableWidgets)
+        # Modify the 'create world' button's label (it gets reset by $self->resetGridWidgets)
         if (! $displayFlag) {
 
             $self->createWorldButton->set_label('Apply changes');
@@ -2313,12 +2275,14 @@
 
                 if ($worldObj->worldURL) {
 
-                    $website .= ' <a href="' . $worldObj->worldURL . '">Website</a>';
+                    $website .= ' <a href="' . $self->escapeHtml($worldObj->worldURL)
+                                    . '">Website</a>';
                 }
 
                 if ($worldObj->referURL) {
 
-                    $website .= ' <a href="' . $worldObj->referURL . '">Referrer</a>';
+                    $website .= ' <a href="' . $self->escapeHtml($worldObj->referURL)
+                                    . '">Referrer</a>';
                 }
             }
 
@@ -2389,8 +2353,8 @@
 
         # (These calls eliminate flashing when the screenshot is updated rapidly, for example when
         #   the user scrolls through the list of worlds)
-        $self->winShowAll($self->_objClass . '->updateTableWidgets');
-        $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->updateTableWidgets');
+        $self->winShowAll($self->_objClass . '->updateGridWidgets');
+        $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->updateGridWidgets');
 
         # Update the world screenshot
         my $image = Gtk3::Image->new_from_file($logoPath);
@@ -2399,8 +2363,8 @@
         $self->ivPoke('image', $image);
 
         # (A repeat of those calls eliminates it entirely)
-        $self->winShowAll($self->_objClass . '->updateTableWidgets');
-        $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->updateTableWidgets');
+        $self->winShowAll($self->_objClass . '->updateGridWidgets');
+        $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->updateGridWidgets');
 
         # The entry box for the world's name must not be changed
         $self->entry->set_editable(FALSE);
@@ -2440,14 +2404,14 @@
         $self->ivPoke('updateFlag', FALSE);
 
         # The call to ->show_all() causes the image to appear
-        $self->winShowAll($self->_objClass . '->updateTableWidgets');
+        $self->winShowAll($self->_objClass . '->updateGridWidgets');
 
         return 1;
     }
 
     sub resetComboBox {
 
-        # Called by $self->createTableWidgets, ->resetTableWidgets and ->updateTableWidgets
+        # Called by $self->createGridWidgets, ->resetGridWidgets and ->updateGridWidgets
         # Not sure how to empty a Gtk3::ComboBox, so we'll just destroy the old one, and replace it
         #   with a new one
         #
@@ -2475,12 +2439,12 @@
         # If a Gtk3::ComboBox already exists, destroy it
         if ($destroyFlag) {
 
-            $axmud::CLIENT->desktopObj->removeWidget($self->table, $self->comboBox);
+            $axmud::CLIENT->desktopObj->removeWidget($self->grid, $self->comboBox);
        }
 
         # Create a new combobox
         unshift (@charList, $self->noCharString);
-        my $comboBox = $self->addComboBox($self->table, undef, \@charList, undef,
+        my $comboBox = $self->addComboBox($self->grid, undef, \@charList, undef,
             4, 8, 7, 8);
 
         # If the current mini-world object specifies a character, make that the combobox's active
@@ -2585,8 +2549,18 @@
 
         # (We can't change the profile's ->name)
 
-        # ->host
+        # ->host and ->port
+        # If the host address is in the form 'deathmud.com:8888', then extract the port. Although
+        #   it technically possible to use ports with only one digit, don't recognise it
+        # If, at the same time, the port was specified in the other entry box, ignore the other
         $host = $miniWorldObj->ivShow('propHash', 'host');
+        if ($host && $host =~ m/^(.*)\:(\d{2,5})\s*$/) {
+            $host = $1;
+            $port = $2;
+        } else {
+            $port = $miniWorldObj->ivShow('propHash', 'port');
+        }
+
         if ($host && $host =~ m/\w/) {
 
             $host = $axmud::CLIENT->trimWhitespace($host);
@@ -2607,14 +2581,13 @@
             }
         }
 
-        $port = $self->miniWorldObj->ivShow('propHash', 'port');
         if ($port && $port =~ m/\w/) {
 
             $port = $axmud::CLIENT->trimWhitespace($port);
             $worldObj->ivPoke('port', $port);
         }
 
-        $descrip = $self->miniWorldObj->ivShow('propHash', 'descrip');
+        $descrip = $miniWorldObj->ivShow('propHash', 'descrip');
         if ($descrip) {
 
             $worldObj->ivPoke('worldDescrip', $descrip);
@@ -2624,7 +2597,7 @@
         #   of new characters, and existing characters with new passwords) is copied into the world
         #   profile's ->newPasswordHash; it's up to GA::Session->setupProfiles to create new
         #   character profiles, the next time this world is a current world
-        %newHash = $self->miniWorldObj->newPasswordHash;
+        %newHash = $miniWorldObj->newPasswordHash;
         foreach my $char (keys %newHash) {
 
             my $pass = $newHash{$char};    # May be 'undef'
@@ -2633,7 +2606,7 @@
         }
 
         # The same applies to the mini-world object's ->newAccountHash
-        %newHash = $self->miniWorldObj->newAccountHash;
+        %newHash = $miniWorldObj->newAccountHash;
         foreach my $char (keys %newHash) {
 
             my $account = $newHash{$char};    # May be 'undef'
@@ -2641,7 +2614,41 @@
             $worldObj->ivAdd('newAccountHash', $char, $account);
         }
 
+        # In test mode, set the number of connections to at least one
+        if ($miniWorldObj->testModeFlag && $worldObj->numberConnects == 0) {
+
+            $worldObj->ivPoke('numberConnects', 1);
+        }
+
         return 1;
+    }
+
+    sub escapeHtml {
+
+        # Called by $self->updateGridWidgets
+        # Before displaying a random URL in a label, escape &, < and > characters by replacing them
+        #   with HTML entities &amp;, &gt; and &lt;
+        #
+        # Expected arguments
+        #   $url        - A URL to be displayed in a Gtk3::Label
+        #
+        # Return values
+        #   'undef' on impropert arguments
+        #   Otherwise return the $url, with any problematic characters escaped
+
+        my ($self, $url, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $url || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->escapeHtml', @_);
+        }
+
+        $url =~ s/\&/&amp;/g;
+        $url =~ s/\</&gt;/g;
+        $url =~ s/\>/&lt;/g;
+
+        return $url;
     }
 
     # Response methods
@@ -2650,7 +2657,7 @@
 
         # Callback, called by anonymous subroutine in $self->drawWidgets when the user clicks on
         #   any world in the treeview
-        # Copies information from the selected world profile into the table widgets on the right
+        # Copies information from the selected world profile into the grid widgets on the right
         #   side of the window
         #
         # Expected arguments
@@ -2691,11 +2698,11 @@
                 if (! $worldObj) {
 
                     # The user has clicked on the 'Create new world' line
-                    $self->resetTableWidgets();
+                    $self->resetGridWidgets();
 
                 } else {
 
-                    $self->updateTableWidgets($worldObj, $line);
+                    $self->updateGridWidgets($worldObj, $line);
                 }
 
                 return 1;
@@ -2705,7 +2712,7 @@
 
     sub addCharCallback {
 
-        # Callback, called by anonymous subroutine in $self->createTableWidgets when the user clicks
+        # Callback, called by anonymous subroutine in $self->createGridWidgets when the user clicks
         #   on the 'add' button
         # Adds a character (and optionally a password) to ->passwordHash in the GA::Obj::MiniWorld
         #   corresponding to the current world
@@ -2815,7 +2822,7 @@
 
     sub editPasswordCallback {
 
-        # Callback, called by anonymous subroutine in $self->createTableWidgets when the user clicks
+        # Callback, called by anonymous subroutine in $self->createGridWidgets when the user clicks
         #   on the 'pwd' button
         # Edits the password of an existing character, storing the changes in the current mini-world
         #   object's ->passwordHash and ->newPasswordHash
@@ -2878,7 +2885,7 @@
 
     sub editAccountCallback {
 
-        # Callback, called by anonymous subroutine in $self->createTableWidgets when the user clicks
+        # Callback, called by anonymous subroutine in $self->createGridWidgets when the user clicks
         #   on the 'account' button
         # Edits the associated account for an existing character, storing the changes in the current
         #   mini-world object's ->accountHash and ->newAccountHash
@@ -2949,8 +2956,9 @@
 
     sub createWorldCallback {
 
-        # Callback, called by anonymous subroutine in $self->createTableWidgets when the user clicks
-        #   the 'create world' button
+        # Callback, called by anonymous subroutine in $self->createGridWidgets when the user clicks
+        #   the 'create world' button (only visible when 'Create new world' is selected in the list
+        #   of worlds)
         # When the currently-selected treeview item is 'create new world', creates a new world
         #   profile, and updates it with the data stored in $self->miniWorldObj
         #
@@ -2990,8 +2998,8 @@
         $generalString = 'Failed to create the new world profile (many apologies)';
 
         # Check that the name specified by the user is valid
-        $name = $self->entry->get_text();
-        if (! $name) {
+        $name = $axmud::CLIENT->trimWhitespace($self->entry->get_text());
+        if ($name eq '') {
 
             $self->showMsgDialogue(
                 'Missing name',
@@ -3015,8 +3023,8 @@
         }
 
         # Check that the user entered a host address
-        $host = $self->entry2->get_text();
-        if (! $name) {
+        $host = $axmud::CLIENT->trimWhitespace($self->entry2->get_text());
+        if ($host eq '') {
 
             $self->showMsgDialogue(
                 'Missing host address',
@@ -3029,9 +3037,20 @@
             return undef;
         }
 
-        # If the port was specified, check that it is valid
-        $port = $self->entry3->get_text();
-        if (! $axmud::CLIENT->intCheck($port, 0, 65535)) {
+        # If the host address is in the form 'deathmud.com:8888', then extract the port. Although
+        #   it technically possible to use ports with only one digit, don't recognise it
+        # If, at the same time, the port was specified in the other entry box, ignore the other
+        #   entry box
+        if ($host && $host =~ m/^(.*)\:(\d{2,5})\s*$/) {
+            $host = $1;
+            $port = $2;
+        } else {
+            $port = $axmud::CLIENT->trimWhitespace($self->entry3->get_text());
+        }
+
+        # If the port was specified, check that it is valid. If the port was left empty, the generic
+        #   port will be used anyway
+        if ($port ne '' && $port =~ m/\S/ && ! $axmud::CLIENT->intCheck($port, 0, 65535)) {
 
             $self->showMsgDialogue(
                 'Invalid port',
@@ -3148,8 +3167,9 @@
 
     sub applyChangesCallback {
 
-        # Callback, called by anonymous subroutine in $self->createTableWidgets when the user clicks
-        #   the 'apply changes' button
+        # Callback, called by anonymous subroutine in $self->createGridWidgets when the user clicks
+        #   the 'apply changes' button (only visibile when 'Create new world' is not selected in the
+        #   list of worlds)
         #
         # When the currently-selected treeview item is not 'create new world', updates the current
         #   world profile with any user-entered values stored in the current mini-world object
@@ -3187,7 +3207,7 @@
         $self->miniWorldObj->reset();
 
         # Reset the treeview, specifying that the existing world profile should still be selected
-        #   this updates table widgets)
+        #   this updates grid widgets)
         $name = $self->worldObj->name;
         $self->resetTreeView(undef, $name);
 
@@ -3205,10 +3225,10 @@
 
     sub resetWorldCallback {
 
-        # Callback, called by anonymous subroutine in $self->createTableWidgets when the user clicks
+        # Callback, called by anonymous subroutine in $self->createGridWidgets when the user clicks
         #   the 'reset world' button
         # Creates a new mini-world object to replace the old one, then resets the treeview which
-        #   causes all the table widgets to display the values actually stored in the world profile
+        #   causes all the grid widgets to display the values actually stored in the world profile
         #
         # Expected arguments
         #   $widget     - The Gtk3::Button clicked
@@ -3271,7 +3291,7 @@
 
     sub connectWorldCallback {
 
-        # Callback, called by anonymous subroutine in $self->createTableWidgets when the user clicks
+        # Callback, called by anonymous subroutine in $self->createGridWidgets when the user clicks
         #   the 'connect to world' or 'connect offline' buttons
         # Starts a new GA::Session, passing it information from this window (such as the selected
         #   world and character)
@@ -3333,7 +3353,7 @@
             return undef;
         }
 
-        # If the user has made any changes to the values displayed in table widgets, that would be
+        # If the user has made any changes to the values displayed in grid widgets, that would be
         #   applied to the world profile when the 'store changes' button is clicked, we need to ask
         #   the user if they want to apply those changes now
 
@@ -3413,9 +3433,6 @@
             $protocol = 'ssl';
         }
 
-        # Now we can connect to the world. Close this window, so it doesn't get in the way
-        $self->winDestroy();
-
         if ($self->worldObj) {
 
             if (! $displayFlag) {
@@ -3480,10 +3497,26 @@
             # The user has selected a world without an existing world profile, and has declined
             #   to create a profile in the earlier 'dialogue' window (if one was presented)
             $worldName = $self->miniWorldObj->ivShow('propHash', 'name');
-            if ($worldName) {
+            if ($worldName ne '') {
 
-                $worldName = $axmud::CLIENT->trimWhitespace($worldName);
-                $tempFlag = FALSE;
+                if (! $axmud::CLIENT->nameCheck($worldName, 16)) {
+
+                    $self->showMsgDialogue(
+                        'Invalid name',
+                        'error',
+                        '\'' . $worldName . '\' is an invalid world profile name. Names can contain'
+                        . ' letters, numbers and underline characters (except the first character),'
+                        . ' but not spaces. Reserved names like \'' . $axmud::SCRIPT
+                        . '\' are not allowed. The maximum length is 16 characters.',
+                        'ok',
+                    );
+
+                    return undef;
+
+                } else {
+
+                    $tempFlag = FALSE;
+                }
 
             } else {
 
@@ -3507,15 +3540,36 @@
 
             # Decide which connection details to use (the 'host' value is always defined when this
             #   function is called)
-            $host = $axmud::CLIENT->trimWhitespace($self->miniWorldObj->ivShow('propHash', 'host'));
-            $port = $self->miniWorldObj->ivShow('propHash', 'port');
-            if (! defined $port) {
+            $host = $self->miniWorldObj->ivShow('propHash', 'host');
+            # If the host address is in the form 'deathmud.com:8888', then extract the port.
+            #   Although it technically possible to use ports with only one digit, don't recognise
+            #   it
+            # If, at the same time, the port was specified in the other entry box, ignore the other
+            #   entry box
+            if ($host =~ m/^(.*)\:(\d{2,5})\s*$/) {
 
-                $port = 23;
+                $host = $1;
+                $port = $2;
 
             } else {
 
-                $port = $axmud::CLIENT->trimWhitespace($port);
+                $port = $self->miniWorldObj->ivShow('propHash', 'port');
+                if (! defined $port || $port eq '') {
+
+                    $port = 23;
+
+                } elsif (! $axmud::CLIENT->intCheck($port, 0, 65535)) {
+
+                    $self->showMsgDialogue(
+                        'Invalid port',
+                        'error',
+                        '\'' . $port . '\' is an invalid port. Specify a value in the range'
+                        . ' 0-65535, or leave the box empty to use the default port.',
+                        'ok',
+                    );
+
+                    return undef;
+                }
             }
 
             $char = $self->miniWorldObj->selectChar;    # May be 'undef'
@@ -3541,6 +3595,9 @@
                 $account = undef;
             }
         }
+
+        # Now we can connect to the world. Close this window, so it doesn't get in the way
+        $self->winDestroy();
 
         # Start the session
         if (
@@ -3577,7 +3634,7 @@
     sub testModeCallback {
 
         # Function used for Axmud development
-        # $self->createTableWidgets creates a button that's only visible if the user has edited the
+        # $self->createGridWidgets creates a button that's only visible if the user has edited the
         #   contents of /scripts/axmud.pl or /scripts/baxmud.pl, in order to modify the global
         #   variable @TEST_MODE_LOGIN_LIST
         # The button, if visible and if clicked, calls this function, which uses the contents of
@@ -3609,19 +3666,19 @@
         @testList = @axmud::TEST_MODE_LOGIN_LIST;
 
         # If the global variable refers to a world, for which a world profile already exists,
-        #   update table widgets as if the user had entered the global variable's value manually
+        #   update grid widgets as if the user had entered the global variable's value manually
         if (defined $testList[0]) {
 
             $worldObj = $axmud::CLIENT->ivShow('worldProfHash', $testList[0]);
             if ($worldObj) {
 
-                # Update table widgets for this world, unless that world is already the visible one
+                # Update grid widgets for this world, unless that world is already the visible one
                 if (! $self->worldObj || $worldObj ne $self->worldObj) {
 
-                    $self->updateTableWidgets($worldObj, $worldObj->longName);
+                    $self->updateGridWidgets($worldObj, $worldObj->longName);
                 }
 
-                # Update table widgets again, using the values stored in @TEST_MODE_LOGIN_LIST
+                # Update grid widgets again, using the values stored in @TEST_MODE_LOGIN_LIST
 
                 # World DNS/IP address
                 if (defined $testList[1]) {
@@ -3650,6 +3707,9 @@
                     my $comboBox = $self->resetComboBox(TRUE, @charList);
                     $self->ivPoke('comboBox', $comboBox);
                 }
+
+                # Mark the number of connections to be set to at least 1
+                $self->miniWorldObj->ivPoke('testModeFlag', TRUE);
             }
         }
 
@@ -3700,12 +3760,6 @@
         { $_[0]->{frame} }
     sub image
         { $_[0]->{image} }
-    sub frame2
-        { $_[0]->{frame2} }
-    sub vBox2
-        { $_[0]->{vBox2} }
-    sub label
-        { $_[0]->{label} }
     sub hBox
         { $_[0]->{hBox} }
     sub objModel
@@ -3714,14 +3768,16 @@
         { $_[0]->{treeView} }
     sub treeViewColumn
         { $_[0]->{treeViewColumn} }
+    sub frame2
+        { $_[0]->{frame2} }
     sub scroller
         { $_[0]->{scroller} }
     sub frame3
         { $_[0]->{frame3} }
     sub scroller2
         { $_[0]->{scroller2} }
-    sub table
-        { $_[0]->{table} }
+    sub grid
+        { $_[0]->{grid} }
     sub preConfigButton
         { $_[0]->{preConfigButton} }
     sub otherWorldButton
@@ -4120,7 +4176,7 @@
         # Create a textview
         my $scroller = Gtk3::ScrolledWindow->new(undef, undef);
         $packingBox->pack_start($scroller, TRUE, TRUE, 0);
-        $scroller->set_shadow_type('etched-out');
+        $scroller->set_shadow_type($axmud::CLIENT->constShadowType);
         $scroller->set_policy('automatic', 'automatic');
         $scroller->set_border_width(5);
 
@@ -4484,7 +4540,7 @@
         my $frame = Gtk3::Frame->new(undef);
         $vBox->pack_start($frame, FALSE, FALSE, 0);
         $frame->set_size_request(64, 64);
-        $frame->set_shadow_type('etched-in');
+        $frame->set_shadow_type($axmud::CLIENT->constShadowType);
 
         my $image = Gtk3::Image->new_from_file($axmud::CLIENT->getDialogueIcon());
         $frame->add($image);
@@ -4882,7 +4938,7 @@
         # At the top, create a textview
         my $scroller = Gtk3::ScrolledWindow->new(undef, undef);
         $packingBox->pack_start($scroller, TRUE, TRUE, 0);
-        $scroller->set_shadow_type('etched-out');
+        $scroller->set_shadow_type($axmud::CLIENT->constShadowType);
         $scroller->set_policy('automatic', 'automatic');
         $scroller->set_border_width(0);
 
@@ -5138,10 +5194,10 @@
 
             # IVs for this type of window
 
-            # Standard size of the Gtk3::Grid used (a 12x12 table, with a spare cell around every
+            # Standard size of the Gtk3::Grid used (a 12x12 grid, with a spare cell around every
             #   border)
-            tableWidth                  => 13,
-            tableHeight                 => 13,
+            gridWidth                   => 13,
+            gridHeight                  => 13,
         };
 
         # Bless the object into existence
@@ -5206,25 +5262,25 @@
         my $frame = Gtk3::Frame->new(undef);
         $vBox->pack_start($frame, FALSE, FALSE, 0);
         $frame->set_size_request(64, 64);
-        $frame->set_shadow_type('etched-in');
+        $frame->set_shadow_type($axmud::CLIENT->constShadowType);
 
         my $image = Gtk3::Image->new_from_file($axmud::CLIENT->getDialogueIcon());
         $frame->add($image);
 
-        # Create a table inside a scroller on the right
+        # Create a grid inside a scroller on the right
         my $frame2 = Gtk3::Frame->new(undef);
         $hBox->pack_start($frame2, TRUE, TRUE, $self->spacingPixels);
-        $frame2->set_shadow_type('etched-in');
+        $frame2->set_shadow_type($axmud::CLIENT->constShadowType);
 
         my $scroller = Gtk3::ScrolledWindow->new();
         $frame2->add($scroller);
         $scroller->set_policy(qw/automatic automatic/);
         $scroller->set_border_width(5);
 
-        my $table = Gtk3::Grid->new();
-        $scroller->add_with_viewport($table);
-        $table->set_column_spacing($self->spacingPixels);
-        $table->set_row_spacing($self->spacingPixels);
+        my $grid = Gtk3::Grid->new();
+        $scroller->add_with_viewport($grid);
+        $grid->set_column_spacing($self->spacingPixels);
+        $grid->set_row_spacing($self->spacingPixels);
 
         # Create a button at the bottom to close the window
         my $hBox2 = Gtk3::HBox->new(FALSE, 0);
@@ -5241,34 +5297,34 @@
         });
 
         # Add some editing widgets. The ->signal_connect appear below
-        $self->addLabel($table, '<b>Pattern / regular expression / regex tester</b>',
+        $self->addLabel($grid, '<b>Pattern / regular expression / regex tester</b>',
             1, 12, 1, 2);
 
-        $self->addLabel($table, 'Pattern',
+        $self->addLabel($grid, 'Pattern',
             1, 3, 2, 3);
-        my $entry = $self->addEntry($table, undef, undef, TRUE,
+        my $entry = $self->addEntry($grid, undef, undef, TRUE,
             3, 12, 2, 3);
         $entry->set_icon_from_stock('secondary', 'gtk-no');
 
-        $self->addLabel($table, 'Line',
+        $self->addLabel($grid, 'Line',
             1, 3, 3, 4);
-        my $entry2 = $self->addEntry($table, undef, undef, TRUE,
+        my $entry2 = $self->addEntry($grid, undef, undef, TRUE,
             3, 12, 3, 4);
 
-        $self->addLabel($table, 'Substitution',
+        $self->addLabel($grid, 'Substitution',
             1, 3, 4, 5);
-        my $entry3 = $self->addEntry($table, undef, undef, TRUE,
+        my $entry3 = $self->addEntry($grid, undef, undef, TRUE,
             3, 12, 4, 5);
 
         my $button = $self->addButton(
-            $table,
+            $grid,
             undef,
             'Test the pattern\'s validity',
             'Test the pattern\'s validity',
             1, 6, 5, 6);
 
         my $button2 = $self->addButton(
-            $table,
+            $grid,
             undef,
             'Match the pattern against the line',
             'i.e. $line =~ m/$pattern/',
@@ -5276,7 +5332,7 @@
         $button2->set_sensitive(FALSE);
 
         my $button3 = $self->addButton(
-            $table,
+            $grid,
             undef,
             'Use the pattern to apply the substitution to the line',
             'i.e. $line =~ s/$pattern/$substitution/',
@@ -5284,15 +5340,15 @@
         $button3->set_sensitive(FALSE);
 
         my $button4 = $self->addButton(
-            $table,
+            $grid,
             undef,
             'Clear all',
             'Clear all the entry boxes',
             8, 12, 6, 7);
 
-        $self->addLabel($table, 'Result',
+        $self->addLabel($grid, 'Result',
             1, 3, 7, 8);
-        my $entry4 = $self->addEntry($table, undef, undef, TRUE,
+        my $entry4 = $self->addEntry($grid, undef, undef, TRUE,
             3, 12, 7, 8);
         $entry4->set_editable(FALSE);
 
@@ -5303,7 +5359,7 @@
         );
 
         my $frame3 = Gtk3::Frame->new(undef);
-        $table->attach($frame3, 1, 8, 11, 4);
+        $grid->attach($frame3, 1, 8, 11, 4);
         $frame3->set_border_width(0);
         $frame3->set_vexpand(TRUE);
 
@@ -5509,10 +5565,10 @@
     ##################
     # Accessors - get
 
-    sub tableWidth
-        { $_[0]->{tableWidth} }
-    sub tableHeight
-        { $_[0]->{tableHeight} }
+    sub gridWidth
+        { $_[0]->{gridWidth} }
+    sub gridHeight
+        { $_[0]->{gridHeight} }
 }
 
 { package Games::Axmud::OtherWin::QuickInput;
@@ -5714,7 +5770,7 @@
         # At the top, create a textview
         my $scroller = Gtk3::ScrolledWindow->new(undef, undef);
         $packingBox->pack_start($scroller, TRUE, TRUE, 0);
-        $scroller->set_shadow_type('etched-out');
+        $scroller->set_shadow_type($axmud::CLIENT->constShadowType);
         $scroller->set_policy('automatic', 'automatic');
         $scroller->set_border_width(0);
 
@@ -5770,7 +5826,7 @@
         $hBox3->pack_start($okButton, TRUE, TRUE, 0);
 
         my $clearButton = Gtk3::Button->new('Send and clear text');
-        $hBox3->pack_start($clearButton, FALSE, FALSE, 0);
+        $hBox3->pack_start($clearButton, FALSE, FALSE, $self->spacingPixels);
         $clearButton->get_child->set_width_chars(20);
 
         my $closeButton = Gtk3::Button->new('Close window');
@@ -6232,7 +6288,7 @@
         my $frame = Gtk3::Frame->new(undef);
         $vBox->pack_start($frame, FALSE, FALSE, 0);
         $frame->set_size_request(64, 64);
-        $frame->set_shadow_type('etched-in');
+        $frame->set_shadow_type($axmud::CLIENT->constShadowType);
 
         my $image = Gtk3::Image->new_from_file($axmud::CLIENT->getDialogueIcon());
         $frame->add($image);
@@ -7223,7 +7279,7 @@
         # At the top, create a textview
         my $scroller = Gtk3::ScrolledWindow->new(undef, undef);
         $packingBox->pack_start($scroller, TRUE, TRUE, 0);
-        $scroller->set_shadow_type('etched-out');
+        $scroller->set_shadow_type($axmud::CLIENT->constShadowType);
         $scroller->set_policy('automatic', 'automatic');
         $scroller->set_border_width(0);
 
@@ -7262,7 +7318,7 @@
 
         $comboBox->set_active(0);
 
-        # Create the 'Add' button
+        # Create the 'Apply' button
         my $addButton = Gtk3::Button->new('Apply');
         $hBox->pack_start($addButton, FALSE, FALSE, 0);
         $addButton->get_child->set_width_chars(8);
@@ -7331,7 +7387,7 @@
 
         # Create the 'Close' button
         my $cancelButton = Gtk3::Button->new('Close');
-        $hBox->pack_end($cancelButton, FALSE, FALSE, 0);
+        $hBox->pack_end($cancelButton, FALSE, FALSE, $self->spacingPixels);
         $cancelButton->get_child->set_width_chars(8);
         $cancelButton->signal_connect('clicked' => sub {
 
@@ -7646,7 +7702,7 @@
 
         my $scroller = Gtk3::ScrolledWindow->new(undef, undef);
         $frame->add($scroller);
-        $scroller->set_shadow_type('etched-out');
+        $scroller->set_shadow_type($axmud::CLIENT->constShadowType);
         $scroller->set_policy('automatic', 'automatic');
         $scroller->set_border_width(5);
 
@@ -8454,6 +8510,14 @@
         $self->ivAdd('headerHash', 'Colour schemes', 'colourSchemeHeader');
 
         $child = $model->append($pointer);
+        $model->set($child, [0], ['Map label styles']);
+        $self->ivAdd('headerHash', 'Map label styles', 'mapLabelStyleHeader');
+
+        $child = $model->append($pointer);
+        $model->set($child, [0], ['Region colour schemes']);
+        $self->ivAdd('headerHash', 'Region colour schemes', 'regionSchemeHeader');
+
+        $child = $model->append($pointer);
         $model->set($child, [0], ['TTS configurations']);
         $self->ivAdd('headerHash', 'TTS configurations', 'ttsHeader');
 
@@ -8471,12 +8535,12 @@
 
         # Quick help
         $child = $model->append($pointer);
-        $model->set($pointer, [0], ['Quick help']);
+        $model->set($child, [0], ['Quick help']);
         $self->ivAdd('headerHash', 'Quick help', 'quickHelpHeader');
 
         # Client command Help
         $child = $model->append($pointer);
-        $model->set($pointer, [0], ['Client commands']);
+        $model->set($child, [0], ['Client commands']);
 
         $grandChild = $model->append($child);
         $model->set($grandChild, [0], ['Categorised commands']);
@@ -8596,8 +8660,8 @@
                 $self->ivAdd('headerHash', $item, 'axbasicFuncHeader');
             }
 
-            # (Store the dummy script object, so that functions like $self->axbasicHeader can use
-            #   it)
+            # (Store the dummy script object, so that functions like $self->axbasicKeywordHeader can
+            #   use it)
             $self->ivPoke('dummyScriptObj', $scriptObj);
         }
 
@@ -9007,10 +9071,6 @@
             $self->hPaned->add2($self->notebook);
 
             $self->hPaned->set_position($self->leftWidth);
-            $self->hPaned->child1_shrink(FALSE);
-            $self->hPaned->child1_resize(FALSE);
-            $self->hPaned->child2_shrink(FALSE);
-            $self->hPaned->child2_resize(FALSE);
         }
 
         # Update IVs
@@ -9022,7 +9082,7 @@
 
         # Create a scrolled window
         my $scrolled = Gtk3::ScrolledWindow->new(undef, undef);
-        $scrolled->set_shadow_type('etched-out');
+        $scrolled->set_shadow_type($axmud::CLIENT->constShadowType);
         $scrolled->set_policy('automatic', 'automatic');
         $scrolled->set_border_width(5);
 
@@ -11739,6 +11799,168 @@
         return $self->refreshNotebook($tabListRef, $columnListRef, $dataHashRef, $buttonListRef);
     }
 
+    sub mapLabelStyleHeader {
+
+        # Called by ->treeViewChanged when the user clicks on the 'Map label styles' header in the
+        #   treeview
+        #
+        # Expected arguments
+        #   $item   - The treeview item that was clicked (i.e. the text it contains)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $item, $check) = @_;
+
+        # Local variables
+        my (
+            $tabListRef, $columnListRef, $dataHashRef, $buttonListRef,
+            @list, @dataList,
+            %dataHash,
+        );
+
+        # Check for improper arguments
+        if (! defined $item || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->mapLabelStyleHeader', @_);
+        }
+
+        # Prepare the list of tabs
+        $tabListRef = [
+            'Map label style' => '_Map label style',
+        ];
+
+        # Prepare the list of column headings
+        $columnListRef = [
+            'Default' => 'bool',
+            'Name' => 'text',
+        ];
+
+        # Prepare the list of buttons
+        $buttonListRef = [
+            'Add', 'Add a new map label style object', 'buttonAdd_mapLabelStyle',
+            'Edit', 'Edit the selected map label style object', 'buttonEdit_mapLabelStyle',
+            'Rename', 'Rename the selected map label style object', 'buttonRename_mapLabelStyle',
+            'Delete', 'Delete the selected map label style object', 'buttonDelete_mapLabelStyle',
+            'Dump', 'Display a list of map label style objects in the \'main\' window',
+                'buttonDump_mapLabelStyle',
+        ];
+
+        # Prepare the data to be displayed (there is only one tab)
+        @list = sort {lc($a->name) cmp lc($b->name)}
+                    ($self->session->worldModelObj->ivValues('mapLabelStyleHash'));
+
+        OUTER: foreach my $obj (@list) {
+
+            my ($flag, $listRef);
+
+            if ($self->session->worldModelObj->mapLabelStyle eq $obj->name) {
+                $flag = TRUE;
+            } else {
+                $flag = FALSE;
+            }
+
+            $listRef = [$flag, $obj->name];
+            push (@dataList, $listRef);
+        }
+
+        $dataHash{'Map label style'} = \@dataList;
+        $dataHashRef = \%dataHash;
+
+        # Which function to call if the user double-clicks on a row in the list - in this case, it's
+        #   equivalent to the edit button
+        $self->ivPoke('notebookSelectRef', sub {
+
+            $self->buttonEdit_mapLabelStyle();
+        });
+
+        # Display all of this in the notebook
+        return $self->refreshNotebook($tabListRef, $columnListRef, $dataHashRef, $buttonListRef);
+    }
+
+    sub regionSchemeHeader {
+
+        # Called by ->treeViewChanged when the user clicks on the 'Region colour schemes' header in
+        #   the treeview
+        #
+        # Expected arguments
+        #   $item   - The treeview item that was clicked (i.e. the text it contains)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $item, $check) = @_;
+
+        # Local variables
+        my (
+            $tabListRef, $columnListRef, $dataHashRef, $buttonListRef,
+            @list, @dataList,
+            %dataHash,
+        );
+
+        # Check for improper arguments
+        if (! defined $item || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->regionSchemeHeader', @_);
+        }
+
+        # Prepare the list of tabs
+        $tabListRef = [
+            'Region colour scheme' => '_Region colour scheme',
+        ];
+
+        # Prepare the list of column headings
+        $columnListRef = [
+            'Default' => 'bool',
+            'Name' => 'text',
+        ];
+
+        # Prepare the list of buttons
+        $buttonListRef = [
+            'Add', 'Add a new region colour scheme object', 'buttonAdd_regionScheme',
+            'Edit', 'Edit the selected region colour scheme object', 'buttonEdit_regionScheme',
+            'Rename', 'Rename the selected region colour scheme object',
+                'buttonRename_regionScheme',
+            'Delete', 'Delete the selected region colour scheme object',
+                'buttonDelete_regionScheme',
+            'Dump', 'Display a list of region colour scheme objects in the \'main\' window',
+                'buttonDump_regionScheme',
+        ];
+
+        # Prepare the data to be displayed (there is only one tab)
+        @list = sort {lc($a->name) cmp lc($b->name)}
+            ($self->session->worldModelObj->ivValues('regionSchemeHash'));
+
+        OUTER: foreach my $obj (@list) {
+
+            my ($flag, $listRef);
+
+            if ($obj->name eq 'default') {
+                $flag = TRUE;
+            } else {
+                $flag = FALSE;
+            }
+
+            $listRef = [$flag, $obj->name];
+            push (@dataList, $listRef);
+        }
+
+        $dataHash{'Region colour scheme'} = \@dataList;
+        $dataHashRef = \%dataHash;
+
+        # Which function to call if the user double-clicks on a row in the list - in this case, it's
+        #   equivalent to the edit button
+        $self->ivPoke('notebookSelectRef', sub {
+
+            $self->buttonEdit_regionScheme();
+        });
+
+        # Display all of this in the notebook
+        return $self->refreshNotebook($tabListRef, $columnListRef, $dataHashRef, $buttonListRef);
+    }
+
     sub ttsHeader {
 
         # Called by ->treeViewChanged when the user clicks on the 'TTS configurations' header in the
@@ -12124,6 +12346,13 @@
 
         # Get the ';axbasichelp' command object (rather than going through GA::Generic::Cmd)
         $obj = $axmud::CLIENT->ivShow('clientCmdHash', 'axbasichelp');
+        # If $item is a weak keyword, then we use the help file for the equivalent strong keyword
+        #   (e.g. use help for OPEN rather than ACCESS)
+        if ($self->dummyScriptObj->ivExists('weakKeywordHash', $item)) {
+
+            $item = $self->dummyScriptObj->ivShow('weakKeywordHash', $item);
+        }
+
         # Get the help for the keyword $item
         @list = $obj->abHelp($self->session, $item, 'keyword');
 
@@ -12185,7 +12414,7 @@
 
         # Local variables
         my (
-            $cmdObj, $packageName, $prettyName,
+            $cmdObj, $packageName,
             @list,
         );
 
@@ -12201,14 +12430,14 @@
         # Get the package name for the task
         $packageName = $cmdObj->findTaskPackageName($self->session, $item);
         # Remove the 'Games::Axmud::Task::' bit...
-        $prettyName =~ s/^Games\:\:Axmud\:\:Task\:\://;
+        $packageName =~ s/^Games\:\:Axmud\:\:Task\:\://;
         # Get the help for the task
-        @list = $cmdObj->taskHelp($self->session, $prettyName);
+        @list = $cmdObj->taskHelp($self->session, $packageName);
 
         # (Do nothing when a line is double-clicked)
 
         # Display the help in the notebook
-        return $self->refreshTextView($prettyName, @list);
+        return $self->refreshTextView($packageName, @list);
     }
 
     # Header support functions
@@ -19445,7 +19674,7 @@
         }
 
         # Delete the colour scheme
-        $self->session->pseudoCmd('deletecolourscheme ' . $name, $self->pseudoCmdMode);
+        $self->session->pseudoCmd('deletecolourscheme <' . $name . '>', $self->pseudoCmdMode);
 
         # Update the notebook
         $self->updateNotebook();
@@ -19488,6 +19717,603 @@
 
         # Display the list
         $self->session->pseudoCmd('listcolourscheme', $self->pseudoCmdMode);
+
+        return 1;
+    }
+
+    # Map label style callbacks
+
+    sub buttonAdd_mapLabelStyle {
+
+        # Callback: Add a map label style object (equivalent to ';addlabelstyle')
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my ($tab, $slWidget, $name);
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper(
+                $self->_objClass . '->buttonAdd_mapLabelStyle',
+                @_,
+            );
+        }
+
+        # Get the selected tab, and from there the tab's GA::Obj::SimpleList
+        $tab = $self->notebookGetTab();
+        $slWidget = $self->ivShow('notebookDataHash', $tab);
+
+        # Unselect everything in the list, because we're creating a new map label style
+        $slWidget->get_selection->unselect_all();
+
+        # Prompt the user for the name of the map label style object
+        $name = $self->showEntryDialogue(
+            'Add map label style',
+            'Enter a name for the object (max 16 chars)',
+            16,     # Max chars
+        );
+
+        if ($name) {
+
+            # Add the new map label style
+            $self->session->pseudoCmd('addlabelstyle <' . $name . '>', $self->pseudoCmdMode);
+
+            # Update the notebook
+            $self->updateNotebook();
+        }
+
+        return 1;
+    }
+
+    sub buttonEdit_mapLabelStyle {
+
+        # Callback: Edits a map label style object (equivalent to ';editlabelstyle')
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments, if no line is selected in the notebook or if the selected
+        #       object no longer exists
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my (
+            $dataRef, $name, $obj,
+            @list, @dataList,
+        );
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper(
+                $self->_objClass . '->buttonEdit_mapLabelStyle',
+                @_,
+            );
+        }
+
+        # Import the currently selected portions of the notebook list
+        @list = $self->notebookGetSelectedData();
+        if (! @list) {
+
+            # Nothing selected
+            return undef;
+        }
+
+        # @list is a list of references to anonymous lists; each of these anonymous lists contains
+        #   a single row of the list
+        $dataRef = $list[0];
+        @dataList = @$dataRef;
+        # The map label style's name is the second item of data
+        $name = $dataList[1];
+        if (! $name) {
+
+            # Can't continue
+            return undef;
+        }
+
+        # Get the map label style itself
+        $obj = $self->session->worldModelObj->ivShow('mapLabelStyleHash', $name);
+        if (! $obj) {
+
+            # Can't continue
+            return undef;
+
+        } else {
+
+            # Open up an 'edit' window to edit the object
+            $self->createFreeWin(
+                'Games::Axmud::EditWin::MapLabelStyle',
+                $self,
+                $self->session,
+                'Edit map label style \'' . $name . '\'',
+                $obj,
+                FALSE,                          # Not temporary
+            );
+
+            return 1;
+        }
+    }
+
+    sub buttonRename_mapLabelStyle {
+
+        # Callback: Renames a map label style object (equivalent to ';renamelabelstyle')
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments, if no line is selected in the notebook or if the selected
+        #       object no longer exists
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my (
+            $dataRef, $oldName, $obj, $newName,
+            @list, @dataList,
+        );
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper(
+                $self->_objClass . '->buttonRename_mapLabelStyle',
+                @_,
+            );
+        }
+
+        # Import the currently selected portions of the notebook list
+        @list = $self->notebookGetSelectedData();
+        if (! @list) {
+
+            # Nothing selected
+            return undef;
+        }
+
+        # @list is a list of references to anonymous lists; each of these anonymous lists contains
+        #   a single row of the list
+        $dataRef = $list[0];
+        @dataList = @$dataRef;
+        # The map label style's name is the second item of data
+        $oldName = $dataList[1];
+        if (! $oldName) {
+
+            # Can't continue
+            return undef;
+        }
+
+        # Get the map label style itself
+        $obj = $self->session->worldModelObj->ivShow('mapLabelStyleHash', $oldName);
+        if (! $obj) {
+
+            # Can't continue
+            return undef;
+        }
+
+        # Prompt the user for a new name
+        $newName = $self->showEntryDialogue(
+            'Rename map label style',
+            'Enter a new name for the object (max 16 chars)',
+            16,     # Max chars
+        );
+
+        if ($newName) {
+
+            # Rename the map label style
+            $self->session->pseudoCmd(
+                'renamelabelstyle <' . $oldName . '> <' . $newName . '>',
+                $self->pseudoCmdMode,
+            );
+
+            # Update the notebook
+            $self->updateNotebook();
+        }
+
+        return 1;
+    }
+
+    sub buttonDelete_mapLabelStyle {
+
+        # Callback: Deletes a map label style object (equivalent to ';deletelabelstyle')
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if no line is selected in the notebook
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my (
+            $dataRef, $name,
+            @list, @dataList,
+        );
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper(
+                $self->_objClass . '->buttonDelete_mapLabelStyle',
+                @_,
+            );
+        }
+
+        # Import the currently selected portions of the notebook list
+        @list = $self->notebookGetSelectedData();
+        if (! @list) {
+
+            # Nothing selected
+            return undef;
+        }
+
+        # @list is a list of references to anonymous lists; each of these anonymous lists contains
+        #   a single row of the list
+        $dataRef = $list[0];
+        @dataList = @$dataRef;
+        # The map label style object name is the second item of data
+        $name = $dataList[1];
+        if (! $name) {
+
+            # Can't continue
+            return undef;
+        }
+
+        # Delete the map label style
+        $self->session->pseudoCmd('deletelabelstyle <' . $name . '>', $self->pseudoCmdMode);
+
+        # Update the notebook
+        $self->updateNotebook();
+
+        return 1;
+    }
+
+    sub buttonDump_mapLabelStyle {
+
+        # Callback: Displays a list of map label style objects in the 'main' window (equivalent to
+        #   ';listlabelstyle')
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my ($tab, $slWidget);
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper(
+                $self->_objClass . '->buttonDump_mapLabelStyle',
+                @_,
+            );
+        }
+
+        # Get the selected tab, and from there the tab's GA::Obj::SimpleList
+        $tab = $self->notebookGetTab();
+        $slWidget = $self->ivShow('notebookDataHash', $tab);
+
+        # Unselect everything in the list
+        $slWidget->get_selection->unselect_all();
+
+        # Display the list
+        $self->session->pseudoCmd('listlabelstyle', $self->pseudoCmdMode);
+
+        return 1;
+    }
+
+    # Region colour scheme button callbacks
+
+    sub buttonAdd_regionScheme {
+
+        # Callback: Add a region scheme object (equivalent to ';addregionscheme')
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my ($tab, $slWidget, $name);
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->buttonAdd_regionScheme', @_);
+        }
+
+        # Get the selected tab, and from there the tab's GA::Obj::SimpleList
+        $tab = $self->notebookGetTab();
+        $slWidget = $self->ivShow('notebookDataHash', $tab);
+
+        # Unselect everything in the list, because we're creating a new region scheme
+        $slWidget->get_selection->unselect_all();
+
+        # Prompt the user for the name of the region scheme object
+        $name = $self->showEntryDialogue(
+            'Add region colour scheme',
+            'Enter a name for the object (max 16 chars)',
+            16,     # Max chars
+        );
+
+        if ($name) {
+
+            # Add the new colour scheme
+            $self->session->pseudoCmd('addregionscheme <' . $name . '>', $self->pseudoCmdMode);
+
+            # Update the notebook
+            $self->updateNotebook();
+        }
+
+        return 1;
+    }
+
+    sub buttonEdit_regionScheme {
+
+        # Callback: Edits a region colour scheme object (equivalent to ';editregionscheme')
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments, if no line is selected in the notebook or if the selected
+        #       object no longer exists
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my (
+            $dataRef, $name, $obj,
+            @list, @dataList,
+        );
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper(
+                $self->_objClass . '->buttonEdit_regionScheme',
+                @_,
+            );
+        }
+
+        # Import the currently selected portions of the notebook list
+        @list = $self->notebookGetSelectedData();
+        if (! @list) {
+
+            # Nothing selected
+            return undef;
+        }
+
+        # @list is a list of references to anonymous lists; each of these anonymous lists contains
+        #   a single row of the list
+        $dataRef = $list[0];
+        @dataList = @$dataRef;
+        # The region scheme's name is the second item of data
+        $name = $dataList[1];
+        if (! $name) {
+
+            # Can't continue
+            return undef;
+        }
+
+        # Get the region scheme itself
+        $obj = $self->session->worldModelObj->ivShow('regionSchemeHash', $name);
+        if (! $obj) {
+
+            # Can't continue
+            return undef;
+
+        } else {
+
+            # Open up an 'edit' window to edit the object
+            $self->createFreeWin(
+                'Games::Axmud::EditWin::RegionScheme',
+                $self,
+                $self->session,
+                'Edit region colour scheme \'' . $name . '\'',
+                $obj,
+                FALSE,                          # Not temporary
+            );
+
+            return 1;
+        }
+    }
+
+    sub buttonRename_regionScheme {
+
+        # Callback: Renames a region colour scheme object (equivalent to ';renameregionscheme')
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments, if no line is selected in the notebook or if the selected
+        #       object no longer exists
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my (
+            $dataRef, $oldName, $obj, $newName,
+            @list, @dataList,
+        );
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper(
+                $self->_objClass . '->buttonEdit_regionScheme',
+                @_,
+            );
+        }
+
+        # Import the currently selected portions of the notebook list
+        @list = $self->notebookGetSelectedData();
+        if (! @list) {
+
+            # Nothing selected
+            return undef;
+        }
+
+        # @list is a list of references to anonymous lists; each of these anonymous lists contains
+        #   a single row of the list
+        $dataRef = $list[0];
+        @dataList = @$dataRef;
+        # The region scheme's name is the second item of data
+        $oldName = $dataList[1];
+        if (! $oldName) {
+
+            # Can't continue
+            return undef;
+        }
+
+        # Get the region scheme itself
+        $obj = $self->session->worldModelObj->ivShow('regionSchemeHash', $oldName);
+        if (! $obj) {
+
+            # Can't continue
+            return undef;
+        }
+
+        # Prompt the user for a new name
+        $newName = $self->showEntryDialogue(
+            'Rename region colour scheme',
+            'Enter a new name for the object (max 16 chars)',
+            16,     # Max chars
+        );
+
+        if ($newName) {
+
+            # Rename the colour scheme
+            $self->session->pseudoCmd(
+                'renameregionscheme <' . $oldName . '> <' . $newName . '>',
+                $self->pseudoCmdMode,
+            );
+
+            # Update the notebook
+            $self->updateNotebook();
+        }
+
+        return 1;
+    }
+
+    sub buttonDelete_regionScheme {
+
+        # Callback: Deletes a region scheme object (equivalent to ';deleteregionscheme')
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if no line is selected in the notebook
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my (
+            $dataRef, $name,
+            @list, @dataList,
+        );
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper(
+                $self->_objClass . '->buttonDelete_regionScheme',
+                @_,
+            );
+        }
+
+        # Import the currently selected portions of the notebook list
+        @list = $self->notebookGetSelectedData();
+        if (! @list) {
+
+            # Nothing selected
+            return undef;
+        }
+
+        # @list is a list of references to anonymous lists; each of these anonymous lists contains
+        #   a single row of the list
+        $dataRef = $list[0];
+        @dataList = @$dataRef;
+        # The region scheme object name is the second item of data
+        $name = $dataList[1];
+        if (! $name) {
+
+            # Can't continue
+            return undef;
+        }
+
+        # Delete the region scheme
+        $self->session->pseudoCmd('deleteregionscheme <' . $name . '>', $self->pseudoCmdMode);
+
+        # Update the notebook
+        $self->updateNotebook();
+
+        return 1;
+    }
+
+    sub buttonDump_regionScheme {
+
+        # Callback: Displays a list of region scheme objects in the 'main' window (equivalent to
+        #   ';listregionscheme')
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my ($tab, $slWidget);
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper(
+                $self->_objClass . '->buttonDump_regionScheme',
+                @_,
+            );
+        }
+
+        # Get the selected tab, and from there the tab's GA::Obj::SimpleList
+        $tab = $self->notebookGetTab();
+        $slWidget = $self->ivShow('notebookDataHash', $tab);
+
+        # Unselect everything in the list
+        $slWidget->get_selection->unselect_all();
+
+        # Display the list
+        $self->session->pseudoCmd('listregionscheme', $self->pseudoCmdMode);
 
         return 1;
     }

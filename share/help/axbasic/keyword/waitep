@@ -10,15 +10,17 @@ WAITEP expression [ , expression ]
          this range (e.g. 1000), Axbasic will use a default value of 100.
       The second expression is a timeout measured in seconds. If specified, the
          script gives up waiting after that period and resumes execution.
-      If the Axbasic script isn't being run from within a task, the WAITEP
-         statement is ignored (and no error message is generated). Execution
-         continues immediately with the next statement.
       WAITEP relies on the Status task to supply the character's current EP. If
          the Status task is not running (or if it doesn't know anything about
          the character's EP), the Axbasic script pauses briefly and resumes
          execution on the next task loop.
       See also the help for WAITHP, WAITMP, WAITSP, WAITTOTALXP and WAITXP.
 
+   Requires:
+      If the script is not being run as a task, the WAITEP statement is ignored
+         (and no error message is generated). Execution continues with the next
+         statement.
+         
    Examples:
       ! Wait for EP to recover to at least 50% of maximum
       WAITEP 50

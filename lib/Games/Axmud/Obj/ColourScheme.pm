@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2019 A S Lewis
+# Copyright (C) 2011-2020 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -13,7 +13,7 @@
 #
 #
 # Games::Axmud::Obj::ColourScheme
-# Colour scheme objects, used by pane objects (GA::Table::Pane) to set colours and fonts in the pane
+# Colour scheme object, used by pane objects (GA::Table::Pane) to set colours and fonts in the pane
 #   object's textview(s)
 
 { package Games::Axmud::Obj::ColourScheme;
@@ -36,7 +36,10 @@
         #   and fonts in the pane object's textview(s)
         #
         # Expected arguments
-        #   $name       - Unique name for this colour scheme (max 16 chars)
+        #   $name       - Unique name for this colour scheme (max 16 chars, containing
+        #                   A-Za-z0-9_ - 1st char can't be number, non-Latin alphabets acceptable.
+        #                   Must not exist as a key in the global hash of reserved names,
+        #                   $axmud::CLIENT->constReservedHash)
         #
         # Return values
         #   'undef' on improper arguments or if $name is invalid
@@ -77,7 +80,7 @@
             _objName                    => 'colour_scheme_' . $name,
             _objClass                   => $class,
             _parentFile                 => 'winmaps',
-            _parentWorld                => undef,       # No parent file object
+            _parentWorld                => undef,       # No parent world object
             _privFlag                   => FALSE,       # All IVs are public
 
             # IVs
@@ -115,7 +118,6 @@
             # Flag set to TRUE if all Axmud colour tags should be ignored altogether, leaving the
             #   textview object able to use only its default text, underlay and background colours
             overrideAllFlag             => FALSE,
-
         };
 
         # Bless the object into existence

@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2019 A S Lewis
+# Copyright (C) 2011-2020 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -383,7 +383,18 @@
             defaultMapWidthPixels       => undef,       # Set below
             defaultMapHeightPixels      => undef,
 
-            # Default colours - used to reset colours to defaults
+            # Hash of region scheme objects, specifying a set of colours to use in the automapper.
+            #   The object named 'default' always exists and cannot be deleted. Other objects can
+            #   have any name (i.e. they don't need to match a region name)
+            # Hash in the form
+            #   $regionSchemeHash{style_name} = blessed_reference_to_scheme_object
+            regionSchemeHash            => {},
+            # Shortcut to the default region scheme object
+            defaultSchemeObj            => undef,       # Set below
+
+            # Default colours - used to reset region scheme colours to default values
+            # N.b. Region schemes have corresponding IVs for all of these values except for
+            #   ->defaultNoBackgroundColour
             defaultBackgroundColour     => '#FFFF99',   # Cream - map displayed
             defaultNoBackgroundColour   => '#FFFFFF',   # White - no map
             defaultRoomColour           => '#FFFFFF',   # White - room
@@ -431,42 +442,6 @@
             defaultSelectExitTagColour  => '#0088FF',   # Blue - selected exit tag
             defaultMapLabelColour       => '#C90640',   # Dark red - map label
             defaultSelectMapLabelColour => '#0088FF',   # Blue - selected label
-
-            # Current colours
-            backgroundColour            => undef,       # Set below
-            noBackgroundColour          => undef,       # Set below
-            roomColour                  => undef,
-            roomTextColour              => undef,
-            selectBoxColour             => undef,
-            borderColour                => undef,
-            currentBorderColour         => undef,
-            currentFollowBorderColour   => undef,
-            currentWaitBorderColour     => undef,
-            currentSelectBorderColour   => undef,
-            lostBorderColour            => undef,
-            lostSelectBorderColour      => undef,
-            ghostBorderColour           => undef,
-            ghostSelectBorderColour     => undef,
-            selectBorderColour          => undef,
-            roomAboveColour             => undef,
-            roomBelowColour             => undef,
-            roomTagColour               => undef,
-            selectRoomTagColour         => undef,
-            roomGuildColour             => undef,
-            selectRoomGuildColour       => undef,
-            exitColour                  => undef,
-            selectExitColour            => undef,
-            selectExitTwinColour        => undef,
-            selectExitShadowColour      => undef,
-            randomExitColour            => undef,
-            impassableExitColour        => undef,
-            mysteryExitColour           => undef,
-            checkedDirColour            => undef,
-            dragExitColour              => undef,
-            exitTagColour               => undef,
-            selectExitTagColour         => undef,
-            mapLabelColour              => undef,
-            selectMapLabelColour        => undef,
 
             # Hash of map label style objects. Each object defines attributes like text colour,
             #   italics, and so on, that can be applied to multiple map labels
@@ -612,6 +587,24 @@
             #   'complex_exit' - Draw complex exits (there are four kinds of exits drawn -
             #       incomplete, uncertain, one-way and two-way)
             drawExitMode                => 'ask_regionmap',
+            # Flag set to TRUE if the automapper should obscure (i.e. filter out) some exits,
+            #   drawing only those exits for rooms near the current room, or for selected rooms (and
+            #   selected exits), and for rooms whose rooms flags match those in
+            #   GA::Client->constRoomNoObscuredHash (e.g. 'main_route')
+            obscuredExitFlag            => FALSE,
+            # Flag set to TRUE if the automapper should re-obscure exits as the character moves
+            #   around (so that only exits around the character's location are visible), and
+            #   when other conditions change
+            obscuredExitRedrawFlag      => FALSE,
+            # Radius (in gridblocks) of a square area, with the current room in the middle. When
+            #   obscuring exits is enabled, exits are drawn for all rooms in this area (including
+            #   the current room), but not necessarily for any rooms outside the area
+            # Use 1 to draw only the current room, 2 to draw exits for rooms in a 3x3 area, 3 for a
+            #   5x5 area, and so on
+            obscuredExitRadius          => 2,
+            # Max radius (the minimum is always 1). This maximum also applies to
+            #   GA::Obj::Regionmap->obscuredExitRadius
+            maxobscuredExitRadius       => 9,
             # When this flag is set to TRUE, exit ornaments are drawn. If set to FALSE, ornaments
             #   aren't drawn
             drawOrnamentsFlag           => TRUE,
@@ -1077,45 +1070,12 @@
         $self->{defaultMapHeightPixels}
             = $self->{defaultGridHeightBlocks} * $self->{defaultBlockHeightPixels};
 
-        # Set current colours (so the literal values above only need appear once)
-        $self->{backgroundColour}       = $self->{defaultBackgroundColour};
-        $self->{noBackgroundColour}     = $self->{defaultNoBackgroundColour};
-        $self->{roomColour}             = $self->{defaultRoomColour};
-        $self->{roomTextColour}         = $self->{defaultRoomTextColour};
-        $self->{selectBoxColour}        = $self->{defaultSelectBoxColour};
-        $self->{borderColour}           = $self->{defaultBorderColour};
-        $self->{currentBorderColour}    = $self->{defaultCurrentBorderColour};
-        $self->{currentFollowBorderColour}
-                                        = $self->{defaultCurrentFollowBorderColour};
-        $self->{currentWaitBorderColour}
-                                        = $self->{defaultCurrentWaitBorderColour};
-        $self->{currentSelectBorderColour}
-                                        = $self->{defaultCurrentSelectBorderColour};
-        $self->{lostBorderColour}       = $self->{defaultLostBorderColour};
-        $self->{lostSelectBorderColour} = $self->{defaultLostSelectBorderColour};
-        $self->{ghostBorderColour}      = $self->{defaultGhostBorderColour};
-        $self->{ghostSelectBorderColour}
-                                        = $self->{defaultGhostSelectBorderColour};
-        $self->{selectBorderColour}     = $self->{defaultSelectBorderColour};
-        $self->{roomAboveColour}        = $self->{defaultRoomAboveColour};
-        $self->{roomBelowColour}        = $self->{defaultRoomBelowColour};
-        $self->{roomTagColour}          = $self->{defaultRoomTagColour};
-        $self->{selectRoomTagColour}    = $self->{defaultSelectRoomTagColour};
-        $self->{roomGuildColour}        = $self->{defaultRoomGuildColour};
-        $self->{selectRoomGuildColour}  = $self->{defaultSelectRoomGuildColour};
-        $self->{exitColour}             = $self->{defaultExitColour};
-        $self->{selectExitColour}       = $self->{defaultSelectExitColour};
-        $self->{selectExitTwinColour}   = $self->{defaultSelectExitTwinColour};
-        $self->{selectExitShadowColour} = $self->{defaultSelectExitShadowColour};
-        $self->{randomExitColour}       = $self->{defaultRandomExitColour};
-        $self->{impassableExitColour}   = $self->{defaultImpassableExitColour};
-        $self->{mysteryExitColour}      = $self->{defaultMysteryExitColour};
-        $self->{checkedDirColour}       = $self->{defaultCheckedDirColour};
-        $self->{dragExitColour}         = $self->{defaultDragExitColour};
-        $self->{exitTagColour}          = $self->{defaultExitTagColour};
-        $self->{selectExitTagColour}    = $self->{defaultSelectExitTagColour};
-        $self->{mapLabelColour}         = $self->{defaultMapLabelColour};
-        $self->{selectMapLabelColour}   = $self->{defaultSelectMapLabelColour};
+        # Create a default region scheme object
+        $self->ivPoke(
+            'defaultSchemeObj',
+            Games::Axmud::Obj::RegionScheme->new($session, $self, 'default'),
+        );
+        $self->ivAdd('regionSchemeHash', 'default', $self->defaultSchemeObj);
 
         # Create some map label styles
         $self->addLabelStyle($session, 'Style 1', $self->{defaultMapLabelColour});
@@ -4262,6 +4222,261 @@
 
     # Add non-model objects
 
+    sub addRegionScheme {
+
+        # Called by $self->new and GA::Cmd::AddRegionScheme->do
+        # Adds a new region scheme object (GA::Obj::RegionScheme)
+        #
+        # Expected arguments
+        #   $session        - The calling function's GA::Session
+        #   $name           - A name for the region scheme (any characters, max length 16)
+        #
+        # Return values
+        #   'undef' on improper arguments or if the region scheme object can't be created
+        #   Otherwise returns the region scheme object created
+
+        my ($self, $session, $name, $check) = @_;
+
+        # Local variables
+        my $schemeObj;
+
+        # Check for improper arguments
+        if (! defined $session || ! defined $name || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->addRegionScheme', @_);
+        }
+
+        # Check specified values are valid
+        if (length ($name) > 16) {
+
+            return undef;
+        }
+
+        # Create the region scheme object
+        $schemeObj = Games::Axmud::Obj::RegionScheme->new($session, $self, $name);
+        if (! $schemeObj) {
+
+            return undef;
+
+        } else {
+
+            $self->ivAdd('regionSchemeHash', $name, $schemeObj);
+
+            return $schemeObj;
+        }
+    }
+
+    sub deleteRegionScheme {
+
+        # Called by anything
+        # Deletes the specified region scheme
+        #
+        # Expected arguments
+        #   $updateFlag     - Flag set to TRUE if all Automapper windows using this world model
+        #                       should be updated now, FALSE if not (in which case, they can be
+        #                       updated later by the calling function, when it is ready)
+        #   $name           - The name of the region scheme to delete
+        #
+        # Return values
+        #   'undef' on improper arguments, if the region scheme doesn't exist or if the default
+        #       region scheme (which can't be deleted) is specified
+        #   1 otherwise
+
+        my ($self, $updateFlag, $name, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $updateFlag || ! defined $name || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->deleteRegionScheme', @_);
+        }
+
+        if (! $self->ivExists('regionSchemeHash', $name) || $name eq 'default') {
+
+            return undef;
+        }
+
+        $self->ivDelete('regionSchemeHash', $name);
+
+        # Any regionmap using that region scheme should be redrawn (if the flag is specified)
+        foreach my $regionmapObj ($self->ivValues('regionmapHash')) {
+
+            if (defined $regionmapObj->regionScheme && $regionmapObj->regionScheme eq $name) {
+
+                $regionmapObj->ivUndef('regionScheme');
+                if ($updateFlag) {
+
+                    # Redraw the region in any automapper window in which it's already drawn
+                    $self->updateRegion($regionmapObj->name);
+                }
+            }
+        }
+
+        return 1;
+    }
+
+    sub renameRegionScheme {
+
+        # Called by GA::Win::Map->doRegionSchemeCallback and GA::Cmd::RenameRegionScheme->do
+        # Renames the specified region scheme
+        #
+        # Expected arguments
+        #   $session        - The calling function's GA::Session
+        #   $oldName        - The name of an existing region scheme
+        #   $newName        - The new name for that region scheme
+        #
+        # Return values
+        #   'undef' on improper arguments, or if $oldName or $newName are invalid, or if the default
+        #       region scheme (which can't be renamed) is specified
+        #   1 otherwise
+
+        my ($self, $session, $oldName, $newName, $check) = @_;
+
+        # Local variables
+        my $schemeObj;
+
+        # Check for improper arguments
+        if (! defined $session || ! defined $oldName || ! defined $newName || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->renameRegionScheme', @_);
+        }
+
+        # Check specified values are valid
+        if (
+            length ($newName) > 16
+            || ! $self->ivExists('regionSchemeHash', $oldName)
+            || $self->ivExists('regionSchemeHash', $newName)
+            || $oldName eq 'default'
+        ) {
+            return undef;
+        }
+
+        # Get the region scheme object, and rename it
+        $schemeObj = $self->ivShow('regionSchemeHash', $oldName);
+        $schemeObj->ivPoke('name', $newName);
+
+        # Update our IVs
+        $self->ivDelete('regionSchemeHash', $oldName);
+        $self->ivAdd('regionSchemeHash', $newName, $schemeObj);
+
+        return 1;
+    }
+
+    sub attachRegionScheme {
+
+        # Called by anything
+        # Attaches a region scheme to a regionmap
+        #
+        # Expected arguments
+        #   $updateFlag     - Flag set to TRUE if all Automapper windows using this world model
+        #                       should be updated now, FALSE if not (in which case, they can be
+        #                       updated later by the calling function, when it is ready)
+        #   $schemeName     - The name of the region scheme to apply
+        #   $regionName     - The name of the regionmap to which the scheme should be applied
+        #
+        # Return values
+        #   'undef' on improper arguments, if the scheme/region names are invalid, if the region
+        #       scheme object can't be applied or if it has already been applied
+        #   1 otherwise
+
+        my ($self, $updateFlag, $schemeName, $regionName, $check) = @_;
+
+        # Local variables
+        my ($schemeObj, $regionmapObj);
+
+        # Check for improper arguments
+        if (
+            ! defined $updateFlag || ! defined $schemeName || ! defined $regionName
+            || defined $check
+        ) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->attachRegionScheme', @_);
+        }
+
+        # Retrieve the specified objects
+        $schemeObj = $self->ivShow('regionSchemeHash', $schemeName);
+        $regionmapObj = $self->ivShow('regionmapHash', $regionName);
+        if (! $schemeObj || ! $regionmapObj) {
+
+            return undef;
+        }
+
+        # If the scheme has already been applied to this regionmap, do nothing (i.e. don't redraw
+        #   the regionmap)
+        if (
+            (
+                ! defined $regionmapObj->regionScheme
+                && $schemeObj eq $self->defaultSchemeObj
+            ) || (
+                defined $regionmapObj->regionScheme
+                && $regionmapObj->regionScheme eq $schemeObj->name
+            )
+        ) {
+            return undef;
+        }
+
+        # Apply the region scheme. Apply the default region scheme by setting the value to 'undef'
+        if ($schemeObj eq $self->defaultSchemeObj) {
+            $regionmapObj->ivUndef('regionScheme');
+        } else {
+            $regionmapObj->ivPoke('regionScheme', $schemeObj->name);
+        }
+
+        if ($updateFlag) {
+
+            # Redraw the region in any automapper window in which it's already drawn
+            $self->updateRegion($regionName);
+        }
+
+        return 1;
+    }
+
+    sub detachRegionScheme {
+
+        # Called by anything
+        # Detaches the region scheme from a regionmap (the 'default' region scheme then applies to
+        #   it)
+        #
+        # Expected arguments
+        #   $updateFlag     - Flag set to TRUE if all Automapper windows using this world model
+        #                       should be updated now, FALSE if not (in which case, they can be
+        #                       updated later by the calling function, when it is ready)
+        #   $regionName     - The name of the regionmap to which the scheme should be applied
+        #
+        # Return values
+        #   'undef' on improper arguments, if the region name is invalid or if the region has no
+        #       region scheme attached to it
+        #   1 otherwise
+
+        my ($self, $updateFlag, $regionName, $check) = @_;
+
+        # Local variables
+        my $regionmapObj;
+
+        # Check for improper arguments
+        if (! defined $updateFlag || ! defined $regionName || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->addRegionScheme', @_);
+        }
+
+        # Retrieve the specified regionmap
+        $regionmapObj = $self->ivShow('regionmapHash', $regionName);
+        if (! $regionmapObj || ! defined $regionmapObj->regionScheme) {
+
+            return undef;
+
+        } else {
+
+            $regionmapObj->ivUndef('regionScheme');
+            if ($updateFlag) {
+
+                # Redraw the region in any automapper window in which it's already drawn
+                $self->updateRegion($regionName);
+            }
+        }
+
+        return 1;
+    }
+
     sub addLabelStyle {
 
         # Called by $self->new and GA::Cmd::AddLabelStyle->do
@@ -4408,7 +4623,7 @@
         #   $newName        - The new name for that style
         #
         # Return values
-        #   'undef' on improper arguments or if $oldName or $newName are invalid
+        #   'undef' on improper arguments, or if $oldName or $newName are invalid
         #   1 otherwise
 
         my ($self, $session, $oldName, $newName, $check) = @_;
@@ -10070,7 +10285,7 @@
                 # Redraw all drawn regions
                 $mapWin->redrawRegions();
 
-            } else {
+            } elsif ($mapWin->ivExists('parchmentHash', $regionmapObj->name)) {
 
                 # Redraw the specified region (if it's drawn in this automapper window). The TRUE
                 #   argument means 'don't redraw other regions'
@@ -18009,6 +18224,39 @@
         }
     }
 
+    sub getRegionScheme {
+
+        # Can be called by anything
+        # Get the region scheme object (GA::Obj::RegionScheme) that applies to a specified regionmap
+        #
+        # Expected arguments
+        #   $regionmapObj   - The specified GA::Obj::Regionmap
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $regionmapObj, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $regionmapObj || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->getRegionScheme', @_);
+        }
+
+        if (
+            defined $regionmapObj->regionScheme
+            && $self->ivExists('regionSchemeHash', $regionmapObj->regionScheme)
+        ) {
+            return $self->ivShow('regionSchemeHash', $regionmapObj->regionScheme);
+
+        } else{
+
+            # If the regionmap doesn't name a region scheme, then use the default one
+            return $self->defaultSchemeObj;
+        }
+    }
+
     # (Called from GA::Win::Map menu, 'View' column)
 
     sub toggleFlag {
@@ -18484,6 +18732,157 @@
 
             $mapWin->setActiveItem($menuName, FALSE);
 
+            $mapWin->set_ignoreMenuUpdateFlag(FALSE);
+
+            # Sensitise/desensitise menu bar/toolbar items, depending on current conditions
+            $mapWin->restrictWidgets();
+        }
+
+        return 1;
+    }
+
+    sub toggleObscuredExitFlag {
+
+        # Called by anonymous function in GA::Win::Map->enableViewColumn
+        # Sets the value of GA::Obj::Regionmap->obscuredExitFlag and updates each Automapper window
+        #
+        # Expected arguments
+        #   $regionmapObj   - The regionmap to modify
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $regionmapObj, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $regionmapObj || defined $check) {
+
+            return $axmud::CLIENT->writeImproper(
+                $self->_objClass . '->toggleObscuredExitFlag',
+                @_,
+            );
+        }
+
+        if (! $regionmapObj->obscuredExitFlag) {
+            $regionmapObj->ivPoke('obscuredExitFlag', TRUE);
+        } else {
+            $regionmapObj->ivPoke('obscuredExitFlag', FALSE);
+        }
+
+        # Update every Automapper window using this world model
+        foreach my $mapWin ($self->collectMapWins()) {
+
+            my ($menuName, $menuItem);
+
+            # Redraw the specified regionmap (the TRUE argument means don't redraw other regionmaps)
+            $mapWin->redrawRegions($regionmapObj, TRUE);
+
+            # Update the menu item
+            $mapWin->set_ignoreMenuUpdateFlag(TRUE);
+            $mapWin->setActiveItem('obscured_exits_region', $regionmapObj->obscuredExitFlag);
+            $mapWin->set_ignoreMenuUpdateFlag(FALSE);
+
+            # Sensitise/desensitise menu bar/toolbar items, depending on current conditions
+            $mapWin->restrictWidgets();
+        }
+
+        return 1;
+    }
+
+    sub toggleObscuredExitRedrawFlag {
+
+        # Called by anonymous function in GA::Win::Map->enableViewColumn
+        # Sets the value of GA::Obj::Regionmap->obscuredExitRedrawFlag and updates each Automapper
+        #   window
+        #
+        # Expected arguments
+        #   $regionmapObj   - The regionmap to modify
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $regionmapObj, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $regionmapObj || defined $check) {
+
+            return $axmud::CLIENT->writeImproper(
+                $self->_objClass . '->toggleObscuredExitRedrawFlag',
+                @_,
+            );
+        }
+
+        if (! $regionmapObj->obscuredExitRedrawFlag) {
+            $regionmapObj->ivPoke('obscuredExitRedrawFlag', TRUE);
+        } else {
+            $regionmapObj->ivPoke('obscuredExitRedrawFlag', FALSE);
+        }
+
+        # Update every Automapper window using this world model
+        foreach my $mapWin ($self->collectMapWins()) {
+
+            my ($menuName, $menuItem);
+
+            # Redraw the specified regionmap (the TRUE argument means don't redraw other regionmaps)
+            $mapWin->redrawRegions($regionmapObj, TRUE);
+
+            # Update the menu item
+            $mapWin->set_ignoreMenuUpdateFlag(TRUE);
+            $mapWin->setActiveItem(
+                'auto_redraw_obscured_region',
+                $regionmapObj->obscuredExitRedrawFlag,
+            );
+            $mapWin->set_ignoreMenuUpdateFlag(FALSE);
+
+            # Sensitise/desensitise menu bar/toolbar items, depending on current conditions
+            $mapWin->restrictWidgets();
+        }
+
+        return 1;
+    }
+
+    sub toggleDrawOrnamentsFlag {
+
+        # Called by anonymous function in GA::Win::Map->enableViewColumn
+        # Sets the value of GA::Obj::Regionmap->drawOrnamentsFlag and updates each Automapper window
+        #
+        # Expected arguments
+        #   $regionmapObj   - The regionmap to modify
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $regionmapObj, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $regionmapObj || defined $check) {
+
+            return $axmud::CLIENT->writeImproper(
+                $self->_objClass . '->toggleDrawOrnamentsFlag',
+                @_,
+            );
+        }
+
+        if (! $regionmapObj->drawOrnamentsFlag) {
+            $regionmapObj->ivPoke('drawOrnamentsFlag', TRUE);
+        } else {
+            $regionmapObj->ivPoke('drawOrnamentsFlag', FALSE);
+        }
+
+        # Update every Automapper window using this world model
+        foreach my $mapWin ($self->collectMapWins()) {
+
+            my ($menuName, $menuItem);
+
+            # Redraw the specified regionmap (the TRUE argument means don't redraw other regionmaps)
+            $mapWin->redrawRegions($regionmapObj, TRUE);
+
+            # Update the menu item
+            $mapWin->set_ignoreMenuUpdateFlag(TRUE);
+            $mapWin->setActiveItem('draw_ornaments_region', $regionmapObj->drawOrnamentsFlag);
             $mapWin->set_ignoreMenuUpdateFlag(FALSE);
 
             # Sensitise/desensitise menu bar/toolbar items, depending on current conditions
@@ -24182,6 +24581,21 @@
         return 1;
     }
 
+    sub set_obscuredExitRadius {
+
+        my ($self, $radius, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $radius || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->set_obscuredExitRadius', @_);
+        }
+
+        $self->ivPoke('obscuredExitRadius', $radius);
+
+        return 1;
+    }
+
     sub set_lightStatus {
 
         # Called by GA::Cmd::SetLightStatus->do
@@ -24322,7 +24736,6 @@
 
         return 1;
     }
-
 
     sub set_preDrawAllocation {
 
@@ -24631,6 +25044,11 @@
     sub defaultMapHeightPixels
         { $_[0]->{defaultMapHeightPixels} }
 
+    sub regionSchemeHash
+        { my $self = shift; return %{$self->{regionSchemeHash}}; }
+    sub defaultSchemeObj
+        { $_[0]->{defaultSchemeObj} }
+
     sub defaultBackgroundColour
         { $_[0]->{defaultBackgroundColour} }
     sub defaultNoBackgroundColour
@@ -24700,75 +25118,6 @@
     sub defaultSelectMapLabelColour
         { $_[0]->{defaultSelectMapLabelColour} }
 
-    sub backgroundColour
-        { $_[0]->{backgroundColour} }
-    sub noBackgroundColour
-        { $_[0]->{noBackgroundColour} }
-    sub roomColour
-        { $_[0]->{roomColour} }
-    sub roomTextColour
-        { $_[0]->{roomTextColour} }
-    sub selectBoxColour
-        { $_[0]->{selectBoxColour} }
-    sub borderColour
-        { $_[0]->{borderColour} }
-    sub currentBorderColour
-        { $_[0]->{currentBorderColour} }
-    sub currentFollowBorderColour
-        { $_[0]->{currentFollowBorderColour} }
-    sub currentWaitBorderColour
-        { $_[0]->{currentWaitBorderColour} }
-    sub currentSelectBorderColour
-        { $_[0]->{currentSelectBorderColour} }
-    sub lostBorderColour
-        { $_[0]->{lostBorderColour} }
-    sub lostSelectBorderColour
-        { $_[0]->{lostSelectBorderColour} }
-    sub ghostBorderColour
-        { $_[0]->{ghostBorderColour} }
-    sub ghostSelectBorderColour
-        { $_[0]->{ghostSelectBorderColour} }
-    sub selectBorderColour
-        { $_[0]->{selectBorderColour} }
-    sub roomAboveColour
-        { $_[0]->{roomAboveColour} }
-    sub roomBelowColour
-        { $_[0]->{roomBelowColour} }
-    sub roomTagColour
-        { $_[0]->{roomTagColour} }
-    sub selectRoomTagColour
-        { $_[0]->{selectRoomTagColour} }
-    sub roomGuildColour
-        { $_[0]->{roomGuildColour} }
-    sub selectRoomGuildColour
-        { $_[0]->{selectRoomGuildColour} }
-    sub exitColour
-        { $_[0]->{exitColour} }
-    sub selectExitColour
-        { $_[0]->{selectExitColour} }
-    sub selectExitTwinColour
-        { $_[0]->{selectExitTwinColour} }
-    sub selectExitShadowColour
-        { $_[0]->{selectExitShadowColour} }
-    sub randomExitColour
-        { $_[0]->{randomExitColour} }
-    sub impassableExitColour
-        { $_[0]->{impassableExitColour} }
-    sub mysteryExitColour
-        { $_[0]->{mysteryExitColour} }
-    sub checkedDirColour
-        { $_[0]->{checkedDirColour} }
-    sub dragExitColour
-        { $_[0]->{dragExitColour} }
-    sub exitTagColour
-        { $_[0]->{exitTagColour} }
-    sub selectExitTagColour
-        { $_[0]->{selectExitTagColour} }
-    sub mapLabelColour
-        { $_[0]->{mapLabelColour} }
-    sub selectMapLabelColour
-        { $_[0]->{selectMapLabelColour} }
-
     sub mapLabelStyleHash
         { my $self = shift; return %{$self->{mapLabelStyleHash}}; }
     sub mapLabelStyle
@@ -24813,6 +25162,14 @@
 
     sub drawExitMode
         { $_[0]->{drawExitMode} }
+    sub obscuredExitFlag
+        { $_[0]->{obscuredExitFlag} }
+    sub obscuredExitRedrawFlag
+        { $_[0]->{obscuredExitRedrawFlag} }
+    sub obscuredExitRadius
+        { $_[0]->{obscuredExitRadius} }
+    sub maxObscuredExitRadius
+        { $_[0]->{maxObscuredExitRadius} }
     sub drawOrnamentsFlag
         { $_[0]->{drawOrnamentsFlag} }
     sub horizontalExitLengthBlocks

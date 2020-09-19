@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2019 A S Lewis
+# Copyright (C) 2011-2020 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # Lesser Public License as published by the Free Software Foundation, either version 3 of the
@@ -709,6 +709,9 @@
                     );
                 }
 
+                # Remove any whitespace from the end of the line body
+                $lineBody =~ s/\s+$//;
+
                 # Create a LA::Line with the line body
                 $procLineCount++;
                 $lineObj = Language::Axbasic::Line->new(
@@ -931,25 +934,27 @@
             'addstatus', 'addtimer', 'addtrig', 'angle', 'array', 'beep', 'begin', 'break',
             'bypass', 'call', 'case', 'client', 'cls', 'close', 'closewin', 'create', 'data',
             'debug', 'def', 'degrees', 'delalias', 'delgauge', 'delhook', 'deliface', 'delmacro',
-            'delstatus', 'deltimer', 'deltrig', 'dim', 'do', 'else', 'emptywin', 'end', 'erase',
-            'error', 'exit', 'flashwin', 'for', 'global', 'gosub', 'goto', 'help', 'if', 'input',
-            'let', 'local', 'login', 'loop', 'multi', 'move', 'name', 'needtask', 'new', 'newold',
-            'next', 'nextiface', 'nolet', 'numeric', 'old', 'on', 'open', 'openentry', 'openwin',
-            'option', 'org', 'organization', 'outin', 'output', 'paintwin', 'pause', 'peek',
-            'peekequals', 'peekexists', 'peekfind', 'peekfirst', 'peekget', 'peekindex', 'peekkeys',
-            'peeklast', 'peekmatch', 'peeknumber', 'peekpairs', 'peekshow', 'peekvalues', 'perl',
-            'persist', 'play',  'poke', 'pokeadd', 'pokedec', 'pokedechash', 'pokedelete',
-            'pokedivide', 'pokeempty', 'pokefalse', 'pokeinc', 'pokeinchash', 'pokeint',
-            'pokeminus', 'pokemultiply', 'pokeplus', 'pokepop', 'pokepush', 'pokereplace',
-            'pokeset', 'pokeshift', 'poketrue', 'pokeundef', 'pokeunshift', 'print', 'profile',
-            'pseudo', 'radians', 'randomize', 'read', 'redim', 'redirect', 'relay', 'rem',
-            'require', 'reset', 'restore', 'return', 'revpath', 'select', 'send', 'setgauge',
-            'setstatus', 'settrig', 'silent', 'skipiface', 'sleep', 'sort', 'sortcase', 'sortcaser',
-            'sortr', 'speak', 'speed', 'step', 'stop', 'string', 'sub', 'text', 'titlewin', 'then',
-            'to', 'typo', 'unflashwin', 'until', 'waitactive', 'waitalive', 'waitarrive',
-            'waitdead', 'waitep', 'waitgp', 'waithp', 'waitmp', 'waitnextxp', 'waitnotactive',
-            'waitpassout', 'waitscript', 'waitsleep', 'waitsp', 'waittask', 'waittotalxp',
-            'waittrig', 'waitxp', 'warning', 'while', 'write', 'writewin',
+            'delstatus', 'deltimer', 'deltrig', 'dim', 'dimensions', 'do', 'each', 'else',
+            'elseif', 'emptywin', 'end', 'erase', 'error', 'exit', 'flashwin', 'for', 'global',
+            'gosub', 'goto', 'help', 'if', 'in', 'input', 'let', 'local', 'login', 'loop', 'lower',
+            'multi', 'move', 'name', 'needtask', 'new', 'newold', 'next', 'nextiface', 'nolet',
+            'numeric', 'old', 'on', 'open', 'openentry', 'openwin', 'option', 'org', 'organization',
+            'outin', 'output', 'paintwin', 'pause', 'peek', 'peekequals', 'peekexists', 'peekfind',
+            'peekfirst', 'peekget', 'peekindex', 'peekkeys', 'peeklast', 'peekmatch', 'peeknumber',
+            'peekpairs', 'peekshow', 'peekvalues', 'perl', 'persist', 'play',  'poke', 'pokeadd',
+            'pokedec', 'pokedechash', 'pokedelete', 'pokedivide', 'pokeempty', 'pokefalse',
+            'pokeinc', 'pokeinchash', 'pokeint', 'pokeminus', 'pokemultiply', 'pokeplus', 'pokepop',
+            'pokepush', 'pokereplace', 'pokeset', 'pokeshift', 'poketrue', 'pokeundef',
+            'pokeunshift', 'pop', 'print', 'profile', 'pseudo', 'push', 'radians', 'randomize',
+            'read', 'redim', 'redirect', 'relay', 'rem', 'require', 'reset', 'restore', 'return',
+            'revpath', 'select', 'send', 'setalias', 'setgauge', 'sethook', 'setmacro', 'setstatus',
+            'settimer', 'settrig', 'shift', 'silent', 'size', 'skipiface', 'sleep', 'sort',
+            'sortcase', 'sortcaser', 'sortr', 'speak', 'speed', 'step', 'stop', 'string', 'sub',
+            'tab', 'text', 'titlewin', 'then', 'to', 'typo', 'unflashwin', 'unshift', 'until',
+            'upper', 'waitactive', 'waitalias', 'waitalive', 'waitarrive', 'waitdead', 'waitep',
+            'waitgp', 'waithook', 'waithp', 'waitmacro', 'waitmp', 'waitnextxp', 'waitnotactive',
+            'waitpassout', 'waitscript', 'waitsleep', 'waitsp', 'waittask', 'waittimer',
+            'waittotalxp', 'waittrig', 'waitxp', 'warning', 'while', 'write', 'writewin',
         );
 
         foreach my $keyword (@keywordList) {
@@ -999,8 +1004,8 @@
             nextStatement               => undef,
 
             # A hash to convert primitive line numbers into ->procLineNum values
-            #   e.g.    10 print "hello"
-            #           20 goto 10
+            #   e.g.    10 PRINT "hello"
+            #           20 GOTO 10
             #   key = 10, value = 0 / key = 20, value = 1
             primLineHash                => {},
 
@@ -1060,6 +1065,10 @@
                 'begin'                 => 'reset',
                 'create'                => 'open',
                 'degrees'               => 'option',
+                'dimensions'            => 'let',
+                'each'                  => 'for',
+                'in'                    => 'for',
+                'lower'                 => 'let',
                 'name'                  => 'open',
                 'needtask'              => 'option',
                 'new'                   => 'open',
@@ -1077,12 +1086,15 @@
                 'redirect'              => 'option',
                 'require'               => 'option',
                 'silent'                => 'option',
+                'size'                  => 'let',
                 'step'                  => 'for',
                 'string'                => 'sub',
+                'tab'                   => 'print',
                 'text'                  => 'open',
                 'then'                  => 'for',
                 'to'                    => 'for',
                 'typo'                  => 'option',
+                'upper'                 => 'let',
             },
             # A hash of keywords that are either synonyms of other keywords (such as PAUSE and
             #   SLEEP), or whose code is so similar that their LA::Statement objects should be
@@ -1090,6 +1102,7 @@
             equivKeywordHash            => {
                 'addcongauge'           => 'addgauge',
                 'addconstatus'          => 'addstatus',
+                'elseif'                => 'else',
                 'sleep'                 => 'pause',
             },
             # A list of statements that interact directly with Axmud
@@ -1105,21 +1118,24 @@
                 'pokedelete', 'pokedivide', 'pokeempty', 'pokefalse', 'pokeinc', 'pokeinchash',
                 'pokeint', 'pokeminus', 'pokemultiply', 'pokeplus', 'pokepop', 'pokepush',
                 'pokereplace', 'pokeset', 'pokeshift', 'poketrue', 'pokeundef', 'pokeunshift',
-                'profile', 'relay', 'revpath', 'send', 'setgauge', 'setstatus', 'settrig',
-                'skipiface', 'sleep', 'speak', 'speed', 'titlewin', 'unflashwin', 'waitactive',
-                'waitalive', 'waitarrive', 'waitdead', 'waitep', 'waitgp', 'waithp', 'waitmp',
-                'waitnextxp', 'waitpassout', 'waitscript', 'waitsleep', 'waitsp', 'waittask',
-                'waittotalxp', 'waittrig', 'waitxp', 'warning', 'write', 'writewin',
+                'profile', 'relay', 'revpath', 'send',  'setalias', 'setgauge', 'sethook',
+                'setmacro', 'setstatus', 'settimer', 'settrig', 'skipiface', 'sleep', 'speak',
+                'speed', 'titlewin', 'unflashwin', 'waitactive', 'waitalias', 'waitalive',
+                'waitarrive', 'waitdead', 'waitep', 'waitgp', 'waithook', 'waithp', 'waitmacro',
+                'waitmp', 'waitnextxp', 'waitpassout', 'waitscript', 'waitsleep', 'waitsp',
+                'waittask', 'waittimer', 'waittotalxp', 'waittrig', 'waitxp', 'warning', 'write',
+                'writewin',
             ],
             # A list of keywords that are ignored when the Axbasic script isn't being run from
             #   within a task
             taskKeywordList             => [
                 'addcongauge', 'addgauge', 'addconstatus', 'addstatus', 'break', 'closewin',
                 'delgauge', 'emptywin', 'flashwin', 'openentry', 'openwin', 'paintwin', 'pause',
-                'setgauge', 'settrig', 'sleep', 'titlewin', 'unflashwin', 'waitactive', 'waitalive',
-                'waitarrive', 'waitdead', 'waitep', 'waitgp', 'waithp', 'waitmp', 'waitnextxp',
-                'waitnotactive', 'waitpassout', 'waitscript', 'waitsleep', 'waitsp', 'waittask',
-                'waittotalxp', 'waittrig', 'waitxp', 'writewin',
+                'setalias', 'setgauge', 'sethook', 'setmacro', 'settimer', 'settrig', 'sleep',
+                'titlewin', 'unflashwin', 'waitactive', 'waitalias', 'waitalive', 'waitarrive',
+                'waitdead', 'waitep', 'waitgp', 'waithook', 'waithp', 'waitmacro',  'waitmp',
+                'waitnextxp', 'waitnotactive', 'waitpassout', 'waitscript', 'waitsleep', 'waitsp',
+                'waittask', 'waittimer', 'waittotalxp', 'waittrig', 'waitxp', 'writewin',
             ],
 
             # A list of logical operators ('and', 'or', 'not')
@@ -1424,6 +1440,7 @@
                 'getroomtag$'           => '',
                 'getroomtitle$'         => '',
                 'iface$'                => '',
+                'ifacedata$'            => '',
                 'ifacename$'            => '',
                 'ifacepop$'             => '',
                 'ifaceselect$'          => 'N',
@@ -1459,9 +1476,11 @@
             # This IV is normally set to 'default'. When $self->parse is processing a GLOBAL
             #   statement, it is briefly set to 'global_scalar' (for scalars) or 'global_array' (for
             #   arrays). When processing a LOCAL or SUB statement, it is briefly set to
-            #   'local_scalar' (for scalars) or 'local_array' (for arrays). When processing a SORT
-            #   statement, it is briefly set to 'sort'. When processing a PEEK or PEEK... statement,
-            #   it is briefly set to 'peek_scalar' (for scalars) or 'peek_array' (for arrays)
+            #   'local_scalar' (for scalars) or 'local_array' (for arrays). When processing a PEEK
+            #   or PEEK... statement, it is briefly set to 'peek_scalar' (for scalars) or
+            #   'peek_array' (for arrays)
+            # When processing a FOR EACH, POP, PUSH, SHIFT or UNSHIFT statement, or a SORT statement
+            #   (or similar), it is set to 'simple'
             # A non-'default' value tells ->lookup to declare the variable by adding it one of the
             #   declared variable hashes. Otherwise, when the script refers to an undeclared
             #   variable, an error is produced
@@ -2575,48 +2594,88 @@
 
     sub interfaceNotification {
 
-        # Called by the parent task's ->notifyPatternSeen when one of the dependent interfaces
+        # Called by the parent task's ->triggerNotifySeen (etc) when one of the dependent interfaces
         #   created by a SETTRIG (etc) fires
         # Creates a LA::Notification object to store details of the fired interface, so that the
         #   script can retrieve them when it's ready
         #
+        # The format of arguments supplied by different GA::Task::Script functions is as follows:
+        #
+        #   ->triggerNotifySeen: (line_of_text, group_string_list)
+        #
+        #       line_of_text: The line of text sent by the world which caused the trigger to fire
+        #       group_string_list: A list of group substrings from the pattern match (the equivalent
+        #           of @_)
+        #
+        #   ->aliasNotifySeen
+        #
+        #       world_cmd: The world command which caused the alias to fire
+        #       group_string_list: A list of group substrings from the pattern match (the equivalent
+        #           of @_)
+        #
+        #   ->macroNotifySeen
+        #
+        #       keycode_string: The keycode string (combination of keypresses, e.g. 'ctrl + f1'
+        #           which caused the macro to fire
+        #       empty_list: An empty list
+        #
+        #   ->timerNotifySeen
+        #
+        #       session_time: The value of GA::Session->sessionTime when the timer fired (and that
+        #           caused the timer to fire)
+        #
+        #       other_time: For timers whose stimulus is an interval, the time (matches
+        #           GA::Session->sessionTime) at which the timer was due to fire. This value will be
+        #           less than or the same as session_time. For timers whose stimulus is a clock time
+        #           (in the form HH:MM firing once a day, or 99:MM firing once an hour, at MM
+        #           minutes past the hour), the stimulus itself
+        #
+        #   ->hookNotifySeen
+        #
+        #       hook_event: The hook event which caused the hook to fire
+        #
+        #       hook_var, hook_val: Zero, one or two items of additional data for this hook event.
+        #           The number of items depends on the hook event
+        #
         # Expected arguments
         #   $interfaceObj       - The active interface that fired
-        #   $lineOfText         - The line of text sent by the world which caused the interface to
-        #                           fire
+        #   $fireBecause        - A scalar describing why the interface fired
         #
         # Optional arguments
-        #   @grpStringList      - A list of group substrings supplied by the interface (empty if
-        #                           none were supplied)
+        #   @dataList           - A list of additional data, supplied by the interface when it
+        #                           fired (may be an empty list)
         #
         # Return values
         #   'undef' on improper arguments or if the LA::Notification object can't be created
         #   1 otherwise
 
-        my ($self, $interfaceObj, $lineOfText, @grpStringList) = @_;
+        my ($self, $interfaceObj, $fireBecause, @dataList) = @_;
 
         # Local variables
         my $obj;
 
         # Check for improper arguments
-        if (! defined $interfaceObj || ! defined $lineOfText) {
+        if (! defined $interfaceObj || ! defined $fireBecause) {
 
             return $axmud::CLIENT->writeImproper($self->_objClass . '->interfaceNotification', @_);
         }
 
-        # @grpStringList, if it is populated at all, contains the whole matching, followed by any
-        #   substrings. Remove the first element, the matching line, leaving us with the substrings
-        if (@grpStringList) {
-
-            shift @grpStringList;
+        # For triggers and aliases, @fireDataList (if it is populated at all) contains the whole
+        #   matching line of text/world command, followed by any substrings. Remove the first
+        #   element, leaving us with the substrings
+        if (
+            ($interfaceObj->category eq 'trigger' || $interfaceObj->category eq 'alias')
+            && @dataList
+        ) {
+            shift @dataList;
         }
 
         # Create a LA::Notification object to store the information about the fired interface
         $obj = Language::Axbasic::Notification->new(
             $self,
             $interfaceObj,
-            $lineOfText,
-            @grpStringList,
+            $fireBecause,
+            @dataList,
         );
 
         if (! $obj) {
@@ -3540,8 +3599,7 @@
         # Called by LA::RawScript->upload
         # The class that handles a single line in the script, which contains one or more statements
         #   (e.g. FOR A = 1 to 10 : NEXT A)
-        # (This object has no ->implement method. See the comments at the top of $self->parse for an
-        #   explanation)
+        # (This object has no ->implement method)
         #
         # Expected arguments
         #   $scriptObj      - Blessed reference to the parent LA::Script
@@ -3758,21 +3816,22 @@
         # Expected arguments
         #   $scriptObj          - Blessed reference to the parent LA::Script
         #   $interfaceObj       - The active interface which has fired
-        #   $lineOfText         - The line of text sent by the world which caused the interface to
-        #                           fire
+        #   $fireBecause        - A scalar describing why the interface fired (see the comments in
+        #                           LA::Script->interfaceNotification for a list of values)
+        #
         # Optional arguments
-        #   @grpStringList      - A list of group substrings supplied by the interface (empty if
-        #                           none were supplied)
+        #   @dataList           - A list of additional data, supplied by the interface when it
+        #                           fired (may be an empty list)
         #
         # Return values
         #   'undef' on improper arguments
         #   Blessed reference to the newly-created object on success
 
-        my ($class, $scriptObj, $interfaceObj, $lineOfText, @grpStringList) = @_;
+        my ($class, $scriptObj, $interfaceObj, $fireBecause, @dataList) = @_;
 
         if (
             ! defined $class || ! defined $scriptObj || ! defined $interfaceObj
-            || ! defined $lineOfText
+            || ! defined $fireBecause
         ) {
             return $axmud::CLIENT->writeImproper($class . '->new', @_);
         }
@@ -3802,9 +3861,12 @@
             name                        => $interfaceObj->name,
             time                        => $scriptObj->session->sessionTime,
 
-            # The matching line of text received from the world (and any group substrings)
-            text                        => $lineOfText,
-            grpStringList               => \@grpStringList,
+            # A scalar describing why the interface fired (see the comments in
+            #   LA::Script->interfaceNotification for a list of values)
+            fireBecause                 => $fireBecause,
+            # A list of additional data, supplied by the interface when it fired (may be an empty
+            #   list)
+            dataList                    => \@dataList,
         };
 
         # Bless the object into existence
@@ -3835,10 +3897,10 @@
     sub time
         { $_[0]->{time} }
 
-    sub text
-        { $_[0]->{text} }
-    sub grpStringList
-        { my $self = shift; return @{$self->{grpStringList}}; }
+    sub fireBecause
+        { $_[0]->{fireBecause} }
+    sub dataList
+        { my $self = shift; return @{$self->{dataList}}; }
 }
 
 { package Language::Axbasic::TokenGroup;
@@ -3987,7 +4049,7 @@
             }
 
         # Continue until there are no tokens left
-        } until (! $self->text || $token->category eq 'short_comment');
+        } until ($self->text eq '' || $token->category eq 'short_comment');
 
         return 1;
     }
@@ -4165,22 +4227,23 @@
         #   $otherGroup     - The other LA::TokenGroup from which to taken tokens
         #
         # Optional arguments
-        #   $matchString    - A string which, if matching the other group's ->tokenText, ends the
-        #                       process. (If not specified, all tokens to the end of the group are
-        #                       taken)
+        #   @matchList      - A list of strings. If any of them match the other group's ->tokenText,
+        #                       that ends the process. (If the list is empty, all tokens to the end
+        #                       of the group are taken)
         #
         # Return values
         #   'undef' on improper arguments, if there are no tokens left in $otherGroup's token list
-        #       or if the first token in $otherGroup's token list matches $matchString exactly
+        #       or if the first token in $otherGroup's token list matches a string in @matchList
+        #       exactly
         #   Otherwise returns the number of tokens imported (which might be 0)
 
-        my ($self, $otherGroup, $matchString, $check) = @_;
+        my ($self, $otherGroup, @matchList) = @_;
 
         # Local variables
         my ($token, $count);
 
         # Check for improper arguments
-        if (! defined $otherGroup || defined $check) {
+        if (! defined $otherGroup) {
 
             return $axmud::CLIENT->writeImproper($self->_objClass . '->importTokens', @_);
         }
@@ -4194,19 +4257,21 @@
             if ($otherGroup->tokenList) {
 
                 $token = $otherGroup->ivFirst('tokenList');
-                if (
-                    ! defined $matchString
-                    || (defined $token && $token->tokenText ne $matchString)
-                ) {
-                    # Import this token
+                if (defined $token) {
+
+                    foreach my $matchString (@matchList) {
+
+                        if ($token->tokenText eq $matchString) {
+
+                            # Stop importing. Return the number of imported tokens (may be 0)
+                            return $count;
+                        }
+                    }
+
+                    # Otherwise, import this token
                     $self->ivPush('tokenList', $token);
                     $otherGroup->shiftToken();
                     $count++;
-
-                } else {
-
-                    # Stop importing
-                    $token = undef;
                 }
             }
 
@@ -4475,6 +4540,26 @@
 
         # Update IVs
         $self->ivPoke('category', $category);
+
+        return 1;
+    }
+
+    sub set_tokenText {
+
+        # Called by LA::Statement::if->parse to convert an ELSEIF keyword token into an IF
+        # Returns 'undef' on improper arguments
+        # Returns 1 on success
+
+        my ($self, $tokenText, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $tokenText || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->set_tokenText', @_);
+        }
+
+        # Update IVs
+        $self->ivPoke('tokenText', $tokenText);
 
         return 1;
     }

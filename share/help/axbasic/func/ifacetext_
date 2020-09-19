@@ -1,10 +1,30 @@
 Ifacetext$ ()
 
    Synopsis:
-      Returns the line of text that caused the current interface notification
+      Returns the cause of the the current interface notification
 
    Notes:
       The interface notification list contains all the notifications received,
-         and not yet processed, as the result of an earlier SETTRIG statement.
-      Returns the line of text that caused the trigger to fire. If there is no
-         current notification, returns an empty string.
+         and not yet processed, as the result of an earlier SETTRIG, SETALIAS,
+         SETMACRO, SETTIMER or SETHOOK statement.
+
+      This function works in a different way, depending on the type of
+         interface that generated the notification.
+
+      After a SETTRIG statement, returns the line of text received from the
+         world that caused the trigger to fire.
+      After a SETALIAS statement, returns the world command that caused the
+         alias to fire.
+      After a SETMACRO statement, returns the keycode string that caused the
+         macro to fire. (A keycode string consists of one or more keycodes
+         combined in a single string; if there is more than one keycode,
+         successive keycodes are separated by a space character).
+      After a SETTIMER statement, returns the time at which the timer fired (an
+         epoch time, measured in seconds). The value is returned as a string.
+      After a SETHOOK statement, returns the hook event that caused the hook to
+         fire.
+
+      The Ifacetext$ () function is often used together with the Ifacedata$ ()
+         function, which returns more information about what caused the
+         interface to fire. (The extra information is especially useful for
+         aliases, macros and hooks).

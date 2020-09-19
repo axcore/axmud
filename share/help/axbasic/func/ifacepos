@@ -5,7 +5,8 @@ Ifacepos ()
 
    Notes:
       The interface notification list contains all the notifications received,
-         and not yet processed, as the result of an earlier SETTRIG statement.
+         and not yet processed, as the result of an earlier SETTRIG, SETALIAS,
+         SETMACRO, SETTIMER or SETHOOK statement.
       The first notification in the list is at position 1 in the list, the
          second at position 2, and so on.
       If the list is empty, 0 is returned.

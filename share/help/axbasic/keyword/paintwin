@@ -19,13 +19,14 @@ PAINTWIN [ expression ]
          Any colours specified by earlier WRITEWIN statements are lost.
       If no colour is specified, the default colour scheme is used.
       
-      If the Axbasic script isn't being run from within a task, or if the task
-         window is not open, the PAINTWIN statement is ignored (and no error
-         message is generated). Execution continues immediately with the next
-         statement.
       Axmud underlay colours such as "ul_red" and "UL_BLUE" can also be
          specified; the corresponding normal colour is used.
-         
+
+   Requires:
+      If the script is not being run as a task, or if not task window is open,
+         the PAINTWIN statement is ignored (and no error message is generated).
+         Execution continues with the next statement.
+
    Examples:
       PAINTWIN "white"
       PAINTWIN "CYAN"

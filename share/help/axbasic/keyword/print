@@ -15,17 +15,24 @@ PRINT #channel: expression [ separator ] [ expression [ separator ] ... ]
          PRINT, INPUT and WRITEWIN statements is displayed in the window. This
          is useful for running old BASIC scripts in their own window, even 
          though the scripts don't know anything about Axmud task windows.
-      In addition, in 'forced window' mode, Axbasic will display a 'space'
-         character after a PRINTed number, as most flavours of BASIC do.
+      In place of an expression, you can use the pseudo-function TAB (). The
+         pseudo-function takes one argument: a column number (the first column
+         is 1). Axbasic moves its "cursor" to that column or, if the "cursor"
+         has already advanced beyond that column, to the same position on the
+         next line. For the benefit of ancient BASIC programmes, a floating-
+         point number is rounded down, and column 1 is used for any value less
+         than 1.
          
       The second form of the PRINT statement writes data to a file channel 
          created with an earlier OPEN statement. If the file channel is closed 
-         or if it was opened in read-only mode, an error is generated.  
+         or if it was opened in read-only mode, an error is generated.
 
       The Axbasic PRINT separators are ';' and ','. If no PRINT separators are
          present, each expression is printed on a new line. If there is no
          semicolon after the last expression, a newline character is printed
          after the last expression.
+      Numerical expressions are PRINTed with a leading space (or a minus sign),
+         and a trailing space.
       Commas behave like a 14-character tab (but like a newline character past
          column 56).
       See also the help for DEBUG, ERROR, WARNING and WRITE.
@@ -38,7 +45,7 @@ PRINT #channel: expression [ separator ] [ expression [ separator ] ... ]
       PRINT " world!"
       END
 
-      ! Print data in columns
+      ! Print data in equally-spaced columns
       LET val1 = 10
       LET val2 = 20
       LET val3 = 50
@@ -46,6 +53,14 @@ PRINT #channel: expression [ separator ] [ expression [ separator ] ... ]
       PRINT val1 , val2 , val3
       END
 
+      ! Print data in unusually-spaced columns
+      LET val1 = 10
+      LET val2 = 20
+      LET val3 = 50
+      PRINT "Column 1" ; TAB(15) ; "Column 2" ; TAB (40) ; "Column 3"
+      PRINT val1 ; TAB(15) ; val2 ; TAB (40) ; val3
+      END
+      
       ! Write data to a file
       OPEN #1: NAME "myfile.txt", CREATE NEWOLD
       PRINT #1: "Going ";

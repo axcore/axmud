@@ -13,6 +13,11 @@ BREAK
          no pause (and no error message is generated). Execution continues
          immediately with the next statement.
 
+   Requires:
+      If the script is not being run as a task, the BREAK statement is ignored
+         (and no error message is generated). Execution continues with the next
+         statement.
+         
    Examples:
       SEND "drop treasure"
       BREAK

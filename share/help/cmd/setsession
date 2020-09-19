@@ -12,8 +12,10 @@ ss / setsession               Changes various session settings
       ;ss -s                  Toggles simple tabs
       
       ;ss -m                  Opens prompt before click-closing 'main' window
-      ;ss -t                  Opens prompt before click-closing tab
-
+      ;ss -t                  Opens prompt before click-closing session tab
+      ;ss -e                  Opens prompt before closing session from menu
+      ;ss -r                  Opens prompt before closing session from toolbar
+      
       ;ss -o                  Toggles between modes after disconnection
  
    Notes:

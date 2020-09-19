@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2019 A S Lewis
+# Copyright (C) 2011-2020 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -106,7 +106,8 @@
             #   $self->style is set, the following IVs are ignored)
 
             # Text colour (an RGB tag like '#ABCDEF', case-insensitive)
-            textColour                  => $session->worldModelObj->mapLabelColour,
+            textColour                  =>
+                $session->worldModelObj->defaultSchemeObj->mapLabelColour,
             # Underlay colour (an RGB tag, only used if defined)
             underlayColour              => undef,
             # Text's relative size (a number in the range 0.5-10, with the default size being 1)
@@ -149,7 +150,7 @@
         # Update IVs
         $self->ivPoke('style', $style);
 
-        $self->ivPoke('textColour', $session->worldModelObj->mapLabelColour);
+        $self->ivPoke('textColour', $session->worldModelObj->defaultSchemeObj->mapLabelColour);
         $self->ivUndef('underlayColour');
         $self->ivPoke('relSize', 1);
         $self->ivPoke('italicsFlag', FALSE);
@@ -241,7 +242,8 @@
         #
         # Expected arguments
         #   $session    - The GA::Session which created this object (not stored as an IV)
-        #   $name       - A unique string name for this profile (max 16 chars, containing any text)
+        #   $name       - A unique string name for this profile (min 1 char, max 16 chars,
+        #                   containing any text)
         #
         # Optional arguments
         #   $textColour - The text colour to use (an RGB tag like '#ABCDEF', case-insensitive). If
@@ -269,7 +271,7 @@
         }
 
         # Check that $name is valid and not already in use by another set
-        if (length ($name) > 16) {
+        if ($name eq '' || length ($name) > 16) {
 
             return $axmud::CLIENT->writeError(
                 'Registry naming error: invalid name \'' . $name . '\'',
@@ -292,7 +294,7 @@
 
             } else {
 
-                $textColour = $session->worldModelObj->mapLabelColour;
+                $textColour = $session->worldModelObj->defaultSchemeObj->mapLabelColour;
             }
 
         } else {

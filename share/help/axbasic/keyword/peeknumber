@@ -14,7 +14,7 @@ PEEKNUMBER ARRAY variable-name = axmud-object-property
       'variable-name' is set to the size of the list property. If the list is 
          empty, the size is 0. If 'variable-name' is a string variable (or a 
          string array), a string value such as "3" is used.
-
+         
    Examples:
       ! Store the size of a list property in an Axbasic global scalar variable
       PEEKNUMBER size = "world.current.doorPatternList"

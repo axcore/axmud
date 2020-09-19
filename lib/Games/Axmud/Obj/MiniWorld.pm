@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2019 A S Lewis
+# Copyright (C) 2011-2020 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -150,6 +150,12 @@
             #   are also stored in this hash. (Changes include adding a new character, regardless of
             #   whether the new character's password is set, or not)
             newAccountHash              => {},
+
+            # Flag used in Axmud test mode. When set to TRUE, a world profile's ->numberConnects is
+            #   set to at least 1, so that the tester can connect to the world in offline mode,
+            #   and the next time the GA::OtherWin::Connect is opened, the world will be visible
+            #   near the top of its list
+            testModeFlag                => FALSE,
         };
 
         # Bless the object into existence
@@ -221,6 +227,9 @@
         { my $self = shift; return %{$self->{accountHash}}; }
     sub newAccountHash
         { my $self = shift; return %{$self->{newAccountHash}}; }
+
+    sub testModeFlag
+        { $_[0]->{testModeFlag} }
 }
 
 # Package must return a true value

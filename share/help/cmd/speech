@@ -7,9 +7,9 @@ tts / speech                  Modifies text-to-speech (TTS) general settings
    Notes:
       If you have one or more of the text-to-speech engines installed on your
          system, Axmud can use them to convert text to speech.
-      The engines currently supported on MS Windows are eSpeak, espeak-ng and
-         Swift. The engines supported on Linux are eSpeak, espeak-ng, Flite,
-         Festival and Swift.
+      The engines currently supported on MS Windows are eSpeak, espeak-ng,
+         Festival and Swift. The engines supported on Linux are eSpeak,
+         espeak-ng, Flite, Festival and Swift.
       Axmud also uses a dummy engine, called 'none'. If Axmud tries to convert
          text to speech using the dummy engine, you'll hear nothing.
          
@@ -24,19 +24,24 @@ tts / speech                  Modifies text-to-speech (TTS) general settings
                                  the ';speak' command will still work)
          ;speech toggle       Enables or disables text-to-speech
 
-      (Note that text-to-speech is always active when Axmud is running in 
-         'blind' mode. You can still enable/disable text-to-speech for all 
-         users, and that setting will be applied when Axmud is not running in 
-         'blind' mode.)
+      (Note that text-to-speech is always active when running the version of 
+         Axmud that's optimised for visually-impaired users. You can still 
+         enable/disable text-to-speech for all users, and that setting will be 
+         applied to all versions of Axmud.)
 
       If specified, <options> could also be one of the following:
 
          ;speech receive on
          ;speech receive off  Turns conversion of received text to speech on/off
          ;speech login on
-         ;speech login off    Turns on login protection. When on, received text 
-                                 isn't converted to speech before the automatic
-                                 login is processed, unless it's a prompt.
+         ;speech login off    Turns on/off login protection. When on, received
+                                 text isn't converted to speech before the
+                                 automatic login is processed, unless it's a
+                                 prompt
+         ;speech prompt on    Turns on/off conversion of prompts after the
+         ;speech prompt off      login. Only recognised prompts are affected, so
+                                 this command is especially useful with pre-
+                                 configured worlds
          ;speech system on
          ;speech system off   Turns conversion of system messages to speech 
                                  on/off
@@ -56,27 +61,16 @@ tts / speech                  Modifies text-to-speech (TTS) general settings
                                  sentences split over several lines more
                                  smoothly (the 'on' setting is recommended)
 
-         ;speech auto on 
-         ;speech auto off     Turns on/off the automatic starting of the 
-                                 Festival engine server, the first time the 
-                                 engine is used (in case it's not already 
-                                 running)
-         ;speech port <port>  Sets the port used by the Festival engine server
-         ;speech port         Resets the port used by the Festival engine server
-                                 to the default 1314   
-         ;speech reconnect    Reconnects to the Festival engine server. This 
-                                 happens automatically if you change the port, 
-                                 and Axmud connects to the server when it starts 
-                                 (unless you have done ';speech auto off'), so 
-                                 you only need this command if you manually 
-                                 start the server after you start Axmud.
-         ;speech restart      Starts the Festival engine server on your system,
-                                 if it's not already running.
+         ;speech port <port>  Sets the port used by the Festival server engine
+         ;speech port default Resets the port used by the Festival server engine
+                                 to the default 1314
+         ;speech port none    Disables use of the Festival (Axmud will use the
+                                 command-line engine instead)
  
       Normal Axmud switches can be used, if you prefer: -o for on, -f for off, 
          -g for toggle, -r for receive, -l for login, -s for system, -e for 
-         error, -c for command, -d for dialogue, -t for task, -m for smooth, -a 
-         for auto, -p for port, -n for reconnect and -z for start.     
+         error, -c for command, -d for dialogue, -t for task, -m for smooth and
+         -p for port.
 
    User commands:
       tts / speech

@@ -27,7 +27,7 @@ PEEKSHOW ARRAY variable-name = axmud-object-property, expression
          numeric, it's best to use a string varoab;e. If you use a numeric
          variable and the matching key-value pair has a string value, you'll get
          an error.
-
+         
    Examples:
       ! Find the key "gold", and store the matching value in an Axbasic global
       ! scalar variable

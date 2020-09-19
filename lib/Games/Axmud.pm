@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2019 A S Lewis
+# Copyright (C) 2011-2020 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # Lesser Public License as published by the Free Software Foundation, either version 3 of the
@@ -131,7 +131,7 @@
     use diagnostics;
 
     # (This variable exists for the benefit of Kwalitee, and is never referenced by the code)
-    our $VERSION = '1.2.041';
+    our $VERSION = '1.3.0';
 
     use Glib qw(TRUE FALSE);
 
@@ -189,6 +189,7 @@
     use Games::Axmud::Obj::Plugin;
     use Games::Axmud::Obj::Protect;
     use Games::Axmud::Obj::Quest;
+    use Games::Axmud::Obj::RegionScheme;
     use Games::Axmud::Obj::Regionmap;
     use Games::Axmud::Obj::RegionPath;
     use Games::Axmud::Obj::Repeat;
@@ -4083,8 +4084,8 @@ Axmud is known to work on MS Windows, Linux and *BSD. It might be possible to
 install it on other systems such as MacOS, but the authors have not been able to
 confirm this yet.
 
-After installation (see the INSTALL file), visually-impaired users can run this
-script
+After installation (see the README.rst file), visually-impaired users can run
+this script
 
     baxmud.pl
 
@@ -4109,23 +4110,32 @@ engine's name to the end of those commands. This overrides (almost) all other
 text-to-speech settings.
 
 Acceptable engine names are 'espeak', 'esng' (for espeak-ng), 'flite' (for
-Festival Lite), 'festival', 'swift' and 'none' (for the dummy engine). For
-example:
+Festival Lite), 'festival', 'swift' and 'none' (for the dummy engine, which
+produces no sound). For example:
 
     baxmud.pl empiremud.net 4000 esng
     axmud.pl cryosphere festival
 
+Note that on MS Windows, Flite is not supported, and other speech engines are
+assumed to be installed in their default locations.
+
 =head1 DESCRIPTION
 
-Axmud is a modern Multi-User Dungeon (MUD) client written in Perl 5 / GTK 2.
+Axmud is a modern Multi-User Dungeon (MUD) client written in Perl 5 / GTK 3.
 Its features include:
 
-Telnet, SSH and SSL connections - ANSI/xterm/OSC/RGB colour - Full support for
-all major MUD protocols, including MXP and GMCP (with partial Pueblo support) -
-VT100 emulation - Class-based triggers, aliases, macros, timers and hooks
-- Graphical automapper - 100 pre-configured worlds - Multiple approaches to
-scripting - Fully customisable from top to bottom, using the command line or the
-extensive GUI interface - Native support for visually-impaired users
+- Telnet, SSH and SSL connections
+- ANSI/xterm/truecolour/OSC/RGB colours
+- Full support for all major MUD protocols, including MXP and GMCP (with partial
+Pueblo support)
+- Partial VT100 emulation
+- Class-based triggers, aliases, macros, timers and hooks
+- Graphical automapper
+- Over 100 pre-configured worlds
+- Multiple approaches to scripting
+- Fully customisable from top to bottom, using the command line or the extensive
+GUI interface
+- Native support for visually-impaired users
 
 =head1 AUTHOR
 
@@ -4133,7 +4143,7 @@ A S Lewis <aslewis@cpan.org>
 
 =head1 COPYRIGHT
 
-Copyright (C) 2011-2019 A S Lewis
+Copyright (C) 2011-2020 A S Lewis
 
 This program is free software: you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software

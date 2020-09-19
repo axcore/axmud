@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2019 A S Lewis
+# Copyright (C) 2011-2020 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -101,6 +101,11 @@
             mapWidthPixels              => undef,       # Set below
             mapHeightPixels             => undef,
 
+            # Name of the region scheme (GA::Obj::RegionScheme) that specifies colours for this
+            #   region. If 'undef', or if the named scheme doesn't exist, colours specified by the
+            #   'default' region scheme are used
+            regionScheme                => undef,
+
             # How exits are drawn for this region; the range of values matches those used in
             #   GA::Obj::WorldModel->drawExitMode. If that IV is set to 'ask_regionmap', this IV is
             #   consulted
@@ -111,6 +116,26 @@
             #   'complex_exit' - Draw complex exits (there are four kinds of exits drawn -
             #       incomplete, uncertain, one-way and two-way)
             drawExitMode                => 'simple_exit',
+            # Flag set to TRUE if the automapper should obscure (i.e. filter out) some exits in this
+            #   region, drawing only those exits for rooms near the current room, or for selected
+            #   rooms (and selected exits), and for rooms whose rooms flags match those in
+            #   GA::Client->constRoomNoObscuredHash (e.g. 'main_route')
+            obscuredExitFlag            => FALSE,
+            # Flag set to TRUE if the automapper should re-obscure exits as the character moves
+            #   around (so that only exits around the character's location are visible), and
+            #   when other conditions change
+            obscuredExitRedrawFlag      => FALSE,
+            # Radius (in gridblocks) of a square area, with the current room in the middle. When
+            #   obscuring exits is enabled for this region, exits are drawn for all rooms in this
+            #   area (including the current room), but not necessarily for any rooms outside the
+            #   area
+            # Use 1 to draw only the current room, 2 to draw exits for rooms in a 3x3 area, 3 for a
+            #   5x5 area, and so on
+            # The maximum value is that specified by GA::Obj::WorldModel::maxobscuredExitRadius
+            obscuredExitRadius          => 3,
+            # When this flag is set to TRUE, exit ornaments are drawn in this region. If set to
+            #   FALSE, ornaments aren't drawn
+            drawOrnamentsFlag           => TRUE,
 
             # The current level (i.e., the z-coordinate currently displayed). The initial level is
             #   0, the level in the middle
@@ -1798,8 +1823,19 @@
     sub mapHeightPixels
         { $_[0]->{mapHeightPixels} }
 
+    sub regionScheme
+        { $_[0]->{regionScheme} }
+
     sub drawExitMode
         { $_[0]->{drawExitMode} }
+    sub obscuredExitFlag
+        { $_[0]->{obscuredExitFlag} }
+    sub obscuredExitRedrawFlag
+        { $_[0]->{obscuredExitRedrawFlag} }
+    sub obscuredExitRadius
+        { $_[0]->{obscuredExitRadius} }
+    sub drawOrnamentsFlag
+        { $_[0]->{drawOrnamentsFlag} }
 
     sub currentLevel
         { $_[0]->{currentLevel} }

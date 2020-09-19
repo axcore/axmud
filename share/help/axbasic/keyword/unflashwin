@@ -4,10 +4,12 @@ UNFLASHWIN
       Resets the task window's urgency hint
 
    Notes:
-      If the Axbasic script isn't being run from within a task, the UNFLASHWIN
-         statement is ignored (and no error message is generated). Execution
-         continues immediately with the next statement.
       The FLASHWIN statement sets the window's urgency hint and this statement
          resets it. The effect of setting a window's urgency hint varies 
          depending on the desktop environment you're using. Often, it causes the 
          window to flash in the panel at the bottom (or top) of the screen.
+
+   Requires:
+      If the script is not being run as a task, or if not task window is open,
+         the UNFLASHWIN statement is ignored (and no error message is
+         generated). Execution continues with the next statement.

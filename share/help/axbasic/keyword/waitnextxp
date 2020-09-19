@@ -10,9 +10,6 @@ WAITNEXTXP expression [ , expression ]
          from their 'current' XP (depending on the world).
       The second expression is a timeout measured in seconds. If specified, the
          script gives up waiting after that period and resumes execution.
-      If the Axbasic script isn't being run from within a task, the WAITNEXTXP
-         statement is ignored (and no error message is generated). Execution
-         continues immediately with the next statement.
       WAITNEXTXP relies on the Status task to supply the character's required 
          XP. If the Status task is not running (or if it doesn't know anything 
          about the character's required XP), the Axbasic script pauses briefly 
@@ -20,6 +17,11 @@ WAITNEXTXP expression [ , expression ]
       See also the help for WAITEP, WAITGP, WAITHP, WAITMP, WAITSP and for 
          WAITXP and WAITTOTALXP.
 
+   Requires:
+      If the script is not being run as a task, the WAITNEXTXP statement is
+         ignored (and no error message is generated). Execution continues with
+         the next statement.
+         
    Examples:
       ! Wait for required XP to fall below 1000
       WAITNEXTXP 1001
