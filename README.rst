@@ -51,7 +51,7 @@ Axmud does not yet have a comprehensive manual, but there is lots of information
 
 - Read the `quick help <share/docs/quick/quick.mkd>`__
 - Read the `Axmud guide <share/docs/guide/index.mkd>`__, including the section for `visually-impaired users <share/docs/guide/ch16.mkd>`__
-- Read the `tutorial <share/docs/tutorial/index.mdk>`__  for the Axbasic scripting language
+- Read the `tutorial <share/docs/tutorial/index.mkd>`__  for the Axbasic scripting language
 - In Axmud's main window menu, click **Help > About**
 - Just below the menu, click the calendar button to open the object viewer window, and then click on **Help**
 - Type **;help** for a list of client commands, or **;help listworld** for help on the **;listworld** client command
