@@ -309,8 +309,24 @@ share/docs/guide/img/ch15/wild_room_1.png
 share/docs/guide/img/ch15/wild_room_2.png
 share/docs/guide/img/ch15/wild_room_3.png
 share/docs/guide/img/index/axmud_logo.png
+share/docs/guide/img/tut01/example_map.png
+share/docs/guide/img/tut01/route_cage.png
+share/docs/guide/img/tut02/connected_rooms.png
+share/docs/guide/img/tut02/empty_room.png
+share/docs/guide/img/tut02/nearby_room.png
+share/docs/guide/img/tut02/recognised_rooms.png
+share/docs/guide/img/tut03/edit_model.png
+share/docs/guide/img/tut03/label_window.png
 share/docs/guide/index.html
 share/docs/guide/index.mkd
+share/docs/guide/tut01.html
+share/docs/guide/tut01.mkd
+share/docs/guide/tut02.html
+share/docs/guide/tut02.mkd
+share/docs/guide/tut03.html
+share/docs/guide/tut03.mkd
+share/docs/guide/tut04.html
+share/docs/guide/tut04.mkd
 share/docs/quick/quick.html
 share/docs/quick/quick.mkd
 share/docs/tutorial/ch01.html
@@ -3273,5 +3289,3 @@ share/plugins/wilderness.pm
 share/plugins/zmptest.pm
 share/standalone/mapextract.pl
 t/00-compile.t
-META.yml                                 Module YAML meta-data (added by MakeMaker)
-META.json                                Module JSON meta-data (added by MakeMaker)

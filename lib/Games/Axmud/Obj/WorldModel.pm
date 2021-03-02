@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2020 A S Lewis
+# Copyright (C) 2011-2021 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -604,7 +604,7 @@
             obscuredExitRadius          => 2,
             # Max radius (the minimum is always 1). This maximum also applies to
             #   GA::Obj::Regionmap->obscuredExitRadius
-            maxobscuredExitRadius       => 9,
+            maxObscuredExitRadius       => 9,
             # When this flag is set to TRUE, exit ornaments are drawn. If set to FALSE, ornaments
             #   aren't drawn
             drawOrnamentsFlag           => TRUE,

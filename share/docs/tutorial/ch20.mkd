@@ -284,7 +284,7 @@ In this particular case, the order of the arguments doesn't matter. Both of thes
 
 ##<a name="20.9">20.9 That's all, folks!</a>
 
-That's the end of the tutorial! Don't forget that you can get help at the [Axmud forum](https://axmud.sourceforge.io/forum/index.php), if you need it!
+That's the end of the tutorial! Don't forget that you can get help at the [Axmud Github page](https://github.com/axcore/axmud), if you need it!
 
 ---
 

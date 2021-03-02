@@ -1,0 +1,138 @@
+<!doctype html>
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<style type="text/css">
+td, th { border: 1px solid #c3c3c3; padding: 0 3px 0 3px; }
+table { border-collapse: collapse; }
+img { max-width: 100%; }
+</style>
+<meta name="generator" content="ReText 7.1.0">
+<title>tut01</title>
+<style type="text/css">
+</style>
+</head>
+<body>
+<p><a href="index.html">Index</a> <a href="tut02.html">Next</a></p>
+<hr>
+<h1>Tutorial 1: Using routes</h1>
+<h4>Table of Contents</h4>
+<ul>
+<li><a href="#1.1">1.1 Axmud routes</a></li>
+<li><a href="#1.2">1.2 Adding routes using an edit window</a></li>
+<li><a href="#1.3">1.3 Moving with routes</a></li>
+<li><a href="#1.4">1.4 Types of route</a></li>
+<li><a href="#1.5">1.5 Circuit routes</a></li>
+<li><a href="#1.6">1.6 Combining routes</a></li>
+<li><a href="#1.7">1.7 Hoppable routes</a></li>
+<li><a href="#1.8">1.8 Omitting the start room</a></li>
+<li><a href="#1.9">1.9 Making use of the automapper</a></li>
+</ul>
+<hr>
+<h2><a name="1.1">1.1 Axmud routes</a></h2>
+<p>Players often use aliases to move between two rooms. For example, to move between a shop and a bank, a player might create two aliases called</p>
+<pre><code>    shop2bank
+    bank2shop
+</code></pre>
+<p>Creating aliases is one way to do it - but there's a better way!</p>
+<hr>
+<p>Routes are a fixed path between two rooms. To create an alias, you could type</p>
+<pre><code>    ;addalias shop2bank w;w;n;nw;w;w;w;s
+    ;addalias bank2shop n;e;e;e;se;s;e;e
+</code></pre>
+<p>To create a route, you should type</p>
+<pre><code>    ;addroute shop bank w;w;n;nw;w;w;w;s
+    ;addroute bank shop n;e;e;e;se;s;e;e
+</code></pre>
+<p>Of course, for very long routes you might prefer to use speedwalk commands (in the Guide, see <a href="ch04.html#4.4.5">Section 4.4.5</a>)</p>
+<pre><code>    ;addalias shop2bank .2wn(nw)3ws
+    ;addroute shop bank .2wn(nw)3ws
+</code></pre>
+<p>Speedwalk commands are really useful because you can reverse the path just by adding a full stop/period at the beginning.</p>
+<pre><code>    ;addroute shop bank ..2wn(nw)3ws
+</code></pre>
+<h2><a name="1.2">1.2 Adding routes using an edit window</a></h2>
+<p>If you prefer clicking over typing, then you can add routes using an edit window:</p>
+<ul>
+<li>From the main window's menu, click <strong>Interfaces &gt; Routes &gt; World routes... &gt; Routes &gt; Page 1</strong></li>
+<li>In the <strong>Start room tag</strong> box, type <strong>shop</strong></li>
+<li>In the <strong>Stop room tag box</strong>, type <strong>bank</strong></li>
+<li>In the <strong>Route</strong> box, type <strong>.2wn(nw)3ws</strong></li>
+<li>Click <strong>Add route</strong></li>
+</ul>
+<p>Creating the reverse route is just as simple:</p>
+<ul>
+<li>First swap <strong>shop</strong> and <strong>bank</strong></li>
+<li>Then put an extra full stop/period before the speedwalk command, i.e. <strong>..2wn(nw)3ws</strong></li>
+<li>Then click the <strong>Add route</strong> button again</li>
+<li>When you've finished, click the <strong>OK</strong> button to close the window</li>
+</ul>
+<p><img alt="The edit window for routes" src="img/tut01/route_cage.png"></p>
+<h2><a name="1.3">1.3 Moving with routes</a></h2>
+<p>To move between the shop and the bank, you can now type</p>
+<pre><code>    ;drive shop bank
+</code></pre>
+<p>To move in the opposite direction, you can now type</p>
+<pre><code>    ;drive bank shop
+</code></pre>
+<h2><a name="1.4">1.4 Types of route</a></h2>
+<p>Actually, there are three types of route. The ones you just created are called road routes. A road route represents a path between two rooms that uses main roads, marked paths, and so on.</p>
+<p>The opposite of a road route is a quick route, which represents a shorter path between two rooms. The path is shorter because you don't stick to using main roads and marked paths.</p>
+<p>To add a quick route from the edit window, find the <strong>Routes type</strong> box and select <strong>quick</strong>; then repeat the process above.</p>
+<p>You can create both a road route and a short route between the same two rooms. If so, take the road route by typing</p>
+<pre><code>    ;road bank shop
+</code></pre>
+<p>Take the quick route by typing </p>
+<pre><code>    ;quick bank shop
+</code></pre>
+<p>The <strong>;drive</strong> command tells Axmud to use a road route, if it exists, and otherwise to use a quick route.</p>
+<h2><a name="1.5">1.5 Circuit routes</a></h2>
+<p>The third type of route is called a circuit route. </p>
+<p>Circuit routes begin and end in the same room. If you're hunting an NPC which spawns at a random location in a zone, you could create a circuit around the zone, and then type</p>
+<pre><code>    ;circuit myroute
+</code></pre>
+<p>If it's a long route, you could create a temporary trigger so you don't miss the NPC when you pass him. For example, to look out for trolls:</p>
+<pre><code>    ;sound on
+    ;addtrigger -s troll -p ;beep -t 1
+</code></pre>
+<p>(Of course, it's a lot easier to create triggers from the edit window; in the Guide, see <a href="ch07.html#7.1">Section 7.1</a>.)</p>
+<h2><a name="1.6">1.6 Combining routes</a></h2>
+<p>Now we get to the really clever part. </p>
+<pre><code>    SHOP === BANK === GUILD ROOM
+</code></pre>
+<p>Let's assume that you've created a route between the shop and the bank, and that you've created another route between the bank and the guild room. </p>
+<p>If you want to travel directly between the shop and the guild room, there is no need to create a third route; you can just type</p>
+<pre><code>    ;drive shop guildroom
+</code></pre>
+<p>...which is the same as typing</p>
+<pre><code>    ;drive shop bank
+    ;drive bank guildroom
+</code></pre>
+<p>Axmud automatically combines routes to find the shortest path, even if that means checking dozens or hundreds of different routes.</p>
+<h2><a name="1.7">1.7 Hoppable routes</a></h2>
+<p>Sometimes a route might be blocked by a natural hazard or an NPC. In either case, you won't want Axmud to combine this route with other routes.</p>
+<p>Routes are hoppable by default, which means that Axmud can hop between routes to reach its desination. If you don't want a route to be hoppable, just deselect the check button in the edit window.</p>
+<h2><a name="1.8">1.8 Omitting the start room</a></h2>
+<p>Another useful feature is that you only need to type the start room once. In other words, if you</p>
+<pre><code>    ;drive shop bank
+</code></pre>
+<p>...then you don't need to type</p>
+<pre><code>    ;drive bank guildroom
+</code></pre>
+<p>...because Axmud already knows that you're at the bank; instead, you can just type</p>
+<pre><code>    ;drive guildroom
+</code></pre>
+<h2><a name="1.9">1.9 Making use of the automapper</a></h2>
+<p><img alt="An example map" src="img/tut01/example_map.png"></p>
+<p>You can use the automapper to add room tags to a room (right click the room, then click <strong>Set room text &gt; Set room tag...</strong> )</p>
+<p>If the automapper knows you're at a room tagged as <strong>BANK</strong>, then you don't need to type the start room; just tell Axmud where you want to go.</p>
+<pre><code>    ;drive guildroom
+</code></pre>
+<p>Routes are completely independent of the automapper. Of course, if you have drawn a nice map, then you don't need to use routes at all; just tell Axmud to</p>
+<pre><code>    ;go guildroom
+</code></pre>
+<hr>
+<p><a href="index.html">Index</a> <a href="tut02.html">Next</a></p>
+
+</body>
+</html>

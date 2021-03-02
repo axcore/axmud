@@ -22,7 +22,7 @@ package wilderness;
 #
 #   NB It is not a good idea to use this plugin, if you've modified a pre-configured world profile
 #       to change the way it interprets room statements (for example, if you have used the Locator
-#       wizard on it). If you're not sure, ask for advice on the Axmud forum
+#       wizard on it). If you're not sure, ask for advice on the Axmud Github page.
 #
 #   Before doing any conversions, you have to load the plugin
 #

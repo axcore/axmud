@@ -1,3 +1,11 @@
+v1.3.007 (2 Mar 2021)
+--------------------------------------------------------------------------------
+
+- The edit window for regionmaps could not be opened. Fixed
+- The Axmud forum has been removed, due to relentless spambot attacks. Please
+    use the Github page instead (https://github.com/axcore/axmud). Tutorials
+    from the forum have been added to the Axmud Guide
+    
 v1.3.0 (19 Sep 2020)
 --------------------------------------------------------------------------------
 

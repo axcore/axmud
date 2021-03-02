@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2020 A S Lewis
+# Copyright (C) 2011-2021 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -9626,6 +9626,17 @@
                             $regionmapObj->ivUndef('regionScheme');
                         }
                     }
+                }
+            }
+
+            if ($version < 1_003_003) {
+
+                # This version fixes a typo in a world model IV
+                if (! exists $wmObj->{maxObscuredExitRadius}) {
+
+                    $wmObj->{maxObscuredExitRadius} = undef;
+                    $wmObj->ivPoke('maxObscuredExitRadius', 9);
+                    delete $wmObj->{maxobscuredExitRadius};
                 }
             }
         }

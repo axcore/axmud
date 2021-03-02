@@ -4,6 +4,11 @@ Modified files from the Perl IPC::Run module, by Adam Kennedy and Barrie
 For instructions about what to do with these files, see the instructions in the
     ../axmud/nsis/axmud_install.nsi file
 
+Note that the upload to CPAN causes Kwalitee issues, so the modified files are
+    removed from that version. You can get them from 
+
+    https://github.com/axcore/axmud
+
 Changes:
 - In Run.pm, copied the &start function, renamed the copy as &start_festival,
     and made the copy call IPC::Run::Win32Helper::win32_spawn_festival, instead

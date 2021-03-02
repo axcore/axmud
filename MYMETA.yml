@@ -8,7 +8,7 @@ configure_requires:
   ExtUtils::MakeMaker: '6.52'
   File::ShareDir::Install: '0'
   Path::Tiny: '0'
-dynamic_config: 1
+dynamic_config: 0
 generated_by: 'ExtUtils::MakeMaker version 7.34, CPAN::Meta::Converter version 2.150010'
 license: gpl
 meta-spec:
@@ -62,5 +62,5 @@ resources:
   bugtracker: https://github.com/axcore/axmud/issues
   homepage: https://axmud.sourceforge.io/
   repository: https://github.com/axcore/axmud.git
-version: v1.3.0
+version: v1.3.007
 x_serialization_backend: 'CPAN::Meta::YAML version 0.018'

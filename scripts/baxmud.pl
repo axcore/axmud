@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 package axmud;
 
-# Copyright (C) 2011-2020 A S Lewis
+# Copyright (C) 2011-2021 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -43,15 +43,15 @@ use vars qw(
 );
 
 $SCRIPT = 'Axmud';              # Name used in system messages
-$VERSION = '1.3.0';             # Version number for this client
-$DATE = '19 Sep 2020';
+$VERSION = '1.3.007';           # Version number for this client
+$DATE = '2 Mar 2021';
 $NAME_SHORT = 'axmud';          # Lower-case version of $SCRIPT; same as the package name above
 $NAME_ARTICLE = 'an Axmud';     # Name with an article
 $BASIC_NAME = 'Axbasic';        # Name of Axmud's built-in scripting library
 $BASIC_ARTICLE = 'an Axbasic';  # Name with an article
 $BASIC_VERSION = '1.004';       # Version number for the Axbasic library
 $AUTHORS = 'A S Lewis';
-$COPYRIGHT = 'Copyright 2011-2020 A S Lewis';
+$COPYRIGHT = 'Copyright 2011-2021 A S Lewis';
 $URL = 'http://axmud.sourceforge.io/';
 $DESCRIP = 'A modern MUD client for MS Windows, Linux and *BSD';
 

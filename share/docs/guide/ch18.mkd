@@ -1,4 +1,4 @@
-[Previous](ch17.html) [Index](index.html)
+[Previous](ch17.html) [Index](index.html) [Next](tut01.html)
 
 ---
 
@@ -450,4 +450,5 @@ permit their use in free software.
 
 ---
 
-[Previous](ch17.html) [Index](index.html)
+[Previous](ch17.html) [Index](index.html) [Next](tut01.html)
+

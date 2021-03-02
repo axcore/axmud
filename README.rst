@@ -56,22 +56,22 @@ Axmud does not yet have a comprehensive manual, but there is lots of information
 - Just below the menu, click the calendar button to open the object viewer window, and then click on **Help**
 - Type **;help** for a list of client commands, or **;help listworld** for help on the **;listworld** client command
 - Type **;axbasichelp** for a list of help topics for the Axbasic scripting language
-- For further support, visit the `Axmud forum <https://axmud.sourceforge.io/forum/index.php>`__ or our `Github page <https://github.com/axcore/axmud>`__
+- For further support, visit our `Github page <https://github.com/axcore/axmud>`__
 
 2 Downloads
 ===========
 
-Latest version: **v1.3.0 (19 Sep 2020)** (see `recent changes <CHANGES>`__)
+Latest version: **v1.3.007 (2 Mar 2021)** (see `recent changes <CHANGES>`__)
 
 Official packages (also available from the `Github release page <https://github.com/axcore/tartube/releases>`__):
 
-- `MS Windows installer <https://sourceforge.net/projects/axmud/files/Axmud-1.3.0/install-axmud-1.3.0.exe/download>`__ from Sourceforge
-- `DEB package (for Debian-based distros, e.g. Ubuntu, Linux Mint) <https://sourceforge.net/projects/axmud/files/Axmud-1.3.0/libgames-axmud-perl_1.3.0.deb/download>`__ from Sourceforge
-- `RPM package (for RHEL-based distros, e.g. Fedora) <https://sourceforge.net/projects/axmud/files/Axmud-1.3.0/perl-Games-Axmud-1.3.0.noarch.rpm/download>`__ from Sourceforge
+- `MS Windows installer <https://sourceforge.net/projects/axmud/files/Axmud-1.3.007/install-axmud-1.3.007.exe/download>`__ from Sourceforge
+- `DEB package (for Debian-based distros, e.g. Ubuntu, Linux Mint) <https://sourceforge.net/projects/axmud/files/Axmud-1.3.007/libgames-axmud-perl_1.3.007.deb/download>`__ from Sourceforge
+- `RPM package (for RHEL-based distros, e.g. Fedora) <https://sourceforge.net/projects/axmud/files/Axmud-1.3.007/perl-Games-Axmud-1.3.007.noarch.rpm/download>`__ from Sourceforge
 
 Source code:
 
-- `Source code <https://sourceforge.net/projects/axmud/files/Axmud-1.2.041/Games-Axmud-1.2.041.tar.gz/download>`__ from Sourceforge
+- `Source code <https://sourceforge.net/projects/axmud/files/Axmud-1.3.007/Games-Axmud-1.3.007.tar.gz/download>`__ from Sourceforge
 - `Source code <https://github.com/axcore/axmud>`__ and `support <https://github.com/axcore/axmud/issues>`__ from GitHub
 
 3 Running Axmud
@@ -572,7 +572,7 @@ Axmud can be used with any world that supports telnet, SSH or SSL connections. T
 - `Age of Chaos <http://aoc.pandapub.com/>`__ (`Mudstats page <http://mudstats.com/World/AgeofChaos>`__)
 - `Alter Aeon <http://alteraeon.com/>`__ (`Mudstats page <http://mudstats.com/World/AlterAeon>`__)
 - `Ancient Anguish <http://ancient.anguish.org/>`__ (`Mudstats page <http://mudstats.com/World/AncientAnguish>`__)
-- `Archipelago MUD <http://the-firebird.net:8004/>`__ (`Mudstats page <http://mudstats.com/World/ArchipelagoMUD>`__)
+- `Archipelago MUD <http://the-firebird.net:8004/>`__
 - `ArcticMud <http://arcticmud.org/>`__ (`Mudstats page <http://mudstats.com/World/ArticMUD>`__)
 - `Avalon (Germany) <http://avalon.mud.de/>`__ (`Mudstats page <http://mudstats.com/World/Avalon(Germany)>`__)
 - `Avalon: The Legend Lives <http://www.avalon-rpg.com/>`__ (`Mudstats page <http://mudstats.com/World/Avalon,TheLegendLives>`__)
@@ -653,7 +653,7 @@ Axmud can be used with any world that supports telnet, SSH or SSL connections. T
 - `Star Wars Mud <http://www.swmud.org/>`__ (`Mudstats page <http://mudstats.com/World/StarWarsMud(SWmud)>`__)
 - `StickMUD <http://stickmud.com/index.php/Home>`__ (`Mudstats page <http://mudstats.com/World/BLANK>`__)
 - `Stonia <http://stonia.ttu.ee/>`__ (`Top Mud Sites page <http://www.topmudsites.com/forums/mudinfo-cham.html>`__)
-- `Tempora Heroica <http://www.ibiblio.org/TH/>`__ (`Mudstats page <http://mudstats.com/World/TemporaHeroica>`__)
+- `Tempora Heroica <http://www.ibiblio.org/TH/>`__
 - `The Inquisition: Legacy <https://ti-legacy.com/>`__ (`Mudstats page <http://mudstats.com/World/TheInquisitionLegacy>`__)
 - The Land (`Mudstats page <http://mudstats.com/World/TheLand>`__)
 - `The Two Towers <http://www.t2tmud.org/>`__ (`Mudstats page <http://mudstats.com/World/TheTwoTowersMUD>`__)
@@ -669,7 +669,7 @@ Axmud can be used with any world that supports telnet, SSH or SSL connections. T
 8 Contributing
 ==============
 
-- Report a bug: Use the Github `issues <https://github.com/axcore/tartube/issues>`__ page, or visit the `Axmud forum <https://axmud.sourceforge.io/forum/index.php>`__
+- Report a bug: Use the Github `issues <https://github.com/axcore/tartube/issues>`__ page.
 
 9 Authors
 =========

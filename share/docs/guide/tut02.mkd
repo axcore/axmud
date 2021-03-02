@@ -1,0 +1,66 @@
+[Previous](tut01.html) [Index](index.html) [Next](tut03.html)
+
+---
+
+#Tutorial 2: Mapping arkward rooms
+
+####Table of Contents
+
+* [2.1 Introducing arkward rooms](#2.1)
+    * [2.1.1 Draw a nearby room](#2.1.1)
+    * [2.1.2 Draw an empty room](#2.1.2)
+    * [2.1.3 Add the pattern](#2.1.3)
+    * [2.1.4 Connect the two rooms](#2.1.4)
+
+---
+
+##<a name="2.1">2.1 Introducing arkward rooms</a>
+
+        You are in a forest outside the town. To the southwest the path continues toward 
+        a clearing. To the east it leads to a bridge over a river toward a town.
+        Obvious exits: north, east, southwest
+
+This room from the Dead Souls mudlib is easy to map, at least during the day. But at night, the exit list disappears, and the automapper doesn't recognise it at all.
+
+        You are in a forest outside the town. To the southwest the path continues toward 
+        a clearing. To the east it leads to a bridge over a river toward a town.
+
+Well, in this situation you can tell Axmud to look for a line containing **You are in a forest outside the town**, instead of an exit list. Updating the map is a little tricky, so here's the best way to do it.
+
+##<a name="2.1.1">2.1.1 Draw a nearby room</a>
+
+Move to a neighbouring room, one that the automapper does recognise, and draw it on the map
+
+![The nearby room, drawn on the map](img/tut02/nearby_room.png)
+
+##<a name="2.1.2">2.1.2 Draw an empty room</a>
+
+Right-click the background at the position where you want to draw the arkward room. In the popup menu, select **Add room here**.
+
+![An empty room, added to the map](img/tut02/empty_room.png)
+
+##<a name="2.1.3">2.1.3 Add the pattern</a>
+
+Right-click the empty room, and select **Add pattern > Add unspecified room pattern...**
+
+In the dialogue window, add the first few words from the tricky room's description, for example:
+
+        You are in a forest outside the town
+
+Axmud expects a pattern (regular expression/regex). If you're not sure what that means, read [Section 6](ch06.html) of the Guide.
+
+##<a name="2.1.4">2.1.4 Connect the two rooms</a>
+
+Axmud won't check this pattern unless the two rooms are connected to each other. A one-way exit will do just fine.
+
+Right-click the west exit, select **Connect to click**, then click on the arkward (empty) room.
+
+![The rooms connected on the map](img/tut02/connected_rooms.png)
+
+The automapper should now recognise the arkward room. You can test this by moving there (in this example, by going west.)
+
+![The working map](img/tut02/recognised_rooms.png)
+
+---
+
+[Previous](tut01.html) [Index](index.html) [Next](tut03.html)

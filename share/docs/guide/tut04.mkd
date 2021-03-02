@@ -1,0 +1,246 @@
+[Previous](tut03.html) [Index](index.html)
+
+---
+
+#Tutorial 4: Speed-walking and slow-walking
+
+####Table of Contents
+
+* [4.1 Speed-walking](#4.1)
+    * [4.1.1 Enabling speedwalk commands](#4.1.1)
+    * [4.1.2 Simple speedwalk commands](#4.1.2)
+    * [4.1.3 Going northwest](#4.1.3)
+    * [4.1.4 Special letters](#4.1.4)
+    * [4.1.5 Adding comments](#4.1.5)
+    * [4.1.6 Changing direction](#4.1.6)
+    * [4.1.7 Modifier characters](#4.1.7)
+    * [4.1.8 List of modifier characters](#4.1.8)
+    * [4.1.9 Using doors](#4.1.9)
+    * [4.1.10 MUDs in other languages](#4.1.10)
+    * [4.1.11 Configuring speedwalk commands](#4.1.11)
+    * [4.1.12 Using routes](#4.1.12)
+* [4.2 Slow-walking](#4.2)
+
+---
+
+##<a name="4.1">4.1 Speed-walking</a>
+
+Speedwalking is a way to move around the MUD with a minimum of effort. In other words, instead of typing:
+
+        north;north;north;west;south;south
+
+...you can type:
+
+        .3nw2s
+
+Axmud's speedwalk syntax is very similar to that used by other popular MUD clients, but there are some important differences.
+
+##<a name="4.1.1">4.1.1 Enabling speedwalk commands</a>
+
+A speedwalk command always starts with a full stop (period) character.
+
+        .3nw2s
+
+If that command is sent to the MUD *literally*, it means that speedwalk commands are currently disabled. Here are some ways to enable them.
+
+* When you first install Axmud, speedwalk commands can be enabled in the setup window
+* Type **;togglesigil -w** or **;tsg -w**
+* Open the client preference window ( **;editclient** ), click on **Commands > Page 1**, click the **Enable** button, then click **OK** button to close the window
+
+##<a name="4.1.2">4.1.2 Simple speedwalk commands</a>
+
+Simple speedwalk commands consist of a sequence of letters. Each letter represents a single direction.
+
+        .nnnwss
+
+If you move **north** several times in a row, you can put a number just before the letter.
+
+        .3nw2s
+
+Both of these examples are the equivalent of:
+
+        .north;north;north;west;south;south
+
+##<a name="4.1.3">4.1.3 Going northwest</a>
+
+Sooner or later, you will try to speedwalk **northwest** and, at that point, you'll realise that you can't. The following command is the equivalent of typing **north**, followed by **west**.
+
+        .nw
+
+One way around this is to put the command inside brackets. Everything inside a pair of brackets is treated as a single direction.
+
+        .(nw)
+
+Because it's a single direction, you can put a number in front of it. To go northwest five times:
+
+        .5(nw)
+
+You can use any number between 1 and 999. If you use a larger number like 12345, only the last three digits (345) are used. If you use the number 0, the direction is ignored. The following command is the equivalent of **north**:
+
+        .0en
+
+##<a name="4.1.4">4.1.4 Special letters</a>
+
+Another way to do it is to use the letters **t**, **y**, **g** and **h**. **t** represents northwest, **y** represents northeast, **g** represents southwest and **h** represents southeast.
+
+        .t
+
+The letter **l** represents a **look** command, and of course you can use **u** to go **up**, and **d** to go **down**.
+
+##<a name="4.1.5">4.1.5 Adding comments</a>
+
+You can break up a very long speedwalk command by inserting comments somewhere in the middle.
+
+Everything inside a pair of braces {...} is ignored, so you can add any comment you like.
+
+        .3nw2n5ws{the city gates are here}5sw{the guild is here}nwn
+
+By the way, speedwalk commands can contain any number of spaces (which is a simpler way of breaking up speedwalk command).
+
+        .3nw2n5ws 5sw nwn
+
+You can put spaces anywhere you like; it makes no difference to the way Axmud interprets the command. All of the following commands are equivalent.
+
+        .3nw 2n 5w s 5n w n w n
+        .3 n w 2 n 5 w s 5 n w n w n
+        north;north;north;west;north;north;west;west;west;west;west;south;north;north;north;north;north;west;north;west;north
+
+##<a name="4.1.6">4.1.6 Changing direction</a>
+
+You can *reverse* any speedwalk command by using two full stops (periods) at the beginning of it. For example:
+
+        ..3nw2n
+
+...is the equivalent of typing:
+
+        south;south;east;south;south;south
+
+However, this won't work for any command inside a pair of brackets. The solution is to specify both the command and the opposite direction at the same time.
+
+        ..(sw/ne)
+        ..(enter portal/open curtains)
+
+##<a name="4.1.7">4.1.7 Modifier characters</a>
+
+The speedwalk commands you've seen so far are always typed in lower-case letters. This is very important - if you type this, you won't get the result you were expecting:
+
+        ..3NW2S
+
+In a speedwalk command, every letter can be preceded by a modifier character. The modifier is always typed as an upper-case letter.
+
+For example, the letter **S** means **sail**. It converts **north** into **sail north**, **east** into **sail east** and so on.
+
+        .Sn
+        .Se
+
+You can use a modifier before any single command - either a letter, or a longer command enclosed in brackets. This is the equivalent of **sail northwest**:
+
+        .S(nw)
+
+If you use a number - for example, to sail northwest three times - the number comes before the modifier:
+
+        .Sn
+        .3S(nw)
+
+##<a name="4.1.8">4.1.8 List of modifier characters</a>
+
+Axmud provides a long list of modifier characters. Axmud will use its current dictionary to convert each modifier into the correct command for whichever MUD you're playing. (This will, of course, only work if the world has been configured correctly.)
+
+The full list is:
+
+* G : go <dir>
+* S : sail <dir>
+* O : open <dir> door
+* N : run <dir>
+* I : ride <dir>
+* C : close <dir> door
+* A : walk <dir>
+* D : drive <dir>
+* K : unlock <dir> door
+* F : fly <dir>
+* R : creep <dir>
+* L : lock <dir> door
+* W : swim <dir>
+* E : sneak <dir>
+* P : pick <dir> door
+* V : dive <dir>
+* Q : squeeze <dir>
+* B : break <dir> door
+
+If the modifier you want isn't available - or if you don't want to memorise the whole list - you can specify your own modifier using a pair of square brackets [...]. The following two commands are equivalent:
+
+        .Sn
+        .[sail]n
+
+If the opposite direction uses a different command, you can specify both:
+
+        ..[sail/swim]n
+
+In some situations, you might need to specify two modifiers and two movement commands together:
+
+        ..[sail/swim](sw/ne)
+
+##<a name="4.1.9">4.1.9 Using doors</a>
+
+The modifier character **O** converts a direction like **north** into something like **open north door**.
+
+        .On
+
+If you try going through a door, and then try reversing your path, you might find that the **open door** command is now in the wrong place.
+
+        .Oww (the equivalent of open west door;west)
+        ..Oww (the equivalent of east;open east door)
+
+One possible solution is to open the door twice - once before moving, and once afterwards. When you reverse the path, you'll probably see a message like **there is no door here**, but that's definitely better than seeing something like **you slam face-first into a wall!**
+
+        .OwwOw (the equivalent of open west door;west;open west door)
+        ..Oww (the equivalent of open east door;east;open east door)
+
+##<a name="4.1.10">4.1.10 MUDs in other languages</a>
+
+If your favourite MUD uses French, rather than English, Axmud should be able to handle the translation on your behalf. That is to say, as long as the world has been configured correctly, the following command will work at MUDs using any language.
+
+        .3nw2s
+
+If you need to configure the world yourself, type **;editdictionary**, then click on **Directions > Page 1**, **Page 2** and **Page 3**, and then make the changes you require.
+
+##<a name="4.1.11">4.1.11 Configuring speedwalk commands</a>
+
+If you don't like Axmud's speedwalk characters, you can modify them as well. Having opened the dictionary's edit window with **;editdictionary**, click on **Directions > Page 4**.
+
+If you want to customise the modifier characters, you can do so by clicking on **Directions > Page 5**.
+
+##<a name="4.1.12">4.1.12 Using routes</a>
+
+Speedwalk commands can be used in Axmud routes. See [this tutorial](tut01.html).
+
+##<a name="4.2">4.2 Slow-walking</a>
+
+Despite the similar name, slowwalking is not related to speedwalking.
+
+In Axmud, slowwalking is a way of limiting the number of commands that are sent to the world. This is very useful at worlds that enforce a limit, and which might ignore your commands if you send too many, too quickly.
+
+To tell Axmud to send no more than one command per second, you can type either of these:
+
+        ;slowwalk on
+        ;slowwalk 1
+
+If you type more commands than this limit allows, Axmud will store them temporarily, sending them once per second until they've all been sent.
+
+To set a limit of three commands per second:
+
+        ;slowwalk 3
+
+To set a limit of five command every three seconds:
+
+        ;slowwalk 5 3
+
+To turn off slowwalking altogether:
+
+        ;slowwalk off
+        ;slowwalk 0
+
+---
+
+[Previous](tut03.html) [Index](index.html)
+

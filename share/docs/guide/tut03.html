@@ -1,0 +1,154 @@
+<!doctype html>
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<style type="text/css">
+td, th { border: 1px solid #c3c3c3; padding: 0 3px 0 3px; }
+table { border-collapse: collapse; }
+img { max-width: 100%; }
+</style>
+<meta name="generator" content="ReText 7.1.0">
+<title>tut03</title>
+<style type="text/css">
+</style>
+</head>
+<body>
+<p><a href="tut02.html">Previous</a> <a href="index.html">Index</a> <a href="tut04.html">Next</a></p>
+<hr>
+<h1>Tutorial 3: Sharing your maps</h1>
+<h4>Table of Contents</h4>
+<ul>
+<li><a href="#3.1">3.1 A handy checklist</a><ul>
+<li><a href="#3.1.1">3.1.1 Make a backup of the your map</a></li>
+<li><a href="#3.1.2">3.1.2 Claim credit for your work</a></li>
+<li><a href="#3.1.3">3.1.3 Reposition all regions</a></li>
+<li><a href="#3.1.4">3.1.4 Reset room tracking</a></li>
+<li><a href="#3.1.5">3.1.5 Turn on tooltips</a></li>
+<li><a href="#3.1.6">3.1.6 Reset character visits</a></li>
+<li><a href="#3.1.7">3.1.7 Reset room filters and room interiors</a></li>
+<li><a href="#3.1.8">3.1.8 Reset automatic modes</a></li>
+<li><a href="#3.1.9">3.1.9 Turn on assisted moves</a></li>
+<li><a href="#3.1.10">3.1.10 Reset exit options</a></li>
+<li><a href="#3.1.11">3.1.11 Reset unwanted labels</a></li>
+<li><a href="#3.1.12">3.1.12 Export the public map</a></li>
+<li><a href="#3.1.13">3.1.13 Restore your private map</a></li>
+</ul>
+</li>
+</ul>
+<hr>
+<h2><a name="3.1">3.1 A handy checklist</a></h2>
+<p>After spending weeks crafting a comprehensive map of your favourite MUD, you're probably thinking about sharing that map with other players. </p>
+<p>Here's a handy checklist of things to do. Of course, these are only suggestions; apply them, or don't. It's up to you!</p>
+<h2><a name="3.1.1">3.1.1 Make a backup of the your map</a></h2>
+<p>There are two version of the map - the original, private version that you want to keep for yourself, and a public version that you're going to send to other people.</p>
+<p>The first step is to make a copy of the private version, so you can restore it after you've released the public version.</p>
+<ul>
+<li>From the automapper window menu, select <strong>File &gt; Save/export world model...</strong></li>
+<li>Save the file somewhere convenient, for example on your desktop</li>
+<li>It's probably a good idea to name the file something like <strong>private.tar.gz</strong>, so you don't get the private and public versions mixed up</li>
+<li>Now you're ready to edit the public version of your map</li>
+</ul>
+<h2><a name="3.1.2">3.1.2 Claim credit for your work</a></h2>
+<p>Everyone should know who's responsible for their beautiful new map. This is how to claim credit for it.</p>
+<ul>
+<li>From the automapper window menu, select <strong>Edit &gt; Edit world model...</strong></li>
+<li>The edit window opens on the <strong>General</strong> tab</li>
+<li>You should add your name here</li>
+<li>If it's useful, you can also add a version number, and a date for the version</li>
+<li>Those boxes - as well as the <strong>Description</strong> box - can contain any text you like</li>
+<li>Click the <strong>OK</strong> button to confirm your changes</li>
+</ul>
+<p><img alt="The world model edit window" src="img/tut03/edit_model.png"></p>
+<h2><a name="3.1.3">3.1.3 Reposition all regions</a></h2>
+<p>There are a few things you can do to make life easier for the people who use your maps. The first one is to set which part of the map is initially visible, and how much of the map is visible.</p>
+<ul>
+<li>From the automapper window menu, select <strong>View &gt; Reposition all maps</strong></li>
+<li>If you want to make a different part of a region visible, you can do so. That information is saved along with everything else, when you save the map</li>
+</ul>
+<h2><a name="3.1.4">3.1.4 Reset room tracking</a></h2>
+<p>Axmud scrolls the map around so that the current room is always visible. If you've change the tracking settings, you should restore the default values.</p>
+<ul>
+<li>From the automapper window menu, make sure <strong>View &gt; Tracking &gt; Track current room</strong> is selected</li>
+<li>Then select <strong>View &gt; Tracking &gt; Track near edge</strong></li>
+</ul>
+<h2><a name="3.1.5">3.1.5 Turn on tooltips</a></h2>
+<p>Another common courtesy is to turn on tooltips, if you've turned them off</p>
+<ul>
+<li>From the automapper window menu, select <strong>Mode &gt; Drawing flags &gt; Show tooltips</strong></li>
+<li>Then select <strong>Mode &gt; Drawing flags &gt; Show room notes in tooltips</strong></li>
+</ul>
+<p>While you're at it, the default setting is not to open the automapper window automatically.</p>
+<ul>
+<li>From the automapper window menu, de-select <strong>Mode &gt; Start-up flags &gt;Open automapper on startup</strong></li>
+</ul>
+<h2><a name="3.1.6">3.1.6 Reset character visits</a></h2>
+<p>Axmud records how many visits your characters have made to each room. Other players are not interested in where your characters have been, so you should probably remove this information.</p>
+<ul>
+<li>From the automapper window menu, select <strong>Edit &gt; Reset &gt; Reset visits by character...</strong></li>
+<li>In the dialogue window, select <strong>All character profiles</strong></li>
+<li>Just below that, select <strong>All regions</strong></li>
+<li>Click <strong>OK</strong> to confirm your changes</li>
+</ul>
+<h2><a name="3.1.7">3.1.7 Reset room filters and room interiors</a></h2>
+<p>You should reset the way rooms are displayed, if you've changed those settings.</p>
+<ul>
+<li>From the automapper window menu, make sure that <strong>View &gt; Room filters &gt; Release all filters</strong> is selected</li>
+<li>Then, make sure that <strong>View &gt; Room interiors &gt; Don't draw counts</strong> is selected</li>
+</ul>
+<h2><a name="3.1.8">3.1.8 Reset automatic modes</a></h2>
+<p>Auto-compare mode, auto-rescue mode and auto-slide mode are really useful, but other users should be able to choose whether they're turned on, or not. We advise that they are all turned off.</p>
+<ul>
+<li>From the automapper window menu, make sure that <strong>Mode &gt; Auto-compare &gt; Don't auto-compare current room</strong> is selected</li>
+<li>Then, make sure that <strong>Mode &gt; Auto-rescue mode &gt; Enable auto-rescue mode</strong> is not selected</li>
+<li>Then, make sure that <strong>Mode &gt; Auto-slide mode &gt; Don't auto-slide new rooms</strong> is selected</li>
+</ul>
+<h2><a name="3.1.9">3.1.9 Turn on assisted moves</a></h2>
+<p>Assisted moves allow you to move through exits like <strong>enter portal</strong> by typing a command like <strong>north</strong> or <strong>n</strong> (assuming that the exit has been drawn as a north exit).</p>
+<ul>
+<li>From the automapper window menu, make sure that <strong>Mode &gt; Movement flags &gt; Allow assisted moves</strong> is selected</li>
+<li>Then, make sure that <strong>Mode &gt; Movement flags &gt; Allow protected moves</strong> is not selected</li>
+<li>Also make sure that <strong>Mode &gt; Movement flags &gt; Allow crafty moves</strong> is not selected</li>
+</ul>
+<h2><a name="3.1.10">3.1.10 Reset exit options</a></h2>
+<p>If other users might want to add their own rooms to their imported map, you should consider resetting the options that specify how two-way exits are drawn. </p>
+<ul>
+<li>From the automapper window menu, make sure that <strong>Exits &gt; Exit options &gt; Autocomplete uncertain exits</strong> is not selected</li>
+<li>Make sure that <strong>Exits &gt; Exit options &gt; Intelligent uncertain exits</strong> is selected</li>
+<li>Make sure that <strong>Exits &gt; Exit options &gt; Collect checked directions</strong> is not selected</li>
+</ul>
+<h2><a name="3.1.11">3.1.11 Reset unwanted labels</a></h2>
+<p>If you've filled your map with quest hints that you don't want to share, there's a quick and easy way to delete them all (while keeping the labels that you do want to share).</p>
+<ul>
+<li>From the automapper window menu, select <strong>Labels &gt; Quick label deletion...</strong></li>
+<li>In the new window, click the box next to every label that you want to delete</li>
+<li>When you're ready, click the <strong>Delete selected labels</strong> button</li>
+<li>Then click the <strong>OK</strong> button to close the window</li>
+</ul>
+<p><img alt="The label deletion window" src="img/tut03/label_window.png"></p>
+<h2><a name="3.1.12">3.1.12 Export the public map</a></h2>
+<p>Now you're ready to share your map.</p>
+<ul>
+<li>From the automapper window menu, select <strong>File &gt; Save/export world model...</strong></li>
+<li>Save the file somewhere convenient, for example on your desktop</li>
+<li>Give the file a sensible name, for example <strong>public-deathmud-map.tar.gz</strong></li>
+<li>Send this file to your friends!</li>
+</ul>
+<p>Your friends probably already know how to import the file they've received. If not, you can send them this:</p>
+<ul>
+<li>The usual advice applies: <em>don't import things from people you don't trust</em></li>
+<li>From the automapper window menu, select <strong>File &gt; Import/load world model...</strong></li>
+<li>Select the <strong>.tar.gz</strong> file you received</li>
+<li>When Axmud warns you about overwriting your existing map, select <strong>Yes</strong></li>
+<li>If you don't want to overwrite your existing map, you can merge the two maps instead. From the automapper window menu, click <strong>File &gt; Merge world models...</strong></li>
+</ul>
+<h2><a name="3.1.13">3.1.13 Restore your private map</a></h2>
+<p>The final step, of course, is to restore the private map you exported earlier.</p>
+<ul>
+<li>From the automapper window menu, select <strong>File &gt; Import/load world model...</strong></li>
+<li>Select the <strong>private.tar.gz</strong> file you exported and saved on your desktop</li>
+</ul>
+<hr>
+<p><a href="tut02.html">Previous</a> <a href="index.html">Index</a> <a href="tut04.html">Next</a></p>
+
+</body>
+</html>

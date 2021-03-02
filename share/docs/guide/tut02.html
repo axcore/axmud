@@ -1,0 +1,62 @@
+<!doctype html>
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<style type="text/css">
+td, th { border: 1px solid #c3c3c3; padding: 0 3px 0 3px; }
+table { border-collapse: collapse; }
+img { max-width: 100%; }
+</style>
+<meta name="generator" content="ReText 7.1.0">
+<title>tut02</title>
+<style type="text/css">
+</style>
+</head>
+<body>
+<p><a href="tut01.html">Previous</a> <a href="index.html">Index</a> <a href="tut03.html">Next</a></p>
+<hr>
+<h1>Tutorial 2: Mapping arkward rooms</h1>
+<h4>Table of Contents</h4>
+<ul>
+<li><a href="#2.1">2.1 Introducing arkward rooms</a><ul>
+<li><a href="#2.1.1">2.1.1 Draw a nearby room</a></li>
+<li><a href="#2.1.2">2.1.2 Draw an empty room</a></li>
+<li><a href="#2.1.3">2.1.3 Add the pattern</a></li>
+<li><a href="#2.1.4">2.1.4 Connect the two rooms</a></li>
+</ul>
+</li>
+</ul>
+<hr>
+<h2><a name="2.1">2.1 Introducing arkward rooms</a></h2>
+<pre><code>    You are in a forest outside the town. To the southwest the path continues toward 
+    a clearing. To the east it leads to a bridge over a river toward a town.
+    Obvious exits: north, east, southwest
+</code></pre>
+<p>This room from the Dead Souls mudlib is easy to map, at least during the day. But at night, the exit list disappears, and the automapper doesn't recognise it at all.</p>
+<pre><code>    You are in a forest outside the town. To the southwest the path continues toward 
+    a clearing. To the east it leads to a bridge over a river toward a town.
+</code></pre>
+<p>Well, in this situation you can tell Axmud to look for a line containing <strong>You are in a forest outside the town</strong>, instead of an exit list. Updating the map is a little tricky, so here's the best way to do it.</p>
+<h2><a name="2.1.1">2.1.1 Draw a nearby room</a></h2>
+<p>Move to a neighbouring room, one that the automapper does recognise, and draw it on the map</p>
+<p><img alt="The nearby room, drawn on the map" src="img/tut02/nearby_room.png"></p>
+<h2><a name="2.1.2">2.1.2 Draw an empty room</a></h2>
+<p>Right-click the background at the position where you want to draw the arkward room. In the popup menu, select <strong>Add room here</strong>.</p>
+<p><img alt="An empty room, added to the map" src="img/tut02/empty_room.png"></p>
+<h2><a name="2.1.3">2.1.3 Add the pattern</a></h2>
+<p>Right-click the empty room, and select <strong>Add pattern &gt; Add unspecified room pattern...</strong></p>
+<p>In the dialogue window, add the first few words from the tricky room's description, for example:</p>
+<pre><code>    You are in a forest outside the town
+</code></pre>
+<p>Axmud expects a pattern (regular expression/regex). If you're not sure what that means, read <a href="ch06.html">Section 6</a> of the Guide.</p>
+<h2><a name="2.1.4">2.1.4 Connect the two rooms</a></h2>
+<p>Axmud won't check this pattern unless the two rooms are connected to each other. A one-way exit will do just fine.</p>
+<p>Right-click the west exit, select <strong>Connect to click</strong>, then click on the arkward (empty) room.</p>
+<p><img alt="The rooms connected on the map" src="img/tut02/connected_rooms.png"></p>
+<p>The automapper should now recognise the arkward room. You can test this by moving there (in this example, by going west.)</p>
+<p><img alt="The working map" src="img/tut02/recognised_rooms.png"></p>
+<hr>
+<p><a href="tut01.html">Previous</a> <a href="index.html">Index</a> <a href="tut03.html">Next</a></p>
+
+</body>
+</html>

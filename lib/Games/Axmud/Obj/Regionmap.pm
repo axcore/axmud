@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2020 A S Lewis
+# Copyright (C) 2011-2021 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -131,7 +131,7 @@
             #   area
             # Use 1 to draw only the current room, 2 to draw exits for rooms in a 3x3 area, 3 for a
             #   5x5 area, and so on
-            # The maximum value is that specified by GA::Obj::WorldModel::maxobscuredExitRadius
+            # The maximum value is that specified by GA::Obj::WorldModel->maxObscuredExitRadius
             obscuredExitRadius          => 3,
             # When this flag is set to TRUE, exit ornaments are drawn in this region. If set to
             #   FALSE, ornaments aren't drawn

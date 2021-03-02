@@ -1,6 +1,6 @@
-# Axmud v1.3.0 installer script for MS Windows
+# Axmud v1.3.007 installer script for MS Windows
 #
-# Copyright (C) 2011-2020 A S Lewis
+# Copyright (C) 2011-2021 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -114,7 +114,7 @@
 #   - The Axmud folder contains an \nsis folder, which contains this file
 #   - In this file, update the version number just below, e.g.
 #
-#       OutFile "install-axmud-1.3.0.exe"
+#       OutFile "install-axmud-1.3.007.exe"
 #
 #   - Compile the installer (e.g. by right-clicking this file and selecting
 #       'Compile NSIS script file')
@@ -131,7 +131,7 @@
 
     ;Name and file
     Name "Axmud"
-    OutFile "install-axmud-1.3.0.exe"
+    OutFile "install-axmud-1.3.007.exe"
 
     ;Default installation folder
     InstallDir "$LOCALAPPDATA\Axmud"

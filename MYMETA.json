@@ -3,7 +3,7 @@
    "author" : [
       "A S Lewis <aslewis@cpan.org>"
    ],
-   "dynamic_config" : 1,
+   "dynamic_config" : 0,
    "generated_by" : "ExtUtils::MakeMaker version 7.34, CPAN::Meta::Converter version 2.150010",
    "license" : [
       "gpl_3"
@@ -87,6 +87,6 @@
          "web" : "https://github.com/axcore/axmud"
       }
    },
-   "version" : "v1.3.0",
+   "version" : "v1.3.007",
    "x_serialization_backend" : "JSON::PP version 4.02"
 }
