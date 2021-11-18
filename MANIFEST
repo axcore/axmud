@@ -317,6 +317,14 @@ share/docs/guide/img/tut02/nearby_room.png
 share/docs/guide/img/tut02/recognised_rooms.png
 share/docs/guide/img/tut03/edit_model.png
 share/docs/guide/img/tut03/label_window.png
+share/docs/guide/img/tut05/anchor_patterns.png
+share/docs/guide/img/tut05/brief_components.png
+share/docs/guide/img/tut05/creating_components.png
+share/docs/guide/img/tut05/example_colour.png
+share/docs/guide/img/tut05/exit_delimiters.png
+share/docs/guide/img/tut05/short_components.png
+share/docs/guide/img/tut05/start_stop_patterns.png
+share/docs/guide/img/tut05/verbose_components.png
 share/docs/guide/index.html
 share/docs/guide/index.mkd
 share/docs/guide/tut01.html
@@ -327,6 +335,8 @@ share/docs/guide/tut03.html
 share/docs/guide/tut03.mkd
 share/docs/guide/tut04.html
 share/docs/guide/tut04.mkd
+share/docs/guide/tut05.html
+share/docs/guide/tut05.mkd
 share/docs/quick/quick.html
 share/docs/quick/quick.mkd
 share/docs/tutorial/ch01.html
@@ -2575,8 +2585,8 @@ share/icons/map/icon_draw_descrips.png
 share/icons/map/icon_draw_descrips_large.png
 share/icons/map/icon_draw_exclusive.png
 share/icons/map/icon_draw_exclusive_large.png
-share/icons/map/icon_draw_flags.png
-share/icons/map/icon_draw_flags_large.png
+share/icons/map/icon_draw_grid_posn.png
+share/icons/map/icon_draw_grid_posn_large.png
 share/icons/map/icon_draw_hidden.png
 share/icons/map/icon_draw_hidden_large.png
 share/icons/map/icon_draw_none.png
@@ -2585,6 +2595,10 @@ share/icons/map/icon_draw_ornaments.png
 share/icons/map/icon_draw_ornaments_large.png
 share/icons/map/icon_draw_patterns.png
 share/icons/map/icon_draw_patterns_large.png
+share/icons/map/icon_draw_room_flag.png
+share/icons/map/icon_draw_room_flag_large.png
+share/icons/map/icon_draw_room_tag.png
+share/icons/map/icon_draw_room_tag_large.png
 share/icons/map/icon_draw_shadow.png
 share/icons/map/icon_draw_shadow_large.png
 share/icons/map/icon_draw_simple.png

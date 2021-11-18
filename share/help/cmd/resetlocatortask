@@ -20,6 +20,8 @@ rlc / resetlocatortask        Resets the Locator task
          reset it. The task searches back through the text received from the 
          world, finds the most recent room statement, and uses it as the new 
          current room.
+      As a convenience for automapper users, if the Locator task is not already
+         running, then using this command will start a new one.
 
       A small number of worlds use relative directions like 'forward' and
          'left'. At these worlds, exits in a room can change depending on the

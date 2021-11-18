@@ -62,5 +62,5 @@ resources:
   bugtracker: https://github.com/axcore/axmud/issues
   homepage: https://axmud.sourceforge.io/
   repository: https://github.com/axcore/axmud.git
-version: v1.3.007
+version: v1.3.019
 x_serialization_backend: 'CPAN::Meta::YAML version 0.018'

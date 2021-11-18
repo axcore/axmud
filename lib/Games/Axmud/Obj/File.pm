@@ -9639,6 +9639,18 @@
                     delete $wmObj->{maxobscuredExitRadius};
                 }
             }
+
+            if ($version < 1_003_017) {
+
+                # This version adds new IVs to the world model
+                if (! exists $wmObj->{roomInteriorXOffset}) {
+
+                    $wmObj->{roomInteriorXOffset} = undef;
+                    $wmObj->ivPoke('roomInteriorXOffset', 0);
+                    $wmObj->{roomInteriorYOffset} = undef;
+                    $wmObj->ivPoke('roomInteriorYOffset', 0);
+                }
+            }
         }
 
         ### new built-in tasks (new IVs for existing tasks are below) #############################

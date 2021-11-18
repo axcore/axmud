@@ -1,0 +1,283 @@
+<!doctype html>
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<style type="text/css">
+td, th { border: 1px solid #c3c3c3; padding: 0 3px 0 3px; }
+table { border-collapse: collapse; }
+img { max-width: 100%; }
+</style>
+<meta name="generator" content="ReText 7.1.0">
+<title>tut05</title>
+<style type="text/css">
+</style>
+</head>
+<body>
+<p><a href="tut04.html">Previous</a> <a href="index.html">Index</a></p>
+<hr>
+<h1>Tutorial 5: Pre-Configured Worlds 1: Setting up the automapper</h1>
+<h4>Table of Contents</h4>
+<ul>
+<li><a href="#5.1">5.1 Introduction</a></li>
+<li><a href="#5.2">5.2 Mapping Definitions</a></li>
+<li><a href="#5.3">5.3 Room statements</a></li>
+<li><a href="#5.4">5.4 Room statement types</a></li>
+<li><a href="#5.5">5.5 Anchor lines</a></li>
+<li><a href="#5.6">5.6 Detecting components</a></li>
+<li><a href="#5.7">5.7 Component type</a></li>
+<li><a href="#5.8">5.8 The verbose component list</a></li>
+<li><a href="#5.9">5.9 Other component list</a></li>
+<li><a href="#5.10">5.10 Anchor line pattern</a></li>
+<li><a href="#5.11">5.11 Exit delimiters</a></li>
+<li><a href="#5.12">5.12 Contents patternss</a></li>
+<li><a href="#5.13">5.13 Component boundaries</a></li>
+<li><a href="#5.14">5.14 More about component boundaries</a></li>
+<li><a href="#5.15">5.15 Shortcuts</a></li>
+<li><a href="#5.16">5.16 Using colours</a></li>
+</ul>
+<hr>
+<h2><a name="5.1">5.1 Introduction</a></h2>
+<p>Axmud comes with over a hundred pre-configured worlds. This is the first of three tutorials which will show, step by step, how those pre-configured worlds were created.</p>
+<p>Different worlds behave in a myriad of different ways, and Axmud aims to able to handle them all. As a result, there is rather a lot to read; however, much of it won't apply to your favourite MUD. You can skip the parts that you don't actually need.</p>
+<p>You <em>must</em> be familiar with regular expressions/regexes/patterns (we use these terms interchangeably). <a href="ch06.html">Section 6</a> of the Axmud Guide tells you everything you need to know, so read that first, if necessary. </p>
+<p>If you haven't used Axmud's automapper before, you should get used to it first: connect to any of the pre-configured worlds, and try drawing a simple map. The first few parts of <a href="ch15.html">Section 15</a> can help you with that, if necessary.</p>
+<p>This tutorial deals with the Locator Task and automapper. In the remaining tutorials, we'll cover the Status Task and the Inventory Task.</p>
+<h2><a name="5.2">5.2 Mapping Definitions</a></h2>
+<p>Several independent processes work together to help you draw your maps. Let's start by identifying them.</p>
+<p>The <strong>world profile</strong> is a collection of settings that tell Axmud how to handle a world. Many of the settings for the automapper are stored in the world profile.</p>
+<p>To see the current world profile, from Axmud's main window you can click <strong>Edit &gt; Edit current world...</strong>, or type:</p>
+<pre><code>    ;editworld
+    ;ewo
+</code></pre>
+<p>The <strong>world model</strong> is a database. It usually contains just rooms and exits, but it can 'model' many other parts of the game as well. A few more settings are stored here. To see the world model, click <strong>Edit &gt; Edit world world...</strong> or type:</p>
+<pre><code>    ;editmodel
+    ;emd
+</code></pre>
+<p>As you move around the world, the game sends lots of text. The <strong>Locator Task</strong> analyses this text, trying to identify your character's location. The analysis is available to any code that wants it. (You have probably noticed that the automapper does nothing when the Locator Task isn't running.)</p>
+<p>The <strong>automapper</strong> is an (invisible) process that tries to keep track of your character's location in the world. When the Locator Task detects a location, that information is passed to the automapper. </p>
+<p>The automapper's main job is to work out when your character is in the wrong place. For example, after moving north the automapper might think that you should be in a tavern, so if you've actually arrived in a shop, the automapper will mark itself as <em>lost</em> (and will stop tracking your location).</p>
+<p>The <strong>automapper window</strong> is a completely separate process that handles map drawing. You can test this claim by closing the automapper window, moving around a bit, and then re-opening it: hopefully, the automapper still knows where you are, and the automapper window should be showing the correct location.</p>
+<h2><a name="5.3">5.3 Room statements</a></h2>
+<p>Your character's current location is received as a <strong>room statement</strong>. The room statement contains information about a single room. Here's a typical example.</p>
+<pre><code>    Village Road Intersection
+    You are in the main intersection of the village, lit by a town lamp post. Saquivor road extends north and south, intersected east to west by a road that leads west toward a wilderness, and east toward shore.
+    Obvious exits: south, north, east, west
+    Two guards are here.
+</code></pre>
+<p>The room statement is made up of several <strong>components</strong>. In this case, we have four components: a title, a description, an exit list and a contents list.</p>
+<p>A single component can consist of one or many lines. (The title is usually only one line; a description might be several lines).</p>
+<p>In most worlds, each component appears on a separate line (or lines). It's very common for the title and list of exits to appear together on the same line, however. At a few worlds, a multi-line component might terminate in the middle of a line.</p>
+<h2><a name="5.4">5.4 Room statement types</a></h2>
+<p>Axmud handles three types of room statement. The one just above is an example of a <strong>verbose</strong> statement, which usually contains a long description of the room.</p>
+<p>A <strong>brief</strong> statement might look like this:</p>
+<pre><code>    Village Road Intersection [s, n, e, w]
+</code></pre>
+<p>As you can see, it contains the minimum possible information: the room's title and the exit list, all in a single line. At many worlds you can switch modes by typing <strong>verbose</strong> or <strong>brief</strong> (sometimes by typing <strong>brief on</strong> and <strong>brief off</strong>).</p>
+<p>The third type is a hybrid form called a <strong>short verbose</strong> statement. It is usually in the same format as a verbose statement, but without a room description.</p>
+<pre><code>    Village Road Intersection
+    Obvious exits: south, north, east, west
+    Two guards are here.
+</code></pre>
+<p>When you configure a world, you can set up just one of the statement types, or two of them, or even all three.</p>
+<h2><a name="5.5">5.5 Anchor lines</a></h2>
+<p>Going back to our verbose statement:</p>
+<pre><code>    Village Road Intersection
+    You are in the main intersection of the village, lit by a town lamp post. Saquivor road extends north and south, intersected east to west by a road that leads west toward a wilderness, and east toward shore.
+    Obvious exits: south, north, east, west
+    Two guards are here.
+</code></pre>
+<p>Our first decision is choose a line that consistently matches a pattern. At the <em>vast majority</em> of worlds, the exit list appears in a clear and consistent format, so that's the line we choose:</p>
+<pre><code>    Obvious exits: south, north, east, west
+    Obvious exits: north, northeast, east, southeast, south, southwest, west, northwest, up, down
+    Obvious exit: north
+</code></pre>
+<p>All of these lines match the following regex/pattern:</p>
+<pre><code>    ^Obvious exits?\:\s
+</code></pre>
+<p>(The question mark after the letter <strong>s</strong> make the letter optional, so that we match both <strong>Obvious exit</strong> and <strong>Obvious exits</strong>. The colon is always followed by a space, so we can include the <strong>\s</strong> in our pattern.)</p>
+<p>Axmud assumes that <u>every room statement includes exactly one line matching the pattern</u>. This line is called the <strong>anchor line</strong>.</p>
+<p>When Axmud receives text from the world, the Locator Task analyses it, one line at a time, looking for anchor lines. When an anchor line is found, the Locator checks the text above and below the anchor line, looking for the other components.</p>
+<p>In the example above, having found the exit list, the Locator checks the first line above it, and finds the description. Checking the line above that, it finds a room title. Knowing that each room statement begins with a title, the Locator stops checking lines above.</p>
+<p>Next, the Locator checks the first line below the anchor line, and finds the contents list. Knowing that some room statements end with a contents list, but that some rooms don't have any contents at all, the Locator stops checking lines below.</p>
+<p>Some components are compulsory, and some are optional. At many worlds, we'll decide to make the room title and exit list compulsory, but the room description and contents list optional. If a compulsory component is missing, the Locator <em>ignores</em> the anchor line, and starts looking for a new one. In this example, Axmud would still recognise the title if the description was missing.</p>
+<h2><a name="5.6">5.6 Detecting components</a></h2>
+<p>So, we have a statement consisting of four components. We have an anchor line (the list of exits) and a pattern that matches it. After finding the anchor line, the Locator checks the lines above, then the lines below, looking for more components.</p>
+<p>Therefore, in order to set up the automapper <em>completely</em>, we only need to do these things:</p>
+<ol>
+<li>Divide the room statement into its components</li>
+<li>Decide which line should be the anchor line</li>
+<li>Design a regex/pattern that matches that line</li>
+<li>Tell Axmud which components appear above the anchor line</li>
+<li>Tell Axmud which components appear below the anchor line</li>
+<li>Tell Axmud how to find the beginning and end of each component</li>
+</ol>
+<p>In fact, in most cases it is even simpler than that. Invariably, the automapper will work perfectly with just the list of exits, so that is the only component that you <em>need</em> to define. This is what we recommend: define that one component and ignore all of the others. (You can set up the others later, if you really want them.)</p>
+<h2><a name="5.7">5.7 Component types</a></h2>
+<p>Axmud recognises a number of different components. Some of them are designed for verbose statements, some for brief statements, and others are suitable for all types of statement. </p>
+<p>Here is a complete list, starting with:</p>
+<ul>
+<li><strong>anchor</strong> - the component for the anchor line</li>
+</ul>
+<p>These components are designed for verbose and short verbose statements:</p>
+<ul>
+<li><strong>verb_title</strong> - the room title </li>
+<li><strong>verb_descrip</strong> - the room description</li>
+<li><strong>verb_exit</strong> - the exit list</li>
+<li><strong>verb_content</strong> - the contents list</li>
+<li><strong>verb_special</strong> - a special type of contents list, usually found <em>between</em> the description and exit list (and not <em>after</em> the exit list, as in the example above). Some worlds might require both a <strong>verb_content</strong> and a <strong>verb_special</strong> component</li>
+</ul>
+<p>These components are designed for brief statements:</p>
+<ul>
+<li><strong>brief_title</strong> - the room title</li>
+<li><strong>brief_exit</strong> - the exit list</li>
+<li><strong>brief_title_exit</strong> - the room title and exit list on a single line (title first)</li>
+<li><strong>brief_exit_title</strong> - the room title and exit list on a single line (exits first)</li>
+<li><strong>brief_content</strong> - the contents list</li>
+</ul>
+<p>These components can be used anywhere:</p>
+<ul>
+<li><strong>room_cmd</strong> - a list of commands available in the room. Very few worlds provide such a list, but for those that do, the Locator can recognise that list, and make them available to any code that wants it</li>
+<li><strong>mudlib_path</strong> - a path to the room's source code; this should only be visible to administrators</li>
+<li><strong>weather</strong> - line(s) describing the current weather. The Locator can store the text separately, in case any code wants to know about the weather</li>
+<li><strong>ignore_line</strong> - the most important component of all: lines which are expected, but which the Locator should ignore completely</li>
+<li><strong>custom</strong> - it's possible for code to define new types of component, but that is outside the scope of this tutorial. (You almost certainly do not need that functionality, in any case)</li>
+</ul>
+<p>Note that it's allowed to use brief components in a verbose statement, and vice-versa, if you really <em>really</em> need to do that.</p>
+<h2><a name="5.8">5.8 The verbose component list</a></h2>
+<p>Enough theory, time for some action. If you haven't already done so, you should create a completely new world profile, so that you can practice without messing up any existing profiles you have.</p>
+<p>We'll start by configuring Axmud to recognise the verbose statement:</p>
+<pre><code>    Village Road Intersection
+    You are in the main intersection of the village, lit by a town lamp post. Saquivor road extends north and south, intersected east to west by a road that leads west toward a wilderness, and east toward shore.
+    Obvious exits: south, north, east, west
+    Two guards are here.
+</code></pre>
+<p>Open the world profile's edit window, and click the <strong>Rooms &gt; Page 1</strong> tab. We use this tab to create new components. (The <strong>anchor</strong> component already exists, so we don't have to create it here.)</p>
+<p><img alt="Creating components" src="img/tut05/creating_components.png"></p>
+<ul>
+<li>In the dropdown box, select <strong>verb_title</strong></li>
+<li>Each component has a unique name. You can select any name you like. We only have one of each type of component, so just call this component <strong>verb_title</strong></li>
+<li>Click the <strong>Add</strong> button to create the component</li>
+<li>Repeat that process for the other components: <strong>verb_descrip</strong>, <strong>verb_exit</strong> and <strong>verb_content</strong></li>
+</ul>
+<p>Now click <strong>Page 2</strong>. This is a list of components for verbose statements, in the correct order (from top to bottom). </p>
+<ul>
+<li>In the dropdown box, select <strong>verb_title</strong></li>
+<li>Click the <strong>Add to list</strong> button</li>
+<li>Repeat that process for the other components in the dropdown box</li>
+<li>You can use the <strong>Move up</strong> and <strong>Move down</strong> buttons to put the components in the right order, if necessary.</li>
+</ul>
+<p><strong><u>Because of a bug in v1.3.008, the anchor component is missing from the dropdown box. To make it appear, close the edit window, and open a new one.</u></strong></p>
+<p><img alt="Verbose components, in the correct order" src="img/tut05/verbose_components.png"></p>
+<p>An important thing to realise is that the <strong>anchor</strong> component and the <strong>verb_exit</strong> components <u>occupy the same line</u>. We'll talk more about this later, but for now, make sure that <strong>anchor</strong> comes after <strong>verb_exit</strong> in the list.</p>
+<h2><a name="5.9">5.9 Other component lists</a></h2>
+<p>Exactly the same process is used for short verbose statements:</p>
+<pre><code>    Village Road Intersection
+    Obvious exits: south, north, east, west
+    Two guards are here.
+</code></pre>
+<p>Click <strong>Page 5</strong> to see the corresponding list. If you wanted the Locator to recognise short verbose statements, you would add the components <strong>verb_title</strong>, <strong>verb_exit</strong>, <strong>anchor</strong> and <strong>verb_content</strong> (in that order).</p>
+<p><img alt="Short verbose components, in the correct order" src="img/tut05/short_components.png"></p>
+<p>Now consider a brief statement:</p>
+<pre><code>    Village Road Intersection [s, n, e, w]
+    Two guards are here.
+</code></pre>
+<p>To configure this list, you would first click <strong>Page 1</strong> to create the components <strong>brief_title_exit</strong> and <strong>brief_content</strong>. Then you would click <strong>Page 8</strong> to add them to the list in the order <strong>brief_title_exit</strong>, <strong>anchor</strong>, <strong>brief_content</strong>.</p>
+<p><img alt="Brief components, in the correct order" src="img/tut05/brief_components.png"></p>
+<p>After a little practice, you should be able to create the components you need, adding them to the correct list in the right order, for any world you want to play. </p>
+<h2><a name="5.10">5.10 Anchor line patterns</a></h2>
+<p>We'll now focus on verbose statements exclusively, ignoring for the moment short verbose and brief statements.</p>
+<pre><code>    Village Road Intersection
+    You are in the main intersection of the village, lit by a town lamp post. Saquivor road extends north and south, intersected east to west by a road that leads west toward a wilderness, and east toward shore.
+    Obvious exits: south, north, east, west
+    Two guards are here.
+</code></pre>
+<p>The next job is to create a pattern to match the exit list (which is the anchor line). We have already seen a suitable regex, so click <strong>Page 3</strong> and paste it into the box there:</p>
+<pre><code>    ^Obvious exits?\:\s
+</code></pre>
+<p>At some worlds, you might need more than one pattern. Consider the following exit lists:</p>
+<pre><code>    Obvious exits: south, north, east, west
+    There is only one exit: north
+    There are no obvious exits
+</code></pre>
+<p>In that case, you would need to add three separate patterns. At least one of them must match the anchor line in every room statement.</p>
+<pre><code>    ^Obvious exits?\:\s
+    ^There is only one exit\:\s
+    There are no obvious exits
+</code></pre>
+<p><img alt="Verbose anchor patterns" src="img/tut05/anchor_patterns.png"></p>
+<h2><a name="5.11">5.11 Exit delimiters</a></h2>
+<p>Having recognised a list of exits, Axmud needs to know which bits of text are actually exits, and which are not. </p>
+<p>Click on <strong>Page 12</strong>. In our example, the exits themselves are separated by a comma, followed by a space. This is called the <strong>delimiter</strong>. In the top-left box, type a comma followed by a space.</p>
+<p>The <strong>marker</strong> is a pattern which matches a part of the line that does not contain the exits themselves. Because of our careful regex design, earlier in the tutorial, we are now able to use exactly the same pattern(s), which can be entered into the the bottom-left box.</p>
+<pre><code>    ^Obvious exits?\:\s
+    ^There is only one exit\:\s
+    There are no obvious exits
+</code></pre>
+<p><img alt="Exit delimiters" src="img/tut05/exit_delimiters.png"></p>
+<p>The <strong>Page 12</strong> tab applies to both verbose and short verbose statements. A separate set of delimiters and markers is available for short statements on <strong>Page 13</strong>.</p>
+<p>A malformed regex can cause crashes, and that is something you definitely want to avoid. Once you've finished designing your regexes, click the <strong>Check patterns</strong> button to make sure they are valid regular expressions that won't cause a crash.</p>
+<h2><a name="5.12">5.12 Contents patterns</a></h2>
+<p>The process for interpretting a contents list is a little simpler (click <strong>Page 19</strong>).</p>
+<p>Some worlds will have a nice, simple layout that (for example) always ends <strong>is here</strong> or <strong>are here</strong>.</p>
+<pre><code>    Two guards are here.
+    The sword is here.
+</code></pre>
+<p>In that case, you can add patterns matching the parts of the line whose words are not part of the object(s), namely:</p>
+<pre><code>    are here\.
+    is here\.
+</code></pre>
+<p>By the way, Axmud can already handle multiple objects on the same line, so in most circumstances you don't need to do anything else in order for this line to be parsed correctly.</p>
+<pre><code>    Two trolls, three hobbits and an elf are here.
+</code></pre>
+<p>Unfortunately, some worlds are rather more creative, and produce text like this:</p>
+<pre><code>    The sword of Excalibur is embedded in a rock here.
+</code></pre>
+<p>It would be pointless to add a pattern matching the <strong>is embedded in a rock here</strong> portion, since it's unique to the object, and there might be thousands of different objects. In this situation, Axmud cannot easily parse the text; it would be easier to make this an <strong>ignore</strong> component. Because it's the last component, we could just as easily pretend that it doesn't exist at all.</p>
+<h2><a name="5.13">5.13 Component boundaries</a></h2>
+<p>The next step is to specify how each component starts, and how each component stops. Once again, we can use patterns to achieve this.</p>
+<p>Again using the same example, let's suppose the server has split the description across several lines. Each line is now numbered for your convenience.</p>
+<pre><code>    {1} Village Road Intersection
+    {2} You are in the main intersection of the village, lit by a town lamp post. Saquivor
+    {3} road extends north and south, intersected east to west by a road that leads west 
+    {4} toward a wilderness, and east toward shore.
+    {5} Obvious exits: south, north, east, west
+    {6} Two guards are here.
+</code></pre>
+<p>Having found the exit list on line 5, the Locator starts checking the lines above, one at a time, from line 4 upwards. The description component comprises lines 2-4, so we need to specify how to recognise the <em>start</em> line (4) and the <em>stop</em> line (2).</p>
+<p>Depending on the world, this is either simple, or extremely fiddly, or somewhere in between. In this example, the <em>start</em> line is the final line of the description, so it ends with a full stop/period. (Notice that the room title does <em>not</em> end with a full stop/period; this is an extremely common format.)</p>
+<p>So, the <em>start</em> line matches the following pattern:</p>
+<pre><code>    \.$
+</code></pre>
+<p>...which is to say, the full/stop period at the end of a line.</p>
+<p>The stop line is a much trickier. In fact, there is often <u>no way to reliably determine the <em>stop</em> line</u>. Therefore, we're forced to guess; we might use the following pattern:</p>
+<pre><code>    ^[A-Z]
+</code></pre>
+<p>...which is to say, a capital letter at the beginning of a line. In this case, the guess will work, but often it won't. </p>
+<p>Now, click on <strong>Page 2</strong>, select the line <strong>verb_descrip</strong>, then click the <strong>Edit</strong> button. A new window appears, in that, click the <strong>Pattens/tags</strong> tab.</p>
+<p>On <strong>Page 1</strong>, enter the pattern matching the <em>start</em> line in the box at the top. On <strong>Page 4</strong>, enter the pattern matching the <em>stop</em> line in the box at the top. Then click the <strong>OK</strong> button to close the window.</p>
+<p><img alt="The example start pattern" src="img/tut05/start_stop_patterns.png"></p>
+<h2><a name="5.14">5.14 More about component boundaries</a></h2>
+<p>That's the <strong>verb_descrip</strong> component out of the way. The <strong>verb_title</strong> is much simpler, because we can assume that it occupies exactly one line.</p>
+<p>So, again in <strong>Page 2</strong>, select the line <strong>verb_title</strong>, then click the <strong>Edit</strong> button. A new window appears.</p>
+<p>This time we won't add any patterns; we'll just specify that the component has a fixed size of 1 line. Click the <strong>Name</strong> tab, type <strong>1</strong> in the box near the top, then click the <strong>OK</strong> button to close the window.</p>
+<p>Because we didn't specify a <em>start</em> pattern, Axmud will accept the first line it finds (line 2 in this example), without testing it. If we had specified either a <em>start</em> or a <em>stop</em> pattern, Axmud would have tested the line against one (or both) patterns before accepting it.</p>
+<p>If we had not specified a fixed size, and if we had not specified a <em>stop</em> pattern, Axmud would have gone on checking lines until it runs out of them. Usually, the previous room statement is found first; Axmud knows the position of that previous statement, so it will stop checking there.</p>
+<p>(There is actually a sanity test in place, but it shouldn't concern you right now. The correct method is to set up your components correctly, not to rely on sanity checks.)</p>
+<h2><a name="5.15">5.15 Shortcuts</a></h2>
+<p>The <em>stop</em> situation described above is so common, that Axmud provides some shortcuts for it.</p>
+<p>Once again, select <strong>verb_descrip</strong> and click the <strong>Edit</strong> button. In the new window, click <strong>Patterns/tags &gt; Page 8</strong>. In the box marked <strong>Stop at the n-th line which starts with a capital letter</strong>, enter the number <strong>1</strong>, meaning at the first such line (in our example, line 2).</p>
+<p>If you do this <em>in addition</em> to specifying the <em>stop</em> pattern described just above, Axmud will perform tests in the obvious order - the order used in the edit window, starting with <strong>Page 1</strong>, going page by page until <strong>Page 10</strong> is reached.</p>
+<h2><a name="5.16">5.16 Using colours</a></h2>
+<p>Some worlds use different colours and/or styles to separate the components of a room statement. (Italics, bold text and so on are examples of a style).</p>
+<p>If the game uses a consistent colour scheme - yellow for room tiles, green for descriptions, for example - then we can  use those colours, instead of specifying patterns.</p>
+<p>Click <strong>Page 2</strong>, select the line <strong>verb_description</strong>, then click the <strong>Edit</strong> button. A new window appears.</p>
+<p>Click <strong>Patterns/tags &gt; Page 1</strong>. In the dropdown box marked <strong>Standard text colour tags</strong>, select <strong>green</strong>, and click the <strong>Add</strong> button. </p>
+<p>(There is an <strong>Add bold</strong> button here. The Locator treats normal and bold green text interchangeably by default, so you only need the <strong>Add bold</strong> button if you have disabled that behaviour.)</p>
+<p><img alt="An example colour" src="img/tut05/example_colour.png"></p>
+<p>Now click <strong>Page 5</strong>, which is marked <strong>Stop before the first line which does NOT match one of these patterns</strong>. Add <strong>green</strong> here, too.</p>
+<p>You could repeat this process for the <strong>verb_title</strong> component, but since it's a single-line component, that's probably not necessary. </p>
+<hr>
+<p><a href="tut04.html">Previous</a> <a href="index.html">Index</a></p>
+
+</body>
+</html>

@@ -3301,6 +3301,7 @@
                 'hidden_count' => 'Draw _hidden contents',
                 'temp_count' => 'Draw _temporary contents',
                 'word_count' => 'Draw r_ecognised words',
+                'room_tag' => 'Draw room t_ag',
                 'room_flag' => 'Draw r_oom flag text',
                 'visit_count' => 'Draw character _visits',
                 'compare_count' => 'Draw _matching rooms',
@@ -3308,6 +3309,7 @@
                 'title_descrip' => 'Draw t_itles/descriptions',
                 'exit_pattern' => 'Draw exit _patterns',
                 'source_code' => 'Draw room _source code',
+                'grid_posn' => 'Dra_w grid coordinates',
                 'vnum' => 'Draw world\'s room v_num',
             );
 
@@ -6600,6 +6602,8 @@
             # (Requires $self->currentRegionmap & $self->selectedRoom)
             $self->ivAdd('menuToolItemHash', 'reset_positions', $item_resetPositions);
 
+            $subMenu_roomText->append(Gtk3::SeparatorMenuItem->new());  # Separator
+
         my $item_roomText = Gtk3::MenuItem->new('Set room _text');
         $item_roomText->set_submenu($subMenu_roomText);
         $column_rooms->append($item_roomText);
@@ -6900,6 +6904,22 @@
             my $item_sourceCode = Gtk3::MenuItem->new('Source _code');
             $item_sourceCode->set_submenu($subSubMenu_sourceCode);
             $subMenu_roomFeatures->append($item_sourceCode);
+
+            $subMenu_roomFeatures->append(Gtk3::SeparatorMenuItem->new()); # Separator
+
+            my $item_setInteriorOffsets = Gtk3::MenuItem->new('_Synchronise grid coordinates...');
+            $item_setInteriorOffsets->signal_connect('activate' => sub {
+
+                $self->setInteriorOffsetsCallback();
+            });
+            $subMenu_roomFeatures->append($item_setInteriorOffsets);
+
+            my $item_resetInteriorOffsets = Gtk3::MenuItem->new('_Reset grid coordinates');
+            $item_resetInteriorOffsets->signal_connect('activate' => sub {
+
+                $self->resetInteriorOffsetsCallback();
+            });
+            $subMenu_roomFeatures->append($item_resetInteriorOffsets);
 
         my $item_roomFeatures = Gtk3::MenuItem->new('Ot_her room features');
         $item_roomFeatures->set_submenu($subMenu_roomFeatures);
@@ -8748,6 +8768,22 @@
             my $item_sourceCode = Gtk3::MenuItem->new('Source _code');
             $item_sourceCode->set_submenu($subSubMenu_sourceCode);
             $subMenu_roomFeatures->append($item_sourceCode);
+
+            $subMenu_roomFeatures->append(Gtk3::SeparatorMenuItem->new());  # Separator
+
+            my $item_setInteriorOffsets = Gtk3::MenuItem->new('_Synchronise grid coordinates...');
+            $item_setInteriorOffsets->signal_connect('activate' => sub {
+
+                $self->setInteriorOffsetsCallback();
+            });
+            $subMenu_roomFeatures->append($item_setInteriorOffsets);
+
+            my $item_resetInteriorOffsets = Gtk3::MenuItem->new('_Reset grid coordinates');
+            $item_resetInteriorOffsets->signal_connect('activate' => sub {
+
+                $self->resetInteriorOffsetsCallback();
+            });
+            $subMenu_roomFeatures->append($item_resetInteriorOffsets);
 
         my $item_roomFeatures = Gtk3::MenuItem->new('Ot_her room features');
         $item_roomFeatures->set_submenu($subMenu_roomFeatures);
@@ -12218,9 +12254,12 @@
             'word_count',
                 'Draw recognised words',
                 'icon_draw_words.png',
+            'room_tag',
+                'Draw room tag',
+                'icon_draw_room_tag.png',
             'room_flag',
                 'Draw room flag text',
-                'icon_draw_flags.png',
+                'icon_draw_room_flag.png',
             'visit_count',
                 'Draw character visits',
                 'icon_draw_visits.png',
@@ -12242,6 +12281,9 @@
             'vnum',
                 'Draw world\'s room _vnum',
                 'icon_draw_vnum.png',
+            'grid_posn',
+                'Draw grid position',
+                'icon_draw_grid_posn.png',
         );
 
         do {
@@ -17032,6 +17074,14 @@
         $self->ivPoke('selectBoxCurrentXPos', $xPos);
         $self->ivPoke('selectBoxCurrentYPos', $yPos);
 
+        # Temporarily set a few drawing cycle IVs, which allows the drawing functions to work as if
+        #   we were in a drawing cycle (i.e. a call to $self->doDraw). They are reset by
+        #   $self->stopSelectBox
+        $self->ivPoke(
+            'drawScheme',
+            $self->worldModelObj->getRegionScheme($self->currentRegionmap),
+        );
+
         return 1;
     }
 
@@ -17187,6 +17237,8 @@
         $self->ivUndef('selectBoxInitYPos');
         $self->ivUndef('selectBoxCurrentXPos');
         $self->ivUndef('selectBoxCurrentYPos');
+
+        $self->ivUndef('drawScheme');
 
         return 1;
     }
@@ -22922,7 +22974,7 @@
         $total = 0;
         foreach my $regionObj (@tempList) {
 
-            my $regionmapObj = $self->worldModelObj->ivShow('regionmapHash', $regionObj);
+            my $regionmapObj = $self->worldModelObj->ivShow('regionmapHash', $regionObj->name);
 
             $total += $regionmapObj->ivPairs('gridRoomHash');
             $total += $regionmapObj->ivPairs('gridLabelHash');
@@ -26400,6 +26452,130 @@
             0,                  # Mode 0 - reset both room tags and room guilds
             @combinedList,
         );
+
+        return 1;
+    }
+
+    sub setInteriorOffsetsCallback {
+
+        # Called by $self->enableRoomsColumn
+        # Sets the offsets used when a room's grid coordinates are displayed as interior text inside
+        #   the room box
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments, if the standard callback check fails or if the user
+        #       doesn't supply a pattern
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my ($xOffset, $yOffset);
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper(
+                $self->_objClass . '->setInteriorOffsetsCallback',
+                @_,
+            );
+        }
+
+        # Standard callback check
+        if (! $self->currentRegionmap) {
+
+            return undef;
+        }
+
+        # Prompt the user for a new offsets
+        ($xOffset, $yOffset) = $self->showDoubleEntryDialogue(
+            'Synchronise grid coordinates',
+            'Adjust X coordinate (enter an integer)',
+            'Adjust Y coordinate (enter an integer)',
+        );
+
+        if (
+            ! defined $xOffset
+            || ! defined $yOffset
+            || ! ($axmud::CLIENT->intCheck($xOffset))
+            || ! ($axmud::CLIENT->intCheck($yOffset))
+        ) {
+
+            return undef;
+
+        } else {
+
+            # Update the world model
+            $self->worldModelObj->setInteriorOffsets($xOffset, $yOffset);
+
+            if ($self->worldModelObj->roomInteriorMode eq 'grid_posn') {
+
+                # Redraw the current region
+                $self->redrawRegions();
+
+            } else {
+
+                # Remind the user how to make the offset position visible, if they aren't already
+                $self->showMsgDialogue(
+                    'Synchronise grid coordinates',
+                    'info',
+                    'To make grid coordinates visible on the map, click \'View > Room interiors >'
+                        . ' Draw grid coordinates\'',
+                    'ok',
+                );
+            }
+
+            # Sensitise/desensitise menu bar/toolbar items, depending on current conditions
+            $self->restrictWidgets();
+
+            return 1;
+        }
+    }
+
+    sub resetInteriorOffsetsCallback {
+
+        # Called by $self->enableRoomsColumn
+        # Resets the offsets used when a room's grid coordinates are displayed as interior text
+        #   inside the room box
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if the standard callback check fails
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper(
+                $self->_objClass . '->resetInteriorOffsetsCallback',
+                @_,
+            );
+        }
+
+        # Standard callback check
+        if (! $self->currentRegionmap) {
+
+            return undef;
+        }
+
+        # Update the world model
+        $self->worldModelObj->setInteriorOffsets(0, 0);
+
+        if ($self->worldModelObj->roomInteriorMode eq 'grid_posn') {
+
+            # Redraw the current region
+            $self->redrawRegions();
+        }
+
+        # Sensitise/desensitise menu bar/toolbar items, depending on current conditions
+        $self->restrictWidgets();
 
         return 1;
     }
@@ -36167,11 +36343,13 @@
         #   1. The room's position on the map has not been set
         #   2. The room isn't in the right region
         #   3. The room doesn't have a room tag set
+        #   4. Room tags are drawn as interior text, inside the room box
         if (
             # (We'll assume that if ->xPosBlocks is set, so are ->yPosBlocks and ->zPosBlocks)
             ! defined $roomObj->xPosBlocks
             || $roomObj->parent != $self->drawRegionmap->number
             || ! $roomObj->roomTag
+            || $self->worldModelObj->roomInteriorMode eq 'room_tag'
         ) {
             return undef;
         }
@@ -37303,6 +37481,19 @@
                 $roomObj->ivNumber('adjList'),
             );
 
+        # Draw the room tag
+        } elsif ($mode eq 'room_tag' && $roomObj->roomTag) {
+
+            # Don't worry if the text is bigger than the room box (nothing we can do about it)
+            $self->drawInteriorText(
+                $roomObj,
+                $canvasWidget,
+                $borderCornerXPosPixels,
+                $borderCornerYPosPixels,
+                0,          # Top-left corner
+                $roomObj->roomTag,
+            );
+
         # Draw the highest-priority room flag
         } elsif ($mode eq 'room_flag' && $roomObj->lastRoomFlag) {
 
@@ -37398,11 +37589,32 @@
                 $borderCornerYPosPixels,
             );
 
+        # Draw room's grid position
+        } elsif ($mode eq 'grid_posn' && defined $roomObj->xPosBlocks) {
+
+            # Don't worry if the text is bigger than the room box (nothing we can do about it)
+            $self->drawInteriorText(
+                $roomObj,
+                $canvasWidget,
+                $borderCornerXPosPixels,
+                $borderCornerYPosPixels,
+                0,          # Top-left corner
+                ($roomObj->xPosBlocks + $self->worldModelObj->roomInteriorXOffset),
+            );
+
+            $self->drawInteriorText(
+                $roomObj,
+                $canvasWidget,
+                $borderCornerXPosPixels,
+                $borderCornerYPosPixels,
+                2,          # Bottom-left corner
+                ($roomObj->yPosBlocks + $self->worldModelObj->roomInteriorYOffset),
+            );
+
         # Draw world's room vnum
         } elsif ($mode eq 'vnum' && $roomObj->ivExists('protocolRoomHash', 'vnum')) {
 
-            # For this value only, don't worry if the number is bigger than the room box (nothing we
-            #   can do about it)
+            # Don't worry if the number is bigger than the room box (nothing we can do about it)
             $self->drawInteriorText(
                 $roomObj,
                 $canvasWidget,

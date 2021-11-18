@@ -131,7 +131,7 @@
     use diagnostics;
 
     # (This variable exists for the benefit of Kwalitee, and is never referenced by the code)
-    our $VERSION = '1.3.007';
+    our $VERSION = '1.3.019';
 
     use Glib qw(TRUE FALSE);
 

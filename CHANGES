@@ -1,3 +1,31 @@
+v1.3.019 (18 Nov 2021)
+--------------------------------------------------------------------------------
+
+Major new features
+- In the automapper, you can now show the room tag or the room's grid
+    coordinates inside the room box (select 'View > Room interiors > Draw room
+    tag' or 'View > Room interiors > Draw grid coordinates') (Git #7)
+- When grid coordinates are visible, you can synchronise them with the
+    coordinates used by the world itself; click 'Rooms > Other room features >
+    Synchronise grid coordinates...' (Git #7)
+    
+Major fixes
+- Fixed a bug that crashed Axmud whenever the user dragged the mouse across the
+    automapper background, in order to create a selection box
+- Fixed a bug that crashed Axmud whenever temporary regions were deleted
+
+Minor new features
+- The automapper's Reset Locator (RL) button now automatically starts the
+    Locator task, if it isn't running (instead of complaining that it isn't
+    running, as before)
+- Added to the Axmud Guide the first part of a tutorial for configuring the
+    Locator and automapper for a new world
+
+Minor fixes
+- Fixed a bug in the 'Edit world profile' window, Rooms > Page 1. When the user
+    added a new component on this page, the 'anchor' component disppeared on
+    Pages 2, 5 and 8
+
 v1.3.007 (2 Mar 2021)
 --------------------------------------------------------------------------------
 

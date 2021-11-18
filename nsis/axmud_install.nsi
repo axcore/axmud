@@ -1,4 +1,4 @@
-# Axmud v1.3.007 installer script for MS Windows
+# Axmud v1.3.019 installer script for MS Windows
 #
 # Copyright (C) 2011-2021 A S Lewis
 #
@@ -114,7 +114,7 @@
 #   - The Axmud folder contains an \nsis folder, which contains this file
 #   - In this file, update the version number just below, e.g.
 #
-#       OutFile "install-axmud-1.3.007.exe"
+#       OutFile "install-axmud-1.3.019.exe"
 #
 #   - Compile the installer (e.g. by right-clicking this file and selecting
 #       'Compile NSIS script file')
@@ -131,7 +131,7 @@
 
     ;Name and file
     Name "Axmud"
-    OutFile "install-axmud-1.3.007.exe"
+    OutFile "install-axmud-1.3.019.exe"
 
     ;Default installation folder
     InstallDir "$LOCALAPPDATA\Axmud"

@@ -567,6 +567,7 @@
             #   'hidden_count' - Draw hidden objects counts
             #   'temp_count' - Draw temporary contents counts
             #   'word_count' - Draw recognised word counts
+            #   'room_tag' - Draw the room tag (instead of drawing it externally)
             #   'room_flag' - Draw room flag text (which matches the room's highest priority room
             #       flag)
             #   'visit_count' - Draw # of character visits
@@ -576,7 +577,12 @@
             #   'exit_pattern' - Draw assisted moves/exit patterns
             #   'source_code' - Draw source code path
             #   'vnum' - Draw world's room vnum
+            #   'grid_posn' - Draw room's grid coordinates
             roomInteriorMode            => 'none',
+            # When ->roomInteriorMode is set to 'grid_posn', offsets to use, so that the visible
+            #   grid coordinates match the game's grid coordinates
+            roomInteriorXOffset         => 0,
+            roomInteriorYOffset         => 0,
 
             # How exits are drawn
             #   'ask_regionmap' - Let each individual regionmap decide (between no exits, simple
@@ -18037,6 +18043,34 @@
         return 1;
     }
 
+    sub setInteriorOffsets {
+
+        # Called by GA::Obj::Map->setInteriorOffsetsCallback
+        # Sets the offsets used when a room's grid coordinates are displayed as interior text inside
+        #   the room box
+        #
+        # Expected arguments
+        #   $xOffset, $yOffset  - The new values to set
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $xOffset, $yOffset, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $xOffset || ! defined $yOffset || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->setInteriorOffsets', @_);
+        }
+
+        # Update IVs
+        $self->ivPoke('roomInteriorXOffset', $xOffset);
+        $self->ivPoke('roomInteriorYOffset', $yOffset);
+
+        return 1;
+    }
+
     sub findPathCmds {
 
         # Called by GA::Win::Map->processPathCallback
@@ -25159,6 +25193,10 @@
         { $_[0]->{currentRoomMode} }
     sub roomInteriorMode
         { $_[0]->{roomInteriorMode} }
+    sub roomInteriorXOffset
+        { $_[0]->{roomInteriorXOffset} }
+    sub roomInteriorYOffset
+        { $_[0]->{roomInteriorYOffset} }
 
     sub drawExitMode
         { $_[0]->{drawExitMode} }

@@ -61,11 +61,11 @@ DIRFILESEP = /
 DFSEP = $(DIRFILESEP)
 NAME = Games::Axmud
 NAME_SYM = Games_Axmud
-VERSION = 1.3.007
+VERSION = 1.3.019
 VERSION_MACRO = VERSION
-VERSION_SYM = 1_3_007
+VERSION_SYM = 1_3_019
 DEFINE_VERSION = -D$(VERSION_MACRO)=\"$(VERSION)\"
-XS_VERSION = 1.3.007
+XS_VERSION = 1.3.019
 XS_VERSION_MACRO = XS_VERSION
 XS_DEFINE_VERSION = -D$(XS_VERSION_MACRO)=\"$(XS_VERSION)\"
 INST_ARCHLIB = blib/arch
@@ -190,8 +190,7 @@ PERL_ARCHIVEDEP    =
 PERL_ARCHIVE_AFTER = 
 
 
-TO_INST_PM = domanifest.pl \
-	lib/Games/Axmud.pm \
+TO_INST_PM = lib/Games/Axmud.pm \
 	lib/Games/Axmud/Buffer.pm \
 	lib/Games/Axmud/Cage.pm \
 	lib/Games/Axmud/Client.pm \
@@ -346,7 +345,7 @@ RCS_LABEL = rcs -Nv$(VERSION_SYM): -q
 DIST_CP = best
 DIST_DEFAULT = tardist
 DISTNAME = Games-Axmud
-DISTVNAME = Games-Axmud-1.3.007
+DISTVNAME = Games-Axmud-1.3.019
 
 
 # --- MakeMaker macro section:
@@ -658,7 +657,7 @@ metafile : create_distdir
 	$(NOECHO) $(ECHO) '  bugtracker: https://github.com/axcore/axmud/issues' >> META_new.yml
 	$(NOECHO) $(ECHO) '  homepage: https://axmud.sourceforge.io/' >> META_new.yml
 	$(NOECHO) $(ECHO) '  repository: https://github.com/axcore/axmud.git' >> META_new.yml
-	$(NOECHO) $(ECHO) 'version: v1.3.007' >> META_new.yml
+	$(NOECHO) $(ECHO) 'version: v1.3.019' >> META_new.yml
 	$(NOECHO) $(ECHO) 'x_serialization_backend: '\''CPAN::Meta::YAML version 0.018'\''' >> META_new.yml
 	-$(NOECHO) $(MV) META_new.yml $(DISTVNAME)/META.yml
 	$(NOECHO) $(ECHO) Generating META.json
@@ -751,7 +750,7 @@ metafile : create_distdir
 	$(NOECHO) $(ECHO) '         "web" : "https://github.com/axcore/axmud"' >> META_new.json
 	$(NOECHO) $(ECHO) '      }' >> META_new.json
 	$(NOECHO) $(ECHO) '   },' >> META_new.json
-	$(NOECHO) $(ECHO) '   "version" : "v1.3.007",' >> META_new.json
+	$(NOECHO) $(ECHO) '   "version" : "v1.3.019",' >> META_new.json
 	$(NOECHO) $(ECHO) '   "x_serialization_backend" : "JSON::PP version 4.02"' >> META_new.json
 	$(NOECHO) $(ECHO) '}' >> META_new.json
 	-$(NOECHO) $(MV) META_new.json $(DISTVNAME)/META.json
@@ -1037,7 +1036,7 @@ testdb_static :: static pure_all
 # --- MakeMaker ppd section:
 # Creates a PPD (Perl Package Description) for a binary distribution.
 ppd :
-	$(NOECHO) $(ECHO) '<SOFTPKG NAME="Games-Axmud" VERSION="1.3.007">' > Games-Axmud.ppd
+	$(NOECHO) $(ECHO) '<SOFTPKG NAME="Games-Axmud" VERSION="1.3.019">' > Games-Axmud.ppd
 	$(NOECHO) $(ECHO) '    <ABSTRACT></ABSTRACT>' >> Games-Axmud.ppd
 	$(NOECHO) $(ECHO) '    <AUTHOR>A S Lewis &lt;aslewis@cpan.org&gt;</AUTHOR>' >> Games-Axmud.ppd
 	$(NOECHO) $(ECHO) '    <IMPLEMENTATION>' >> Games-Axmud.ppd
@@ -1088,7 +1087,6 @@ ppd :
 
 pm_to_blib : $(FIRST_MAKEFILE) $(TO_INST_PM)
 	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)/auto'\'', q[$(PM_FILTER)], '\''$(PERM_DIR)'\'')' -- \
-	  'domanifest.pl' '$(INST_LIB)/Games/domanifest.pl' \
 	  'lib/Games/Axmud.pm' 'blib/lib/Games/Axmud.pm' \
 	  'lib/Games/Axmud/Buffer.pm' 'blib/lib/Games/Axmud/Buffer.pm' \
 	  'lib/Games/Axmud/Cage.pm' 'blib/lib/Games/Axmud/Cage.pm' \
@@ -1125,9 +1123,9 @@ pm_to_blib : $(FIRST_MAKEFILE) $(TO_INST_PM)
 	  'lib/Games/Axmud/Obj/Map.pm' 'blib/lib/Games/Axmud/Obj/Map.pm' \
 	  'lib/Games/Axmud/Obj/MapLabel.pm' 'blib/lib/Games/Axmud/Obj/MapLabel.pm' \
 	  'lib/Games/Axmud/Obj/MiniWorld.pm' 'blib/lib/Games/Axmud/Obj/MiniWorld.pm' \
-	  'lib/Games/Axmud/Obj/Mission.pm' 'blib/lib/Games/Axmud/Obj/Mission.pm' 
+	  'lib/Games/Axmud/Obj/Mission.pm' 'blib/lib/Games/Axmud/Obj/Mission.pm' \
+	  'lib/Games/Axmud/Obj/Monitor.pm' 'blib/lib/Games/Axmud/Obj/Monitor.pm' 
 	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)/auto'\'', q[$(PM_FILTER)], '\''$(PERM_DIR)'\'')' -- \
-	  'lib/Games/Axmud/Obj/Monitor.pm' 'blib/lib/Games/Axmud/Obj/Monitor.pm' \
 	  'lib/Games/Axmud/Obj/Parchment.pm' 'blib/lib/Games/Axmud/Obj/Parchment.pm' \
 	  'lib/Games/Axmud/Obj/Phrasebook.pm' 'blib/lib/Games/Axmud/Obj/Phrasebook.pm' \
 	  'lib/Games/Axmud/Obj/Plugin.pm' 'blib/lib/Games/Axmud/Obj/Plugin.pm' \
@@ -1163,9 +1161,9 @@ pm_to_blib : $(FIRST_MAKEFILE) $(TO_INST_PM)
 	  'lib/Games/Axmud/Profile.pm' 'blib/lib/Games/Axmud/Profile.pm' \
 	  'lib/Games/Axmud/Pueblo.pm' 'blib/lib/Games/Axmud/Pueblo.pm' \
 	  'lib/Games/Axmud/Session.pm' 'blib/lib/Games/Axmud/Session.pm' \
-	  'lib/Games/Axmud/Strip.pm' 'blib/lib/Games/Axmud/Strip.pm' 
+	  'lib/Games/Axmud/Strip.pm' 'blib/lib/Games/Axmud/Strip.pm' \
+	  'lib/Games/Axmud/Table.pm' 'blib/lib/Games/Axmud/Table.pm' 
 	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)/auto'\'', q[$(PM_FILTER)], '\''$(PERM_DIR)'\'')' -- \
-	  'lib/Games/Axmud/Table.pm' 'blib/lib/Games/Axmud/Table.pm' \
 	  'lib/Games/Axmud/Task.pm' 'blib/lib/Games/Axmud/Task.pm' \
 	  'lib/Games/Axmud/Win/External.pm' 'blib/lib/Games/Axmud/Win/External.pm' \
 	  'lib/Games/Axmud/Win/Internal.pm' 'blib/lib/Games/Axmud/Win/Internal.pm' \
@@ -1366,6 +1364,14 @@ config::
 	  'share/docs/guide/img/tut03/edit_model.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/docs/guide/img/tut03/edit_model.png' 
 	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/docs/guide/img/tut03/label_window.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/docs/guide/img/tut03/label_window.png' \
+	  'share/docs/guide/img/tut05/anchor_patterns.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/docs/guide/img/tut05/anchor_patterns.png' \
+	  'share/docs/guide/img/tut05/brief_components.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/docs/guide/img/tut05/brief_components.png' \
+	  'share/docs/guide/img/tut05/creating_components.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/docs/guide/img/tut05/creating_components.png' \
+	  'share/docs/guide/img/tut05/example_colour.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/docs/guide/img/tut05/example_colour.png' \
+	  'share/docs/guide/img/tut05/exit_delimiters.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/docs/guide/img/tut05/exit_delimiters.png' \
+	  'share/docs/guide/img/tut05/short_components.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/docs/guide/img/tut05/short_components.png' \
+	  'share/docs/guide/img/tut05/start_stop_patterns.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/docs/guide/img/tut05/start_stop_patterns.png' \
+	  'share/docs/guide/img/tut05/verbose_components.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/docs/guide/img/tut05/verbose_components.png' \
 	  'share/docs/guide/index.html' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/docs/guide/index.html' \
 	  'share/docs/guide/index.mkd' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/docs/guide/index.mkd' \
 	  'share/docs/guide/tut01.html' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/docs/guide/tut01.html' \
@@ -1376,9 +1382,12 @@ config::
 	  'share/docs/guide/tut03.mkd' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/docs/guide/tut03.mkd' \
 	  'share/docs/guide/tut04.html' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/docs/guide/tut04.html' \
 	  'share/docs/guide/tut04.mkd' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/docs/guide/tut04.mkd' \
+	  'share/docs/guide/tut05.html' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/docs/guide/tut05.html' \
+	  'share/docs/guide/tut05.mkd' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/docs/guide/tut05.mkd' \
 	  'share/docs/quick/quick.html' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/docs/quick/quick.html' \
 	  'share/docs/quick/quick.mkd' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/docs/quick/quick.mkd' \
-	  'share/docs/tutorial/ch01.html' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/docs/tutorial/ch01.html' \
+	  'share/docs/tutorial/ch01.html' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/docs/tutorial/ch01.html' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/docs/tutorial/ch01.mkd' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/docs/tutorial/ch01.mkd' \
 	  'share/docs/tutorial/ch02.html' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/docs/tutorial/ch02.html' \
 	  'share/docs/tutorial/ch02.mkd' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/docs/tutorial/ch02.mkd' \
@@ -1391,8 +1400,7 @@ config::
 	  'share/docs/tutorial/ch06.html' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/docs/tutorial/ch06.html' \
 	  'share/docs/tutorial/ch06.mkd' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/docs/tutorial/ch06.mkd' \
 	  'share/docs/tutorial/ch07.html' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/docs/tutorial/ch07.html' \
-	  'share/docs/tutorial/ch07.mkd' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/docs/tutorial/ch07.mkd' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/docs/tutorial/ch07.mkd' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/docs/tutorial/ch07.mkd' \
 	  'share/docs/tutorial/ch08.html' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/docs/tutorial/ch08.html' \
 	  'share/docs/tutorial/ch08.mkd' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/docs/tutorial/ch08.mkd' \
 	  'share/docs/tutorial/ch09.html' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/docs/tutorial/ch09.html' \
@@ -1406,7 +1414,8 @@ config::
 	  'share/docs/tutorial/ch13.html' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/docs/tutorial/ch13.html' \
 	  'share/docs/tutorial/ch13.mkd' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/docs/tutorial/ch13.mkd' \
 	  'share/docs/tutorial/ch14.html' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/docs/tutorial/ch14.html' \
-	  'share/docs/tutorial/ch14.mkd' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/docs/tutorial/ch14.mkd' \
+	  'share/docs/tutorial/ch14.mkd' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/docs/tutorial/ch14.mkd' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/docs/tutorial/ch15.html' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/docs/tutorial/ch15.html' \
 	  'share/docs/tutorial/ch15.mkd' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/docs/tutorial/ch15.mkd' \
 	  'share/docs/tutorial/ch16.html' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/docs/tutorial/ch16.html' \
@@ -1419,8 +1428,7 @@ config::
 	  'share/docs/tutorial/ch19.mkd' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/docs/tutorial/ch19.mkd' \
 	  'share/docs/tutorial/ch20.html' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/docs/tutorial/ch20.html' \
 	  'share/docs/tutorial/ch20.mkd' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/docs/tutorial/ch20.mkd' \
-	  'share/docs/tutorial/ch21.html' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/docs/tutorial/ch21.html' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/docs/tutorial/ch21.html' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/docs/tutorial/ch21.html' \
 	  'share/docs/tutorial/ch21.mkd' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/docs/tutorial/ch21.mkd' \
 	  'share/docs/tutorial/img/index/axmud_logo.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/docs/tutorial/img/index/axmud_logo.png' \
 	  'share/docs/tutorial/index.html' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/docs/tutorial/index.html' \
@@ -1433,7 +1441,8 @@ config::
 	  'share/help/axbasic/func/addlabel' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/addlabel' \
 	  'share/help/axbasic/func/addregion' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/addregion' \
 	  'share/help/axbasic/func/addroom' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/addroom' \
-	  'share/help/axbasic/func/addtempregion' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/addtempregion' \
+	  'share/help/axbasic/func/addtempregion' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/addtempregion' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/help/axbasic/func/angle' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/angle' \
 	  'share/help/axbasic/func/asc' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/asc' \
 	  'share/help/axbasic/func/asin' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/asin' \
@@ -1446,8 +1455,7 @@ config::
 	  'share/help/axbasic/func/closemap' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/closemap' \
 	  'share/help/axbasic/func/cos' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/cos' \
 	  'share/help/axbasic/func/cosh' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/cosh' \
-	  'share/help/axbasic/func/cot' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/cot' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/help/axbasic/func/cot' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/cot' \
 	  'share/help/axbasic/func/counttask' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/counttask' \
 	  'share/help/axbasic/func/cpos' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/cpos' \
 	  'share/help/axbasic/func/cposr' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/cposr' \
@@ -1460,7 +1468,8 @@ config::
 	  'share/help/axbasic/func/eof' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/eof' \
 	  'share/help/axbasic/func/epoch' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/epoch' \
 	  'share/help/axbasic/func/exp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/exp' \
-	  'share/help/axbasic/func/findtask_' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/findtask_' \
+	  'share/help/axbasic/func/findtask_' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/findtask_' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/help/axbasic/func/floor' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/floor' \
 	  'share/help/axbasic/func/fp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/fp' \
 	  'share/help/axbasic/func/getexit_' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/getexit_' \
@@ -1472,8 +1481,7 @@ config::
 	  'share/help/axbasic/func/getexittype_' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/getexittype_' \
 	  'share/help/axbasic/func/getlight_' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/getlight_' \
 	  'share/help/axbasic/func/getlostroom' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/getlostroom' \
-	  'share/help/axbasic/func/getmapmode_' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/getmapmode_' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/help/axbasic/func/getmapmode_' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/getmapmode_' \
 	  'share/help/axbasic/func/getobject_' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/getobject_' \
 	  'share/help/axbasic/func/getobjectalive' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/getobjectalive' \
 	  'share/help/axbasic/func/getobjectcount' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/getobjectcount' \
@@ -1485,7 +1493,8 @@ config::
 	  'share/help/axbasic/func/getroomexits' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/getroomexits' \
 	  'share/help/axbasic/func/getroomguild_' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/getroomguild_' \
 	  'share/help/axbasic/func/getroomnum' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/getroomnum' \
-	  'share/help/axbasic/func/getroomobjects' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/getroomobjects' \
+	  'share/help/axbasic/func/getroomobjects' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/getroomobjects' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/help/axbasic/func/getroomsource_' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/getroomsource_' \
 	  'share/help/axbasic/func/getroomtag_' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/getroomtag_' \
 	  'share/help/axbasic/func/getroomtitle_' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/getroomtitle_' \
@@ -1497,8 +1506,7 @@ config::
 	  'share/help/axbasic/func/ifacenum' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/ifacenum' \
 	  'share/help/axbasic/func/ifacepop_' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/ifacepop_' \
 	  'share/help/axbasic/func/ifacepos' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/ifacepos' \
-	  'share/help/axbasic/func/ifaceselect_' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/ifaceselect_' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/help/axbasic/func/ifaceselect_' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/ifaceselect_' \
 	  'share/help/axbasic/func/ifaceshift_' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/ifaceshift_' \
 	  'share/help/axbasic/func/ifacestrings' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/ifacestrings' \
 	  'share/help/axbasic/func/ifacetext_' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/ifacetext_' \
@@ -1511,7 +1519,8 @@ config::
 	  'share/help/axbasic/func/isscript' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/isscript' \
 	  'share/help/axbasic/func/istask' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/istask' \
 	  'share/help/axbasic/func/iswin' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/iswin' \
-	  'share/help/axbasic/func/lcase_' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/lcase_' \
+	  'share/help/axbasic/func/lcase_' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/lcase_' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/help/axbasic/func/left_' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/left_' \
 	  'share/help/axbasic/func/len' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/len' \
 	  'share/help/axbasic/func/log' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/log' \
@@ -1525,8 +1534,7 @@ config::
 	  'share/help/axbasic/func/min' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/min' \
 	  'share/help/axbasic/func/mod' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/mod' \
 	  'share/help/axbasic/func/ncpos' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/ncpos' \
-	  'share/help/axbasic/func/ncposr' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/ncposr' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/help/axbasic/func/ncposr' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/ncposr' \
 	  'share/help/axbasic/func/openmap' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/openmap' \
 	  'share/help/axbasic/func/pi' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/pi' \
 	  'share/help/axbasic/func/popup_' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/popup_' \
@@ -1539,7 +1547,8 @@ config::
 	  'share/help/axbasic/func/rnd' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/rnd' \
 	  'share/help/axbasic/func/round' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/round' \
 	  'share/help/axbasic/func/rtrim_' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/rtrim_' \
-	  'share/help/axbasic/func/scriptname_' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/scriptname_' \
+	  'share/help/axbasic/func/scriptname_' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/scriptname_' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/help/axbasic/func/sec' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/sec' \
 	  'share/help/axbasic/func/setlight' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/setlight' \
 	  'share/help/axbasic/func/setmapmode' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/setmapmode' \
@@ -1552,8 +1561,7 @@ config::
 	  'share/help/axbasic/func/sin' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/sin' \
 	  'share/help/axbasic/func/sinh' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/sinh' \
 	  'share/help/axbasic/func/sqr' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/sqr' \
-	  'share/help/axbasic/func/str_' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/str_' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/help/axbasic/func/str_' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/str_' \
 	  'share/help/axbasic/func/tan' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/tan' \
 	  'share/help/axbasic/func/tanh' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/tanh' \
 	  'share/help/axbasic/func/testpat' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/testpat' \
@@ -1566,7 +1574,8 @@ config::
 	  'share/help/axbasic/func/ucase_' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/ucase_' \
 	  'share/help/axbasic/func/unabbrevdir_' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/unabbrevdir_' \
 	  'share/help/axbasic/func/val' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/val' \
-	  'share/help/axbasic/func/version' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/version' \
+	  'share/help/axbasic/func/version' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/func/version' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/help/axbasic/keyword/addalias' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/addalias' \
 	  'share/help/axbasic/keyword/addcongauge' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/addcongauge' \
 	  'share/help/axbasic/keyword/addconstatus' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/addconstatus' \
@@ -1578,8 +1587,7 @@ config::
 	  'share/help/axbasic/keyword/addtrig' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/addtrig' \
 	  'share/help/axbasic/keyword/beep' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/beep' \
 	  'share/help/axbasic/keyword/break' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/break' \
-	  'share/help/axbasic/keyword/bypass' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/bypass' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/help/axbasic/keyword/bypass' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/bypass' \
 	  'share/help/axbasic/keyword/call' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/call' \
 	  'share/help/axbasic/keyword/case' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/case' \
 	  'share/help/axbasic/keyword/client' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/client' \
@@ -1592,7 +1600,8 @@ config::
 	  'share/help/axbasic/keyword/delalias' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/delalias' \
 	  'share/help/axbasic/keyword/delgauge' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/delgauge' \
 	  'share/help/axbasic/keyword/delhook' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/delhook' \
-	  'share/help/axbasic/keyword/deliface' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/deliface' \
+	  'share/help/axbasic/keyword/deliface' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/deliface' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/help/axbasic/keyword/delmacro' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/delmacro' \
 	  'share/help/axbasic/keyword/delstatus' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/delstatus' \
 	  'share/help/axbasic/keyword/deltimer' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/deltimer' \
@@ -1604,8 +1613,7 @@ config::
 	  'share/help/axbasic/keyword/emptywin' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/emptywin' \
 	  'share/help/axbasic/keyword/end' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/end' \
 	  'share/help/axbasic/keyword/erase' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/erase' \
-	  'share/help/axbasic/keyword/error' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/error' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/help/axbasic/keyword/error' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/error' \
 	  'share/help/axbasic/keyword/exit' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/exit' \
 	  'share/help/axbasic/keyword/flashwin' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/flashwin' \
 	  'share/help/axbasic/keyword/for' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/for' \
@@ -1618,7 +1626,8 @@ config::
 	  'share/help/axbasic/keyword/let' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/let' \
 	  'share/help/axbasic/keyword/local' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/local' \
 	  'share/help/axbasic/keyword/login' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/login' \
-	  'share/help/axbasic/keyword/loop' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/loop' \
+	  'share/help/axbasic/keyword/loop' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/loop' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/help/axbasic/keyword/move' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/move' \
 	  'share/help/axbasic/keyword/multi' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/multi' \
 	  'share/help/axbasic/keyword/next' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/next' \
@@ -1630,8 +1639,7 @@ config::
 	  'share/help/axbasic/keyword/option' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/option' \
 	  'share/help/axbasic/keyword/paintwin' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/paintwin' \
 	  'share/help/axbasic/keyword/pause' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/pause' \
-	  'share/help/axbasic/keyword/peek' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/peek' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/help/axbasic/keyword/peek' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/peek' \
 	  'share/help/axbasic/keyword/peekequals' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/peekequals' \
 	  'share/help/axbasic/keyword/peekexists' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/peekexists' \
 	  'share/help/axbasic/keyword/peekfind' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/peekfind' \
@@ -1643,7 +1651,8 @@ config::
 	  'share/help/axbasic/keyword/peekmatch' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/peekmatch' \
 	  'share/help/axbasic/keyword/peeknumber' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/peeknumber' \
 	  'share/help/axbasic/keyword/peekpairs' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/peekpairs' \
-	  'share/help/axbasic/keyword/peekshow' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/peekshow' \
+	  'share/help/axbasic/keyword/peekshow' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/peekshow' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/help/axbasic/keyword/peekvalues' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/peekvalues' \
 	  'share/help/axbasic/keyword/perl' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/perl' \
 	  'share/help/axbasic/keyword/play' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/play' \
@@ -1655,8 +1664,7 @@ config::
 	  'share/help/axbasic/keyword/pokedivide' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/pokedivide' \
 	  'share/help/axbasic/keyword/pokeempty' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/pokeempty' \
 	  'share/help/axbasic/keyword/pokefalse' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/pokefalse' \
-	  'share/help/axbasic/keyword/pokeinc' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/pokeinc' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/help/axbasic/keyword/pokeinc' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/pokeinc' \
 	  'share/help/axbasic/keyword/pokeinchash' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/pokeinchash' \
 	  'share/help/axbasic/keyword/pokeint' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/pokeint' \
 	  'share/help/axbasic/keyword/pokeminus' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/pokeminus' \
@@ -1668,7 +1676,8 @@ config::
 	  'share/help/axbasic/keyword/pokeset' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/pokeset' \
 	  'share/help/axbasic/keyword/pokeshift' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/pokeshift' \
 	  'share/help/axbasic/keyword/poketrue' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/poketrue' \
-	  'share/help/axbasic/keyword/pokeundef' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/pokeundef' \
+	  'share/help/axbasic/keyword/pokeundef' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/pokeundef' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/help/axbasic/keyword/pokeunshift' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/pokeunshift' \
 	  'share/help/axbasic/keyword/pop' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/pop' \
 	  'share/help/axbasic/keyword/print' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/print' \
@@ -1680,8 +1689,7 @@ config::
 	  'share/help/axbasic/keyword/relay' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/relay' \
 	  'share/help/axbasic/keyword/rem' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/rem' \
 	  'share/help/axbasic/keyword/reset' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/reset' \
-	  'share/help/axbasic/keyword/restore' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/restore' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/help/axbasic/keyword/restore' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/restore' \
 	  'share/help/axbasic/keyword/return' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/return' \
 	  'share/help/axbasic/keyword/revpath' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/revpath' \
 	  'share/help/axbasic/keyword/select' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/select' \
@@ -1694,7 +1702,8 @@ config::
 	  'share/help/axbasic/keyword/settimer' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/settimer' \
 	  'share/help/axbasic/keyword/settrig' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/settrig' \
 	  'share/help/axbasic/keyword/shift' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/shift' \
-	  'share/help/axbasic/keyword/skipiface' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/skipiface' \
+	  'share/help/axbasic/keyword/skipiface' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/skipiface' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/help/axbasic/keyword/sleep' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/sleep' \
 	  'share/help/axbasic/keyword/sort' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/sort' \
 	  'share/help/axbasic/keyword/sortcase' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/sortcase' \
@@ -1706,8 +1715,7 @@ config::
 	  'share/help/axbasic/keyword/sub' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/sub' \
 	  'share/help/axbasic/keyword/titlewin' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/titlewin' \
 	  'share/help/axbasic/keyword/unflashwin' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/unflashwin' \
-	  'share/help/axbasic/keyword/unshift' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/unshift' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/help/axbasic/keyword/unshift' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/unshift' \
 	  'share/help/axbasic/keyword/until' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/until' \
 	  'share/help/axbasic/keyword/waitactive' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/waitactive' \
 	  'share/help/axbasic/keyword/waitalias' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/waitalias' \
@@ -1719,7 +1727,8 @@ config::
 	  'share/help/axbasic/keyword/waithook' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/waithook' \
 	  'share/help/axbasic/keyword/waithp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/waithp' \
 	  'share/help/axbasic/keyword/waitmacro' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/waitmacro' \
-	  'share/help/axbasic/keyword/waitmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/waitmp' \
+	  'share/help/axbasic/keyword/waitmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/waitmp' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/help/axbasic/keyword/waitnextxp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/waitnextxp' \
 	  'share/help/axbasic/keyword/waitnotactive' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/waitnotactive' \
 	  'share/help/axbasic/keyword/waitpassout' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/waitpassout' \
@@ -1731,8 +1740,7 @@ config::
 	  'share/help/axbasic/keyword/waittotalxp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/waittotalxp' \
 	  'share/help/axbasic/keyword/waittrig' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/waittrig' \
 	  'share/help/axbasic/keyword/waitxp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/waitxp' \
-	  'share/help/axbasic/keyword/warning' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/warning' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/help/axbasic/keyword/warning' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/warning' \
 	  'share/help/axbasic/keyword/while' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/while' \
 	  'share/help/axbasic/keyword/write' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/write' \
 	  'share/help/axbasic/keyword/writewin' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/axbasic/keyword/writewin' \
@@ -1745,7 +1753,8 @@ config::
 	  'share/help/cmd/addalias' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/addalias' \
 	  'share/help/cmd/addchannelpattern' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/addchannelpattern' \
 	  'share/help/cmd/addchar' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/addchar' \
-	  'share/help/cmd/addcolourscheme' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/addcolourscheme' \
+	  'share/help/cmd/addcolourscheme' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/addcolourscheme' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/help/cmd/addconfig' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/addconfig' \
 	  'share/help/cmd/addcontact' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/addcontact' \
 	  'share/help/cmd/addcustomprofile' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/addcustomprofile' \
@@ -1759,8 +1768,7 @@ config::
 	  'share/help/cmd/addhook' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/addhook' \
 	  'share/help/cmd/addinitialplugin' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/addinitialplugin' \
 	  'share/help/cmd/addinitialscript' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/addinitialscript' \
-	  'share/help/cmd/addinitialtask' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/addinitialtask' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/help/cmd/addinitialtask' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/addinitialtask' \
 	  'share/help/cmd/addinitialworkspace' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/addinitialworkspace' \
 	  'share/help/cmd/addlabelstyle' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/addlabelstyle' \
 	  'share/help/cmd/addlistproperty' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/addlistproperty' \
@@ -1774,7 +1782,8 @@ config::
 	  'share/help/cmd/addrace' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/addrace' \
 	  'share/help/cmd/addregion' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/addregion' \
 	  'share/help/cmd/addregionscheme' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/addregionscheme' \
-	  'share/help/cmd/addrelative' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/addrelative' \
+	  'share/help/cmd/addrelative' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/addrelative' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/help/cmd/addroom' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/addroom' \
 	  'share/help/cmd/addroute' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/addroute' \
 	  'share/help/cmd/addscalarproperty' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/addscalarproperty' \
@@ -1788,8 +1797,7 @@ config::
 	  'share/help/cmd/addteleport' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/addteleport' \
 	  'share/help/cmd/addtemplate' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/addtemplate' \
 	  'share/help/cmd/addtimer' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/addtimer' \
-	  'share/help/cmd/addtrigger' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/addtrigger' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/help/cmd/addtrigger' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/addtrigger' \
 	  'share/help/cmd/addusercommand' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/addusercommand' \
 	  'share/help/cmd/addwinmap' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/addwinmap' \
 	  'share/help/cmd/addwinzone' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/addwinzone' \
@@ -1804,7 +1812,8 @@ config::
 	  'share/help/cmd/applycolourscheme' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/applycolourscheme' \
 	  'share/help/cmd/applywindowstorage' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/applywindowstorage' \
 	  'share/help/cmd/asciibell' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/asciibell' \
-	  'share/help/cmd/atcp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/atcp' \
+	  'share/help/cmd/atcp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/atcp' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/help/cmd/autobackup' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/autobackup' \
 	  'share/help/cmd/autosave' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/autosave' \
 	  'share/help/cmd/awayfromkeys' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/awayfromkeys' \
@@ -1819,8 +1828,7 @@ config::
 	  'share/help/cmd/chatcall' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/chatcall' \
 	  'share/help/cmd/chatcommand' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/chatcommand' \
 	  'share/help/cmd/chatdnd' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/chatdnd' \
-	  'share/help/cmd/chatescape' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/chatescape' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/help/cmd/chatescape' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/chatescape' \
 	  'share/help/cmd/chatgroup' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/chatgroup' \
 	  'share/help/cmd/chathangup' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/chathangup' \
 	  'share/help/cmd/chatignore' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/chatignore' \
@@ -1835,7 +1843,8 @@ config::
 	  'share/help/cmd/chatsetemail' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/chatsetemail' \
 	  'share/help/cmd/chatsetgroup' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/chatsetgroup' \
 	  'share/help/cmd/chatseticon' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/chatseticon' \
-	  'share/help/cmd/chatsetname' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/chatsetname' \
+	  'share/help/cmd/chatsetname' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/chatsetname' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/help/cmd/chatsetsmiley' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/chatsetsmiley' \
 	  'share/help/cmd/chatsnoop' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/chatsnoop' \
 	  'share/help/cmd/chatstopfile' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/chatstopfile' \
@@ -1849,8 +1858,7 @@ config::
 	  'share/help/cmd/clientcommand' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/clientcommand' \
 	  'share/help/cmd/clonechar' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/clonechar' \
 	  'share/help/cmd/cloneconfig' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/cloneconfig' \
-	  'share/help/cmd/clonecustomprofile' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/clonecustomprofile' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/help/cmd/clonecustomprofile' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/clonecustomprofile' \
 	  'share/help/cmd/clonedictionary' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/clonedictionary' \
 	  'share/help/cmd/cloneguild' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/cloneguild' \
 	  'share/help/cmd/clonemission' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/clonemission' \
@@ -1864,7 +1872,8 @@ config::
 	  'share/help/cmd/closeautomapper' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/closeautomapper' \
 	  'share/help/cmd/closefreewindow' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/closefreewindow' \
 	  'share/help/cmd/closeobjectviewer' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/closeobjectviewer' \
-	  'share/help/cmd/closetaskwindow' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/closetaskwindow' \
+	  'share/help/cmd/closetaskwindow' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/closetaskwindow' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/help/cmd/closewindow' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/closewindow' \
 	  'share/help/cmd/collectcontentslines' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/collectcontentslines' \
 	  'share/help/cmd/collectunknownwords' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/collectunknownwords' \
@@ -1878,8 +1887,7 @@ config::
 	  'share/help/cmd/converttext' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/converttext' \
 	  'share/help/cmd/copyrecording' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/copyrecording' \
 	  'share/help/cmd/crawl' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/crawl' \
-	  'share/help/cmd/debugconnection' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/debugconnection' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/help/cmd/debugconnection' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/debugconnection' \
 	  'share/help/cmd/debugtoggle' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/debugtoggle' \
 	  'share/help/cmd/deletealias' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/deletealias' \
 	  'share/help/cmd/deletecage' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/deletecage' \
@@ -1892,7 +1900,8 @@ config::
 	  'share/help/cmd/deletecustomtask' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/deletecustomtask' \
 	  'share/help/cmd/deletedictionary' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/deletedictionary' \
 	  'share/help/cmd/deletedirectory' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/deletedirectory' \
-	  'share/help/cmd/deleteexit' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/deleteexit' \
+	  'share/help/cmd/deleteexit' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/deleteexit' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/help/cmd/deleteexitpattern' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/deleteexitpattern' \
 	  'share/help/cmd/deleteguild' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/deleteguild' \
 	  'share/help/cmd/deletehook' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/deletehook' \
@@ -1905,8 +1914,7 @@ config::
 	  'share/help/cmd/deleteminionstring' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/deleteminionstring' \
 	  'share/help/cmd/deletemission' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/deletemission' \
 	  'share/help/cmd/deletemodelobject' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/deletemodelobject' \
-	  'share/help/cmd/deletemodifierchar' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/deletemodifierchar' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/help/cmd/deletemodifierchar' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/deletemodifierchar' \
 	  'share/help/cmd/deleteplayercharacter' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/deleteplayercharacter' \
 	  'share/help/cmd/deleteproperty' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/deleteproperty' \
 	  'share/help/cmd/deletequest' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/deletequest' \
@@ -1919,7 +1927,8 @@ config::
 	  'share/help/cmd/deleteroute' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/deleteroute' \
 	  'share/help/cmd/deletesecondary' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/deletesecondary' \
 	  'share/help/cmd/deletesmiley' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/deletesmiley' \
-	  'share/help/cmd/deletesoundeffect' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/deletesoundeffect' \
+	  'share/help/cmd/deletesoundeffect' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/deletesoundeffect' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/help/cmd/deletespeedwalk' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/deletespeedwalk' \
 	  'share/help/cmd/deletestatuscommand' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/deletestatuscommand' \
 	  'share/help/cmd/deletetasklabel' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/deletetasklabel' \
@@ -1933,8 +1942,7 @@ config::
 	  'share/help/cmd/deletewinmap' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/deletewinmap' \
 	  'share/help/cmd/deletewinzone' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/deletewinzone' \
 	  'share/help/cmd/deleteword' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/deleteword' \
-	  'share/help/cmd/deleteworld' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/deleteworld' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/help/cmd/deleteworld' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/deleteworld' \
 	  'share/help/cmd/deletezonemap' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/deletezonemap' \
 	  'share/help/cmd/deletezonemodel' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/deletezonemodel' \
 	  'share/help/cmd/disableactiveinterface' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/disableactiveinterface' \
@@ -1947,7 +1955,8 @@ config::
 	  'share/help/cmd/displaybuffer' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/displaybuffer' \
 	  'share/help/cmd/drive' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/drive' \
 	  'share/help/cmd/dropall' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/dropall' \
-	  'share/help/cmd/dumpascii' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/dumpascii' \
+	  'share/help/cmd/dumpascii' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/dumpascii' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/help/cmd/dumpcommandbuffer' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/dumpcommandbuffer' \
 	  'share/help/cmd/dumpdisplaybuffer' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/dumpdisplaybuffer' \
 	  'share/help/cmd/dumpexitmodel' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/dumpexitmodel' \
@@ -1961,8 +1970,7 @@ config::
 	  'share/help/cmd/editchar' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/editchar' \
 	  'share/help/cmd/editclient' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/editclient' \
 	  'share/help/cmd/editcolourscheme' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/editcolourscheme' \
-	  'share/help/cmd/editcommandbuffer' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/editcommandbuffer' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/help/cmd/editcommandbuffer' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/editcommandbuffer' \
 	  'share/help/cmd/editconfig' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/editconfig' \
 	  'share/help/cmd/editcontact' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/editcontact' \
 	  'share/help/cmd/editcustomprofile' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/editcustomprofile' \
@@ -1975,7 +1983,8 @@ config::
 	  'share/help/cmd/editguild' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/editguild' \
 	  'share/help/cmd/editinitialtask' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/editinitialtask' \
 	  'share/help/cmd/editinstructionbuffer' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/editinstructionbuffer' \
-	  'share/help/cmd/editinterfacemodel' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/editinterfacemodel' \
+	  'share/help/cmd/editinterfacemodel' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/editinterfacemodel' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/help/cmd/editlabelstyle' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/editlabelstyle' \
 	  'share/help/cmd/editmission' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/editmission' \
 	  'share/help/cmd/editmodel' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/editmodel' \
@@ -1990,8 +1999,7 @@ config::
 	  'share/help/cmd/editroute' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/editroute' \
 	  'share/help/cmd/editscript' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/editscript' \
 	  'share/help/cmd/editsession' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/editsession' \
-	  'share/help/cmd/edittask' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/edittask' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/help/cmd/edittask' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/edittask' \
 	  'share/help/cmd/edittemplate' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/edittemplate' \
 	  'share/help/cmd/edittoolbar' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/edittoolbar' \
 	  'share/help/cmd/editwindow' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/editwindow' \
@@ -2004,7 +2012,8 @@ config::
 	  'share/help/cmd/editzonemap' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/editzonemap' \
 	  'share/help/cmd/editzonemodel' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/editzonemodel' \
 	  'share/help/cmd/emergencysave' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/emergencysave' \
-	  'share/help/cmd/emote' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/emote' \
+	  'share/help/cmd/emote' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/emote' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/help/cmd/emoteall' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/emoteall' \
 	  'share/help/cmd/emotegroup' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/emotegroup' \
 	  'share/help/cmd/emptychannelswindow' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/emptychannelswindow' \
@@ -2019,8 +2028,7 @@ config::
 	  'share/help/cmd/exitall' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/exitall' \
 	  'share/help/cmd/exportdata' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/exportdata' \
 	  'share/help/cmd/exportfiles' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/exportfiles' \
-	  'share/help/cmd/findreset' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/findreset' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/help/cmd/findreset' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/findreset' \
 	  'share/help/cmd/findtext' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/findtext' \
 	  'share/help/cmd/finishquest' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/finishquest' \
 	  'share/help/cmd/first' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/first' \
@@ -2034,7 +2042,8 @@ config::
 	  'share/help/cmd/go' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/go' \
 	  'share/help/cmd/grabwindow' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/grabwindow' \
 	  'share/help/cmd/haltmission' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/haltmission' \
-	  'share/help/cmd/haltreplay' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/haltreplay' \
+	  'share/help/cmd/haltreplay' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/haltreplay' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/help/cmd/halttask' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/halttask' \
 	  'share/help/cmd/help' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/help' \
 	  'share/help/cmd/helptest' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/helptest' \
@@ -2050,8 +2059,7 @@ config::
 	  'share/help/cmd/insertlook' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/insertlook' \
 	  'share/help/cmd/insertrecording' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/insertrecording' \
 	  'share/help/cmd/instructionbuffer' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/instructionbuffer' \
-	  'share/help/cmd/interact' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/interact' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/help/cmd/interact' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/interact' \
 	  'share/help/cmd/interactall' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/interactall' \
 	  'share/help/cmd/interactmall' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/interactmall' \
 	  'share/help/cmd/intervalrepeat' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/intervalrepeat' \
@@ -2064,7 +2072,8 @@ config::
 	  'share/help/cmd/layerdown' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/layerdown' \
 	  'share/help/cmd/layerup' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/layerup' \
 	  'share/help/cmd/listactiveinterface' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/listactiveinterface' \
-	  'share/help/cmd/listadvance' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/listadvance' \
+	  'share/help/cmd/listadvance' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/listadvance' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/help/cmd/listadvancehistory' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/listadvancehistory' \
 	  'share/help/cmd/listalias' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/listalias' \
 	  'share/help/cmd/listattribute' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/listattribute' \
@@ -2079,8 +2088,7 @@ config::
 	  'share/help/cmd/listconfig' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/listconfig' \
 	  'share/help/cmd/listcontact' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/listcontact' \
 	  'share/help/cmd/listcontentslines' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/listcontentslines' \
-	  'share/help/cmd/listcustomprofile' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/listcustomprofile' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/help/cmd/listcustomprofile' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/listcustomprofile' \
 	  'share/help/cmd/listcustomtask' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/listcustomtask' \
 	  'share/help/cmd/listdatadirectory' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/listdatadirectory' \
 	  'share/help/cmd/listdictionary' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/listdictionary' \
@@ -2092,7 +2100,8 @@ config::
 	  'share/help/cmd/listfreewindow' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/listfreewindow' \
 	  'share/help/cmd/listgrid' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/listgrid' \
 	  'share/help/cmd/listguild' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/listguild' \
-	  'share/help/cmd/listguildskills' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/listguildskills' \
+	  'share/help/cmd/listguildskills' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/listguildskills' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/help/cmd/listhook' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/listhook' \
 	  'share/help/cmd/listinitialplugin' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/listinitialplugin' \
 	  'share/help/cmd/listinitialscript' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/listinitialscript' \
@@ -2107,8 +2116,7 @@ config::
 	  'share/help/cmd/listminionstring' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/listminionstring' \
 	  'share/help/cmd/listmission' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/listmission' \
 	  'share/help/cmd/listmodel' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/listmodel' \
-	  'share/help/cmd/listmodifierchar' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/listmodifierchar' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/help/cmd/listmodifierchar' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/listmodifierchar' \
 	  'share/help/cmd/listmonitorobject' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/listmonitorobject' \
 	  'share/help/cmd/listorphan' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/listorphan' \
 	  'share/help/cmd/listpanel' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/listpanel' \
@@ -2120,7 +2128,8 @@ config::
 	  'share/help/cmd/listprotectobject' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/listprotectobject' \
 	  'share/help/cmd/listquest' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/listquest' \
 	  'share/help/cmd/listrace' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/listrace' \
-	  'share/help/cmd/listrecording' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/listrecording' \
+	  'share/help/cmd/listrecording' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/listrecording' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/help/cmd/listregionscheme' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/listregionscheme' \
 	  'share/help/cmd/listreserved' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/listreserved' \
 	  'share/help/cmd/listrestoreworld' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/listrestoreworld' \
@@ -2135,8 +2144,7 @@ config::
 	  'share/help/cmd/liststatuscommand' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/liststatuscommand' \
 	  'share/help/cmd/listsystemcolour' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/listsystemcolour' \
 	  'share/help/cmd/listtask' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/listtask' \
-	  'share/help/cmd/listtasklabel' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/listtasklabel' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/help/cmd/listtasklabel' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/listtasklabel' \
 	  'share/help/cmd/listtaskpackage' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/listtaskpackage' \
 	  'share/help/cmd/listteleport' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/listteleport' \
 	  'share/help/cmd/listtemplate' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/listtemplate' \
@@ -2148,7 +2156,8 @@ config::
 	  'share/help/cmd/listusercommand' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/listusercommand' \
 	  'share/help/cmd/listwindow' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/listwindow' \
 	  'share/help/cmd/listwindowcontrols' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/listwindowcontrols' \
-	  'share/help/cmd/listwindowstrip' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/listwindowstrip' \
+	  'share/help/cmd/listwindowstrip' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/listwindowstrip' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/help/cmd/listwindowtable' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/listwindowtable' \
 	  'share/help/cmd/listwinmap' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/listwinmap' \
 	  'share/help/cmd/listwinzone' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/listwinzone' \
@@ -2165,8 +2174,7 @@ config::
 	  'share/help/cmd/log' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/log' \
 	  'share/help/cmd/login' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/login' \
 	  'share/help/cmd/maxsession' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/maxsession' \
-	  'share/help/cmd/mcp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/mcp' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/help/cmd/mcp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/mcp' \
 	  'share/help/cmd/mergemodel' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/mergemodel' \
 	  'share/help/cmd/mission' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/mission' \
 	  'share/help/cmd/mnes' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/mnes' \
@@ -2178,7 +2186,8 @@ config::
 	  'share/help/cmd/modifyinitialworkspace' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/modifyinitialworkspace' \
 	  'share/help/cmd/modifymacro' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/modifymacro' \
 	  'share/help/cmd/modifyprimary' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/modifyprimary' \
-	  'share/help/cmd/modifyquest' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/modifyquest' \
+	  'share/help/cmd/modifyquest' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/modifyquest' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/help/cmd/modifysecondary' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/modifysecondary' \
 	  'share/help/cmd/modifytimer' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/modifytimer' \
 	  'share/help/cmd/modifytrigger' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/modifytrigger' \
@@ -2194,8 +2203,7 @@ config::
 	  'share/help/cmd/mssp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/mssp' \
 	  'share/help/cmd/multi' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/multi' \
 	  'share/help/cmd/mxp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/mxp' \
-	  'share/help/cmd/noticeroomcommand' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/noticeroomcommand' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/help/cmd/noticeroomcommand' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/noticeroomcommand' \
 	  'share/help/cmd/nudgemission' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/nudgemission' \
 	  'share/help/cmd/openaboutwindow' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/openaboutwindow' \
 	  'share/help/cmd/openautomapper' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/openautomapper' \
@@ -2208,7 +2216,8 @@ config::
 	  'share/help/cmd/peekhelp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/peekhelp' \
 	  'share/help/cmd/perl' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/perl' \
 	  'share/help/cmd/permalert' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/permalert' \
-	  'share/help/cmd/permcompass' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/permcompass' \
+	  'share/help/cmd/permcompass' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/permcompass' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/help/cmd/permread' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/permread' \
 	  'share/help/cmd/permswitch' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/permswitch' \
 	  'share/help/cmd/playsoundeffect' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/playsoundeffect' \
@@ -2224,8 +2233,7 @@ config::
 	  'share/help/cmd/quicklabeldelete' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/quicklabeldelete' \
 	  'share/help/cmd/quicksoundeffect' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/quicksoundeffect' \
 	  'share/help/cmd/quit' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/quit' \
-	  'share/help/cmd/quitall' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/quitall' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/help/cmd/quitall' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/quitall' \
 	  'share/help/cmd/read' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/read' \
 	  'share/help/cmd/reconnect' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/reconnect' \
 	  'share/help/cmd/record' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/record' \
@@ -2238,7 +2246,8 @@ config::
 	  'share/help/cmd/repeatcomment' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/repeatcomment' \
 	  'share/help/cmd/repeatmission' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/repeatmission' \
 	  'share/help/cmd/replaybuffer' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/replaybuffer' \
-	  'share/help/cmd/resetapplication' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/resetapplication' \
+	  'share/help/cmd/resetapplication' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/resetapplication' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/help/cmd/resetcounter' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/resetcounter' \
 	  'share/help/cmd/resetgrid' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/resetgrid' \
 	  'share/help/cmd/resetguildskills' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/resetguildskills' \
@@ -2253,8 +2262,7 @@ config::
 	  'share/help/cmd/resettaskpackage' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/resettaskpackage' \
 	  'share/help/cmd/resetusercommand' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/resetusercommand' \
 	  'share/help/cmd/resetwinmap' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/resetwinmap' \
-	  'share/help/cmd/resetzonemap' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/resetzonemap' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/help/cmd/resetzonemap' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/resetzonemap' \
 	  'share/help/cmd/restart' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/restart' \
 	  'share/help/cmd/restoredata' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/restoredata' \
 	  'share/help/cmd/restorewindow' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/restorewindow' \
@@ -2267,7 +2275,8 @@ config::
 	  'share/help/cmd/runscript' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/runscript' \
 	  'share/help/cmd/runscripttask' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/runscripttask' \
 	  'share/help/cmd/save' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/save' \
-	  'share/help/cmd/savebuffer' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/savebuffer' \
+	  'share/help/cmd/savebuffer' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/savebuffer' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/help/cmd/scrolllock' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/scrolllock' \
 	  'share/help/cmd/searchhelp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/searchhelp' \
 	  'share/help/cmd/sellall' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/sellall' \
@@ -2283,8 +2292,7 @@ config::
 	  'share/help/cmd/setchar' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/setchar' \
 	  'share/help/cmd/setcharset' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/setcharset' \
 	  'share/help/cmd/setcolour' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/setcolour' \
-	  'share/help/cmd/setcommandbuffer' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/setcommandbuffer' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/help/cmd/setcommandbuffer' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/setcommandbuffer' \
 	  'share/help/cmd/setcommifymode' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/setcommifymode' \
 	  'share/help/cmd/setcountdown' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/setcountdown' \
 	  'share/help/cmd/setcountup' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/setcountup' \
@@ -2296,7 +2304,8 @@ config::
 	  'share/help/cmd/setdictionary' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/setdictionary' \
 	  'share/help/cmd/setdisplaybuffer' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/setdisplaybuffer' \
 	  'share/help/cmd/setfacing' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/setfacing' \
-	  'share/help/cmd/setfavouriteworld' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/setfavouriteworld' \
+	  'share/help/cmd/setfavouriteworld' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/setfavouriteworld' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/help/cmd/setgrid' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/setgrid' \
 	  'share/help/cmd/setguild' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/setguild' \
 	  'share/help/cmd/setinstructionbuffer' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/setinstructionbuffer' \
@@ -2311,8 +2320,7 @@ config::
 	  'share/help/cmd/setofflineroom' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/setofflineroom' \
 	  'share/help/cmd/setpanel' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/setpanel' \
 	  'share/help/cmd/setprofilepriority' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/setprofilepriority' \
-	  'share/help/cmd/setpromptdelay' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/setpromptdelay' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/help/cmd/setpromptdelay' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/setpromptdelay' \
 	  'share/help/cmd/setprotectedmoves' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/setprotectedmoves' \
 	  'share/help/cmd/setrace' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/setrace' \
 	  'share/help/cmd/setredirectmode' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/setredirectmode' \
@@ -2325,7 +2333,8 @@ config::
 	  'share/help/cmd/setsystemmode' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/setsystemmode' \
 	  'share/help/cmd/settelnetoption' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/settelnetoption' \
 	  'share/help/cmd/settermtype' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/settermtype' \
-	  'share/help/cmd/settextview' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/settextview' \
+	  'share/help/cmd/settextview' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/settextview' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/help/cmd/setwimpy' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/setwimpy' \
 	  'share/help/cmd/setwindowcontrols' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/setwindowcontrols' \
 	  'share/help/cmd/setwindowsize' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/setwindowsize' \
@@ -2340,8 +2349,7 @@ config::
 	  'share/help/cmd/simulatehook' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/simulatehook' \
 	  'share/help/cmd/simulateprompt' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/simulateprompt' \
 	  'share/help/cmd/simulateworld' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/simulateworld' \
-	  'share/help/cmd/skip' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/skip' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/help/cmd/skip' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/skip' \
 	  'share/help/cmd/skipadvance' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/skipadvance' \
 	  'share/help/cmd/slowwalk' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/slowwalk' \
 	  'share/help/cmd/sound' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/sound' \
@@ -2355,7 +2363,8 @@ config::
 	  'share/help/cmd/ssh' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/ssh' \
 	  'share/help/cmd/ssl' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/ssl' \
 	  'share/help/cmd/startcustomtask' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/startcustomtask' \
-	  'share/help/cmd/startmission' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/startmission' \
+	  'share/help/cmd/startmission' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/startmission' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/help/cmd/starttask' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/starttask' \
 	  'share/help/cmd/stopclient' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/stopclient' \
 	  'share/help/cmd/stopcommand' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/stopcommand' \
@@ -2371,8 +2380,7 @@ config::
 	  'share/help/cmd/testcolour' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/testcolour' \
 	  'share/help/cmd/testfile' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/testfile' \
 	  'share/help/cmd/testmodel' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/testmodel' \
-	  'share/help/cmd/testpanel' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/testpanel' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/help/cmd/testpanel' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/testpanel' \
 	  'share/help/cmd/testpattern' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/testpattern' \
 	  'share/help/cmd/testplugin' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/testplugin' \
 	  'share/help/cmd/testwindowcontrols' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/testwindowcontrols' \
@@ -2385,7 +2393,8 @@ config::
 	  'share/help/cmd/togglemainwindow' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/togglemainwindow' \
 	  'share/help/cmd/togglepalette' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/togglepalette' \
 	  'share/help/cmd/togglepopup' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/togglepopup' \
-	  'share/help/cmd/toggleshare' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/toggleshare' \
+	  'share/help/cmd/toggleshare' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/toggleshare' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/help/cmd/toggleshortlink' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/toggleshortlink' \
 	  'share/help/cmd/togglesigil' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/togglesigil' \
 	  'share/help/cmd/togglewindowkey' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/togglewindowkey' \
@@ -2399,8 +2408,7 @@ config::
 	  'share/help/cmd/unsetrace' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/unsetrace' \
 	  'share/help/cmd/unskip' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/unskip' \
 	  'share/help/cmd/updatecolourscheme' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/updatecolourscheme' \
-	  'share/help/cmd/updatemodel' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/updatemodel' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/help/cmd/updatemodel' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/updatemodel' \
 	  'share/help/cmd/updateworld' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/updateworld' \
 	  'share/help/cmd/useall' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/useall' \
 	  'share/help/cmd/useworkspace' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/cmd/useworkspace' \
@@ -2415,7 +2423,8 @@ config::
 	  'share/help/task/attack' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/task/attack' \
 	  'share/help/task/channels' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/task/channels' \
 	  'share/help/task/chat' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/task/chat' \
-	  'share/help/task/compass' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/task/compass' \
+	  'share/help/task/compass' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/task/compass' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/help/task/condition' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/task/condition' \
 	  'share/help/task/connections' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/task/connections' \
 	  'share/help/task/countdown' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/task/countdown' \
@@ -2430,8 +2439,7 @@ config::
 	  'share/help/task/rawtoken' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/task/rawtoken' \
 	  'share/help/task/script' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/task/script' \
 	  'share/help/task/status' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/task/status' \
-	  'share/help/task/system' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/task/system' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/help/task/system' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/task/system' \
 	  'share/help/task/tasklist' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/task/tasklist' \
 	  'share/help/task/watch' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/help/task/watch' \
 	  'share/icons/COPYING' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/COPYING' \
@@ -2444,7 +2452,8 @@ config::
 	  'share/icons/button/console_system.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/button/console_system.png' \
 	  'share/icons/button/lock.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/button/lock.png' \
 	  'share/icons/button/lock_open.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/button/lock_open.png' \
-	  'share/icons/button/prohibition_button.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/button/prohibition_button.png' \
+	  'share/icons/button/prohibition_button.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/button/prohibition_button.png' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/icons/button/search.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/button/search.png' \
 	  'share/icons/button/switch_windows.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/button/switch_windows.png' \
 	  'share/icons/button/textfield_add.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/button/textfield_add.png' \
@@ -2457,8 +2466,7 @@ config::
 	  'share/icons/chat/anchor.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/anchor.bmp' \
 	  'share/icons/chat/angel.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/angel.bmp' \
 	  'share/icons/chat/autos.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/autos.bmp' \
-	  'share/icons/chat/ax.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/ax.bmp' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/icons/chat/ax.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/ax.bmp' \
 	  'share/icons/chat/backpack.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/backpack.bmp' \
 	  'share/icons/chat/ballon.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/ballon.bmp' \
 	  'share/icons/chat/bomb.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/bomb.bmp' \
@@ -2472,7 +2480,8 @@ config::
 	  'share/icons/chat/cat.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/cat.bmp' \
 	  'share/icons/chat/caterpillar.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/caterpillar.bmp' \
 	  'share/icons/chat/caution_radiation.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/caution_radiation.bmp' \
-	  'share/icons/chat/chameleon.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/chameleon.bmp' \
+	  'share/icons/chat/chameleon.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/chameleon.bmp' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/icons/chat/chartplotter.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/chartplotter.bmp' \
 	  'share/icons/chat/checkerboard.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/checkerboard.bmp' \
 	  'share/icons/chat/cheese.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/cheese.bmp' \
@@ -2485,8 +2494,7 @@ config::
 	  'share/icons/chat/cold.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/cold.bmp' \
 	  'share/icons/chat/cricket.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/cricket.bmp' \
 	  'share/icons/chat/crown_bronze.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/crown_bronze.bmp' \
-	  'share/icons/chat/crown_gold.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/crown_gold.bmp' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/icons/chat/crown_gold.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/crown_gold.bmp' \
 	  'share/icons/chat/crown_silver.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/crown_silver.bmp' \
 	  'share/icons/chat/cup.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/cup.bmp' \
 	  'share/icons/chat/dog.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/dog.bmp' \
@@ -2499,7 +2507,8 @@ config::
 	  'share/icons/chat/egyptian_pyramid.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/egyptian_pyramid.bmp' \
 	  'share/icons/chat/electric_guitar.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/electric_guitar.bmp' \
 	  'share/icons/chat/emotion_adore.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_adore.bmp' \
-	  'share/icons/chat/emotion_after_boom.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_after_boom.bmp' \
+	  'share/icons/chat/emotion_after_boom.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_after_boom.bmp' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/icons/chat/emotion_ah.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_ah.bmp' \
 	  'share/icons/chat/emotion_alien.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_alien.bmp' \
 	  'share/icons/chat/emotion_amazing.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_amazing.bmp' \
@@ -2511,8 +2520,7 @@ config::
 	  'share/icons/chat/emotion_bad_smelly.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_bad_smelly.bmp' \
 	  'share/icons/chat/emotion_baffle.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_baffle.bmp' \
 	  'share/icons/chat/emotion_batman.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_batman.bmp' \
-	  'share/icons/chat/emotion_beat_brick.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_beat_brick.bmp' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/icons/chat/emotion_beat_brick.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_beat_brick.bmp' \
 	  'share/icons/chat/emotion_beaten.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_beaten.bmp' \
 	  'share/icons/chat/emotion_bigsmile.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_bigsmile.bmp' \
 	  'share/icons/chat/emotion_bloody.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_bloody.bmp' \
@@ -2524,7 +2532,8 @@ config::
 	  'share/icons/chat/emotion_confuse.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_confuse.bmp' \
 	  'share/icons/chat/emotion_cool.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_cool.bmp' \
 	  'share/icons/chat/emotion_crazy.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_crazy.bmp' \
-	  'share/icons/chat/emotion_crazy_rabbit.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_crazy_rabbit.bmp' \
+	  'share/icons/chat/emotion_crazy_rabbit.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_crazy_rabbit.bmp' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/icons/chat/emotion_cry.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_cry.bmp' \
 	  'share/icons/chat/emotion_cyclops.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_cyclops.bmp' \
 	  'share/icons/chat/emotion_darth_wader.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_darth_wader.bmp' \
@@ -2536,8 +2545,7 @@ config::
 	  'share/icons/chat/emotion_dribble.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_dribble.bmp' \
 	  'share/icons/chat/emotion_evilgrin.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_evilgrin.bmp' \
 	  'share/icons/chat/emotion_evolution.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_evolution.bmp' \
-	  'share/icons/chat/emotion_exciting.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_exciting.bmp' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/icons/chat/emotion_exciting.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_exciting.bmp' \
 	  'share/icons/chat/emotion_eyes_droped.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_eyes_droped.bmp' \
 	  'share/icons/chat/emotion_face_monkey.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_face_monkey.bmp' \
 	  'share/icons/chat/emotion_face_panda.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_face_panda.bmp' \
@@ -2549,7 +2557,8 @@ config::
 	  'share/icons/chat/emotion_girl.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_girl.bmp' \
 	  'share/icons/chat/emotion_go.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_go.bmp' \
 	  'share/icons/chat/emotion_greedy.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_greedy.bmp' \
-	  'share/icons/chat/emotion_grin.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_grin.bmp' \
+	  'share/icons/chat/emotion_grin.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_grin.bmp' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/icons/chat/emotion_haha.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_haha.bmp' \
 	  'share/icons/chat/emotion_hand_flower.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_hand_flower.bmp' \
 	  'share/icons/chat/emotion_happy.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_happy.bmp' \
@@ -2561,8 +2570,7 @@ config::
 	  'share/icons/chat/emotion_jason.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_jason.bmp' \
 	  'share/icons/chat/emotion_kiss.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_kiss.bmp' \
 	  'share/icons/chat/emotion_kissed.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_kissed.bmp' \
-	  'share/icons/chat/emotion_love.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_love.bmp' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/icons/chat/emotion_love.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_love.bmp' \
 	  'share/icons/chat/emotion_mad.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_mad.bmp' \
 	  'share/icons/chat/emotion_matrix.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_matrix.bmp' \
 	  'share/icons/chat/emotion_medic.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_medic.bmp' \
@@ -2574,7 +2582,8 @@ config::
 	  'share/icons/chat/emotion_nosebleed.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_nosebleed.bmp' \
 	  'share/icons/chat/emotion_pirate.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_pirate.bmp' \
 	  'share/icons/chat/emotion_pumpkin.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_pumpkin.bmp' \
-	  'share/icons/chat/emotion_question.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_question.bmp' \
+	  'share/icons/chat/emotion_question.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_question.bmp' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/icons/chat/emotion_rap.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_rap.bmp' \
 	  'share/icons/chat/emotion_red.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_red.bmp' \
 	  'share/icons/chat/emotion_sad.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_sad.bmp' \
@@ -2586,8 +2595,7 @@ config::
 	  'share/icons/chat/emotion_sleep.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_sleep.bmp' \
 	  'share/icons/chat/emotion_smile.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_smile.bmp' \
 	  'share/icons/chat/emotion_spiderman.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_spiderman.bmp' \
-	  'share/icons/chat/emotion_spy.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_spy.bmp' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/icons/chat/emotion_spy.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_spy.bmp' \
 	  'share/icons/chat/emotion_star.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_star.bmp' \
 	  'share/icons/chat/emotion_stupid.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_stupid.bmp' \
 	  'share/icons/chat/emotion_suprised.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_suprised.bmp' \
@@ -2599,7 +2607,8 @@ config::
 	  'share/icons/chat/emotion_tongue.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_tongue.bmp' \
 	  'share/icons/chat/emotion_too_sad.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_too_sad.bmp' \
 	  'share/icons/chat/emotion_unhappy.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_unhappy.bmp' \
-	  'share/icons/chat/emotion_unshaven.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_unshaven.bmp' \
+	  'share/icons/chat/emotion_unshaven.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_unshaven.bmp' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/icons/chat/emotion_vampire.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_vampire.bmp' \
 	  'share/icons/chat/emotion_waaaht.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_waaaht.bmp' \
 	  'share/icons/chat/emotion_waii.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/emotion_waii.bmp' \
@@ -2612,8 +2621,7 @@ config::
 	  'share/icons/chat/flag_1.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/flag_1.bmp' \
 	  'share/icons/chat/flag_2.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/flag_2.bmp' \
 	  'share/icons/chat/flamingo.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/flamingo.bmp' \
-	  'share/icons/chat/flower.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/flower.bmp' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/icons/chat/flower.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/flower.bmp' \
 	  'share/icons/chat/game_monitor.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/game_monitor.bmp' \
 	  'share/icons/chat/globe_place.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/globe_place.bmp' \
 	  'share/icons/chat/grass.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/grass.bmp' \
@@ -2626,7 +2634,8 @@ config::
 	  'share/icons/chat/heart.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/heart.bmp' \
 	  'share/icons/chat/holly.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/holly.bmp' \
 	  'share/icons/chat/horoscopes.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/horoscopes.bmp' \
-	  'share/icons/chat/house_two.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/house_two.bmp' \
+	  'share/icons/chat/house_two.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/house_two.bmp' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/icons/chat/hummingbird.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/hummingbird.bmp' \
 	  'share/icons/chat/ice_cube.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/ice_cube.bmp' \
 	  'share/icons/chat/icecream.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/icecream.bmp' \
@@ -2640,8 +2649,7 @@ config::
 	  'share/icons/chat/money_bag.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/money_bag.bmp' \
 	  'share/icons/chat/moneybox.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/moneybox.bmp' \
 	  'share/icons/chat/moon.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/moon.bmp' \
-	  'share/icons/chat/mosque.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/mosque.bmp' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/icons/chat/mosque.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/mosque.bmp' \
 	  'share/icons/chat/parrot.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/parrot.bmp' \
 	  'share/icons/chat/peacock.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/peacock.bmp' \
 	  'share/icons/chat/peak_cap.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/peak_cap.bmp' \
@@ -2654,7 +2662,8 @@ config::
 	  'share/icons/chat/rainbow_cloud.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/rainbow_cloud.bmp' \
 	  'share/icons/chat/ring.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/ring.bmp' \
 	  'share/icons/chat/robo_to.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/robo_to.bmp' \
-	  'share/icons/chat/scull.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/scull.bmp' \
+	  'share/icons/chat/scull.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/scull.bmp' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/icons/chat/shuriken.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/shuriken.bmp' \
 	  'share/icons/chat/snail.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/snail.bmp' \
 	  'share/icons/chat/snowman.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/snowman.bmp' \
@@ -2667,8 +2676,7 @@ config::
 	  'share/icons/chat/sport_shuttlecock.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/sport_shuttlecock.bmp' \
 	  'share/icons/chat/sport_soccer.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/sport_soccer.bmp' \
 	  'share/icons/chat/sport_tennis.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/sport_tennis.bmp' \
-	  'share/icons/chat/sword.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/sword.bmp' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/icons/chat/sword.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/sword.bmp' \
 	  'share/icons/chat/teapot.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/teapot.bmp' \
 	  'share/icons/chat/teddy_bear.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/teddy_bear.bmp' \
 	  'share/icons/chat/toucan.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/toucan.bmp' \
@@ -2680,7 +2688,8 @@ config::
 	  'share/icons/chat/user_angel_female.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_angel_female.bmp' \
 	  'share/icons/chat/user_angel_female_black.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_angel_female_black.bmp' \
 	  'share/icons/chat/user_astronaut.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_astronaut.bmp' \
-	  'share/icons/chat/user_ballplayer.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_ballplayer.bmp' \
+	  'share/icons/chat/user_ballplayer.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_ballplayer.bmp' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/icons/chat/user_ballplayer_black.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_ballplayer_black.bmp' \
 	  'share/icons/chat/user_banker.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_banker.bmp' \
 	  'share/icons/chat/user_bart.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_bart.bmp' \
@@ -2692,8 +2701,7 @@ config::
 	  'share/icons/chat/user_blondy.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_blondy.bmp' \
 	  'share/icons/chat/user_boxer.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_boxer.bmp' \
 	  'share/icons/chat/user_boxer_black.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_boxer_black.bmp' \
-	  'share/icons/chat/user_buddhist.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_buddhist.bmp' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/icons/chat/user_buddhist.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_buddhist.bmp' \
 	  'share/icons/chat/user_c3po.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_c3po.bmp' \
 	  'share/icons/chat/user_catwomen.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_catwomen.bmp' \
 	  'share/icons/chat/user_chief.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_chief.bmp' \
@@ -2705,7 +2713,8 @@ config::
 	  'share/icons/chat/user_cook.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_cook.bmp' \
 	  'share/icons/chat/user_cook_black.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_cook_black.bmp' \
 	  'share/icons/chat/user_cook_female.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_cook_female.bmp' \
-	  'share/icons/chat/user_cook_female_black.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_cook_female_black.bmp' \
+	  'share/icons/chat/user_cook_female_black.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_cook_female_black.bmp' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/icons/chat/user_cowboy.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_cowboy.bmp' \
 	  'share/icons/chat/user_cowboy_female.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_cowboy_female.bmp' \
 	  'share/icons/chat/user_crabs.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_crabs.bmp' \
@@ -2717,8 +2726,7 @@ config::
 	  'share/icons/chat/user_devil.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_devil.bmp' \
 	  'share/icons/chat/user_diver.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_diver.bmp' \
 	  'share/icons/chat/user_dracula.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_dracula.bmp' \
-	  'share/icons/chat/user_edit.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_edit.bmp' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/icons/chat/user_edit.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_edit.bmp' \
 	  'share/icons/chat/user_egyptian.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_egyptian.bmp' \
 	  'share/icons/chat/user_egyptian_female.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_egyptian_female.bmp' \
 	  'share/icons/chat/user_emo.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_emo.bmp' \
@@ -2730,7 +2738,8 @@ config::
 	  'share/icons/chat/user_freddy.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_freddy.bmp' \
 	  'share/icons/chat/user_geisha.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_geisha.bmp' \
 	  'share/icons/chat/user_gladiator.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_gladiator.bmp' \
-	  'share/icons/chat/user_go.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_go.bmp' \
+	  'share/icons/chat/user_go.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_go.bmp' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/icons/chat/user_gomer.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_gomer.bmp' \
 	  'share/icons/chat/user_goth.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_goth.bmp' \
 	  'share/icons/chat/user_gray.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_gray.bmp' \
@@ -2742,8 +2751,7 @@ config::
 	  'share/icons/chat/user_imprisoned_female.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_imprisoned_female.bmp' \
 	  'share/icons/chat/user_imprisoned_female_black.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_imprisoned_female_black.bmp' \
 	  'share/icons/chat/user_indian.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_indian.bmp' \
-	  'share/icons/chat/user_indian_female.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_indian_female.bmp' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/icons/chat/user_indian_female.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_indian_female.bmp' \
 	  'share/icons/chat/user_ironman.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_ironman.bmp' \
 	  'share/icons/chat/user_jason.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_jason.bmp' \
 	  'share/icons/chat/user_jawa.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_jawa.bmp' \
@@ -2756,7 +2764,8 @@ config::
 	  'share/icons/chat/user_knight.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_knight.bmp' \
 	  'share/icons/chat/user_leprechaun.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_leprechaun.bmp' \
 	  'share/icons/chat/user_lisa.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_lisa.bmp' \
-	  'share/icons/chat/user_maid.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_maid.bmp' \
+	  'share/icons/chat/user_maid.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_maid.bmp' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/icons/chat/user_medical.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_medical.bmp' \
 	  'share/icons/chat/user_medical_black.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_medical_black.bmp' \
 	  'share/icons/chat/user_medical_female.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_medical_female.bmp' \
@@ -2767,8 +2776,7 @@ config::
 	  'share/icons/chat/user_ninja.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_ninja.bmp' \
 	  'share/icons/chat/user_nude.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_nude.bmp' \
 	  'share/icons/chat/user_nude_black.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_nude_black.bmp' \
-	  'share/icons/chat/user_nude_female.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_nude_female.bmp' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/icons/chat/user_nude_female.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_nude_female.bmp' \
 	  'share/icons/chat/user_nude_female_black.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_nude_female_black.bmp' \
 	  'share/icons/chat/user_nun.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_nun.bmp' \
 	  'share/icons/chat/user_nun_black.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_nun_black.bmp' \
@@ -2781,7 +2789,8 @@ config::
 	  'share/icons/chat/user_orange.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_orange.bmp' \
 	  'share/icons/chat/user_patrick.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_patrick.bmp' \
 	  'share/icons/chat/user_pilot.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_pilot.bmp' \
-	  'share/icons/chat/user_pilot_civil.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_pilot_civil.bmp' \
+	  'share/icons/chat/user_pilot_civil.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_pilot_civil.bmp' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/icons/chat/user_pirate.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_pirate.bmp' \
 	  'share/icons/chat/user_plankton.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_plankton.bmp' \
 	  'share/icons/chat/user_police_england.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_police_england.bmp' \
@@ -2792,8 +2801,7 @@ config::
 	  'share/icons/chat/user_priest.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_priest.bmp' \
 	  'share/icons/chat/user_priest_black.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_priest_black.bmp' \
 	  'share/icons/chat/user_pumpkin.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_pumpkin.bmp' \
-	  'share/icons/chat/user_queen.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_queen.bmp' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/icons/chat/user_queen.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_queen.bmp' \
 	  'share/icons/chat/user_queen_black.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_queen_black.bmp' \
 	  'share/icons/chat/user_r2d2.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_r2d2.bmp' \
 	  'share/icons/chat/user_racer.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_racer.bmp' \
@@ -2806,7 +2814,8 @@ config::
 	  'share/icons/chat/user_samurai.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_samurai.bmp' \
 	  'share/icons/chat/user_scream.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_scream.bmp' \
 	  'share/icons/chat/user_silhouette.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_silhouette.bmp' \
-	  'share/icons/chat/user_soldier.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_soldier.bmp' \
+	  'share/icons/chat/user_soldier.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_soldier.bmp' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/icons/chat/user_spiderman.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_spiderman.bmp' \
 	  'share/icons/chat/user_sponge_bob.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_sponge_bob.bmp' \
 	  'share/icons/chat/user_squidward.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_squidward.bmp' \
@@ -2817,8 +2826,7 @@ config::
 	  'share/icons/chat/user_student.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_student.bmp' \
 	  'share/icons/chat/user_student_black.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_student_black.bmp' \
 	  'share/icons/chat/user_student_female.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_student_female.bmp' \
-	  'share/icons/chat/user_student_female_black.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_student_female_black.bmp' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/icons/chat/user_student_female_black.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_student_female_black.bmp' \
 	  'share/icons/chat/user_suit.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_suit.bmp' \
 	  'share/icons/chat/user_superman.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_superman.bmp' \
 	  'share/icons/chat/user_swimmer.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_swimmer.bmp' \
@@ -2830,7 +2838,8 @@ config::
 	  'share/icons/chat/user_vietnamese_female.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_vietnamese_female.bmp' \
 	  'share/icons/chat/user_viking.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_viking.bmp' \
 	  'share/icons/chat/user_viking_female.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_viking_female.bmp' \
-	  'share/icons/chat/user_waiter.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_waiter.bmp' \
+	  'share/icons/chat/user_waiter.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_waiter.bmp' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/icons/chat/user_waiter_female.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_waiter_female.bmp' \
 	  'share/icons/chat/user_waiter_female_black.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_waiter_female_black.bmp' \
 	  'share/icons/chat/user_wicket.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/chat/user_wicket.bmp' \
@@ -2842,8 +2851,7 @@ config::
 	  'share/icons/connect/icon_clear.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/connect/icon_clear.png' \
 	  'share/icons/connect/icon_clear_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/connect/icon_clear_large.png' \
 	  'share/icons/connect/icon_config.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/connect/icon_config.png' \
-	  'share/icons/connect/icon_config_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/connect/icon_config_large.png' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/icons/connect/icon_config_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/connect/icon_config_large.png' \
 	  'share/icons/connect/icon_console.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/connect/icon_console.png' \
 	  'share/icons/connect/icon_console_alert.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/connect/icon_console_alert.png' \
 	  'share/icons/connect/icon_console_alert_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/connect/icon_console_alert_large.png' \
@@ -2854,7 +2862,8 @@ config::
 	  'share/icons/connect/icon_search_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/connect/icon_search_large.png' \
 	  'share/icons/connect/icon_sort_a.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/connect/icon_sort_a.png' \
 	  'share/icons/connect/icon_sort_a_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/connect/icon_sort_a_large.png' \
-	  'share/icons/connect/icon_sort_random.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/connect/icon_sort_random.png' \
+	  'share/icons/connect/icon_sort_random.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/connect/icon_sort_random.png' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/icons/connect/icon_sort_random_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/connect/icon_sort_random_large.png' \
 	  'share/icons/connect/icon_sort_z.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/connect/icon_sort_z.png' \
 	  'share/icons/connect/icon_sort_z_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/connect/icon_sort_z_large.png' \
@@ -2866,8 +2875,7 @@ config::
 	  'share/icons/custom/account_menu.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/account_menu.png' \
 	  'share/icons/custom/acorn.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/acorn.png' \
 	  'share/icons/custom/acoustic_guitar.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/acoustic_guitar.png' \
-	  'share/icons/custom/action.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/action.png' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/icons/custom/action.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/action.png' \
 	  'share/icons/custom/action_log.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/action_log.png' \
 	  'share/icons/custom/add.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/add.png' \
 	  'share/icons/custom/add_on.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/add_on.png' \
@@ -2879,7 +2887,8 @@ config::
 	  'share/icons/custom/application.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/application.png' \
 	  'share/icons/custom/application_add.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/application_add.png' \
 	  'share/icons/custom/application_delete.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/application_delete.png' \
-	  'share/icons/custom/application_edit.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/application_edit.png' \
+	  'share/icons/custom/application_edit.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/application_edit.png' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/icons/custom/application_get.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/application_get.png' \
 	  'share/icons/custom/application_go.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/application_go.png' \
 	  'share/icons/custom/application_home.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/application_home.png' \
@@ -2891,8 +2900,7 @@ config::
 	  'share/icons/custom/arrow_branch.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/arrow_branch.png' \
 	  'share/icons/custom/arrow_divide.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/arrow_divide.png' \
 	  'share/icons/custom/arrow_down.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/arrow_down.png' \
-	  'share/icons/custom/arrow_in.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/arrow_in.png' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/icons/custom/arrow_in.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/arrow_in.png' \
 	  'share/icons/custom/arrow_inout.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/arrow_inout.png' \
 	  'share/icons/custom/arrow_join.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/arrow_join.png' \
 	  'share/icons/custom/arrow_left.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/arrow_left.png' \
@@ -2903,7 +2911,8 @@ config::
 	  'share/icons/custom/arrow_refresh_small.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/arrow_refresh_small.png' \
 	  'share/icons/custom/arrow_repeat.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/arrow_repeat.png' \
 	  'share/icons/custom/arrow_repeat_once.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/arrow_repeat_once.png' \
-	  'share/icons/custom/arrow_right.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/arrow_right.png' \
+	  'share/icons/custom/arrow_right.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/arrow_right.png' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/icons/custom/arrow_rotate_anticlockwise.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/arrow_rotate_anticlockwise.png' \
 	  'share/icons/custom/arrow_rotate_clockwise.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/arrow_rotate_clockwise.png' \
 	  'share/icons/custom/arrow_switch.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/arrow_switch.png' \
@@ -2916,8 +2925,7 @@ config::
 	  'share/icons/custom/asterisk_yellow.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/asterisk_yellow.png' \
 	  'share/icons/custom/at_sign.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/at_sign.png' \
 	  'share/icons/custom/atm.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/atm.png' \
-	  'share/icons/custom/attach.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/attach.png' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/icons/custom/attach.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/attach.png' \
 	  'share/icons/custom/attribution.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/attribution.png' \
 	  'share/icons/custom/auction_hammer_gavel.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/auction_hammer_gavel.png' \
 	  'share/icons/custom/autoarchieve_settings.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/autoarchieve_settings.png' \
@@ -2928,7 +2936,8 @@ config::
 	  'share/icons/custom/backpack.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/backpack.png' \
 	  'share/icons/custom/baggage_cart.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/baggage_cart.png' \
 	  'share/icons/custom/baggage_cart_box.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/baggage_cart_box.png' \
-	  'share/icons/custom/balance.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/balance.png' \
+	  'share/icons/custom/balance.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/balance.png' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/icons/custom/balance_unbalance.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/balance_unbalance.png' \
 	  'share/icons/custom/ballon.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/ballon.png' \
 	  'share/icons/custom/baloon_blue.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/baloon_blue.png' \
@@ -2942,8 +2951,7 @@ config::
 	  'share/icons/custom/billboard_empty.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/billboard_empty.png' \
 	  'share/icons/custom/billboard_picture.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/billboard_picture.png' \
 	  'share/icons/custom/billiard_marker.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/billiard_marker.png' \
-	  'share/icons/custom/bin.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/bin.png' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/icons/custom/bin.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/bin.png' \
 	  'share/icons/custom/bin_closed.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/bin_closed.png' \
 	  'share/icons/custom/bin_empty.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/bin_empty.png' \
 	  'share/icons/custom/bin_recycle.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/bin_recycle.png' \
@@ -2954,7 +2962,8 @@ config::
 	  'share/icons/custom/blueprint.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/blueprint.png' \
 	  'share/icons/custom/blueprints.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/blueprints.png' \
 	  'share/icons/custom/board_game.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/board_game.png' \
-	  'share/icons/custom/bomb.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/bomb.png' \
+	  'share/icons/custom/bomb.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/bomb.png' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/icons/custom/book.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/book.png' \
 	  'share/icons/custom/book_add.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/book_add.png' \
 	  'share/icons/custom/book_addresses.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/book_addresses.png' \
@@ -2968,8 +2977,7 @@ config::
 	  'share/icons/custom/book_next.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/book_next.png' \
 	  'share/icons/custom/book_picture.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/book_picture.png' \
 	  'share/icons/custom/book_previous.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/book_previous.png' \
-	  'share/icons/custom/bookmark.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/bookmark.png' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/icons/custom/bookmark.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/bookmark.png' \
 	  'share/icons/custom/bookshelf.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/bookshelf.png' \
 	  'share/icons/custom/boomerang.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/boomerang.png' \
 	  'share/icons/custom/box.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/box.png' \
@@ -2980,7 +2988,8 @@ config::
 	  'share/icons/custom/broom.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/broom.png' \
 	  'share/icons/custom/bug.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/bug.png' \
 	  'share/icons/custom/building.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/building.png' \
-	  'share/icons/custom/bulb.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/bulb.png' \
+	  'share/icons/custom/bulb.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/bulb.png' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/icons/custom/burro.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/burro.png' \
 	  'share/icons/custom/bus.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/bus.png' \
 	  'share/icons/custom/butterfly.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/butterfly.png' \
@@ -2995,8 +3004,7 @@ config::
 	  'share/icons/custom/candy_cane.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/candy_cane.png' \
 	  'share/icons/custom/cap.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/cap.png' \
 	  'share/icons/custom/car_taxi.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/car_taxi.png' \
-	  'share/icons/custom/card_gift.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/card_gift.png' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/icons/custom/card_gift.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/card_gift.png' \
 	  'share/icons/custom/card_money.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/card_money.png' \
 	  'share/icons/custom/cargo.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/cargo.png' \
 	  'share/icons/custom/cart.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/cart.png' \
@@ -3007,7 +3015,8 @@ config::
 	  'share/icons/custom/categories.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/categories.png' \
 	  'share/icons/custom/category.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/category.png' \
 	  'share/icons/custom/category_group.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/category_group.png' \
-	  'share/icons/custom/category_group_select.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/category_group_select.png' \
+	  'share/icons/custom/category_group_select.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/category_group_select.png' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/icons/custom/category_item.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/category_item.png' \
 	  'share/icons/custom/category_item_select.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/category_item_select.png' \
 	  'share/icons/custom/caterpillar.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/caterpillar.png' \
@@ -3020,8 +3029,7 @@ config::
 	  'share/icons/custom/cd_case.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/cd_case.png' \
 	  'share/icons/custom/chair.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/chair.png' \
 	  'share/icons/custom/chameleon.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/chameleon.png' \
-	  'share/icons/custom/chart_bar.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/chart_bar.png' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/icons/custom/chart_bar.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/chart_bar.png' \
 	  'share/icons/custom/chart_curve.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/chart_curve.png' \
 	  'share/icons/custom/chart_pie_plane.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/chart_pie_plane.png' \
 	  'share/icons/custom/chart_stock.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/chart_stock.png' \
@@ -3032,7 +3040,8 @@ config::
 	  'share/icons/custom/checkerboard.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/checkerboard.png' \
 	  'share/icons/custom/cheese.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/cheese.png' \
 	  'share/icons/custom/chefs_hat.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/chefs_hat.png' \
-	  'share/icons/custom/chess_bishop.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/chess_bishop.png' \
+	  'share/icons/custom/chess_bishop.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/chess_bishop.png' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/icons/custom/chess_bishop_white.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/chess_bishop_white.png' \
 	  'share/icons/custom/chess_horse.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/chess_horse.png' \
 	  'share/icons/custom/chess_horse_white.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/chess_horse_white.png' \
@@ -3045,8 +3054,7 @@ config::
 	  'share/icons/custom/chess_tower.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/chess_tower.png' \
 	  'share/icons/custom/chess_tower_white.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/chess_tower_white.png' \
 	  'share/icons/custom/chiken_leg.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/chiken_leg.png' \
-	  'share/icons/custom/children_cap.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/children_cap.png' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/icons/custom/children_cap.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/children_cap.png' \
 	  'share/icons/custom/chocolate.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/chocolate.png' \
 	  'share/icons/custom/chocolate_milk.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/chocolate_milk.png' \
 	  'share/icons/custom/christmas_tree.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/christmas_tree.png' \
@@ -3057,7 +3065,8 @@ config::
 	  'share/icons/custom/clear_formatting.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/clear_formatting.png' \
 	  'share/icons/custom/clock.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/clock.png' \
 	  'share/icons/custom/clock_15.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/clock_15.png' \
-	  'share/icons/custom/clock_45.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/clock_45.png' \
+	  'share/icons/custom/clock_45.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/clock_45.png' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/icons/custom/clock_moon_phase.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/clock_moon_phase.png' \
 	  'share/icons/custom/clock_red.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/clock_red.png' \
 	  'share/icons/custom/clown_fish.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/clown_fish.png' \
@@ -3071,8 +3080,7 @@ config::
 	  'share/icons/custom/coin_single_cooper.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/coin_single_cooper.png' \
 	  'share/icons/custom/coin_single_gold.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/coin_single_gold.png' \
 	  'share/icons/custom/coin_single_silver.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/coin_single_silver.png' \
-	  'share/icons/custom/coin_stack_gold.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/coin_stack_gold.png' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/icons/custom/coin_stack_gold.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/coin_stack_gold.png' \
 	  'share/icons/custom/coins.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/coins.png' \
 	  'share/icons/custom/coins_add.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/coins_add.png' \
 	  'share/icons/custom/coins_delete.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/coins_delete.png' \
@@ -3083,7 +3091,8 @@ config::
 	  'share/icons/custom/comment_add.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/comment_add.png' \
 	  'share/icons/custom/comment_delete.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/comment_delete.png' \
 	  'share/icons/custom/comment_edit.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/comment_edit.png' \
-	  'share/icons/custom/comments.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/comments.png' \
+	  'share/icons/custom/comments.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/comments.png' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/icons/custom/comments_add.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/comments_add.png' \
 	  'share/icons/custom/comments_delete.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/comments_delete.png' \
 	  'share/icons/custom/compass.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/compass.png' \
@@ -3097,8 +3106,7 @@ config::
 	  'share/icons/custom/cross.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/cross.png' \
 	  'share/icons/custom/cross_shield.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/cross_shield.png' \
 	  'share/icons/custom/crown_bronze.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/crown_bronze.png' \
-	  'share/icons/custom/crown_gold.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/crown_gold.png' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/icons/custom/crown_gold.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/crown_gold.png' \
 	  'share/icons/custom/crown_silver.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/crown_silver.png' \
 	  'share/icons/custom/cruise_ship.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/cruise_ship.png' \
 	  'share/icons/custom/cup.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/cup.png' \
@@ -3109,7 +3117,8 @@ config::
 	  'share/icons/custom/cursor.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/cursor.png' \
 	  'share/icons/custom/cursor_lifebuoy.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/cursor_lifebuoy.png' \
 	  'share/icons/custom/curtain.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/curtain.png' \
-	  'share/icons/custom/cushion.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/cushion.png' \
+	  'share/icons/custom/cushion.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/cushion.png' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/icons/custom/cut.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/cut.png' \
 	  'share/icons/custom/cut_red.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/cut_red.png' \
 	  'share/icons/custom/cutleries.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/cutleries.png' \
@@ -3124,8 +3133,7 @@ config::
 	  'share/icons/custom/dice.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/dice.png' \
 	  'share/icons/custom/disk_multiple.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/disk_multiple.png' \
 	  'share/icons/custom/diskette.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/diskette.png' \
-	  'share/icons/custom/dog.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/dog.png' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/icons/custom/dog.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/dog.png' \
 	  'share/icons/custom/donut.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/donut.png' \
 	  'share/icons/custom/door.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/door.png' \
 	  'share/icons/custom/door_in.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/door_in.png' \
@@ -3136,7 +3144,8 @@ config::
 	  'share/icons/custom/draw_clone.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/draw_clone.png' \
 	  'share/icons/custom/draw_convolve.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/draw_convolve.png' \
 	  'share/icons/custom/draw_dodge_burn.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/draw_dodge_burn.png' \
-	  'share/icons/custom/draw_ink.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/draw_ink.png' \
+	  'share/icons/custom/draw_ink.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/draw_ink.png' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/icons/custom/drive_disk.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/drive_disk.png' \
 	  'share/icons/custom/drop.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/drop.png' \
 	  'share/icons/custom/drum.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/drum.png' \
@@ -3150,8 +3159,7 @@ config::
 	  'share/icons/custom/email_authentication.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/email_authentication.png' \
 	  'share/icons/custom/entity.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/entity.png' \
 	  'share/icons/custom/envelopes.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/envelopes.png' \
-	  'share/icons/custom/error.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/error.png' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/icons/custom/error.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/error.png' \
 	  'share/icons/custom/events.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/events.png' \
 	  'share/icons/custom/exclamation.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/exclamation.png' \
 	  'share/icons/custom/eye.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/eye.png' \
@@ -3162,7 +3170,8 @@ config::
 	  'share/icons/custom/fingerprint.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/fingerprint.png' \
 	  'share/icons/custom/fire.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/fire.png' \
 	  'share/icons/custom/fire_extinguisher.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/fire_extinguisher.png' \
-	  'share/icons/custom/flag_great_britain.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/flag_great_britain.png' \
+	  'share/icons/custom/flag_great_britain.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/flag_great_britain.png' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/icons/custom/flamingo.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/flamingo.png' \
 	  'share/icons/custom/flashlight.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/flashlight.png' \
 	  'share/icons/custom/flashlight_shine.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/flashlight_shine.png' \
@@ -3176,8 +3185,7 @@ config::
 	  'share/icons/custom/fruit_lime.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/fruit_lime.png' \
 	  'share/icons/custom/function.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/function.png' \
 	  'share/icons/custom/game_monitor.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/game_monitor.png' \
-	  'share/icons/custom/gear_in.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/gear_in.png' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/icons/custom/gear_in.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/gear_in.png' \
 	  'share/icons/custom/georectify.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/georectify.png' \
 	  'share/icons/custom/getting_started_wizard.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/getting_started_wizard.png' \
 	  'share/icons/custom/glass_narrow.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/glass_narrow.png' \
@@ -3187,7 +3195,8 @@ config::
 	  'share/icons/custom/globe_model.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/globe_model.png' \
 	  'share/icons/custom/globe_network.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/globe_network.png' \
 	  'share/icons/custom/globe_place.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/globe_place.png' \
-	  'share/icons/custom/google_map.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/google_map.png' \
+	  'share/icons/custom/google_map.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/google_map.png' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/icons/custom/google_webmaster_tools.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/google_webmaster_tools.png' \
 	  'share/icons/custom/grass.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/grass.png' \
 	  'share/icons/custom/green.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/green.png' \
@@ -3202,8 +3211,7 @@ config::
 	  'share/icons/custom/hand.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/hand.png' \
 	  'share/icons/custom/hand_fuck.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/hand_fuck.png' \
 	  'share/icons/custom/hand_ily.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/hand_ily.png' \
-	  'share/icons/custom/hand_point_090.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/hand_point_090.png' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/icons/custom/hand_point_090.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/hand_point_090.png' \
 	  'share/icons/custom/hand_point_180.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/hand_point_180.png' \
 	  'share/icons/custom/hand_point_270.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/hand_point_270.png' \
 	  'share/icons/custom/hand_property.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/hand_property.png' \
@@ -3213,7 +3221,8 @@ config::
 	  'share/icons/custom/hbox.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/hbox.png' \
 	  'share/icons/custom/headphone.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/headphone.png' \
 	  'share/icons/custom/headphone_mic.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/headphone_mic.png' \
-	  'share/icons/custom/heart.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/heart.png' \
+	  'share/icons/custom/heart.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/heart.png' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/icons/custom/heart_add.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/heart_add.png' \
 	  'share/icons/custom/heart_break.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/heart_break.png' \
 	  'share/icons/custom/heart_delete.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/heart_delete.png' \
@@ -3228,8 +3237,7 @@ config::
 	  'share/icons/custom/hourglass.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/hourglass.png' \
 	  'share/icons/custom/hourglass_add.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/hourglass_add.png' \
 	  'share/icons/custom/hourglass_delete.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/hourglass_delete.png' \
-	  'share/icons/custom/hourglass_go.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/hourglass_go.png' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/icons/custom/hourglass_go.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/hourglass_go.png' \
 	  'share/icons/custom/hourglass_link.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/hourglass_link.png' \
 	  'share/icons/custom/house.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/house.png' \
 	  'share/icons/custom/house_go.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/house_go.png' \
@@ -3239,7 +3247,8 @@ config::
 	  'share/icons/custom/hummingbird.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/hummingbird.png' \
 	  'share/icons/custom/information.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/information.png' \
 	  'share/icons/custom/jacket.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/jacket.png' \
-	  'share/icons/custom/jason_mask.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/jason_mask.png' \
+	  'share/icons/custom/jason_mask.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/jason_mask.png' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/icons/custom/jeans.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/jeans.png' \
 	  'share/icons/custom/joystick.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/joystick.png' \
 	  'share/icons/custom/key.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/key.png' \
@@ -3255,8 +3264,7 @@ config::
 	  'share/icons/custom/lock_add.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/lock_add.png' \
 	  'share/icons/custom/lock_break.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/lock_break.png' \
 	  'share/icons/custom/lock_delete.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/lock_delete.png' \
-	  'share/icons/custom/lock_edit.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/lock_edit.png' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/icons/custom/lock_edit.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/lock_edit.png' \
 	  'share/icons/custom/lock_go.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/lock_go.png' \
 	  'share/icons/custom/lock_open.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/lock_open.png' \
 	  'share/icons/custom/lollipop.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/lollipop.png' \
@@ -3266,7 +3274,8 @@ config::
 	  'share/icons/custom/mail_box.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/mail_box.png' \
 	  'share/icons/custom/map.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/map.png' \
 	  'share/icons/custom/map_add.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/map_add.png' \
-	  'share/icons/custom/map_delete.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/map_delete.png' \
+	  'share/icons/custom/map_delete.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/map_delete.png' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/icons/custom/map_edit.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/map_edit.png' \
 	  'share/icons/custom/map_go.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/map_go.png' \
 	  'share/icons/custom/map_magnify.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/map_magnify.png' \
@@ -3281,8 +3290,7 @@ config::
 	  'share/icons/custom/microscope.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/microscope.png' \
 	  'share/icons/custom/microwave.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/microwave.png' \
 	  'share/icons/custom/milestone.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/milestone.png' \
-	  'share/icons/custom/mixer.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/mixer.png' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/icons/custom/mixer.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/mixer.png' \
 	  'share/icons/custom/money_bag.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/money_bag.png' \
 	  'share/icons/custom/moneybox.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/moneybox.png' \
 	  'share/icons/custom/moon.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/moon.png' \
@@ -3292,7 +3300,8 @@ config::
 	  'share/icons/custom/mouse_select_left.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/mouse_select_left.png' \
 	  'share/icons/custom/mouse_select_right.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/mouse_select_right.png' \
 	  'share/icons/custom/mouse_select_scroll.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/mouse_select_scroll.png' \
-	  'share/icons/custom/multitool.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/multitool.png' \
+	  'share/icons/custom/multitool.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/multitool.png' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/icons/custom/mushroom.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/mushroom.png' \
 	  'share/icons/custom/music.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/music.png' \
 	  'share/icons/custom/mustache.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/mustache.png' \
@@ -3307,8 +3316,7 @@ config::
 	  'share/icons/custom/palette.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/palette.png' \
 	  'share/icons/custom/paper_airplane.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/paper_airplane.png' \
 	  'share/icons/custom/paper_lantern_red.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/paper_lantern_red.png' \
-	  'share/icons/custom/paragraph_spacing.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/paragraph_spacing.png' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/icons/custom/paragraph_spacing.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/paragraph_spacing.png' \
 	  'share/icons/custom/parrot.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/parrot.png' \
 	  'share/icons/custom/party_hat.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/party_hat.png' \
 	  'share/icons/custom/peacock.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/peacock.png' \
@@ -3318,7 +3326,8 @@ config::
 	  'share/icons/custom/phone_handset.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/phone_handset.png' \
 	  'share/icons/custom/phone_vintage.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/phone_vintage.png' \
 	  'share/icons/custom/photo.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/photo.png' \
-	  'share/icons/custom/photo_add.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/photo_add.png' \
+	  'share/icons/custom/photo_add.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/photo_add.png' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/icons/custom/photo_album.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/photo_album.png' \
 	  'share/icons/custom/photo_delete.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/photo_delete.png' \
 	  'share/icons/custom/photo_link.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/photo_link.png' \
@@ -3333,8 +3342,7 @@ config::
 	  'share/icons/custom/picture_error.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/picture_error.png' \
 	  'share/icons/custom/picture_frame.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/picture_frame.png' \
 	  'share/icons/custom/picture_go.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/picture_go.png' \
-	  'share/icons/custom/picture_insert.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/picture_insert.png' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/icons/custom/picture_insert.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/picture_insert.png' \
 	  'share/icons/custom/picture_insert_from_web.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/picture_insert_from_web.png' \
 	  'share/icons/custom/picture_key.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/picture_key.png' \
 	  'share/icons/custom/picture_link.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/picture_link.png' \
@@ -3343,7 +3351,8 @@ config::
 	  'share/icons/custom/picture_sunset.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/picture_sunset.png' \
 	  'share/icons/custom/pictures.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/pictures.png' \
 	  'share/icons/custom/piece_of_cake.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/piece_of_cake.png' \
-	  'share/icons/custom/pill.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/pill.png' \
+	  'share/icons/custom/pill.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/pill.png' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/icons/custom/pint.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/pint.png' \
 	  'share/icons/custom/pirate_flag.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/pirate_flag.png' \
 	  'share/icons/custom/pizza.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/pizza.png' \
@@ -3359,8 +3368,7 @@ config::
 	  'share/icons/custom/purse.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/purse.png' \
 	  'share/icons/custom/question.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/question.png' \
 	  'share/icons/custom/rabbit.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/rabbit.png' \
-	  'share/icons/custom/radio_button.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/radio_button.png' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/icons/custom/radio_button.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/radio_button.png' \
 	  'share/icons/custom/radio_modern.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/radio_modern.png' \
 	  'share/icons/custom/radio_oldschool.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/radio_oldschool.png' \
 	  'share/icons/custom/radiolocator.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/radiolocator.png' \
@@ -3370,7 +3378,8 @@ config::
 	  'share/icons/custom/redo.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/redo.png' \
 	  'share/icons/custom/refresh_all.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/refresh_all.png' \
 	  'share/icons/custom/report.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/report.png' \
-	  'share/icons/custom/report_add.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/report_add.png' \
+	  'share/icons/custom/report_add.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/report_add.png' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/icons/custom/report_delete.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/report_delete.png' \
 	  'share/icons/custom/report_edit.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/report_edit.png' \
 	  'share/icons/custom/restaurant_menu.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/restaurant_menu.png' \
@@ -3385,8 +3394,7 @@ config::
 	  'share/icons/custom/road_sign_hard.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/road_sign_hard.png' \
 	  'share/icons/custom/roadworks.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/roadworks.png' \
 	  'share/icons/custom/robo_to.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/robo_to.png' \
-	  'share/icons/custom/robot.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/robot.png' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/icons/custom/robot.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/robot.png' \
 	  'share/icons/custom/rocket.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/rocket.png' \
 	  'share/icons/custom/rosette.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/rosette.png' \
 	  'share/icons/custom/routing_around.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/routing_around.png' \
@@ -3395,7 +3403,8 @@ config::
 	  'share/icons/custom/routing_go_right.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/routing_go_right.png' \
 	  'share/icons/custom/routing_go_straight_left.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/routing_go_straight_left.png' \
 	  'share/icons/custom/routing_go_straight_right.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/routing_go_straight_right.png' \
-	  'share/icons/custom/routing_intersection_right.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/routing_intersection_right.png' \
+	  'share/icons/custom/routing_intersection_right.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/routing_intersection_right.png' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/icons/custom/routing_turn_arround_left.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/routing_turn_arround_left.png' \
 	  'share/icons/custom/routing_turn_arround_right.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/routing_turn_arround_right.png' \
 	  'share/icons/custom/routing_turn_left.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/routing_turn_left.png' \
@@ -3407,8 +3416,7 @@ config::
 	  'share/icons/custom/routing_turnaround_left.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/routing_turnaround_left.png' \
 	  'share/icons/custom/routing_turnaround_right.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/routing_turnaround_right.png' \
 	  'share/icons/custom/routing_turning_left.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/routing_turning_left.png' \
-	  'share/icons/custom/routing_turning_right.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/routing_turning_right.png' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/icons/custom/routing_turning_right.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/routing_turning_right.png' \
 	  'share/icons/custom/rubber_duck.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/rubber_duck.png' \
 	  'share/icons/custom/ruby.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/ruby.png' \
 	  'share/icons/custom/ruler.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/ruler.png' \
@@ -3419,7 +3427,8 @@ config::
 	  'share/icons/custom/satellite_dish.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/satellite_dish.png' \
 	  'share/icons/custom/save_as.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/save_as.png' \
 	  'share/icons/custom/save_data.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/save_data.png' \
-	  'share/icons/custom/save_new.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/save_new.png' \
+	  'share/icons/custom/save_new.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/save_new.png' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/icons/custom/scull.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/scull.png' \
 	  'share/icons/custom/security.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/security.png' \
 	  'share/icons/custom/separator.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/separator.png' \
@@ -3434,8 +3443,7 @@ config::
 	  'share/icons/custom/snowman.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/snowman.png' \
 	  'share/icons/custom/sound.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/sound.png' \
 	  'share/icons/custom/sound_add.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/sound_add.png' \
-	  'share/icons/custom/sound_delete.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/sound_delete.png' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/icons/custom/sound_delete.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/sound_delete.png' \
 	  'share/icons/custom/sound_low.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/sound_low.png' \
 	  'share/icons/custom/sound_mute.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/sound_mute.png' \
 	  'share/icons/custom/sound_none.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/sound_none.png' \
@@ -3445,7 +3453,8 @@ config::
 	  'share/icons/custom/sport.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/sport.png' \
 	  'share/icons/custom/sport_8ball.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/sport_8ball.png' \
 	  'share/icons/custom/sport_basketball.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/sport_basketball.png' \
-	  'share/icons/custom/sport_football.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/sport_football.png' \
+	  'share/icons/custom/sport_football.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/sport_football.png' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/icons/custom/sport_golf.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/sport_golf.png' \
 	  'share/icons/custom/sport_raquet.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/sport_raquet.png' \
 	  'share/icons/custom/sport_shuttlecock.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/sport_shuttlecock.png' \
@@ -3459,8 +3468,7 @@ config::
 	  'share/icons/custom/stethoscope.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/stethoscope.png' \
 	  'share/icons/custom/stickman.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/stickman.png' \
 	  'share/icons/custom/stop.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/stop.png' \
-	  'share/icons/custom/stopwatch_finish.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/stopwatch_finish.png' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/icons/custom/stopwatch_finish.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/stopwatch_finish.png' \
 	  'share/icons/custom/stopwatch_pause.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/stopwatch_pause.png' \
 	  'share/icons/custom/stopwatch_start.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/stopwatch_start.png' \
 	  'share/icons/custom/sword.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/sword.png' \
@@ -3470,7 +3478,8 @@ config::
 	  'share/icons/custom/telephone_add.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/telephone_add.png' \
 	  'share/icons/custom/telephone_delete.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/telephone_delete.png' \
 	  'share/icons/custom/telephone_edit.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/telephone_edit.png' \
-	  'share/icons/custom/telephone_error.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/telephone_error.png' \
+	  'share/icons/custom/telephone_error.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/telephone_error.png' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/icons/custom/terminal_seats_blue.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/terminal_seats_blue.png' \
 	  'share/icons/custom/terminal_seats_red.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/terminal_seats_red.png' \
 	  'share/icons/custom/text.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/text.png' \
@@ -3484,8 +3493,7 @@ config::
 	  'share/icons/custom/tick_light_blue.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/tick_light_blue.png' \
 	  'share/icons/custom/tick_octagon.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/tick_octagon.png' \
 	  'share/icons/custom/tick_octagon_frame.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/tick_octagon_frame.png' \
-	  'share/icons/custom/tick_red.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/tick_red.png' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/icons/custom/tick_red.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/tick_red.png' \
 	  'share/icons/custom/tick_shield.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/tick_shield.png' \
 	  'share/icons/custom/tie.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/tie.png' \
 	  'share/icons/custom/tire.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/tire.png' \
@@ -3495,7 +3503,8 @@ config::
 	  'share/icons/custom/toggle.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/toggle.png' \
 	  'share/icons/custom/toggle_expand.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/toggle_expand.png' \
 	  'share/icons/custom/toilet.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/toilet.png' \
-	  'share/icons/custom/toilet_pan.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/toilet_pan.png' \
+	  'share/icons/custom/toilet_pan.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/toilet_pan.png' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/icons/custom/token_anchors.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/token_anchors.png' \
 	  'share/icons/custom/tower.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/tower.png' \
 	  'share/icons/custom/traffic_lights.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/traffic_lights.png' \
@@ -3509,8 +3518,7 @@ config::
 	  'share/icons/custom/user.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/user.png' \
 	  'share/icons/custom/user_add.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/user_add.png' \
 	  'share/icons/custom/user_angel.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/user_angel.png' \
-	  'share/icons/custom/user_angel_female.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/user_angel_female.png' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/icons/custom/user_angel_female.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/user_angel_female.png' \
 	  'share/icons/custom/user_clown.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/user_clown.png' \
 	  'share/icons/custom/user_cowboy.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/user_cowboy.png' \
 	  'share/icons/custom/user_cowboy_female.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/user_cowboy_female.png' \
@@ -3520,7 +3528,8 @@ config::
 	  'share/icons/custom/user_diver.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/user_diver.png' \
 	  'share/icons/custom/user_dracula.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/user_dracula.png' \
 	  'share/icons/custom/user_go.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/user_go.png' \
-	  'share/icons/custom/user_imprisoned.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/user_imprisoned.png' \
+	  'share/icons/custom/user_imprisoned.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/user_imprisoned.png' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/icons/custom/user_imprisoned_female.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/user_imprisoned_female.png' \
 	  'share/icons/custom/user_king.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/user_king.png' \
 	  'share/icons/custom/user_knight.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/user_knight.png' \
@@ -3534,8 +3543,7 @@ config::
 	  'share/icons/custom/user_rambo.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/user_rambo.png' \
 	  'share/icons/custom/user_samurai.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/user_samurai.png' \
 	  'share/icons/custom/user_silhouette.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/user_silhouette.png' \
-	  'share/icons/custom/user_soldier.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/user_soldier.png' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/icons/custom/user_soldier.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/user_soldier.png' \
 	  'share/icons/custom/user_swimmer.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/user_swimmer.png' \
 	  'share/icons/custom/user_swimmer_female.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/user_swimmer_female.png' \
 	  'share/icons/custom/user_viking.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/user_viking.png' \
@@ -3545,7 +3553,8 @@ config::
 	  'share/icons/custom/users_4.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/users_4.png' \
 	  'share/icons/custom/users_5.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/users_5.png' \
 	  'share/icons/custom/users_men_women.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/users_men_women.png' \
-	  'share/icons/custom/vase.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/vase.png' \
+	  'share/icons/custom/vase.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/vase.png' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/icons/custom/vcard.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/vcard.png' \
 	  'share/icons/custom/video.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/video.png' \
 	  'share/icons/custom/virus_protection.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/virus_protection.png' \
@@ -3559,8 +3568,7 @@ config::
 	  'share/icons/custom/weather_moon_half.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/weather_moon_half.png' \
 	  'share/icons/custom/weather_rain.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/weather_rain.png' \
 	  'share/icons/custom/weather_rain_little.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/weather_rain_little.png' \
-	  'share/icons/custom/weather_snow.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/weather_snow.png' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/icons/custom/weather_snow.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/weather_snow.png' \
 	  'share/icons/custom/weather_snow_little.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/weather_snow_little.png' \
 	  'share/icons/custom/weather_sun.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/weather_sun.png' \
 	  'share/icons/custom/weather_sun_fog.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/weather_sun_fog.png' \
@@ -3570,7 +3578,8 @@ config::
 	  'share/icons/custom/wine_pairings.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/wine_pairings.png' \
 	  'share/icons/custom/wizard.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/wizard.png' \
 	  'share/icons/custom/wizard_women.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/wizard_women.png' \
-	  'share/icons/custom/world.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/world.png' \
+	  'share/icons/custom/world.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/world.png' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/icons/custom/world_add.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/world_add.png' \
 	  'share/icons/custom/world_delete.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/world_delete.png' \
 	  'share/icons/custom/world_edit.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/world_edit.png' \
@@ -3585,8 +3594,7 @@ config::
 	  'share/icons/custom/yin_yang.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/yin_yang.png' \
 	  'share/icons/custom/zodiac.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/zodiac.png' \
 	  'share/icons/custom/zodiac_aries.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/zodiac_aries.png' \
-	  'share/icons/custom/zodiac_cancer.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/zodiac_cancer.png' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/icons/custom/zodiac_cancer.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/zodiac_cancer.png' \
 	  'share/icons/custom/zodiac_capricorn.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/zodiac_capricorn.png' \
 	  'share/icons/custom/zodiac_gemini.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/zodiac_gemini.png' \
 	  'share/icons/custom/zodiac_leo.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/zodiac_leo.png' \
@@ -3596,7 +3604,8 @@ config::
 	  'share/icons/custom/zodiac_scorpio.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/zodiac_scorpio.png' \
 	  'share/icons/custom/zodiac_taurus.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/zodiac_taurus.png' \
 	  'share/icons/custom/zodiac_virgo.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/zodiac_virgo.png' \
-	  'share/icons/custom/zone.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/zone.png' \
+	  'share/icons/custom/zone.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/zone.png' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/icons/custom/zone_money.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/zone_money.png' \
 	  'share/icons/custom/zone_resize.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/zone_resize.png' \
 	  'share/icons/custom/zone_resize_actual.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/zone_resize_actual.png' \
@@ -3610,8 +3619,7 @@ config::
 	  'share/icons/custom/zoom_last.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/zoom_last.png' \
 	  'share/icons/custom/zoom_layer.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/zoom_layer.png' \
 	  'share/icons/custom/zoom_out.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/zoom_out.png' \
-	  'share/icons/custom/zoom_refresh.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/zoom_refresh.png' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/icons/custom/zoom_refresh.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/zoom_refresh.png' \
 	  'share/icons/custom/zoom_selection.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/custom/zoom_selection.png' \
 	  'share/icons/main/application_edit.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/main/application_edit.png' \
 	  'share/icons/main/book_edit.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/main/book_edit.png' \
@@ -3622,7 +3630,8 @@ config::
 	  'share/icons/main/compass.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/main/compass.png' \
 	  'share/icons/main/control_pause_record.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/main/control_pause_record.png' \
 	  'share/icons/main/drive_disk.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/main/drive_disk.png' \
-	  'share/icons/main/drop.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/main/drop.png' \
+	  'share/icons/main/drop.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/main/drop.png' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/icons/main/ear_listen.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/main/ear_listen.png' \
 	  'share/icons/main/gear_in.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/main/gear_in.png' \
 	  'share/icons/main/gun.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/main/gun.png' \
@@ -3636,8 +3645,7 @@ config::
 	  'share/icons/main/roadworks.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/main/roadworks.png' \
 	  'share/icons/main/routing_go_straight_left.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/main/routing_go_straight_left.png' \
 	  'share/icons/main/save_data.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/main/save_data.png' \
-	  'share/icons/main/separator.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/main/separator.png' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/icons/main/separator.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/main/separator.png' \
 	  'share/icons/main/user_detective.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/main/user_detective.png' \
 	  'share/icons/main/user_go.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/main/user_go.png' \
 	  'share/icons/main/user_soldier.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/main/user_soldier.png' \
@@ -3648,7 +3656,8 @@ config::
 	  'share/icons/map/icon_EMPTY.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_EMPTY.png' \
 	  'share/icons/map/icon_EMPTY_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_EMPTY_large.png' \
 	  'share/icons/map/icon_add.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_add.png' \
-	  'share/icons/map/icon_add_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_add_large.png' \
+	  'share/icons/map/icon_add_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_add_large.png' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/icons/map/icon_add_quick_flag.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_add_quick_flag.png' \
 	  'share/icons/map/icon_add_quick_flag_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_add_quick_flag_large.png' \
 	  'share/icons/map/icon_add_room_flag.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_add_room_flag.png' \
@@ -3661,8 +3670,7 @@ config::
 	  'share/icons/map/icon_attacks_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_attacks_large.png' \
 	  'share/icons/map/icon_auto_redraw.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_auto_redraw.png' \
 	  'share/icons/map/icon_auto_redraw_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_auto_redraw_large.png' \
-	  'share/icons/map/icon_bg_add.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_bg_add.png' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/icons/map/icon_bg_add.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_bg_add.png' \
 	  'share/icons/map/icon_bg_add_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_bg_add_large.png' \
 	  'share/icons/map/icon_bg_blank.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_bg_blank.png' \
 	  'share/icons/map/icon_bg_blank_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_bg_blank_large.png' \
@@ -3672,7 +3680,8 @@ config::
 	  'share/icons/map/icon_bg_default_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_bg_default_large.png' \
 	  'share/icons/map/icon_bg_remove.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_bg_remove.png' \
 	  'share/icons/map/icon_bg_remove_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_bg_remove_large.png' \
-	  'share/icons/map/icon_bg_shape.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_bg_shape.png' \
+	  'share/icons/map/icon_bg_shape.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_bg_shape.png' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/icons/map/icon_bg_shape_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_bg_shape_large.png' \
 	  'share/icons/map/icon_breakable_exit.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_breakable_exit.png' \
 	  'share/icons/map/icon_breakable_exit_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_breakable_exit_large.png' \
@@ -3684,8 +3693,7 @@ config::
 	  'share/icons/map/icon_centre_last_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_centre_last_large.png' \
 	  'share/icons/map/icon_centre_middle.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_centre_middle.png' \
 	  'share/icons/map/icon_centre_middle_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_centre_middle_large.png' \
-	  'share/icons/map/icon_centre_selected.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_centre_selected.png' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/icons/map/icon_centre_selected.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_centre_selected.png' \
 	  'share/icons/map/icon_centre_selected_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_centre_selected_large.png' \
 	  'share/icons/map/icon_colour_all_level.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_colour_all_level.png' \
 	  'share/icons/map/icon_colour_all_level_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_colour_all_level_large.png' \
@@ -3695,7 +3703,8 @@ config::
 	  'share/icons/map/icon_connect_click_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_connect_click_large.png' \
 	  'share/icons/map/icon_custom.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_custom.png' \
 	  'share/icons/map/icon_custom_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_custom_large.png' \
-	  'share/icons/map/icon_dec_visits.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_dec_visits.png' \
+	  'share/icons/map/icon_dec_visits.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_dec_visits.png' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/icons/map/icon_dec_visits_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_dec_visits_large.png' \
 	  'share/icons/map/icon_drag_mode.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_drag_mode.png' \
 	  'share/icons/map/icon_drag_mode_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_drag_mode_large.png' \
@@ -3707,37 +3716,41 @@ config::
 	  'share/icons/map/icon_draw_compare_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_draw_compare_large.png' \
 	  'share/icons/map/icon_draw_complex.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_draw_complex.png' \
 	  'share/icons/map/icon_draw_complex_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_draw_complex_large.png' \
-	  'share/icons/map/icon_draw_contents.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_draw_contents.png' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/icons/map/icon_draw_contents.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_draw_contents.png' \
 	  'share/icons/map/icon_draw_contents_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_draw_contents_large.png' \
 	  'share/icons/map/icon_draw_descrips.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_draw_descrips.png' \
 	  'share/icons/map/icon_draw_descrips_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_draw_descrips_large.png' \
 	  'share/icons/map/icon_draw_exclusive.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_draw_exclusive.png' \
 	  'share/icons/map/icon_draw_exclusive_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_draw_exclusive_large.png' \
-	  'share/icons/map/icon_draw_flags.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_draw_flags.png' \
-	  'share/icons/map/icon_draw_flags_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_draw_flags_large.png' \
+	  'share/icons/map/icon_draw_grid_posn.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_draw_grid_posn.png' \
+	  'share/icons/map/icon_draw_grid_posn_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_draw_grid_posn_large.png' \
 	  'share/icons/map/icon_draw_hidden.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_draw_hidden.png' \
 	  'share/icons/map/icon_draw_hidden_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_draw_hidden_large.png' \
-	  'share/icons/map/icon_draw_none.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_draw_none.png' \
+	  'share/icons/map/icon_draw_none.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_draw_none.png' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/icons/map/icon_draw_none_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_draw_none_large.png' \
 	  'share/icons/map/icon_draw_ornaments.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_draw_ornaments.png' \
 	  'share/icons/map/icon_draw_ornaments_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_draw_ornaments_large.png' \
 	  'share/icons/map/icon_draw_patterns.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_draw_patterns.png' \
 	  'share/icons/map/icon_draw_patterns_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_draw_patterns_large.png' \
+	  'share/icons/map/icon_draw_room_flag.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_draw_room_flag.png' \
+	  'share/icons/map/icon_draw_room_flag_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_draw_room_flag_large.png' \
+	  'share/icons/map/icon_draw_room_tag.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_draw_room_tag.png' \
+	  'share/icons/map/icon_draw_room_tag_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_draw_room_tag_large.png' \
 	  'share/icons/map/icon_draw_shadow.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_draw_shadow.png' \
 	  'share/icons/map/icon_draw_shadow_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_draw_shadow_large.png' \
 	  'share/icons/map/icon_draw_simple.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_draw_simple.png' \
 	  'share/icons/map/icon_draw_simple_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_draw_simple_large.png' \
 	  'share/icons/map/icon_draw_super.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_draw_super.png' \
 	  'share/icons/map/icon_draw_super_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_draw_super_large.png' \
-	  'share/icons/map/icon_draw_temp.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_draw_temp.png' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/icons/map/icon_draw_temp.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_draw_temp.png' \
 	  'share/icons/map/icon_draw_temp_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_draw_temp_large.png' \
 	  'share/icons/map/icon_draw_visits.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_draw_visits.png' \
 	  'share/icons/map/icon_draw_visits_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_draw_visits_large.png' \
 	  'share/icons/map/icon_draw_vnum.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_draw_vnum.png' \
 	  'share/icons/map/icon_draw_vnum_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_draw_vnum_large.png' \
-	  'share/icons/map/icon_draw_words.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_draw_words.png' \
+	  'share/icons/map/icon_draw_words.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_draw_words.png' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/icons/map/icon_draw_words_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_draw_words_large.png' \
 	  'share/icons/map/icon_edit_dict.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_edit_dict.png' \
 	  'share/icons/map/icon_edit_dict_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_edit_dict_large.png' \
@@ -3754,13 +3767,13 @@ config::
 	  'share/icons/map/icon_graffiti_mode.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_graffiti_mode.png' \
 	  'share/icons/map/icon_graffiti_mode_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_graffiti_mode_large.png' \
 	  'share/icons/map/icon_guilds.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_guilds.png' \
-	  'share/icons/map/icon_guilds_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_guilds_large.png' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/icons/map/icon_guilds_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_guilds_large.png' \
 	  'share/icons/map/icon_horizontal_lengths.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_horizontal_lengths.png' \
 	  'share/icons/map/icon_horizontal_lengths_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_horizontal_lengths_large.png' \
 	  'share/icons/map/icon_impassable_exit.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_impassable_exit.png' \
 	  'share/icons/map/icon_impassable_exit_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_impassable_exit_large.png' \
-	  'share/icons/map/icon_inc_visits.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_inc_visits.png' \
+	  'share/icons/map/icon_inc_visits.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_inc_visits.png' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/icons/map/icon_inc_visits_current.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_inc_visits_current.png' \
 	  'share/icons/map/icon_inc_visits_current_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_inc_visits_current_large.png' \
 	  'share/icons/map/icon_inc_visits_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_inc_visits_large.png' \
@@ -3777,14 +3790,14 @@ config::
 	  'share/icons/map/icon_move_up.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_move_up.png' \
 	  'share/icons/map/icon_move_up_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_move_up_large.png' \
 	  'share/icons/map/icon_mystery_exit.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_mystery_exit.png' \
-	  'share/icons/map/icon_mystery_exit_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_mystery_exit_large.png' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/icons/map/icon_mystery_exit_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_mystery_exit_large.png' \
 	  'share/icons/map/icon_navigation.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_navigation.png' \
 	  'share/icons/map/icon_navigation_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_navigation_large.png' \
 	  'share/icons/map/icon_no_counts.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_no_counts.png' \
 	  'share/icons/map/icon_no_counts_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_no_counts_large.png' \
 	  'share/icons/map/icon_no_ornament.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_no_ornament.png' \
-	  'share/icons/map/icon_no_ornament_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_no_ornament_large.png' \
+	  'share/icons/map/icon_no_ornament_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_no_ornament_large.png' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/icons/map/icon_objects.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_objects.png' \
 	  'share/icons/map/icon_objects_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_objects_large.png' \
 	  'share/icons/map/icon_obscured_exits.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_obscured_exits.png' \
@@ -3800,14 +3813,14 @@ config::
 	  'share/icons/map/icon_paint_new.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_paint_new.png' \
 	  'share/icons/map/icon_paint_new_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_paint_new_large.png' \
 	  'share/icons/map/icon_paint_normal.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_paint_normal.png' \
-	  'share/icons/map/icon_paint_normal_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_paint_normal_large.png' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/icons/map/icon_paint_normal_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_paint_normal_large.png' \
 	  'share/icons/map/icon_paint_wild.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_paint_wild.png' \
 	  'share/icons/map/icon_paint_wild_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_paint_wild_large.png' \
 	  'share/icons/map/icon_pickable_exit.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_pickable_exit.png' \
 	  'share/icons/map/icon_pickable_exit_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_pickable_exit_large.png' \
 	  'share/icons/map/icon_quests.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_quests.png' \
-	  'share/icons/map/icon_quests_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_quests_large.png' \
+	  'share/icons/map/icon_quests_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_quests_large.png' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/icons/map/icon_quick_multi.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_quick_multi.png' \
 	  'share/icons/map/icon_quick_multi_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_quick_multi_large.png' \
 	  'share/icons/map/icon_quick_single.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_quick_single.png' \
@@ -3823,14 +3836,14 @@ config::
 	  'share/icons/map/icon_reset_visits.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_reset_visits.png' \
 	  'share/icons/map/icon_reset_visits_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_reset_visits_large.png' \
 	  'share/icons/map/icon_search_model.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_search_model.png' \
-	  'share/icons/map/icon_search_model_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_search_model_large.png' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/icons/map/icon_search_model_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_search_model_large.png' \
 	  'share/icons/map/icon_set.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_set.png' \
 	  'share/icons/map/icon_set_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_set_large.png' \
 	  'share/icons/map/icon_set_visits.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_set_visits.png' \
 	  'share/icons/map/icon_set_visits_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_set_visits_large.png' \
 	  'share/icons/map/icon_spare_filter.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_spare_filter.png' \
-	  'share/icons/map/icon_spare_filter_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_spare_filter_large.png' \
+	  'share/icons/map/icon_spare_filter_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_spare_filter_large.png' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/icons/map/icon_structures.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_structures.png' \
 	  'share/icons/map/icon_structures_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_structures_large.png' \
 	  'share/icons/map/icon_switch.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_switch.png' \
@@ -3847,14 +3860,14 @@ config::
 	  'share/icons/map/icon_track_centre_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_track_centre_large.png' \
 	  'share/icons/map/icon_track_edge.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_track_edge.png' \
 	  'share/icons/map/icon_track_edge_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_track_edge_large.png' \
-	  'share/icons/map/icon_track_room.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_track_room.png' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/icons/map/icon_track_room.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_track_room.png' \
 	  'share/icons/map/icon_track_room_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_track_room_large.png' \
 	  'share/icons/map/icon_track_visible.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_track_visible.png' \
 	  'share/icons/map/icon_track_visible_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_track_visible_large.png' \
 	  'share/icons/map/icon_update.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_update.png' \
 	  'share/icons/map/icon_update_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_update_large.png' \
-	  'share/icons/map/icon_use_region.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_use_region.png' \
+	  'share/icons/map/icon_use_region.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_use_region.png' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/icons/map/icon_use_region_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_use_region_large.png' \
 	  'share/icons/map/icon_vertical_lengths.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_vertical_lengths.png' \
 	  'share/icons/map/icon_vertical_lengths_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/map/icon_vertical_lengths_large.png' \
@@ -3870,15 +3883,15 @@ config::
 	  'share/icons/search/broom.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/search/broom.png' \
 	  'share/icons/search/capitalization.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/search/capitalization.png' \
 	  'share/icons/search/token_shortland_character.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/search/token_shortland_character.png' \
-	  'share/icons/setup/attack_task.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/setup/attack_task.png' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/icons/setup/attack_task.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/setup/attack_task.png' \
 	  'share/icons/setup/basic_zonemap.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/setup/basic_zonemap.png' \
 	  'share/icons/setup/bypass_sigil.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/setup/bypass_sigil.png' \
 	  'share/icons/setup/client_sigil.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/setup/client_sigil.png' \
 	  'share/icons/setup/compass_task.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/setup/compass_task.png' \
 	  'share/icons/setup/divert_task.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/setup/divert_task.png' \
 	  'share/icons/setup/echo_sigil.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/setup/echo_sigil.png' \
-	  'share/icons/setup/extended_zonemap.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/setup/extended_zonemap.png' \
+	  'share/icons/setup/extended_zonemap.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/setup/extended_zonemap.png' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/icons/setup/forced_sigil.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/setup/forced_sigil.png' \
 	  'share/icons/setup/help.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/setup/help.png' \
 	  'share/icons/setup/horizontal_zonemap.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/setup/horizontal_zonemap.png' \
@@ -3895,15 +3908,15 @@ config::
 	  'share/icons/setup/speedwalk_sigil.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/setup/speedwalk_sigil.png' \
 	  'share/icons/setup/status_task.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/setup/status_task.png' \
 	  'share/icons/setup/vertical_zonemap.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/setup/vertical_zonemap.png' \
-	  'share/icons/setup/widescreen_zonemap.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/setup/widescreen_zonemap.png' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/icons/setup/widescreen_zonemap.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/setup/widescreen_zonemap.png' \
 	  'share/icons/smileys/emotion_angel.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/smileys/emotion_angel.bmp' \
 	  'share/icons/smileys/emotion_devil.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/smileys/emotion_devil.bmp' \
 	  'share/icons/smileys/emotion_evilgrin.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/smileys/emotion_evilgrin.bmp' \
 	  'share/icons/smileys/emotion_haha.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/smileys/emotion_haha.bmp' \
 	  'share/icons/smileys/emotion_horror.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/smileys/emotion_horror.bmp' \
 	  'share/icons/smileys/emotion_kiss.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/smileys/emotion_kiss.bmp' \
-	  'share/icons/smileys/emotion_love.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/smileys/emotion_love.bmp' \
+	  'share/icons/smileys/emotion_love.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/smileys/emotion_love.bmp' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/icons/smileys/emotion_mad.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/smileys/emotion_mad.bmp' \
 	  'share/icons/smileys/emotion_misdoubt.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/smileys/emotion_misdoubt.bmp' \
 	  'share/icons/smileys/emotion_red.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/smileys/emotion_red.bmp' \
@@ -3919,15 +3932,15 @@ config::
 	  'share/icons/system/client_logo.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/system/client_logo.png' \
 	  'share/icons/system/client_logo_18.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/system/client_logo_18.png' \
 	  'share/icons/system/client_logo_xmas.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/system/client_logo_xmas.png' \
-	  'share/icons/system/client_logo_xmas_18.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/system/client_logo_xmas_18.png' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/icons/system/client_logo_xmas_18.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/system/client_logo_xmas_18.png' \
 	  'share/icons/system/default_chat.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/system/default_chat.bmp' \
 	  'share/icons/system/default_contact.bmp' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/system/default_contact.bmp' \
 	  'share/icons/system/dialogue_icon.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/system/dialogue_icon.png' \
 	  'share/icons/system/dialogue_icon_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/system/dialogue_icon_large.png' \
 	  'share/icons/system/dialogue_icon_medium.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/system/dialogue_icon_medium.png' \
 	  'share/icons/system/dialogue_icon_xmas.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/system/dialogue_icon_xmas.png' \
-	  'share/icons/system/dialogue_icon_xmas_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/system/dialogue_icon_xmas_large.png' \
+	  'share/icons/system/dialogue_icon_xmas_large.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/system/dialogue_icon_xmas_large.png' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/icons/system/dialogue_icon_xmas_medium.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/system/dialogue_icon_xmas_medium.png' \
 	  'share/icons/system/irreversible.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/system/irreversible.png' \
 	  'share/icons/system/mapper.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/system/mapper.png' \
@@ -3942,8 +3955,7 @@ config::
 	  'share/icons/win/icon_dialogue_win_16.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/win/icon_dialogue_win_16.png' \
 	  'share/icons/win/icon_dialogue_win_32.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/win/icon_dialogue_win_32.png' \
 	  'share/icons/win/icon_dialogue_win_48.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/win/icon_dialogue_win_48.png' \
-	  'share/icons/win/icon_dialogue_win_64.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/win/icon_dialogue_win_64.png' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/icons/win/icon_dialogue_win_64.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/win/icon_dialogue_win_64.png' \
 	  'share/icons/win/icon_edit_win_128.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/win/icon_edit_win_128.png' \
 	  'share/icons/win/icon_edit_win_16.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/win/icon_edit_win_16.png' \
 	  'share/icons/win/icon_edit_win_32.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/win/icon_edit_win_32.png' \
@@ -3951,7 +3963,8 @@ config::
 	  'share/icons/win/icon_edit_win_64.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/win/icon_edit_win_64.png' \
 	  'share/icons/win/icon_external_win_128.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/win/icon_external_win_128.png' \
 	  'share/icons/win/icon_external_win_16.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/win/icon_external_win_16.png' \
-	  'share/icons/win/icon_external_win_32.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/win/icon_external_win_32.png' \
+	  'share/icons/win/icon_external_win_32.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/win/icon_external_win_32.png' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/icons/win/icon_external_win_48.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/win/icon_external_win_48.png' \
 	  'share/icons/win/icon_external_win_64.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/win/icon_external_win_64.png' \
 	  'share/icons/win/icon_fixed_win_128.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/win/icon_fixed_win_128.png' \
@@ -3966,8 +3979,7 @@ config::
 	  'share/icons/win/icon_main_win_64.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/win/icon_main_win_64.png' \
 	  'share/icons/win/icon_map_win_128.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/win/icon_map_win_128.png' \
 	  'share/icons/win/icon_map_win_16.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/win/icon_map_win_16.png' \
-	  'share/icons/win/icon_map_win_32.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/win/icon_map_win_32.png' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/icons/win/icon_map_win_32.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/win/icon_map_win_32.png' \
 	  'share/icons/win/icon_map_win_48.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/win/icon_map_win_48.png' \
 	  'share/icons/win/icon_map_win_64.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/win/icon_map_win_64.png' \
 	  'share/icons/win/icon_other_win_128.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/win/icon_other_win_128.png' \
@@ -3975,7 +3987,8 @@ config::
 	  'share/icons/win/icon_other_win_32.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/win/icon_other_win_32.png' \
 	  'share/icons/win/icon_other_win_48.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/win/icon_other_win_48.png' \
 	  'share/icons/win/icon_other_win_64.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/win/icon_other_win_64.png' \
-	  'share/icons/win/icon_pref_win_128.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/win/icon_pref_win_128.png' \
+	  'share/icons/win/icon_pref_win_128.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/win/icon_pref_win_128.png' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/icons/win/icon_pref_win_16.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/win/icon_pref_win_16.png' \
 	  'share/icons/win/icon_pref_win_32.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/win/icon_pref_win_32.png' \
 	  'share/icons/win/icon_pref_win_48.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/win/icon_pref_win_48.png' \
@@ -3990,8 +4003,7 @@ config::
 	  'share/icons/win/icon_viewer_win_32.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/win/icon_viewer_win_32.png' \
 	  'share/icons/win/icon_viewer_win_48.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/win/icon_viewer_win_48.png' \
 	  'share/icons/win/icon_viewer_win_64.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/win/icon_viewer_win_64.png' \
-	  'share/icons/win/icon_wiz_win_128.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/win/icon_wiz_win_128.png' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/icons/win/icon_wiz_win_128.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/win/icon_wiz_win_128.png' \
 	  'share/icons/win/icon_wiz_win_16.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/win/icon_wiz_win_16.png' \
 	  'share/icons/win/icon_wiz_win_32.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/win/icon_wiz_win_32.png' \
 	  'share/icons/win/icon_wiz_win_48.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/icons/win/icon_wiz_win_48.png' \
@@ -4000,7 +4012,8 @@ config::
 	  'share/images/viewerbg.jpg' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/images/viewerbg.jpg' \
 	  'share/items/mudlist/mudlist.txt' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/mudlist/mudlist.txt' \
 	  'share/items/phrasebooks/_template.txt' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/phrasebooks/_template.txt' \
-	  'share/items/phrasebooks/dutch.txt' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/phrasebooks/dutch.txt' \
+	  'share/items/phrasebooks/dutch.txt' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/phrasebooks/dutch.txt' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/items/phrasebooks/english.txt' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/phrasebooks/english.txt' \
 	  'share/items/phrasebooks/estonian.txt' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/phrasebooks/estonian.txt' \
 	  'share/items/phrasebooks/french.txt' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/phrasebooks/french.txt' \
@@ -4016,8 +4029,7 @@ config::
 	  'share/items/scripts/test.bas' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/scripts/test.bas' \
 	  'share/items/scripts/wumpus.bas' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/scripts/wumpus.bas' \
 	  'share/items/sounds/COPYING' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/sounds/COPYING' \
-	  'share/items/sounds/afk.mp3' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/sounds/afk.mp3' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/items/sounds/afk.mp3' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/sounds/afk.mp3' \
 	  'share/items/sounds/ahem.mp3' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/sounds/ahem.mp3' \
 	  'share/items/sounds/alarm.mp3' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/sounds/alarm.mp3' \
 	  'share/items/sounds/alert.mp3' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/sounds/alert.mp3' \
@@ -4027,7 +4039,8 @@ config::
 	  'share/items/sounds/barking.mp3' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/sounds/barking.mp3' \
 	  'share/items/sounds/bear.mp3' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/sounds/bear.mp3' \
 	  'share/items/sounds/beep.mp3' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/sounds/beep.mp3' \
-	  'share/items/sounds/belch.mp3' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/sounds/belch.mp3' \
+	  'share/items/sounds/belch.mp3' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/sounds/belch.mp3' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/items/sounds/bell.mp3' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/sounds/bell.mp3' \
 	  'share/items/sounds/bottles.mp3' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/sounds/bottles.mp3' \
 	  'share/items/sounds/boxing.mp3' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/sounds/boxing.mp3' \
@@ -4044,8 +4057,7 @@ config::
 	  'share/items/sounds/cow.mp3' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/sounds/cow.mp3' \
 	  'share/items/sounds/crash.mp3' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/sounds/crash.mp3' \
 	  'share/items/sounds/cuckoo.mp3' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/sounds/cuckoo.mp3' \
-	  'share/items/sounds/death.mp3' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/sounds/death.mp3' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/items/sounds/death.mp3' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/sounds/death.mp3' \
 	  'share/items/sounds/deposit.mp3' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/sounds/deposit.mp3' \
 	  'share/items/sounds/dixie.mp3' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/sounds/dixie.mp3' \
 	  'share/items/sounds/dragon.mp3' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/sounds/dragon.mp3' \
@@ -4055,7 +4067,8 @@ config::
 	  'share/items/sounds/error.mp3' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/sounds/error.mp3' \
 	  'share/items/sounds/explode.mp3' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/sounds/explode.mp3' \
 	  'share/items/sounds/fireworks.mp3' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/sounds/fireworks.mp3' \
-	  'share/items/sounds/flyby.mp3' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/sounds/flyby.mp3' \
+	  'share/items/sounds/flyby.mp3' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/sounds/flyby.mp3' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/items/sounds/footsteps.mp3' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/sounds/footsteps.mp3' \
 	  'share/items/sounds/frogs.mp3' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/sounds/frogs.mp3' \
 	  'share/items/sounds/gorilla.mp3' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/sounds/gorilla.mp3' \
@@ -4072,8 +4085,7 @@ config::
 	  'share/items/sounds/kill.mp3' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/sounds/kill.mp3' \
 	  'share/items/sounds/kookaburra.mp3' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/sounds/kookaburra.mp3' \
 	  'share/items/sounds/landing.mp3' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/sounds/landing.mp3' \
-	  'share/items/sounds/laser.mp3' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/sounds/laser.mp3' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/items/sounds/laser.mp3' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/sounds/laser.mp3' \
 	  'share/items/sounds/laugh.mp3' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/sounds/laugh.mp3' \
 	  'share/items/sounds/lion.mp3' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/sounds/lion.mp3' \
 	  'share/items/sounds/lost.mp3' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/sounds/lost.mp3' \
@@ -4083,7 +4095,8 @@ config::
 	  'share/items/sounds/murder.mp3' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/sounds/murder.mp3' \
 	  'share/items/sounds/notify.mp3' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/sounds/notify.mp3' \
 	  'share/items/sounds/oink.mp3' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/sounds/oink.mp3' \
-	  'share/items/sounds/party.mp3' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/sounds/party.mp3' \
+	  'share/items/sounds/party.mp3' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/sounds/party.mp3' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/items/sounds/phone1.mp3' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/sounds/phone1.mp3' \
 	  'share/items/sounds/phone2.mp3' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/sounds/phone2.mp3' \
 	  'share/items/sounds/phone3.mp3' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/sounds/phone3.mp3' \
@@ -4100,8 +4113,7 @@ config::
 	  'share/items/sounds/sander.mp3' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/sounds/sander.mp3' \
 	  'share/items/sounds/saw.mp3' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/sounds/saw.mp3' \
 	  'share/items/sounds/sharpen.mp3' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/sounds/sharpen.mp3' \
-	  'share/items/sounds/short.mp3' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/sounds/short.mp3' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/items/sounds/short.mp3' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/sounds/short.mp3' \
 	  'share/items/sounds/slap.mp3' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/sounds/slap.mp3' \
 	  'share/items/sounds/sleigh.mp3' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/sounds/sleigh.mp3' \
 	  'share/items/sounds/snooker.mp3' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/sounds/snooker.mp3' \
@@ -4111,7 +4123,8 @@ config::
 	  'share/items/sounds/takeoff.mp3' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/sounds/takeoff.mp3' \
 	  'share/items/sounds/thunder.mp3' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/sounds/thunder.mp3' \
 	  'share/items/sounds/torch.mp3' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/sounds/torch.mp3' \
-	  'share/items/sounds/train.mp3' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/sounds/train.mp3' \
+	  'share/items/sounds/train.mp3' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/sounds/train.mp3' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/items/sounds/twist.mp3' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/sounds/twist.mp3' \
 	  'share/items/sounds/typewriter.mp3' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/sounds/typewriter.mp3' \
 	  'share/items/sounds/unscrew.mp3' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/sounds/unscrew.mp3' \
@@ -4126,8 +4139,7 @@ config::
 	  'share/items/worlds/achaea/achaea.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/achaea/achaea.amx' \
 	  'share/items/worlds/achaea/achaea.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/achaea/achaea.png' \
 	  'share/items/worlds/achaea/achaea.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/achaea/achaea.tgz' \
-	  'share/items/worlds/advun/advun.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/advun/advun.amx' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/items/worlds/advun/advun.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/advun/advun.amx' \
 	  'share/items/worlds/advun/advun.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/advun/advun.png' \
 	  'share/items/worlds/advun/advun.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/advun/advun.tgz' \
 	  'share/items/worlds/aetolia/aetolia.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/aetolia/aetolia.amx' \
@@ -4136,7 +4148,8 @@ config::
 	  'share/items/worlds/alteraeon/alteraeon.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/alteraeon/alteraeon.amx' \
 	  'share/items/worlds/alteraeon/alteraeon.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/alteraeon/alteraeon.png' \
 	  'share/items/worlds/alteraeon/alteraeon.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/alteraeon/alteraeon.tgz' \
-	  'share/items/worlds/anguish/anguish.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/anguish/anguish.amx' \
+	  'share/items/worlds/anguish/anguish.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/anguish/anguish.amx' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/items/worlds/anguish/anguish.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/anguish/anguish.png' \
 	  'share/items/worlds/anguish/anguish.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/anguish/anguish.tgz' \
 	  'share/items/worlds/aochaos/aochaos.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/aochaos/aochaos.amx' \
@@ -4149,8 +4162,7 @@ config::
 	  'share/items/worlds/arctic/arctic.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/arctic/arctic.png' \
 	  'share/items/worlds/arctic/arctic.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/arctic/arctic.tgz' \
 	  'share/items/worlds/ateraan/ateraan.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/ateraan/ateraan.amx' \
-	  'share/items/worlds/ateraan/ateraan.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/ateraan/ateraan.png' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/items/worlds/ateraan/ateraan.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/ateraan/ateraan.png' \
 	  'share/items/worlds/ateraan/ateraan.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/ateraan/ateraan.tgz' \
 	  'share/items/worlds/avalonmud/avalonmud.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/avalonmud/avalonmud.amx' \
 	  'share/items/worlds/avalonmud/avalonmud.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/avalonmud/avalonmud.png' \
@@ -4159,7 +4171,8 @@ config::
 	  'share/items/worlds/avalonrpg/avalonrpg.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/avalonrpg/avalonrpg.png' \
 	  'share/items/worlds/avalonrpg/avalonrpg.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/avalonrpg/avalonrpg.tgz' \
 	  'share/items/worlds/avatarmud/avatarmud.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/avatarmud/avatarmud.amx' \
-	  'share/items/worlds/avatarmud/avatarmud.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/avatarmud/avatarmud.png' \
+	  'share/items/worlds/avatarmud/avatarmud.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/avatarmud/avatarmud.png' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/items/worlds/avatarmud/avatarmud.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/avatarmud/avatarmud.tgz' \
 	  'share/items/worlds/batmud/batmud.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/batmud/batmud.amx' \
 	  'share/items/worlds/batmud/batmud.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/batmud/batmud.png' \
@@ -4172,8 +4185,7 @@ config::
 	  'share/items/worlds/burningmud/burningmud.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/burningmud/burningmud.tgz' \
 	  'share/items/worlds/bylins/bylins.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/bylins/bylins.amx' \
 	  'share/items/worlds/bylins/bylins.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/bylins/bylins.png' \
-	  'share/items/worlds/bylins/bylins.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/bylins/bylins.tgz' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/items/worlds/bylins/bylins.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/bylins/bylins.tgz' \
 	  'share/items/worlds/carrion/carrion.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/carrion/carrion.amx' \
 	  'share/items/worlds/carrion/carrion.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/carrion/carrion.png' \
 	  'share/items/worlds/carrion/carrion.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/carrion/carrion.tgz' \
@@ -4183,7 +4195,8 @@ config::
 	  'share/items/worlds/clok/clok.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/clok/clok.amx' \
 	  'share/items/worlds/clok/clok.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/clok/clok.png' \
 	  'share/items/worlds/clok/clok.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/clok/clok.tgz' \
-	  'share/items/worlds/coffeemud/coffeemud.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/coffeemud/coffeemud.amx' \
+	  'share/items/worlds/coffeemud/coffeemud.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/coffeemud/coffeemud.amx' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/items/worlds/coffeemud/coffeemud.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/coffeemud/coffeemud.png' \
 	  'share/items/worlds/coffeemud/coffeemud.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/coffeemud/coffeemud.tgz' \
 	  'share/items/worlds/cryosphere/cryosphere.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/cryosphere/cryosphere.amx' \
@@ -4195,8 +4208,7 @@ config::
 	  'share/items/worlds/darkrealms/darkrealms.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/darkrealms/darkrealms.amx' \
 	  'share/items/worlds/darkrealms/darkrealms.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/darkrealms/darkrealms.png' \
 	  'share/items/worlds/darkrealms/darkrealms.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/darkrealms/darkrealms.tgz' \
-	  'share/items/worlds/dartmud/dartmud.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/dartmud/dartmud.amx' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/items/worlds/dartmud/dartmud.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/dartmud/dartmud.amx' \
 	  'share/items/worlds/dartmud/dartmud.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/dartmud/dartmud.png' \
 	  'share/items/worlds/dartmud/dartmud.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/dartmud/dartmud.tgz' \
 	  'share/items/worlds/dawn/dawn.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/dawn/dawn.amx' \
@@ -4205,7 +4217,8 @@ config::
 	  'share/items/worlds/discworld/discworld.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/discworld/discworld.amx' \
 	  'share/items/worlds/discworld/discworld.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/discworld/discworld.png' \
 	  'share/items/worlds/discworld/discworld.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/discworld/discworld.tgz' \
-	  'share/items/worlds/dragonstone/dragonstone.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/dragonstone/dragonstone.amx' \
+	  'share/items/worlds/dragonstone/dragonstone.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/dragonstone/dragonstone.amx' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/items/worlds/dragonstone/dragonstone.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/dragonstone/dragonstone.png' \
 	  'share/items/worlds/dragonstone/dragonstone.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/dragonstone/dragonstone.tgz' \
 	  'share/items/worlds/dsdev/dsdev.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/dsdev/dsdev.amx' \
@@ -4219,8 +4232,7 @@ config::
 	  'share/items/worlds/dslocal/dslocal.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/dslocal/dslocal.tgz' \
 	  'share/items/worlds/dsprime/dsprime.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/dsprime/dsprime.amx' \
 	  'share/items/worlds/dsprime/dsprime.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/dsprime/dsprime.png' \
-	  'share/items/worlds/dsprime/dsprime.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/dsprime/dsprime.tgz' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/items/worlds/dsprime/dsprime.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/dsprime/dsprime.tgz' \
 	  'share/items/worlds/dswords/dswords.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/dswords/dswords.amx' \
 	  'share/items/worlds/dswords/dswords.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/dswords/dswords.png' \
 	  'share/items/worlds/dswords/dswords.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/dswords/dswords.tgz' \
@@ -4229,7 +4241,8 @@ config::
 	  'share/items/worlds/dunemud/dunemud.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/dunemud/dunemud.tgz' \
 	  'share/items/worlds/duris/duris.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/duris/duris.amx' \
 	  'share/items/worlds/duris/duris.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/duris/duris.png' \
-	  'share/items/worlds/duris/duris.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/duris/duris.tgz' \
+	  'share/items/worlds/duris/duris.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/duris/duris.tgz' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/items/worlds/edmud/edmud.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/edmud/edmud.amx' \
 	  'share/items/worlds/edmud/edmud.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/edmud/edmud.png' \
 	  'share/items/worlds/edmud/edmud.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/edmud/edmud.tgz' \
@@ -4243,8 +4256,7 @@ config::
 	  'share/items/worlds/empire/empire.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/empire/empire.png' \
 	  'share/items/worlds/empire/empire.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/empire/empire.tgz' \
 	  'share/items/worlds/eotl/eotl.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/eotl/eotl.amx' \
-	  'share/items/worlds/eotl/eotl.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/eotl/eotl.png' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/items/worlds/eotl/eotl.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/eotl/eotl.png' \
 	  'share/items/worlds/eotl/eotl.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/eotl/eotl.tgz' \
 	  'share/items/worlds/fkingdoms/fkingdoms.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/fkingdoms/fkingdoms.amx' \
 	  'share/items/worlds/fkingdoms/fkingdoms.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/fkingdoms/fkingdoms.png' \
@@ -4252,7 +4264,8 @@ config::
 	  'share/items/worlds/forestsedge/forestsedge.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/forestsedge/forestsedge.amx' \
 	  'share/items/worlds/forestsedge/forestsedge.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/forestsedge/forestsedge.png' \
 	  'share/items/worlds/forestsedge/forestsedge.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/forestsedge/forestsedge.tgz' \
-	  'share/items/worlds/fourdims/fourdims.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/fourdims/fourdims.amx' \
+	  'share/items/worlds/fourdims/fourdims.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/fourdims/fourdims.amx' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/items/worlds/fourdims/fourdims.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/fourdims/fourdims.png' \
 	  'share/items/worlds/fourdims/fourdims.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/fourdims/fourdims.tgz' \
 	  'share/items/worlds/genesis/genesis.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/genesis/genesis.amx' \
@@ -4266,8 +4279,7 @@ config::
 	  'share/items/worlds/gwapoc/gwapoc.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/gwapoc/gwapoc.tgz' \
 	  'share/items/worlds/hellmoo/hellmoo.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/hellmoo/hellmoo.amx' \
 	  'share/items/worlds/hellmoo/hellmoo.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/hellmoo/hellmoo.png' \
-	  'share/items/worlds/hellmoo/hellmoo.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/hellmoo/hellmoo.tgz' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/items/worlds/hellmoo/hellmoo.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/hellmoo/hellmoo.tgz' \
 	  'share/items/worlds/hexonyx/hexonyx.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/hexonyx/hexonyx.amx' \
 	  'share/items/worlds/hexonyx/hexonyx.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/hexonyx/hexonyx.png' \
 	  'share/items/worlds/hexonyx/hexonyx.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/hexonyx/hexonyx.tgz' \
@@ -4275,7 +4287,8 @@ config::
 	  'share/items/worlds/holyquest/holyquest.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/holyquest/holyquest.png' \
 	  'share/items/worlds/holyquest/holyquest.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/holyquest/holyquest.tgz' \
 	  'share/items/worlds/iberia/iberia.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/iberia/iberia.amx' \
-	  'share/items/worlds/iberia/iberia.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/iberia/iberia.png' \
+	  'share/items/worlds/iberia/iberia.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/iberia/iberia.png' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/items/worlds/iberia/iberia.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/iberia/iberia.tgz' \
 	  'share/items/worlds/icesus/icesus.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/icesus/icesus.amx' \
 	  'share/items/worlds/icesus/icesus.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/icesus/icesus.png' \
@@ -4290,8 +4303,7 @@ config::
 	  'share/items/worlds/islands/islands.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/islands/islands.png' \
 	  'share/items/worlds/islands/islands.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/islands/islands.tgz' \
 	  'share/items/worlds/kallisti/kallisti.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/kallisti/kallisti.amx' \
-	  'share/items/worlds/kallisti/kallisti.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/kallisti/kallisti.png' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/items/worlds/kallisti/kallisti.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/kallisti/kallisti.png' \
 	  'share/items/worlds/kallisti/kallisti.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/kallisti/kallisti.tgz' \
 	  'share/items/worlds/lambda/lambda.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/lambda/lambda.amx' \
 	  'share/items/worlds/lambda/lambda.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/lambda/lambda.png' \
@@ -4299,7 +4311,8 @@ config::
 	  'share/items/worlds/legendmud/legendmud.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/legendmud/legendmud.amx' \
 	  'share/items/worlds/legendmud/legendmud.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/legendmud/legendmud.png' \
 	  'share/items/worlds/legendmud/legendmud.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/legendmud/legendmud.tgz' \
-	  'share/items/worlds/lostsouls/lostsouls.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/lostsouls/lostsouls.amx' \
+	  'share/items/worlds/lostsouls/lostsouls.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/lostsouls/lostsouls.amx' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/items/worlds/lostsouls/lostsouls.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/lostsouls/lostsouls.png' \
 	  'share/items/worlds/lostsouls/lostsouls.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/lostsouls/lostsouls.tgz' \
 	  'share/items/worlds/lowlands/lowlands.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/lowlands/lowlands.amx' \
@@ -4313,8 +4326,7 @@ config::
 	  'share/items/worlds/lusternia/lusternia.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/lusternia/lusternia.tgz' \
 	  'share/items/worlds/magica/magica.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/magica/magica.amx' \
 	  'share/items/worlds/magica/magica.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/magica/magica.png' \
-	  'share/items/worlds/magica/magica.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/magica/magica.tgz' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/items/worlds/magica/magica.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/magica/magica.tgz' \
 	  'share/items/worlds/medievia/medievia.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/medievia/medievia.amx' \
 	  'share/items/worlds/medievia/medievia.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/medievia/medievia.png' \
 	  'share/items/worlds/medievia/medievia.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/medievia/medievia.tgz' \
@@ -4322,7 +4334,8 @@ config::
 	  'share/items/worlds/merentha/merentha.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/merentha/merentha.png' \
 	  'share/items/worlds/merentha/merentha.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/merentha/merentha.tgz' \
 	  'share/items/worlds/midnightsun/midnightsun.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/midnightsun/midnightsun.amx' \
-	  'share/items/worlds/midnightsun/midnightsun.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/midnightsun/midnightsun.png' \
+	  'share/items/worlds/midnightsun/midnightsun.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/midnightsun/midnightsun.png' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/items/worlds/midnightsun/midnightsun.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/midnightsun/midnightsun.tgz' \
 	  'share/items/worlds/miriani/miriani.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/miriani/miriani.amx' \
 	  'share/items/worlds/miriani/miriani.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/miriani/miriani.png' \
@@ -4336,8 +4349,7 @@ config::
 	  'share/items/worlds/mud2/mud2.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/mud2/mud2.amx' \
 	  'share/items/worlds/mud2/mud2.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/mud2/mud2.png' \
 	  'share/items/worlds/mud2/mud2.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/mud2/mud2.tgz' \
-	  'share/items/worlds/mudii/mudii.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/mudii/mudii.amx' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/items/worlds/mudii/mudii.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/mudii/mudii.amx' \
 	  'share/items/worlds/mudii/mudii.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/mudii/mudii.png' \
 	  'share/items/worlds/mudii/mudii.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/mudii/mudii.tgz' \
 	  'share/items/worlds/mume/mume.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/mume/mume.amx' \
@@ -4346,7 +4358,8 @@ config::
 	  'share/items/worlds/nannymud/nannymud.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/nannymud/nannymud.amx' \
 	  'share/items/worlds/nannymud/nannymud.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/nannymud/nannymud.png' \
 	  'share/items/worlds/nannymud/nannymud.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/nannymud/nannymud.tgz' \
-	  'share/items/worlds/nanvaent/nanvaent.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/nanvaent/nanvaent.amx' \
+	  'share/items/worlds/nanvaent/nanvaent.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/nanvaent/nanvaent.amx' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/items/worlds/nanvaent/nanvaent.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/nanvaent/nanvaent.png' \
 	  'share/items/worlds/nanvaent/nanvaent.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/nanvaent/nanvaent.tgz' \
 	  'share/items/worlds/nodeka/nodeka.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/nodeka/nodeka.amx' \
@@ -4360,8 +4373,7 @@ config::
 	  'share/items/worlds/penultimate/penultimate.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/penultimate/penultimate.tgz' \
 	  'share/items/worlds/pict/pict.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/pict/pict.amx' \
 	  'share/items/worlds/pict/pict.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/pict/pict.png' \
-	  'share/items/worlds/pict/pict.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/pict/pict.tgz' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/items/worlds/pict/pict.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/pict/pict.tgz' \
 	  'share/items/worlds/ravenmud/ravenmud.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/ravenmud/ravenmud.amx' \
 	  'share/items/worlds/ravenmud/ravenmud.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/ravenmud/ravenmud.png' \
 	  'share/items/worlds/ravenmud/ravenmud.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/ravenmud/ravenmud.tgz' \
@@ -4369,7 +4381,8 @@ config::
 	  'share/items/worlds/realmsmud/realmsmud.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/realmsmud/realmsmud.png' \
 	  'share/items/worlds/realmsmud/realmsmud.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/realmsmud/realmsmud.tgz' \
 	  'share/items/worlds/reinos/reinos.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/reinos/reinos.amx' \
-	  'share/items/worlds/reinos/reinos.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/reinos/reinos.png' \
+	  'share/items/worlds/reinos/reinos.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/reinos/reinos.png' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/items/worlds/reinos/reinos.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/reinos/reinos.tgz' \
 	  'share/items/worlds/retromud/retromud.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/retromud/retromud.amx' \
 	  'share/items/worlds/retromud/retromud.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/retromud/retromud.png' \
@@ -4383,8 +4396,7 @@ config::
 	  'share/items/worlds/rowonder/rowonder.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/rowonder/rowonder.amx' \
 	  'share/items/worlds/rowonder/rowonder.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/rowonder/rowonder.png' \
 	  'share/items/worlds/rowonder/rowonder.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/rowonder/rowonder.tgz' \
-	  'share/items/worlds/rupert/rupert.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/rupert/rupert.amx' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/items/worlds/rupert/rupert.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/rupert/rupert.amx' \
 	  'share/items/worlds/rupert/rupert.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/rupert/rupert.png' \
 	  'share/items/worlds/rupert/rupert.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/rupert/rupert.tgz' \
 	  'share/items/worlds/slothmud/slothmud.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/slothmud/slothmud.amx' \
@@ -4392,7 +4404,8 @@ config::
 	  'share/items/worlds/slothmud/slothmud.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/slothmud/slothmud.tgz' \
 	  'share/items/worlds/stickmud/stickmud.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/stickmud/stickmud.amx' \
 	  'share/items/worlds/stickmud/stickmud.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/stickmud/stickmud.png' \
-	  'share/items/worlds/stickmud/stickmud.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/stickmud/stickmud.tgz' \
+	  'share/items/worlds/stickmud/stickmud.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/stickmud/stickmud.tgz' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/items/worlds/stonia/stonia.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/stonia/stonia.amx' \
 	  'share/items/worlds/stonia/stonia.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/stonia/stonia.png' \
 	  'share/items/worlds/stonia/stonia.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/stonia/stonia.tgz' \
@@ -4406,8 +4419,7 @@ config::
 	  'share/items/worlds/theland/theland.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/theland/theland.png' \
 	  'share/items/worlds/theland/theland.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/theland/theland.tgz' \
 	  'share/items/worlds/threekingdoms/threekingdoms.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/threekingdoms/threekingdoms.amx' \
-	  'share/items/worlds/threekingdoms/threekingdoms.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/threekingdoms/threekingdoms.png' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/items/worlds/threekingdoms/threekingdoms.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/threekingdoms/threekingdoms.png' \
 	  'share/items/worlds/threekingdoms/threekingdoms.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/threekingdoms/threekingdoms.tgz' \
 	  'share/items/worlds/threescapes/threescapes.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/threescapes/threescapes.amx' \
 	  'share/items/worlds/threescapes/threescapes.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/threescapes/threescapes.png' \
@@ -4415,7 +4427,8 @@ config::
 	  'share/items/worlds/tilegacy/tilegacy.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/tilegacy/tilegacy.amx' \
 	  'share/items/worlds/tilegacy/tilegacy.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/tilegacy/tilegacy.png' \
 	  'share/items/worlds/tilegacy/tilegacy.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/tilegacy/tilegacy.tgz' \
-	  'share/items/worlds/torilmud/torilmud.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/torilmud/torilmud.amx' \
+	  'share/items/worlds/torilmud/torilmud.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/torilmud/torilmud.amx' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/items/worlds/torilmud/torilmud.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/torilmud/torilmud.png' \
 	  'share/items/worlds/torilmud/torilmud.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/torilmud/torilmud.tgz' \
 	  'share/items/worlds/tsunami/tsunami.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/tsunami/tsunami.amx' \
@@ -4429,8 +4442,7 @@ config::
 	  'share/items/worlds/uossmud/uossmud.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/uossmud/uossmud.tgz' \
 	  'share/items/worlds/valhalla/valhalla.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/valhalla/valhalla.amx' \
 	  'share/items/worlds/valhalla/valhalla.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/valhalla/valhalla.png' \
-	  'share/items/worlds/valhalla/valhalla.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/valhalla/valhalla.tgz' 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
+	  'share/items/worlds/valhalla/valhalla.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/valhalla/valhalla.tgz' \
 	  'share/items/worlds/vikingmud/vikingmud.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/vikingmud/vikingmud.amx' \
 	  'share/items/worlds/vikingmud/vikingmud.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/vikingmud/vikingmud.png' \
 	  'share/items/worlds/vikingmud/vikingmud.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/vikingmud/vikingmud.tgz' \
@@ -4438,7 +4450,8 @@ config::
 	  'share/items/worlds/waterdeep/waterdeep.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/waterdeep/waterdeep.png' \
 	  'share/items/worlds/waterdeep/waterdeep.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/waterdeep/waterdeep.tgz' \
 	  'share/items/worlds/wotmud/wotmud.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/wotmud/wotmud.amx' \
-	  'share/items/worlds/wotmud/wotmud.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/wotmud/wotmud.png' \
+	  'share/items/worlds/wotmud/wotmud.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/wotmud/wotmud.png' 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)'\'')' -- \
 	  'share/items/worlds/wotmud/wotmud.tgz' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/wotmud/wotmud.tgz' \
 	  'share/items/worlds/zombiemud/zombiemud.amx' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/zombiemud/zombiemud.amx' \
 	  'share/items/worlds/zombiemud/zombiemud.png' '$(INST_LIB)/auto/share/dist/$(DISTNAME)/items/worlds/zombiemud/zombiemud.png' \

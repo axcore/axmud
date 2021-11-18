@@ -50,6 +50,7 @@
 * [15.24 Wilderness rooms](#15.24)
     * [15.24.1 Wilderness border rooms](#15.24.1)
 * [15.25 Room interiors](#15.25)
+    * [15.25.1 Synchronising grid coordinates](#15.25.1)
 * [15.26 Graffiti mode](#15.26)
 * [15.27 Updating maps](#15.27)
     * [15.27.1 Matching rooms](#15.27.1)
@@ -90,14 +91,14 @@
 
 ##<a name="15.1">15.1 Introduction</a>
 
-Axmud has an extremely powerful automapper, but it won't work at all if the Locator task can't recognise the character's location (or if the Locator task isn't running at all).
+Axmud has an extremely powerful automapper, but it won't work at all if the Locator task can't recognise the character's location (or if the Locator task isn't running at all - click the **Reset Locator (RL)** button to restart it).
 
 If you're using a pre-configured world, you're good to go: you can start drawing maps immediately. If not, the current world profile needs to be configured first.
 
 ![Wizard hat icon](img/ch15/icon_wizard.png) Axmud provides a *Locator wizard* which can handle most of the configuration process (with just a little assistance from you). Simply click this button in the main window and follow the  instructions.
 
 **Hint 1**
-The wizard has a 100% accuracy rate with some worlds, but struggles to cope with other worlds. If you have problems configuring your favourite MUD, visit us at the [Axmud website](https://axmud.sourceforge.io/) and we'll try to help.
+The wizard has a 100% accuracy rate with some worlds, but struggles to cope with other worlds. If you have problems configuring your favourite MUD, visit us at the [Axmud website](https://github.com/axcore/axmud) and we'll try to help.
 
 **Hint 2**
 The wizard can learn to recognise all the components of a room statement: the room title, the verbose description, the exit list and the contents list. In most cases, the only component you really need is the exit list. If you're having problems, run the wizard again, ignoring everything except the line with the list of exits.
@@ -707,6 +708,10 @@ Like all other objects, room tags can be selected and dragged around the map. If
 
 * Right click on the room tag and choose **Reset position**
 
+If you prefer, room tags can be drawn inside the room box:
+
+* In the automapper menu, selected **View > Room interiors > Draw room tag**
+
 ##<a name="15.20">15.20 Room guilds</a>
 
 Rooms that belong to a guild can be marked some text that's drawn slightly smaller than a label, and in a different colour.
@@ -978,6 +983,21 @@ For the benefit of users who need to keep precise records of which rooms they've
     * The number zero is not drawn inside the room
 
 These operations can also be performed by right-clicking a room and using the popup menu, or by using the window's main menu.
+
+###<a name="15.25.1">15.25.1 Synchronising grid coordinates</a>
+
+Another useful feature is to display each room's grid coordinates.
+
+* In the automapper menu, select **View > Room interiors > Draw grid coordinates**
+
+If it's important, you can synchronise the grid coordinates used by the world with those used by Axmud. (This synchronisation only affects the coordinates displayed inside the room box).
+
+For example, if the automapper is showing a room's coordinates as **100, 100**, but the game is using the coordinates **20, 135**:
+
+* In the automapper menu, click **Rooms > Other room features > Synchronise grid coordinates...**
+* In the dialogue window, adjust the X coordinate with the (negative) value **-80** 
+* Adjust the Y coordinate with the (positive) value **35**
+* Click **OK** to apply the changes
 
 ##<a name="15.26">15.26 Graffiti mode</a>
 

@@ -28133,8 +28133,10 @@
 
         # (No improper arguments to check)
 
-        # Sort the list of components
+        # Sort the list of components, and add the anchor line (which doesn't appear in the
+        #   ->componentHash IV)
         @sortedList = sort {lc($a) cmp lc($b)} (@comboList);
+        push(@sortedList, 'anchor');
 
         # Update each combobox in turn
         foreach my $combo ($self->ivValues('comboHash')) {
@@ -56151,7 +56153,21 @@
         $self->addLabel($grid, 'Tracking sensitivity',
             7, 9, 8, 9);
         $self->addEntry($grid, 'trackingSensitivity', FALSE,
-            9, 12, 8, 9, 4, 4);
+            9, 12, 8, 9,
+            4, 4);
+
+        $self->addLabel($grid, '<u>Synchronise grid coordintes</u>',
+            7, 12, 9, 10);
+        $self->addLabel($grid, 'Adjust X coordinate',
+            7, 9, 10, 11);
+        $self->addEntryWithIcon($grid, 'roomInteriorXOffset', 'int', undef, undef,
+            9, 12, 10, 11,
+            4, 4);
+        $self->addLabel($grid, 'Adjust Y coordinate',
+            7, 9, 11, 12);
+        $self->addEntryWithIcon($grid, 'roomInteriorYOffset', 'int', undef, undef,
+            9, 12, 11, 12,
+            4, 4);
 
         # Tab complete
         return 1;
@@ -56204,6 +56220,7 @@
             'hidden_count'  => '\'hidden_count\' - Hidden contents',
             'temp_count'    => '\'temp_count\' - Temporary contents',
             'word_count'    => '\'word_count\' - Recognised words',
+            'room_tag'      => '\'room_tag\' - Room tag',
             'room_flag'     => '\'room_flag\' - Room flag text',
             'visit_count'   => '\'visit_count\' - Character visits',
             'compare_count' => '\'compare_count\' - Matching rooms',
@@ -56211,6 +56228,7 @@
             'title_descrip' => '\'title_descrip\' - Room descriptions',
             'exit_pattern'  => '\'exit_pattern\' - Assist move/exit patterns',
             'source_code'   => '\'source_code\' - Room source code path',
+            'grid_posn'     => '\'grid_posn\' - Grid coordinates',
             'vnum'          => '\'vnum\' - Room vnum',
         );
 

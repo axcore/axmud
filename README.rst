@@ -61,17 +61,17 @@ Axmud does not yet have a comprehensive manual, but there is lots of information
 2 Downloads
 ===========
 
-Latest version: **v1.3.007 (2 Mar 2021)** (see `recent changes <CHANGES>`__)
+Latest version: **v1.3.019 (18 Nov 2021)** (see `recent changes <CHANGES>`__)
 
 Official packages (also available from the `Github release page <https://github.com/axcore/tartube/releases>`__):
 
-- `MS Windows installer <https://sourceforge.net/projects/axmud/files/Axmud-1.3.007/install-axmud-1.3.007.exe/download>`__ from Sourceforge
-- `DEB package (for Debian-based distros, e.g. Ubuntu, Linux Mint) <https://sourceforge.net/projects/axmud/files/Axmud-1.3.007/libgames-axmud-perl_1.3.007.deb/download>`__ from Sourceforge
-- `RPM package (for RHEL-based distros, e.g. Fedora) <https://sourceforge.net/projects/axmud/files/Axmud-1.3.007/perl-Games-Axmud-1.3.007.noarch.rpm/download>`__ from Sourceforge
+- `MS Windows installer <https://sourceforge.net/projects/axmud/files/Axmud-1.3.019/install-axmud-1.3.019.exe/download>`__ from Sourceforge
+- `DEB package (for Debian-based distros, e.g. Ubuntu, Linux Mint) <https://sourceforge.net/projects/axmud/files/Axmud-1.3.019/libgames-axmud-perl_1.3.019.deb/download>`__ from Sourceforge
+- `RPM package (for RHEL-based distros, e.g. Fedora) <https://sourceforge.net/projects/axmud/files/Axmud-1.3.019/perl-Games-Axmud-1.3.019.noarch.rpm/download>`__ from Sourceforge
 
 Source code:
 
-- `Source code <https://sourceforge.net/projects/axmud/files/Axmud-1.3.007/Games-Axmud-1.3.007.tar.gz/download>`__ from Sourceforge
+- `Source code <https://sourceforge.net/projects/axmud/files/Axmud-1.3.019/Games-Axmud-1.3.019.tar.gz/download>`__ from Sourceforge
 - `Source code <https://github.com/axcore/axmud>`__ and `support <https://github.com/axcore/axmud/issues>`__ from GitHub
 
 3 Running Axmud

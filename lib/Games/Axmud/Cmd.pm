@@ -80955,7 +80955,9 @@
         # Check the Locator task is running
         if (! $session->locatorTask) {
 
-            return $self->error($session, $inputString, 'There is no Locator task running');
+            # v1.3.012 - for the user click on the automapper's 'Reset Locator' button, starting a
+            #   new Locator task is more convenient than simply declaring that it's not running
+            return $session->clientCmd('starttask locator');
         }
 
         # If $dir was specified, it must be a standard or custom primary cardinal or intercardinal

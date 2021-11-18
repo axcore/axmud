@@ -1,4 +1,4 @@
-[Previous](tut03.html) [Index](index.html)
+[Previous](tut03.html) [Index](index.html) [Next](tut05.html)
 
 ---
 
@@ -242,5 +242,5 @@ To turn off slowwalking altogether:
 
 ---
 
-[Previous](tut03.html) [Index](index.html)
+[Previous](tut03.html) [Index](index.html) [Next](tut05.html)
 

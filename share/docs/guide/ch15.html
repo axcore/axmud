@@ -81,7 +81,10 @@ img { max-width: 100%; }
 <li><a href="#15.24.1">15.24.1 Wilderness border rooms</a></li>
 </ul>
 </li>
-<li><a href="#15.25">15.25 Room interiors</a></li>
+<li><a href="#15.25">15.25 Room interiors</a><ul>
+<li><a href="#15.25.1">15.25.1 Synchronising grid coordinates</a></li>
+</ul>
+</li>
 <li><a href="#15.26">15.26 Graffiti mode</a></li>
 <li><a href="#15.27">15.27 Updating maps</a><ul>
 <li><a href="#15.27.1">15.27.1 Matching rooms</a></li>
@@ -126,11 +129,11 @@ img { max-width: 100%; }
     ;map
 </code></pre>
 <h2><a name="15.1">15.1 Introduction</a></h2>
-<p>Axmud has an extremely powerful automapper, but it won't work at all if the Locator task can't recognise the character's location (or if the Locator task isn't running at all).</p>
+<p>Axmud has an extremely powerful automapper, but it won't work at all if the Locator task can't recognise the character's location (or if the Locator task isn't running at all - click the <strong>Reset Locator (RL)</strong> button to restart it).</p>
 <p>If you're using a pre-configured world, you're good to go: you can start drawing maps immediately. If not, the current world profile needs to be configured first.</p>
 <p><img alt="Wizard hat icon" src="img/ch15/icon_wizard.png"> Axmud provides a <em>Locator wizard</em> which can handle most of the configuration process (with just a little assistance from you). Simply click this button in the main window and follow the  instructions.</p>
 <p><strong>Hint 1</strong>
-The wizard has a 100% accuracy rate with some worlds, but struggles to cope with other worlds. If you have problems configuring your favourite MUD, visit us at the <a href="https://axmud.sourceforge.io/">Axmud website</a> and we'll try to help.</p>
+The wizard has a 100% accuracy rate with some worlds, but struggles to cope with other worlds. If you have problems configuring your favourite MUD, visit us at the <a href="https://github.com/axcore/axmud">Axmud website</a> and we'll try to help.</p>
 <p><strong>Hint 2</strong>
 The wizard can learn to recognise all the components of a room statement: the room title, the verbose description, the exit list and the contents list. In most cases, the only component you really need is the exit list. If you're having problems, run the wizard again, ignoring everything except the line with the list of exits.</p>
 <p><strong>Hint 3</strong>
@@ -604,6 +607,10 @@ A few worlds (such as <em>LambdaMoo</em> and <em>MUD1</em>) don't use exit lists
 <ul>
 <li>Right click on the room tag and choose <strong>Reset position</strong></li>
 </ul>
+<p>If you prefer, room tags can be drawn inside the room box:</p>
+<ul>
+<li>In the automapper menu, selected <strong>View &gt; Room interiors &gt; Draw room tag</strong></li>
+</ul>
 <h2><a name="15.20">15.20 Room guilds</a></h2>
 <p>Rooms that belong to a guild can be marked some text that's drawn slightly smaller than a label, and in a different colour.</p>
 <p><img alt="Room guild" src="img/ch15/room_guild.png"></p>
@@ -813,6 +820,19 @@ A few worlds (such as <em>LambdaMoo</em> and <em>MUD1</em>) don't use exit lists
 </li>
 </ul>
 <p>These operations can also be performed by right-clicking a room and using the popup menu, or by using the window's main menu.</p>
+<h3><a name="15.25.1">15.25.1 Synchronising grid coordinates</a></h3>
+<p>Another useful feature is to display each room's grid coordinates.</p>
+<ul>
+<li>In the automapper menu, select <strong>View &gt; Room interiors &gt; Draw grid coordinates</strong></li>
+</ul>
+<p>If it's important, you can synchronise the grid coordinates used by the world with those used by Axmud. (This synchronisation only affects the coordinates displayed inside the room box).</p>
+<p>For example, if the automapper is showing a room's coordinates as <strong>100, 100</strong>, but the game is using the coordinates <strong>20, 135</strong>:</p>
+<ul>
+<li>In the automapper menu, click <strong>Rooms &gt; Other room features &gt; Synchronise grid coordinates...</strong></li>
+<li>In the dialogue window, adjust the X coordinate with the (negative) value <strong>-80</strong> </li>
+<li>Adjust the Y coordinate with the (positive) value <strong>35</strong></li>
+<li>Click <strong>OK</strong> to apply the changes</li>
+</ul>
 <h2><a name="15.26">15.26 Graffiti mode</a></h2>
 <p>Often it's useful to temporarily mark the rooms you've visited.  For example, a quest might require you to find something in a random room, somewhere in the region.  You can check each room in the region, one by one, marking them as you go.</p>
 <p>To turn on graffiti mode from the automapper window's menu, click <strong>Mode &gt; Graffiti mode</strong>.</p>

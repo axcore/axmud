@@ -87,6 +87,6 @@
          "web" : "https://github.com/axcore/axmud"
       }
    },
-   "version" : "v1.3.007",
+   "version" : "v1.3.019",
    "x_serialization_backend" : "JSON::PP version 4.02"
 }
