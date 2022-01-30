@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2021 A S Lewis
+# Copyright (C) 2011-2022 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -2550,7 +2550,19 @@
             return $self->currentRoom;
         }
 
-        # PART 2    - identify relative directions
+        # PART 2    - teleport commands
+
+        # If it's a teleport command, we already know the destination room (or not)
+        if ($cmdObj->teleportFlag) {
+
+            if (defined $cmdObj->teleportDestRoom) {
+                return $self->worldModelObj->ivShow('modelHash', $cmdObj->teleportDestRoom);
+            } else {
+                return undef;
+            }
+        }
+        
+        # PART 3    - identify relative directions
 
         # Is $cmdObj->cmd a relative direction like 'forward'?
         $slot = $dictObj->convertRelativeDir($cmdObj->cmd);
@@ -2571,7 +2583,7 @@
             }
         }
 
-        # PART 3    - get direction of movement
+        # PART 4    - get direction of movement
         #
         # Set $dir, the direction of movement, so that we can work out which exit object is being
         #   used
@@ -2607,7 +2619,7 @@
             $dir = $cmdObj->moveDir;
         }
 
-        # PART 4    - identify an exit object (GA::Obj::Exit) matching the direction
+        # PART 5    - identify an exit object (GA::Obj::Exit) matching the direction
         #
         #   $dir can be any of the following:
         #   (i) The original command used in an assisted move

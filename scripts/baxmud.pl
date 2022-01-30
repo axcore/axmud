@@ -302,6 +302,8 @@ $SIG{__WARN__} = sub {
     } elsif (
         # Warnings seen only on MS Windows
         ! ($_[0] =~ m/attempt to override closure\-\>va_marshal/)
+        # !!! DEBUG Git #10: untested solution to Glib warnings in main window
+        && ! ($_[0] =~ m/GLib-GObject-WARNING/)          
     ) {
         if ($CLIENT && ! $SAFE_MODE_FLAG) {
             $CLIENT->writePerlWarning(@_);
