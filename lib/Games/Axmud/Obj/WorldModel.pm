@@ -17760,7 +17760,7 @@
 
             # Check that no other exits in this room are allocated to the same map direction
             $matchFlag = FALSE;
-            foreach my $otherExitNum ($roomObj->ivValues('exitNumHash')) {
+            OUTER: foreach my $otherExitNum ($roomObj->ivValues('exitNumHash')) {
 
                 my $otherExitObj = $self->ivShow('exitModelHash', $otherExitNum);
 
@@ -23203,8 +23203,6 @@
                     last OUTER;
                 }
             }
-
-
         }
 
         # If it's a portable or decoration, we need to set its type

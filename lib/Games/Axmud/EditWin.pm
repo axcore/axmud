@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2021 A S Lewis
+# Copyright (C) 2011-2022 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -19693,11 +19693,11 @@
 
         # Involuntary exit patterns
         $self->addLabel($grid, '<b>Involuntary exit patterns</b>',
-            0, 12, 0, 2);
+            0, 12, 0, 1);
         $self->addLabel(
             $grid,
             '<i>Patterns which mean the character has left the room involuntarily</i>',
-            1, 10, 2, 4);
+            1, 10, 1, 2);
 
         # Add a simple list
         @columnList = (
