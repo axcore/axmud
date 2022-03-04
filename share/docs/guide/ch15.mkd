@@ -75,7 +75,7 @@
     * [15.31.8 Using unusual exits](#15.30.8)
     * [15.31.9 Primary directions in other languages](#15.30.9)
     * [15.31.10 Secondary directions](#15.30.10)
-    * [15.31.11 Secondary directions in Cyrosphere](#15.30.11)
+    * [15.31.11 Secondary directions in Cryosphere](#15.30.11)
     * [15.31.12 Relative directions](#15.30.12)
 
 ---
@@ -1462,7 +1462,7 @@ It's not necessary to add *every possible word* to your list of secondary direct
 
 (The previous Section demonstrated how you could change Axmud's custom primary directions, which are English words, into a set of French words at the click of a button. Doing so will not affect this list of secondary directions, which must be modified separately.)
 
-###<a name="15.31.11">15.31.11 Secondary directions in Cyrosphere</a>
+###<a name="15.31.11">15.31.11 Secondary directions in Cryosphere</a>
 
 To set custom secondary directions, first open the current dictionary's edit window:
 

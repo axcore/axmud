@@ -1,3 +1,15 @@
+v1.3.029 (3 Mar 2021)
+--------------------------------------------------------------------------------
+
+Major fixes
+- Fixed problems with ;teleport, ;addteleport, ;delteleport, etc (Git #8)
+- Fixed crash caused by ;addexit command (Git #14)
+
+Minor fixes
+- Fixed a couple of minor typos in the Axmud Guide
+- Fix for "GLib-GObject-CRITICAL" and "GLib-GObject-WARNING" messages appearing
+    in Axmud's main window (Git #10, 11)
+
 v1.3.019 (18 Nov 2021)
 --------------------------------------------------------------------------------
 
@@ -8,7 +20,7 @@ Major new features
 - When grid coordinates are visible, you can synchronise them with the
     coordinates used by the world itself; click 'Rooms > Other room features >
     Synchronise grid coordinates...' (Git #7)
-    
+
 Major fixes
 - Fixed a bug that crashed Axmud whenever the user dragged the mouse across the
     automapper background, in order to create a selection box
@@ -33,7 +45,7 @@ v1.3.007 (2 Mar 2021)
 - The Axmud forum has been removed, due to relentless spambot attacks. Please
     use the Github page instead (https://github.com/axcore/axmud). Tutorials
     from the forum have been added to the Axmud Guide
-    
+
 v1.3.0 (19 Sep 2020)
 --------------------------------------------------------------------------------
 

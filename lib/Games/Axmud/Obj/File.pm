@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2021 A S Lewis
+# Copyright (C) 2011-2022 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -12722,7 +12722,7 @@
 
             $worldObj->ivPoke('port', 4000);
         }
-        
+
         if ($world eq 'forestsedge' && $fileVersion < 1_003_000) {
 
             $worldObj->ivPoke('dns', 'mud.theforestsedge.com');

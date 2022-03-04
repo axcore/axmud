@@ -19693,11 +19693,11 @@
 
         # Involuntary exit patterns
         $self->addLabel($grid, '<b>Involuntary exit patterns</b>',
-            0, 12, 0, 1);
+            0, 12, 0, 2);
         $self->addLabel(
             $grid,
             '<i>Patterns which mean the character has left the room involuntarily</i>',
-            1, 10, 1, 2);
+            1, 10, 2, 4);
 
         # Add a simple list
         @columnList = (

@@ -2561,7 +2561,7 @@
                 return undef;
             }
         }
-        
+
         # PART 3    - identify relative directions
 
         # Is $cmdObj->cmd a relative direction like 'forward'?
