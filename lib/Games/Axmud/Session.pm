@@ -17996,28 +17996,28 @@
                     # Substitute the argument name or value, if they match one or more of the
                     #   attributes specified in %attHash
                     # e.g. In <COLOR &col;> and <COLOR FORE=&col;>, if there's a key in %attHash
-                    #   called 'col', subsitute the &col% for the key's corresponding value
+                    #   called 'col', subsitute the &col; for the key's corresponding value
                     if (! defined $argValue) {
 
-                        @grpStringList = ($argName =~ m/\&(\w+)\;/);
+                        @grpStringList = ($argName =~ m/\&(\w+)\;/g);
                         foreach my $grpString (@grpStringList) {
 
                             if (exists $attHash{$grpString}) {
 
                                 $value = $attHash{$grpString};
-                                $argName =~ s/\&\w+\;/$value/g;
+                                $argName =~ s/\&$grpString\;/$value/g;
                             }
                         }
 
                     } elsif (defined $argValue) {
 
-                        @grpStringList = ($argValue =~ m/\&(\w+)\;/);
+                        @grpStringList = ($argValue =~ m/\&(\w+)\;/g);
                         foreach my $grpString (@grpStringList) {
 
                             if (exists $attHash{$grpString}) {
 
                                 $value = $attHash{$grpString};
-                                $argValue =~ s/\&\w+\;/$value/g;
+                                $argValue =~ s/\&$grpString\;/$value/g;
                             }
                         }
                     }
@@ -27588,7 +27588,6 @@
             return @emptyList;
         }
 
-
         # If the world specifies argument 'names' in the wrong order, reset $checkListRef so the
         #   current and subsequent calls to the function work as intended
         if (exists $$ivHashRef{lc($argName)}) {
@@ -28475,7 +28474,7 @@
         # Given a string for which %text; has already been substituted for its values, look for
         #   more entities and, if found, substitute them for their values
         #
-        # NB To avoid unfortunate accidents, this function ignore invalid entities, rather than
+        # NB To avoid unfortunate accidents, this function ignores invalid entities, rather than
         #   issuing an error via a call to $self->mxpDebug
         #
         # Expected arguments
@@ -28528,6 +28527,11 @@
 
                     $enReplace = $axmud::CLIENT->ivShow('constMxpEntityHash', $enName);
                     $string =~ s/$enText/$enReplace/g;
+
+                } else {
+
+                    # Git #18: Handle unrecognised entity names by removing (and ignoring) them
+                    $string =~ s/$enText//g;
                 }
 
             } else {
