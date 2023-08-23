@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2022 A S Lewis
+# Copyright (C) 2011-2023 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -28230,16 +28230,19 @@
                     $updateFlag = TRUE;
                     $entityObj = $self->ivShow('mxpEntityHash', $entName);
 
-                    if ($gaugeObj->mxpEntity eq $entName) {
-                        $gaugeObj->ivPoke('value', $entityObj->value);
-                    } else {
-                        $gaugeObj->ivPoke('maxValue', $entityObj->value);
+                    if (defined $entityObj) {
+
+                        if ($gaugeObj->mxpEntity eq $entName) {
+                            $gaugeObj->ivPoke('value', $entityObj->value);
+                        } else {
+                            $gaugeObj->ivPoke('maxValue', $entityObj->value);
+                        }
                     }
                 }
 
                 # Pass the value on to the Status task, if possible
                 $taskVar = $self->currentWorld->ivShow('mxpStatusVarHash', $entName);
-                if (defined $taskVar && $self->statusTask) {
+                if (defined $taskVar && $self->statusTask && defined $entityObj) {
 
                     $self->statusTask->setValue($taskVar, $entityObj->value);
                 }
@@ -42735,6 +42738,122 @@
 
                     $error = $genError;
                 }
+            }
+
+        } elsif ($first eq 'room') {
+
+            # o room.map
+            if ($second eq 'map') {
+
+                if ($size > 3) {
+
+                    $error = $genError;
+
+                } elsif (! $self->mapObj->currentRoom) {
+
+                    $error = 'No current room set in automapper';
+
+                } else {
+
+                    $blessed = $self->mapObj->currentRoom;
+                    $privFlag = $blessed->_privFlag;
+                    if (defined $third) {
+
+                        $var = $blessed->{$last};
+                        $ivName = $last;
+
+                    } else {
+
+                        $objFlag = TRUE;
+                    }
+                }
+
+            # o room.last
+            } elsif ($second eq 'last') {
+
+                if ($size > 3) {
+
+                    $error = $genError;
+
+                } elsif (! $self->mapObj->lastKnownRoom) {
+
+                    $error = 'No last known room set in automapper';
+
+                } else {
+
+                    $blessed = $self->mapObj->lastKnownRoom;
+                    $privFlag = $blessed->_privFlag;
+                    if (defined $third) {
+
+                        $var = $blessed->{$last};
+                        $ivName = $last;
+
+                    } else {
+
+                        $objFlag = TRUE;
+                    }
+                }
+
+            # o room.ghost
+            } elsif ($second eq 'ghost') {
+
+                if ($size > 3) {
+
+                    $error = $genError;
+
+                } elsif (! $self->mapObj->ghostRoom) {
+
+                    $error = 'No ghost room set in automapper';
+
+                } else {
+
+                    $blessed = $self->mapObj->ghostRoom;
+                    $privFlag = $blessed->_privFlag;
+                    if (defined $third) {
+
+                        $var = $blessed->{$last};
+                        $ivName = $last;
+
+                    } else {
+
+                        $objFlag = TRUE;
+                    }
+                }
+
+            # o room.locator
+            } elsif ($second eq 'locator') {
+
+                if ($size > 3) {
+
+                    $error = $genError;
+
+                } elsif (! $self->locatorTask) {
+
+                    $error = 'Locator task not running, current location unknown';
+
+                    
+                } elsif (! $self->locatorTask->roomObj) {
+
+                    $error = 'Locator task\'s current room not set';
+
+                } else {
+
+                    $blessed = $self->locatorTask->roomObj;
+                    $privFlag = $blessed->_privFlag;
+                    if (defined $third) {
+
+                        $var = $blessed->{$last};
+                        $ivName = $last;
+
+                    } else {
+
+                        $objFlag = TRUE;
+                    }
+                }
+                
+            } else {
+
+                $error = $genError;
             }
 
         } elsif ($first eq 'script') {
