@@ -1,16 +1,16 @@
 css / chatsetsmiley           Turns smileys in all chat sessions on/off
- 
+
    Format:
       ;css on                 Turns on smileys
       ;cse off                Turns off smileys
- 
+
    Notes:
       The Chat task is used to chat with other players directly via telnet.
          Calls can be placed (or accepted) with any user whose MUD client uses
          the zChat or MudMaster protocols.
-      Chat sessions are able to convert strings like :) and :( into a smiley 
-         icon, but if you and your chat contact are exchanging important 
+      Chat sessions are able to convert strings like :) and :( into a smiley
+         icon, but if you and your chat contact are exchanging important
          information, it might be better to turn them off.
- 
+
    User commands:
       css / chatsetsmiley

@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2022 A S Lewis
+# Copyright (C) 2011-2024 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -19,7 +19,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -1095,7 +1095,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -2532,7 +2532,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -3296,7 +3296,7 @@
         }
 
         # Also write the text to the logs, as if it had appeared in the 'main' window (if allowed)
-        if ($triggerFlag) {
+        if ($triggerFlag && $bufferObj) {
 
             $self->session->writeIncomingDataLogs($bufferObj->stripLine, $bufferObj->modLine);
         }
@@ -3759,7 +3759,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -9514,7 +9514,7 @@
     sub newChatWin {
 
         # Called by various functions
-        # Opens a task window for this task, by calling the usuaul ->openWin()
+        # Opens a task window for this task, by calling the usual ->openWin()
         # Also calls $self->setChatWinTitle to change the window's title to something like
         #   'Chat: Alice > Bob'
         #
@@ -11744,7 +11744,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -13079,7 +13079,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -14236,7 +14236,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -14860,7 +14860,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -14991,7 +14991,7 @@
 
         # Table objects created for various Gtk3 widgets, stored here because various functions
         #   need them
-        $self->{labelTableObj}          = undef;        # GA::Table::Label
+        $self->{textViewTableObj}       = undef;        # GA::Table::TextView
         $self->{entryTableObj}          = undef;        # GA::Table::Entry
         $self->{comboTableObj}          = undef;        # GA::Table::Combo
         $self->{comboTableObj2}         = undef;        # GA::Table::Combo
@@ -15006,15 +15006,17 @@
         # The time, in seconds, to count
         $self->{initTime}               = undef;
 
-        # The font and the text/underlay colours used to show the time; must be pango-recognisable
-        #   colours
-        $self->{textLen}                = 9;                # Label has 9 characters, by default
+        # The font and the text/underlay colours used to show the time. Colours are Axmud colour
+        #   tags
         $self->{textFont}               = 'monospace';      # Should be a monospace font
         $self->{textSize}               = '5';              # Relative size; value in range 1-10
         $self->{textColour}             = 'white';
         $self->{underlayColour}         = 'black';
         $self->{textWarning}            = 'white';
         $self->{underlayWarning}        = 'red';
+        # The last underlay colour set; only when it changes, do we need to actually update the
+        #   Gtk3::TextView and its surrounding area
+        $self->{previousColour}         = undef;
 
         # The operating mode - 'default' when no time is visible, 'up' when counting up, 'down'
         #   when counting down
@@ -15162,6 +15164,7 @@
                     $self->ivUndef('clockLeft');
 
                     # Update widgets
+                    $self->entryTableObj->set_normal(TRUE);
                     $self->buttonTableObj->set_normal(TRUE);
                     $self->buttonTableObj2->set_normal(FALSE);
                     $self->buttonTableObj3->set_normal(FALSE);
@@ -15236,26 +15239,55 @@
             return undef;
         }
 
-        my $labelTableObj = $self->winObj->tableStripObj->addTableObj(
-            'Games::Axmud::Table::Label',
+        # v1.3.095 The original code (preserved below) used a Gtk3::Label. Alas, Axmud colour tags
+        #   (used by the surrounding area) and Pango colours (used by the label) aren't the same
+        # So, replaced the label with a Gtk3::TextView, so that everything can use Axmud colour tags
+
+#        my $labelTableObj = $self->winObj->tableStripObj->addTableObj(
+#            'Games::Axmud::Table::Label',
+#            0, 59, 0, 39,
+#            undef,
+#            # Init settings
+#            'justify'                => 'centre',
+#            'align_x'                => 0.5,
+#            'align_y'                => 0.5,
+#            'expand_horizontal_flag' => TRUE,
+#            'expand_vertical_flag'   => TRUE,
+#        );
+#
+#        # (Must store the IV immediately, so the call to ->setBackgroundColour will work)
+#        $self->ivPoke('labelTableObj', $labelTableObj);
+#        $self->setBackgroundColour($self->underlayColour);
+#
+#        # (This line forces the label to the middle of the window)
+#        $labelTableObj->label->set_hexpand(TRUE);
+
+        my $textViewTableObj = $self->winObj->tableStripObj->addTableObj(
+            'Games::Axmud::Table::TextView',
             0, 59, 0, 39,
             undef,
             # Init settings
-            'justify'       => 'centre',
-            'align_x'       => 0.5,
-            'align_y'       => 0.5,
+            'edit_flag'                 => FALSE,
+            'expand_horizontal_flag'    => TRUE,
+            'expand_vertical_flag'      => TRUE,
         );
 
-        # (This line forces the label to the middle of the window)
-        $labelTableObj->label->set_hexpand(TRUE);
+        $textViewTableObj->textView->set_justification('GTK_JUSTIFY_CENTER');
+        $textViewTableObj->textView->set_valign('GTK_ALIGN_CENTER');
+
+#        # (Must store the IV immediately, so the call to ->setBackgroundColour will work)
+        $self->ivPoke('textViewTableObj', $textViewTableObj);
+        $self->setBackgroundColour($self->underlayColour);
 
         my $entryTableObj = $self->winObj->tableStripObj->addTableObj(
             'Games::Axmud::Table::Entry',
             0, 19, 40, 49,
             undef,
             # Init settings
-            'width_chars'   => 8,
-            'max_chars'     => 8,
+            'func'                  => $self->getMethodRef('enterCallback'),
+            'clear_flag'            => FALSE,
+            'width_chars'           => 8,
+            'max_chars'             => 8,
         );
 
         @comboList = (
@@ -15268,7 +15300,7 @@
             20, 39, 40, 49,
             undef,
             # Init settings
-            'list_ref'      => \@comboList,
+            'list_ref'              => \@comboList,
         );
 
         @comboList2 = (
@@ -15280,7 +15312,7 @@
             40, 59, 40, 49,
             undef,
             # Init settings
-            'list_ref'      => \@comboList2,
+            'list_ref'              => \@comboList2,
         );
 
         my $buttonTableObj = $self->winObj->tableStripObj->addTableObj(
@@ -15288,10 +15320,10 @@
             0, 19, 50, 59,
             undef,
             # Init settings
-            'func'          => $self->getMethodRef('startCallback'),
-            'id'            => 'start',
-            'text'          => 'Start',
-            'tooltips'      => 'Start the clock',
+            'func'                  => $self->getMethodRef('startCallback'),
+            'id'                    => 'start',
+            'text'                  => 'Start',
+            'tooltips'              => 'Start the clock',
         );
 
         my $buttonTableObj2 = $self->winObj->tableStripObj->addTableObj(
@@ -15299,11 +15331,11 @@
             20, 39, 50, 59,
             undef,
             # Init settings
-            'func'          => $self->getMethodRef('pauseCallback'),
-            'id'            => 'pause',
-            'text'          => 'Pause',
-            'tooltips'      => 'Pause the clock',
-            'normal_flag'   => FALSE,
+            'func'                  => $self->getMethodRef('pauseCallback'),
+            'id'                    => 'pause',
+            'text'                  => 'Pause',
+            'tooltips'              => 'Pause the clock',
+            'normal_flag'           => FALSE,
         );
 
         my $buttonTableObj3 = $self->winObj->tableStripObj->addTableObj(
@@ -15311,15 +15343,14 @@
             40, 59, 50, 59,
             undef,
             # Init settings
-            'func'          => $self->getMethodRef('stopCallback'),
-            'id'            => 'stop',
-            'text'          => 'Stop',
-            'tooltips'      => 'Stop the clock',
-            'normal_flag'   => FALSE,
+            'func'                  => $self->getMethodRef('stopCallback'),
+            'id'                    => 'stop',
+            'text'                  => 'Stop',
+            'tooltips'              => 'Stop the clock',
+            'normal_flag'           => FALSE,
         );
 
-        # Store the table objects for the benefit of various functions
-        $self->ivPoke('labelTableObj', $labelTableObj);
+        # Store the remaining table objects for the benefit of various functions
         $self->ivPoke('entryTableObj', $entryTableObj);
         $self->ivPoke('comboTableObj', $comboTableObj);
         $self->ivPoke('comboTableObj2', $comboTableObj2);
@@ -15327,7 +15358,7 @@
         $self->ivPoke('buttonTableObj2', $buttonTableObj2);
         $self->ivPoke('buttonTableObj3', $buttonTableObj3);
 
-        # Display all the widgets, including a blank label
+        # Display all the widgets, including a blank textview
         $self->drawTime();
         $self->winObj->winShowAll($self->_objClass . '->createWidgets');
 
@@ -15460,6 +15491,7 @@
         }
 
         # Update table widgets
+        $self->entryTableObj->set_normal(FALSE);
         $self->buttonTableObj->set_normal(FALSE);
         $self->buttonTableObj2->set_normal(TRUE);
         $self->buttonTableObj3->set_normal(TRUE);
@@ -15476,7 +15508,8 @@
 
     sub drawTime {
 
-        # Called by various functions to set (or reset) the clock time displayed as a Gtk3::Label
+        # Called by various functions to set (or reset) the clock time displayed as a
+        #   Gtk3::TextView
         #
         # Expected arguments
         #   (none besides $self)
@@ -15491,7 +15524,10 @@
         my ($self, $secs, $check) = @_;
 
         # Local variables
-        my ($origSecs, $string, $hours, $mins, $fontSize, $textColour, $underlayColour, $modString);
+        my (
+            $origSecs, $string, $hours, $mins, $textColour, $underlayColour, $provider, $display,
+            $screen, $theming, $context,
+        );
 
         # Check for improper arguments
         if (defined $check) {
@@ -15504,7 +15540,7 @@
         if (! defined $secs) {
 
             # No time shown
-            $string = $modString = '';
+            $string = '';
 
         } else {
 
@@ -15529,16 +15565,6 @@
             } else {
                 $string = sprintf('0:%02d', $secs);
             }
-
-            $modString = ' ' . $string . ' ';
-        }
-
-        # Set the pango font size, making sure it's a reasonable value
-        $fontSize = int($self->textSize * 10000);
-        if ($fontSize < 10000) {
-            $fontSize = 10000;
-        } elsif ($fontSize > 100000) {
-            $fontSize = 100000;
         }
 
         # Set the colours to use
@@ -15557,12 +15583,54 @@
             $underlayColour = $self->underlayWarning;
         }
 
-        $self->labelTableObj->label->set_markup(
-            '<span font_family =\'' . $self->textFont . '\' foreground=\'' . $textColour
-            . '\' background=\'' . $underlayColour . '\' size=\'' . $fontSize . '\'>' . $modString
-            . '</span>',
-        );
+        if (! defined $self->previousColour || $self->previousColour ne $underlayColour) {
 
+            # Update IVs (don't change the background, if the old colour is the same as the new one)
+            $self->ivPoke('previousColour', $underlayColour);
+
+            # Update the colour of the background surrounding the Gtk3::TextView
+            $self->setBackgroundColour($underlayColour);
+
+            # Set the textview colours (code adapted from GA::Obj::Desktop->setTextViewStyle)
+            $provider = Gtk3::CssProvider->new();
+            $display = Gtk3::Gdk::Display::get_default();
+            $screen = Gtk3::Gdk::Display::get_default_screen($display);
+            Gtk3::StyleContext::add_provider_for_screen($screen, $provider, 600);
+
+            $theming = "#css_text_id_cdtask, textview text {\n"
+                . "   background-color: "
+                . $axmud::CLIENT->returnRGBColour($underlayColour) . ";\n"
+                . "   color: " . $textColour . ";\n"
+                . "}\n"
+                . "#css_label_id_cdtask, textview {\n";
+
+            # ($self->textSize is a relative value in the range 1-10; convert the Pango value to an
+            #   acceptable CSS value by simple multiplication)
+            if ($^O eq 'MSWin32') {
+
+                $theming
+                .= "   font-family: " . $self->textFont . ";\n"
+                . "   font-size: " . ($self->textSize * 10) . "px;\n"
+                . "}";
+
+            } else {
+
+                $theming
+                .= "   font-family: " . $self->textFont . ", monospace;\n"
+                . "   font-size: " . ($self->textSize * 10). "pt;\n"
+                . "}";
+            }
+
+            $provider->load_from_data ([map ord, split //, $theming]);
+
+            $context = $self->textViewTableObj->textView->get_style_context();
+            $context->add_provider($provider, 600);
+        }
+
+        # Set the text itself
+        $self->textViewTableObj->set_text($string);
+
+        # Update the window title
         if ($string eq '') {
             $self->setTaskWinTitle();
         } else {
@@ -15572,6 +15640,49 @@
         return 1;
     }
 
+    sub setBackgroundColour {
+
+        # Called by $self->createWidgets and ->drawTime to set the colour of the area surrounding
+        #   the textview, to match the textview's own underlay colour
+        #
+        # Expected arguments
+        #   $colour     - A string like 'white' which represents both an Axmud colour tag and a
+        #                   Pango colour, so must be valid for both (if not, 'black' is used as an
+        #                   emergency backup)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $colour, $check) = @_;
+
+        # Local variables
+        my ($rgb, $r, $g, $b);
+
+        # Check for improper arguments
+        if (! defined $colour || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->setBackgroundColour', @_);
+        }
+
+        $rgb = $axmud::CLIENT->ivShow('colourTagHash', $colour);
+        if (! defined $rgb) {
+
+            $rgb = '#000000';
+        }
+
+        $r = hex(substr($rgb, 1, 2)) / 255;
+        $g = hex(substr($rgb, 3, 2)) / 255;
+        $b = hex(substr($rgb, 5, 2)) / 255;
+
+        $self->textViewTableObj->scroll->override_background_color(
+            'GTK_STATE_FLAG_NORMAL',
+            Gtk3::Gdk::RGBA->new($r, $g, $b, 1),
+        );
+
+        return 1,
+    }
+
     ##################
     # Response methods
 
@@ -15579,6 +15690,7 @@
 
         # Called by a ->signal_connect in a GA::Table::Button object when the user clicks on the
         #   'Start' button
+        # Also called by $self->entryCallback
         #
         # Expected arguments
         #   $tableObj   - The GA::Table::Button object for the button
@@ -15682,6 +15794,7 @@
             $self->ivPoke('clockFreeze', $self->session->sessionTime);
 
             # Update widgets
+            $self->entryTableObj->set_normal(FALSE);
             $self->buttonTableObj->set_normal(FALSE);
             $self->buttonTableObj2->set_normal(TRUE);
             $self->buttonTableObj3->set_normal(FALSE);
@@ -15697,9 +15810,10 @@
             $self->ivUndef('clockFreeze');
 
             # Update widgets
+            $self->entryTableObj->set_normal(FALSE);
             $self->buttonTableObj->set_normal(FALSE);
             $self->buttonTableObj2->set_normal(TRUE);
-            $self->buttonTableObj3->set_normal(FALSE);
+            $self->buttonTableObj3->set_normal(TRUE);
         }
 
         return 1;
@@ -15751,11 +15865,45 @@
         $self->ivUndef('clockWarning');
 
         # Update widgets
+        $self->entryTableObj->set_normal(TRUE);
         $self->buttonTableObj->set_normal(TRUE);
         $self->buttonTableObj2->set_normal(FALSE);
         $self->buttonTableObj3->set_normal(FALSE);
 
         return 1;
+    }
+
+    sub enterCallback {
+
+        # Called by a ->signal_connect in a GA::Table::Button object when the user clicks on the
+        #   types a value in he Gtk3::Entry, and presses Enter
+        #
+        # Expected arguments
+        #   $tableObj   - The GA::Table::Entry object for the button
+        #   $entry      - The actual Gtk3::Entry used
+        #   $id         - The callback ID
+        #   $value      - The contents of the Gtk3:Entry
+        #
+        # Return values
+        #   'undef' on improper arguments, if the user hasn't entered a valid time value (or if
+        #       they've entered no value at all) or if $self->countMode is not 'default'
+        #   1 otherwise
+
+        my ($self, $tableObj, $entry, $id, $value, $check) = @_;
+
+        # Local variables
+        my ($time, $unit, $method);
+
+        # Check for improper arguments
+        if (
+            ! defined $tableObj || ! defined $entry || ! defined $id || ! defined $value
+            || defined $check
+        ) {
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->enterCallback', @_);
+        }
+
+        # For convenience, just make a fake call to the 'Start' button's callback
+        return $self->startCallback($tableObj, $entry, $id);
     }
 
     ##################
@@ -15769,8 +15917,8 @@
     ##################
     # Accessors - task parameters - get
 
-    sub labelTableObj
-        { $_[0]->{labelTableObj} }
+    sub textViewTableObj
+        { $_[0]->{textViewTableObj} }
     sub entryTableObj
         { $_[0]->{entryTableObj} }
     sub comboTableObj
@@ -15789,8 +15937,6 @@
     sub initTime
         { $_[0]->{initTime} }
 
-    sub textLen
-        { $_[0]->{textLen} }
     sub textFont
         { $_[0]->{textFont} }
     sub textSize
@@ -15803,6 +15949,8 @@
         { $_[0]->{textWarning} }
     sub underlayWarning
         { $_[0]->{underlayWarning} }
+    sub previousColour
+        { $_[0]->{previousColour} }
 
     sub countMode
         { $_[0]->{countMode} }
@@ -15831,7 +15979,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -15942,7 +16090,8 @@
         $self->{storableFlag}           = TRUE;
         $self->{delayTime}              = 0;
         $self->{allowWinFlag}           = TRUE;
-        $self->{requireWinFlag}         = TRUE;
+        # v1.3.111 - in blind mode, no window appears (but TTS is still available)
+        $self->{requireWinFlag}         = FALSE;
         $self->{startWithWinFlag}       = TRUE;
         $self->{winPreferList}          = ['entry', 'grid'];
         $self->{winmap}                 = 'entry_fill';
@@ -17198,7 +17347,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -17749,7 +17898,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -19650,7 +19799,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -20462,7 +20611,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -29881,7 +30030,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -30226,7 +30375,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -30894,7 +31043,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -31152,7 +31301,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -31660,7 +31809,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -31845,6 +31994,13 @@
         #   object
         $self->{statusBarHash}          = {};
 
+        # The equivalent IVs for the WINADDGAUGE and WINADDCONGAUGE statements, for gauges in the
+        #   task window
+        $self->{taskWinGaugeStripObj}   = undef;
+        $self->{taskWinGaugeLevel}      = undef;
+        $self->{taskWinGaugeHash}       = {};
+        $self->{taskWinStatusBarHash}   = {};
+
         # Flag set to TRUE when this task is started with ;runscripttask -w (set to FALSE otherwise)
         # In 'forced window' mode, the task opens an 'entry' task window before starting to execute
         #   the script. Then, it notifies the AB::Script that output from all PRINT statements must
@@ -31958,6 +32114,11 @@
         $clone->{gaugeLevel}            = $self->gaugeLevel;
         $clone->{gaugeHash}             = {$self->gaugeHash};
         $clone->{statusBarHash}         = {$self->statusBarHash};
+
+        $clone->{taskWinGaugeStripObj}  = $self->taskWinGaugeStripObj;
+        $clone->{taskWinGaugeLevel}     = $self->taskWinGaugeLevel;
+        $clone->{taskWinGaugeHash}      = {$self->taskWinGaugeHash};
+        $clone->{taskWinStatusBarHash}  = {$self->taskWinStatusBarHash};
 
         $clone->{forcedWinFlag}         = $self->forcedWinFlag;
 
@@ -32097,7 +32258,7 @@
             $self->scriptObj->destroyOwnInterfaces();
         }
 
-        # If any gauges/status bars have been created, destroy them
+        # If any main wnidow gauges/status bars have been created, destroy them
         if ($self->gaugeStripObj && ($self->gaugeHash || $self->statusBarHash)) {
 
             $self->gaugeStripObj->removeGauges(
@@ -32135,7 +32296,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->doReset', @_);
         }
 
-        # If any gauges/status bars have been created, destroy them
+        # If any main window gauges/status bars have been created, destroy them
         if ($self->gaugeStripObj && ($self->gaugeHash || $self->statusBarHash)) {
 
            $self->gaugeStripObj->removeGauges(
@@ -33027,7 +33188,7 @@
         return 1;
     }
 
-    sub addGauge {
+    sub addMainWinGauge {
 
         # Called by LA::Statement::addgauge->implement or ::addcongauge->implement
         # Adds a 'main' window gauge, creating a new gauge level if one doesn't already exist for
@@ -33063,7 +33224,7 @@
         if (
             ! defined $number || ! defined $label || ! defined $addFlag || defined $check
         ) {
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->addGauge', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->addMainWinGauge', @_);
         }
 
         # Find the GA::Strip::GaugeBox object for the session's 'main' window (which is the
@@ -33110,7 +33271,7 @@
             );
         }
 
-        # Conver the specified colour tags into RGB colour tags (or use default colours, if the
+        # Convert the specified colour tags into RGB colour tags (or use default colours, if the
         #   specified tags are invalid)
         if (defined $fullCol) {
 
@@ -33169,12 +33330,12 @@
             $self->ivAdd('gaugeHash', $number, $gaugeObj);
         }
 
-        $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->addGauge');
+        $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->addMainWinGauge');
 
         return 1;
     }
 
-    sub deleteGauge {
+    sub deleteMainWinGauge {
 
         # Called by LA::Statement::delgauge->implement
         # Deletes a 'main' window gauge, removing the gauge level if there are no gauges/status bars
@@ -33185,7 +33346,7 @@
         #                   (not related to GA::Obj::Gauge->number)
         #
         # Return values
-        #   'undef' on improper arguments or if the task window isn't open
+        #   'undef' on improper arguments
         #   1 otherwise
 
         my ($self, $number, $check) = @_;
@@ -33193,7 +33354,7 @@
         # Check for improper arguments
         if (! defined $number || defined $check) {
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->deleteGauge', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->deleteMainWinGauge', @_);
         }
 
         # Delete the gauge with this local $number, if it exists
@@ -33218,7 +33379,7 @@
         return 1;
     }
 
-    sub setGauge {
+    sub setMainWinGauge {
 
         # Called by LA::Statement::setgauge->implement
         # Sets the values displayed by the gauge, and tells the gauge box to re-draw its gauges
@@ -33235,7 +33396,7 @@
         #                   'undef'
         #
         # Return values
-        #   'undef' on improper arguments or if the task window isn't open
+        #   'undef' on improper arguments
         #   1 otherwise
 
         my ($self, $number, $val, $maxVal, $check) = @_;
@@ -33246,7 +33407,7 @@
         # Check for improper arguments
         if (! defined $number || defined $check) {
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->setGauge', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->setMainWinGauge', @_);
         }
 
         $gaugeObj = $self->ivShow('gaugeHash', $number);
@@ -33262,7 +33423,7 @@
         return 1;
     }
 
-    sub addStatusBar {
+    sub addMainWinStatusBar {
 
         # Called by LA::Statement::addstatus->implement or ::addconstatus->implement
         # Adds a 'main' window status bar, creating a new gauge level if one doesn't already exist
@@ -33279,7 +33440,7 @@
         #                   statements, TRUE when called by ADDCONSTATUS statements
         #
         # Return values
-        #   'undef' on improper arguments or if the task window isn't open
+        #   'undef' on improper arguments or if the gauge can't be added
         #   1 otherwise
 
         my ($self, $number, $label, $addFlag, $check) = @_;
@@ -33290,7 +33451,7 @@
         # Check for improper arguments
         if (! defined $number || ! defined $label || ! defined $addFlag || defined $check) {
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->addStatusBar', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->addMainWinStatusBar', @_);
         }
 
         # Find the GA::Strip::GaugeBox object for the session's 'main' window (which is the window
@@ -33358,12 +33519,12 @@
             $self->ivAdd('statusBarHash', $number, $gaugeObj);
         }
 
-        $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->addStatusBar');
+        $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->addMainWinStatusBar');
 
         return 1;
     }
 
-    sub deleteStatusBar {
+    sub deleteMainWinStatusBar {
 
         # Called by LA::Statement::delstatus->implement
         # Deletes a 'main' window status bar, removing the gauge level if there are no gauges/status
@@ -33374,7 +33535,7 @@
         #                   $self->statusBarHash (not related to GA::Obj::Gauge->number)
         #
         # Return values
-        #   'undef' on improper arguments or if the task window isn't open
+        #   'undef' on improper arguments
         #   1 otherwise
 
         my ($self, $number, $check) = @_;
@@ -33382,7 +33543,7 @@
         # Check for improper arguments
         if (! defined $number || defined $check) {
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->deleteStatusBar', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->deleteMainWinStatusBar', @_);
         }
 
         # Delete the status bar with this local $number, if it exists
@@ -33407,7 +33568,7 @@
         return 1;
     }
 
-    sub setStatusBar {
+    sub setMainWinStatusBar {
 
         # Called by LA::Statement::setstatus->implement
         # Sets the values displayed by the status bar, and tells the 'main' window to re-draw its
@@ -33425,7 +33586,7 @@
         #                   (graphical) gauge. Can also be set to 'undef'
         #
         # Return values
-        #   'undef' on improper arguments or if the task window isn't open
+        #   'undef' on improper arguments
         #   1 otherwise
 
         my ($self, $number, $val, $maxVal, $check) = @_;
@@ -33436,7 +33597,7 @@
         # Check for improper arguments
         if (! defined $number || defined $check) {
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->setStatusBar', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->setMainWinStatusBar', @_);
         }
 
         $gaugeObj = $self->ivShow('statusBarHash', $number);
@@ -33447,6 +33608,425 @@
             $gaugeObj->ivPoke('maxValue', $maxVal);
 
             $self->gaugeStripObj->updateGauges();
+        }
+
+        return 1;
+    }
+
+    sub addTaskWinGauge {
+
+        # Called by LA::Statement::winaddgauge->implement or ::winaddcongauge->implement
+        # Adds a task window gauge, creating a new gauge level if one doesn't already exist for
+        #   this task
+        #
+        # Expected arguments
+        #   $number     - A local gauge number for this task
+        #                   (not related to GA::Obj::Gauge->number). The Language::Axbasic script
+        #                   can specify any integer number >= 0. If this task has already created a
+        #                   gauge with that local number, it is replaced
+        #   $label      - The label to use. If it's an empty string, this function assigns its own
+        #                   label
+        #   $addFlag    - Flag matching GA::Obj::Gauge->addFlag. FALSE when called by WINADDGAUGE
+        #                   statements, TRUE when called by WINADDCONGAUGE statements
+        #
+        # Optional arguments
+        #   $fullCol    - The colour of the full portion of the gauge. Must be an Axmud colour tag
+        #                   (including standard, xterm and RGB tags). If an empty string, 'undef' or
+        #                   an invalid colour tag, the default gauge colour is used
+        #   $emptyCol   - The colour of the empty portion of the gauge
+        #   $labelCol   - The colour of the label
+        #
+        # Return values
+        #   'undef' on improper arguments or if the gauge can't be added
+        #   1 otherwise
+
+        my ($self, $number, $label, $addFlag, $fullCol, $emptyCol, $labelCol, $check) = @_;
+
+        # Local variables
+        my ($stripObj, $level, $gaugeObj, $fullType, $emptyType, $labelType);
+
+        # Check for improper arguments
+        if (
+            ! defined $number || ! defined $label || ! defined $addFlag || defined $check
+        ) {
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->addTaskWinGauge', @_);
+        }
+
+        # The standard winmaps used by tasks don't provide gauges, so insert one ourselves
+        if (! $self->taskWinGaugeStripObj) {
+
+            $stripObj = $self->winObj->addStripObj('Games::Axmud::Strip::GaugeBox');
+            if (! $stripObj) {
+
+                return undef;
+
+            } else {
+
+                $self->ivPoke('taskWinGaugeStripObj', $stripObj);
+            }
+        }
+
+        # Add a gauge level for this task, if one doesn't already exist
+        if (! defined $self->taskWinGaugeLevel) {
+
+            # The TRUE flag means 'don't draw it yet'
+            $level = $self->taskWinGaugeStripObj->addGaugeLevel($self->session, TRUE);
+            if (! defined $level) {
+
+                return undef;
+
+            } else {
+
+                $self->ivPoke('taskWinGaugeLevel', $level);
+            }
+        }
+
+        # If this task has already created a gauge with the local number $number, remove it
+        if ($self->ivExists('taskWinGaugeHash', $number)) {
+
+            $self->taskWinGaugeStripObj->removeGauges(
+                $self->session,
+                TRUE,
+                $self->ivShow('taskWinGaugeHash', $number),
+            );
+        }
+
+        # Convert the specified colour tags into RGB colour tags (or use default colours, if the
+        #   specified tags are invalid)
+        if (defined $fullCol) {
+
+            ($fullType) = $axmud::CLIENT->checkColourTags($fullCol);
+        }
+
+        if (! $fullType) {
+            $fullCol = $self->taskWinGaugeStripObj->gaugeFullColour;
+        } else {
+            $fullCol = $axmud::CLIENT->returnRGBColour($fullCol);
+        }
+
+        if (defined $emptyCol) {
+
+            ($emptyType) = $axmud::CLIENT->checkColourTags($emptyCol);
+        }
+
+        if (! $emptyType) {
+            $emptyCol = $self->taskWinGaugeStripObj->gaugeEmptyColour;
+        } else {
+            $emptyCol = $axmud::CLIENT->returnRGBColour($emptyCol);
+        }
+
+        if (defined $labelCol) {
+
+            ($labelType) = $axmud::CLIENT->checkColourTags($labelCol);
+            if (! $labelType) {
+                $labelCol = $self->taskWinGaugeStripObj->gaugeLabelColour;
+            } else {
+                $labelCol = $axmud::CLIENT->returnRGBColour($labelCol);
+            }
+        }
+
+        # Assign a label, if none was specified
+        if ($label eq '') {
+
+            $label = 'Gauge ' . $number;
+        }
+
+        # Add the gauge
+        $gaugeObj = $self->taskWinGaugeStripObj->addGauge(
+            $self->session,
+            $self->taskWinGaugeLevel,
+            undef,
+            undef,
+            $addFlag,
+            $label,
+            $fullCol,
+            $emptyCol,
+            $labelCol,
+            TRUE,
+        );
+
+        if ($gaugeObj) {
+
+            $self->ivAdd('taskWinGaugeHash', $number, $gaugeObj);
+        }
+
+        $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->addTaskWinGauge');
+
+        return 1;
+    }
+
+    sub deleteTaskWinGauge {
+
+        # Called by LA::Statement::windelgauge->implement
+        # Deletes a task window gauge, removing the gauge level if there are no gauges/status bars
+        #   left for this task
+        #
+        # Expected arguments
+        #   $number     - A local gauge number for this task, matching a key in
+        #                   $self->taskWinGaugeHash (not related to GA::Obj::Gauge->number)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $number, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $number || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->deleteTaskWinGauge', @_);
+        }
+
+        # Delete the gauge with this local $number, if it exists
+        if ($self->ivExists('taskWinGaugeHash', $number)) {
+
+          $self->taskWinGaugeStripObj->removeGauges(
+                $self->session,
+                FALSE,
+                $self->ivShow('taskWinGaugeHash', $number),
+            );
+
+            $self->ivDelete('taskWinGaugeHash', $number);
+
+            # If there are no more gauges/status bars left for this task, remove the gauge level
+            #   assigned to it
+            if (! $self->taskWinGaugeHash && ! $self->taskWinStatusBarHash) {
+
+                $self->taskWinGaugeStripObj->removeGaugeLevel(
+                    $self->session, $self->taskWinGaugeLevel,
+                );
+            }
+        }
+
+        return 1;
+    }
+
+    sub setTaskWinGauge {
+
+        # Called by LA::Statement::winsetgauge->implement
+        # Sets the values displayed by the gauge, and tells the gauge box to re-draw its gauges
+        #
+        # Expected arguments
+        #   $number     - A local gauge number for this task, matching a key in
+        #                   $self->taskWinGaugeHash (not related to GA::Obj::Gauge->number)
+        #
+        # Optional arguments
+        #   $val        - The value to use for the full portion of the gauge. Can be set to 'undef'
+        #                   if the value supplied by the Axbasic script wasn't a valid decimal
+        #                   number
+        #   $maxVal     - The value to use for the empty portion of the gauge. Can also be set to
+        #                   'undef'
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $number, $val, $maxVal, $check) = @_;
+
+        # Local variables
+        my $gaugeObj;
+
+        # Check for improper arguments
+        if (! defined $number || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->setTaskWinGauge', @_);
+        }
+
+        $gaugeObj = $self->ivShow('taskWinGaugeHash', $number);
+        # If the gauge with this local $number exists...
+        if ($gaugeObj) {
+
+            $gaugeObj->ivPoke('value', $val);
+            $gaugeObj->ivPoke('maxValue', $maxVal);
+
+            $self->taskWinGaugeStripObj->updateGauges();
+        }
+
+        return 1;
+    }
+
+    sub addTaskWinStatusBar {
+
+        # Called by LA::Statement::winaddstatus->implement or ::winaddconstatus->implement
+        # Adds a task window status bar, creating a new gauge level if one doesn't already exist for
+        #   this task
+        #
+        # Expected arguments
+        #   $number     - A local status bar number for this task
+        #                   (not related to GA::Obj::Gauge->number). The Axbasic script can specify
+        #                   any integer number >= 0. If this task has already created a status bar
+        #                   with that local number, it is replaced
+        #   $label      - The label to use. If it's an empty string, this function assigns its own
+        #                   label
+        #   $addFlag    - Flag matching GA::Obj::Gauge->addFlag. FALSE when called by WINADDSTATUS
+        #                   statements, TRUE when called by WINADDCONSTATUS statements
+        #
+        # Return values
+        #   'undef' on improper arguments or if the gauge can't be added
+        #   1 otherwise
+
+        my ($self, $number, $label, $addFlag, $check) = @_;
+
+        # Local variables
+        my ($stripObj, $level, $gaugeObj);
+
+        # Check for improper arguments
+        if (! defined $number || ! defined $label || ! defined $addFlag || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->addTaskWinStatusBar', @_);
+        }
+
+        # The standard winmaps used by tasks don't provide gauges, so insert one ourselves
+        if (! $self->taskWinGaugeStripObj) {
+
+            $stripObj = $self->winObj->addStripObj('Games::Axmud::Strip::GaugeBox');
+            if (! $stripObj) {
+
+                return undef;
+
+            } else {
+
+                $self->ivPoke('taskWinGaugeStripObj', $stripObj);
+            }
+        }
+
+        # Add a gauge level for this task, if one doesn't already exist
+        if (! defined $self->taskWinGaugeLevel) {
+
+            # The TRUE flag means 'don't draw it yet'
+            $level = $self->taskWinGaugeStripObj->addGaugeLevel($self->session, TRUE);
+            if (! defined $level) {
+
+                return undef;
+
+            } else {
+
+                $self->ivPoke('taskWinGaugeLevel', $level);
+            }
+        }
+
+        # If this task has already created a status bar with the local number $number, remove it
+        if ($self->ivExists('taskWinStatusBarHash', $number)) {
+
+            $self->taskWinGaugeStripObj->removeGauges(
+                $self->session,
+                FALSE,
+                $self->ivShow('taskWinStatusBarHash', $number),
+            );
+        }
+
+        # Assign a label, if none was specified
+        if ($label eq '') {
+
+            $label = 'Bar ' . $number;
+        }
+
+        # Add the status bar
+        $gaugeObj = $self->taskWinGaugeStripObj->addTextGauge(
+            $self->session,
+            $self->taskWinGaugeLevel,
+            undef,
+            undef,
+            $addFlag,
+            $label,
+        );
+
+        if ($gaugeObj) {
+
+            $self->ivAdd('taskWinStatusBarHash', $number, $gaugeObj);
+        }
+
+        $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->addTaskWinStatusBar');
+
+        return 1;
+    }
+
+    sub deleteTaskWinStatusBar {
+
+        # Called by LA::Statement::windelstatus->implement
+        # Deletes a task window status bar, removing the gauge level if there are no gauges/status
+        #   bars left for this task
+        #
+        # Expected arguments
+        #   $number     - A local status bar number for this task, matching a key in
+        #                   $self->taskWinStatusBarHash (not related to GA::Obj::Gauge->number)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $number, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $number || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->deleteTaskWinStatusBar', @_);
+        }
+
+        # Delete the status bar with this local $number, if it exists
+        if ($self->ivExists('taskWinStatusBarHash', $number)) {
+
+          $self->taskWinGaugeStripObj->removeGauges(
+                $self->session,
+                FALSE,
+                $self->ivShow('taskWinStatusBarHash', $number),
+            );
+
+            $self->ivDelete('taskWinStatusBarHash', $number);
+
+            # If there are no more gauges/status bars left for this task, remove the gauge level
+            #   assigned to it
+            if (! $self->taskWinGaugeHash && ! $self->taskWinStatusBarHash) {
+
+                $self->taskWinGaugeStripObj->removeGaugeLevel(
+                    $self->session, $self->taskWinGaugeLevel,
+                );
+            }
+        }
+
+        return 1;
+    }
+
+    sub setTaskWinStatusBar {
+
+        # Called by LA::Statement::winsetstatus->implement
+        # Sets the values displayed by the status bar, and tells the 'main' window to re-draw its
+        #   gauges/status bars
+        #
+        # Expected arguments
+        #   $number     - A local status bar number for this task, matching a key in
+        #                   $self->taskWinStatusBarHash (not related to GA::Obj::Gauge->number)
+        #
+        # Optional arguments
+        #   $val        - The value to use that's the equivalent of the full portion of a
+        #                   (graphical) gauge. Can be set to 'undef' if the value supplied by the
+        #                   Axbasic script wasn't a valid decimal number
+        #   $maxVal     - The value to use that's the equivalent of the empty portion of a
+        #                   (graphical) gauge. Can also be set to 'undef'
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $number, $val, $maxVal, $check) = @_;
+
+        # Local variables
+        my $gaugeObj;
+
+        # Check for improper arguments
+        if (! defined $number || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->setTaskWinStatusBar', @_);
+        }
+
+        $gaugeObj = $self->ivShow('taskWinStatusBarHash', $number);
+        # If the status bar with this local $number exists...
+        if ($gaugeObj) {
+
+            $gaugeObj->ivPoke('value', $val);
+            $gaugeObj->ivPoke('maxValue', $maxVal);
+
+            $self->taskWinGaugeStripObj->updateGauges();
         }
 
         return 1;
@@ -34004,6 +34584,15 @@
     sub statusBarHash
         { my $self = shift; return %{$self->{statusBarHash}}; }
 
+    sub taskWinGaugeStripObj
+        { $_[0]->{taskWinGaugeStripObj} }
+    sub taskWinGaugeLevel
+        { $_[0]->{taskWinGaugeLevel} }
+    sub taskWinGaugeHash
+        { my $self = shift; return %{$self->{taskWinGaugeHash}}; }
+    sub taskWinStatusBarHash
+        { my $self = shift; return %{$self->{taskWinStatusBarHash}}; }
+
     sub forcedWinFlag
         { $_[0]->{forcedWinFlag} }
 }
@@ -34012,7 +34601,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -36152,7 +36741,7 @@
         #
         # Expected arguments
         #   $var    - A character, local or custom variable (stored as a key in
-        #               $self->constCharVarHash, ->localVarHash or ->customVarHash
+        #               $self->constCharVarHash, ->localVarHash or ->customVarHash)
         #
         # Optional arguments
         #   $val    - The value to set (can be 'undef')
@@ -39958,7 +40547,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -40528,7 +41117,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -40834,7 +41423,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 

@@ -1,4 +1,4 @@
-# Axmud list of all worlds, created Fri Sep 18, 2020
+# Axmud list of all worlds, created Sun Jan 21, 2024
 
 Aabahran, The Forsaken Lands
 aabahran
@@ -1048,7 +1048,7 @@ bylins
 bylins.su
 4000
 0
-Russkiy
+Русский
 
 Cajun Nights MUSH
 cajunnights

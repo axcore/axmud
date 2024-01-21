@@ -1,17 +1,17 @@
 mcall / chatmcall             Calls someone using the MudMaster protocol
- 
+
    Format:
       ;mcall <ip>             Calls someone on the default port
       ;mcall <ip> <port>      Calls someone on the specified <port>
- 
+
    Notes:
       The Chat task is used to chat with other players directly via telnet.
          Calls can be placed (or accepted) with any user whose MUD client uses
          the zChat or MudMaster protocols.
-      This command opens a chat session using the MudMaster chat protocol. A new 
+      This command opens a chat session using the MudMaster chat protocol. A new
          Chat task is created, if necessary.
       To call using the zChat protocol, use the ';chatzcall' command. To call
          someone on your contacts list, use the ';chatcall' command.
- 
+
    User commands:
       mcall / chatmcall

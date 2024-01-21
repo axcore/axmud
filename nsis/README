@@ -1,1 +1,4 @@
-These files in this directory are used to create the MS Windows installer
+These files in this directory are used to create the MS Windows installer.
+
+If you want to create your own installer, see the comprehensive instructions in
+    the 'axmud_install.nsi' file.

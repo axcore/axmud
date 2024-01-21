@@ -1,12 +1,12 @@
-The Condition task is used in partnership with the Inventory task, which 
+The Condition task is used in partnership with the Inventory task, which
    keeps track of your character's inventory.
-You can activate and disactivate the Condition task. While activated, the 
+You can activate and disactivate the Condition task. While activated, the
    task sends commands like 'examine sword' to the world periodically, hoping
    for a response like 'Your sword is in excellent condition'.
 Ordinarily, one command is sent for every object in your character's
    inventory. The task waits for a response from each command before sending
    the next one.
-However, if you defined one or more 'monitored objects', 'examine' commands 
+However, if you defined one or more 'monitored objects', 'examine' commands
    are only sent for items in the inventory which are marked as monitored.
 
 Client commands used with the Inventory/Condition tasks are:

@@ -1,10 +1,10 @@
 bud / backupdata              Creates a backup copy of the Axmud data directory
- 
+
    Format:
       ;bud                    Creates a backup copy
       ;bud -t                 Creates a backup copy in .tgz format
       ;bud -z                 Creates a backup copy in .zip format
- 
+
    Notes:
       Axmud stores all of its data files in a single directory (folder). This
          command makes a backup copy of the whole directory.
@@ -21,6 +21,6 @@ bud / backupdata              Creates a backup copy of the Axmud data directory
          Otherwise you'll be prompted to choose a directory.
 
       See also the help for ';setdatadirectory'.
-          
+
    User commands:
       bud / backup / backupdata

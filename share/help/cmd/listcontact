@@ -1,14 +1,14 @@
 lcn / listcontact             Displays your contacts list
- 
+
    Format:
       ;lcn                    Displays the list
- 
+
    Notes:
       The Chat task is used to chat with other players directly via telnet.
          Calls can be placed (or accepted) with any user whose MUD client uses
          the zChat or MudMaster protocols.
       Use ';addcontact' and ';deletecontact' to add or remove contacts from your
          contacts list.
- 
+
    User commands:
       lcn / listcontact

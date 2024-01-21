@@ -13,7 +13,7 @@ Ncpos (string, substring, n)
          substring is an empty string but the string isn't, 1 is returned.
       If the third argument is specified, the search begins at the nth character
          in the string and proceeds to the right. Ncpos (string, substring, 1)
-         is interchangeable with Ncpos (string, substring). If the substring is 
+         is interchangeable with Ncpos (string, substring). If the substring is
          empty but the string isn't, the starting position is returned.
       If n is not an integer, it is rounded off. An error occurs if n is zero or
          a negative number.

@@ -7,7 +7,7 @@ td, th { border: 1px solid #c3c3c3; padding: 0 3px 0 3px; }
 table { border-collapse: collapse; }
 img { max-width: 100%; }
 </style>
-<meta name="generator" content="ReText 7.1.0">
+<meta name="generator" content="ReText 7.2.3">
 <title>ch15</title>
 <style type="text/css">
 </style>
@@ -24,6 +24,7 @@ img { max-width: 100%; }
 <li><a href="#15.4">15.4 Setting gauge values</a></li>
 <li><a href="#15.5">15.5 Using constant gauges</a></li>
 <li><a href="#15.6">15.6 Status bars</a></li>
+<li><a href="#15.7">15.7 Gauges in task windows</a></li>
 </ul>
 <hr>
 <p>An Axbasic script has total control of its own task window, but it has only limited control over what is displayed in Axmud's main window.</p>
@@ -110,6 +111,19 @@ img { max-width: 100%; }
     ADDCONSTATUS 400, "pockets"
     SETSTATUS 400, pencils, pens
 </code></pre>
+<h2><a name="15.7">15.7 Gauges in task windows</a></h2>
+<p>Gauges and status bars can be displayed in the task's own window, as well as in the main window. The code is exactly the same, except that ADDGAUGE becomes WINADDGAUGE, ADDSTATUS becomes WINADDSTATUS, and so on.</p>
+<p>Don't forget that you'll need an OPENWIN statement, in order to open the task window in the first place.</p>
+<pre><code>    OPENWIN
+    WINADDGAUGE 100, "health points"
+    WINSETGAUGE 100, 10, 20
+    PAUSE 5
+    WINDELGAUGE 100
+    PAUSE 5
+    CLOSEWIN
+    END
+</code></pre>
+<p>Once again, gauge numbers and status bar numbers in the two windows are separate. You can create two gauges numbered 100, one in the main window and the other in the task window, and both will be visible.</p>
 <hr>
 <p><a href="ch14.html">Previous</a> <a href="index.html">Index</a> <a href="ch16.html">Next</a></p>
 

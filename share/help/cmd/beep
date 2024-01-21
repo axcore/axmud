@@ -1,11 +1,11 @@
 beep / beep                   Plays the 'beep' sound effect
- 
+
    Format:
       ;beep                   Plays a beep
-      
+
    Notes:
-      This command is a shortcut to ';quicksoundeffect beep'. If sound is 
+      This command is a shortcut to ';quicksoundeffect beep'. If sound is
          turned off, you won't hear anything (use ';sound on' to turn it on.)
-          
+
    User commands:
       beep

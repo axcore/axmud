@@ -1,13 +1,13 @@
 lse / listsoundeffect         Shows the sound effects bank
- 
+
    Format:
       ;lse                    Lists sound effects
- 
+
    Notes:
-      Axmud's sound effects bank contains a list of named sound effects, each of 
+      Axmud's sound effects bank contains a list of named sound effects, each of
          which corresponds to a sound file. This command displays the contents
          of the bank.
-      See the help for ';sound' for more information about the default sound 
+      See the help for ';sound' for more information about the default sound
          effects bank.
 
    User commands:

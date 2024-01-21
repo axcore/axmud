@@ -6,7 +6,7 @@ SETTIMER expression [ , expression ]
    Notes:
       A convenient way to create a timer that launches another Axbasic script
          (or notifies this script's parent task) whenever it fires.
-         
+
       The first expression is the stimulus (an interval, in seconds).
       (Axmud automatically assigns its own name to dependent triggers.)
 
@@ -24,10 +24,10 @@ SETTIMER expression [ , expression ]
          second expression (specifying another script to run) is ignored (and no
          error message is generated). Execution continues with the next
          statement.
-         
+
    Compatibility:
       Since Axbasic v1.4
-      
+
    Examples:
       SETTIMER 180
       SETTIMER 180, "drink_potion"

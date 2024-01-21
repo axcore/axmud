@@ -4,7 +4,7 @@ lchp / listchannelpattern     Lists Channels/Divert task patterns
       ;lchp                   Lists all patterns
       ;lchp <channel>         Lists patterns assigned to <channel>
       ;lchp -e                Lists exception patterns
- 
+
    Notes:
       The Channels and Divert tasks intercept text received from the world and
          divert that text into their own task window. Sometimes the text is
@@ -20,6 +20,6 @@ lchp / listchannelpattern     Lists Channels/Divert task patterns
          profile. You'll notice that the list is a numbered list; you'll need to
          know a pattern's number before you can use ';deletechannelpattern' to
          delete it.
- 
+
    User commands:
       lchp / listchan / listchannel / listchannelpattern

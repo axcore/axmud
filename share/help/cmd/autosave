@@ -1,11 +1,11 @@
 ats / autosave                Turns auto-saves on/off
- 
+
    Format:
       ;ats                    Shows current auto-save settings
       ;ats on                 Turns auto-saves on
       ;ats off                Turns auto-saves off
       ;ats <minutes>          Sets the time between auto-saves
- 
+
    Notes:
       Autosaving is turned on by default.
       ';autosave on' and ';autosave off' turn auto-saves on/off for every

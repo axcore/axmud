@@ -1,5 +1,5 @@
 slu / setlookup               Sets the list of IP lookup servers
- 
+
    Format:
       ;slu <list>             Sets the list
       ;sfw                    Empties the list
@@ -17,6 +17,6 @@ slu / setlookup               Sets the list of IP lookup servers
          ';listlookup' to show the list of servers.
       Your IP is only fetched once. If you need to replace the stored value, for
          some reason, you can use the ';forcelookup' command.
- 
+
    User commands:
       slu / setlu / setlookup

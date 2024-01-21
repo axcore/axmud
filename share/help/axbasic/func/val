@@ -5,6 +5,6 @@ Val (string)
 
    Notes:
       Returns 0 if the string isn't a numeric value.
-         
+
    Examples:
       Val ("65") returns 65.

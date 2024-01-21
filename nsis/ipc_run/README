@@ -4,16 +4,6 @@ Modified files from the Perl IPC::Run module, by Adam Kennedy and Barrie
 For instructions about what to do with these files, see the instructions in the
     ../axmud/nsis/axmud_install.nsi file
 
-Note that the upload to CPAN causes Kwalitee issues, so the modified files are
-    removed from that version. You can get them from 
-
-    https://github.com/axcore/axmud
-
 Changes:
-- In Run.pm, copied the &start function, renamed the copy as &start_festival,
-    and made the copy call IPC::Run::Win32Helper::win32_spawn_festival, instead
-    of ::win32_spawn
-- Also changed the &kill_kill function to reduce the delay
-- In Win32Helper.pm, copied the &win32_spawn, renamed the copy as
-    &win32_spawn_festival, and adjusted the search and replace code so it
-    doesn't replace every instance of " with """
+- In Run.pm, changed the &kill_kill function to reduce the delay from 0.5 to
+    0.05 seconds

@@ -8,8 +8,8 @@ GOSUB expression
          script with primitive line numbers. (A 'real' subroutine is one in an
          Axbasic script without line numbers, which is declared with a SUB
          statement.)
-      The expression must evaluate to a line number or an error will occur. 
-         Complex expressions like '(x + 10) / 2' can be used as well as simple 
+      The expression must evaluate to a line number or an error will occur.
+         Complex expressions like '(x + 10) / 2' can be used as well as simple
          line numbers like 100.
       Execution jumps to the specified line number, but when the first RETURN
          statement is encountered, execution returns to the first statement

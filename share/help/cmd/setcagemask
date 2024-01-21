@@ -1,5 +1,5 @@
 smk / setcagemask             Manages cage masks
- 
+
    Format:
       ;smk <type> <switch> -a <iv> <data>
                Sets the instance variable <iv> with <data>
@@ -9,20 +9,20 @@ smk / setcagemask             Manages cage masks
                Displays the specified mask
       ;smk <type> <switch> -n <task_name>
                Applies the specified mask now
- 
+
    Notes:
       Cage masks are a way of initialising (or resetting) a task's settings and
          parameters depending on which profiles are current profiles. Axmud's
-         code does not contain any cage masks at the moment, though it may in 
+         code does not contain any cage masks at the moment, though it may in
          the future.
 
-      <type> is the cage mask type. 
-      <switch> is a switch option specifying which cage mask to modify. If 
-         <switch> is not specified, the lowest-priority mask (associated with 
+      <type> is the cage mask type.
+      <switch> is a switch option specifying which cage mask to modify. If
+         <switch> is not specified, the lowest-priority mask (associated with
          the world profile) is modified.
       <switch> can be one of the following options:
          -w   Modifies the mask associated with the current world
-         -g   Modifies the mask associated with the current guild         
+         -g   Modifies the mask associated with the current guild
          -r   Modifies the mask associated with the current race
          -c   Modifies the mask associated with the current char
          -x <category>
@@ -30,17 +30,17 @@ smk / setcagemask             Manages cage masks
                  <category>
          -d <prof>
               Modifies the mask associated with the profile <prof>
- 
+
       <data> can be a scalar variable, a list, or a hash.
       If <data> is a scalar and contains a space, the scalar must be enclosed
          within diamond brackets <...>
       If <data> is a list or hash, each element that contains a space must also
          be enclosed within diamond brackets.
-       
-      The mask is usually applied to a task by the task itself. To apply the 
-         mask manually, use the '-n' switch and specify the name of a task in 
-         the current tasklist. (This is a debugging tool which is probably not 
+
+      The mask is usually applied to a task by the task itself. To apply the
+         mask manually, use the '-n' switch and specify the name of a task in
+         the current tasklist. (This is a debugging tool which is probably not
          advisable).
- 
+
    User commands:
       smk / setmask / setcagemask

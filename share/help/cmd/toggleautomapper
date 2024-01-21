@@ -1,5 +1,5 @@
 tam / toggleautomapper        Toggles various automapper settings
- 
+
    Format:
       ;tam <switch>           Toggles a setting on or off
 
@@ -13,6 +13,6 @@ tam / toggleautomapper        Toggles various automapper settings
          -m   Shows/hides the map
       The changes will apply to all automapper windows using the same world
          model.
- 
+
    User commands:
       tam / toggleautomap / toggleautomapper

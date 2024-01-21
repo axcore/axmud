@@ -1,5 +1,5 @@
 wcm / worldcompass            Modifies the world's initial Compass task
- 
+
    Format:
       ;wcm <options>          Modifies Compass task parameters
 
@@ -17,41 +17,41 @@ wcm / worldcompass            Modifies the world's initial Compass task
          ';worldcompass' can affect this and all future sessions.
       You can use the ';permcompass' command to modify the Compass task in the
          global initial tasklist, rather than the current world's Compass task,
-         if you prefer.       
+         if you prefer.
       If you disable world commands using this command, the task will start
          disabled in the future.
 
       <options> should be one of the following:
 
          ;wcm on
-         ;wcm -o      Enables world commands, so that pressing a keypad key  
+         ;wcm -o      Enables world commands, so that pressing a keypad key
                          send a world command
-                                
+
          ;wcm off
-         ;wcm -f      Disables world commands, so that keypad keys behave 
-                         normally (however, the task keeps running, so world 
+         ;wcm -f      Disables world commands, so that keypad keys behave
+                         normally (however, the task keeps running, so world
                          commands can be re-activated any time you want)
 
          ;wcm <key> <command>
                       Sets the world <command> send when the <key> is pressed
-                                 
-         ;wcm <key>   Resets the <key>, so that nothing happens, when it is 
-                         pressed   
 
-      <key> can be in several formats. You can use Axmud standard keycodes like 
+         ;wcm <key>   Resets the <key>, so that nothing happens, when it is
+                         pressed
+
+      <key> can be in several formats. You can use Axmud standard keycodes like
          'kp_5', the numeral '5' or the word 'five'.
       <command> can be one or more words. If you want to preserve the spacing,
          or if the command begins with one of the instruction sigils (';', ',,',
-         '"', '/', '&', ':') can surround the whole command with diamond 
+         '"', '/', '&', ':') can surround the whole command with diamond
          brackets <...>.
       Note that the task is set up to work at as many muds as possible. Axmud is
-         able to 'interpolate' world commands, meaning to convert a general 
+         able to 'interpolate' world commands, meaning to convert a general
          command into one suitable for the current world. You almost certainly
-         don't need this, so don't worry about the formatting of world commands 
+         don't need this, so don't worry about the formatting of world commands
          like 'loot_room' and 'get,object,all'.
 
       The full list of <key>s recognised by this command is:
-         
+
          0  zero   kp_0
          5  five   kp_5
          *  times  multiply
@@ -59,8 +59,8 @@ wcm / worldcompass            Modifies the world's initial Compass task
          .  dot    fullstop  period
             enter  return
 
-      If you try to customise a keypad <key> like '8', 'eight' or 'kp_8', you'll 
+      If you try to customise a keypad <key> like '8', 'eight' or 'kp_8', you'll
          get a polite refusal.
- 
+
    User commands:
       wcm / worldcompass

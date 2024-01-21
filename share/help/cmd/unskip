@@ -1,29 +1,29 @@
 usk / unskip                  Reads aloud the previous piece of text
- 
+
    Format:
       ;usk                    Reads aloud the previous piece of text
       ;usk <num>              Unskips <num> pieces of text
       ;usk more               Unskips 10 pieces of text
-      
+
    Notes:
       When Axmud is performing text-to-speech, this command replays the previous
          piece of text (if any). If some text is already being read aloud, it is
          interrupted.
-      When running the version of Axmud that's optimised for visually-impaired 
-         users, the left cursor key can be used as a shortcut to this command 
-         (but only once Axmud is connected to a world, in online or offline 
+      When running the version of Axmud that's optimised for visually-impaired
+         users, the left cursor key can be used as a shortcut to this command
+         (but only once Axmud is connected to a world, in online or offline
          mode.)
       Axmud remembers the last 1000 pieces of text that have been read aloud, so
          you can replay them at any time. If Axmud is already replaying the
          first remaining piece of text, it is replayed again.
 
       You can also specify the number of pieces of text to unskip. If this takes
-         you past the first job, then the first job is read aloud. 
+         you past the first job, then the first job is read aloud.
       When running the optimised version of Axmud, the page up key can be used
          as a shortcut for ';unskip more'.
-                           
+
       See also the help for ';split', ';skip', ';first', ';last', ';resume',
          ';shutup' and ';freekeys'.
-     
+
    User commands:
       usk / unskip

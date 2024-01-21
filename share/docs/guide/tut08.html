@@ -1,0 +1,242 @@
+<!doctype html>
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<style type="text/css">
+td, th { border: 1px solid #c3c3c3; padding: 0 3px 0 3px; }
+table { border-collapse: collapse; }
+img { max-width: 100%; }
+</style>
+<meta name="generator" content="ReText 7.2.3">
+<title>tut08</title>
+<style type="text/css">
+</style>
+</head>
+<body>
+<p><a href="tut07.html">Previous</a> <a href="index.html">Index</a></p>
+<hr>
+<h1>Tutorial 8: Pre-Configured Worlds 4: Miscellaneous configuration</h1>
+<h4>Table of Contents</h4>
+<ul>
+<li><a href="#8.1">8.1 Introduction</a></li>
+<li><a href="#8.2">8.2 Automatic logins</a></li>
+<li><a href="#8.2.1">8.2.1 LP/Diku/AberMUD/TinyMUD/telnet logins</a></li>
+<li><a href="#8.2.2">8.2.2 Logins with a sequence of world commands</a></li>
+<li><a href="#8.2.3">8.2.3 Logins with Axbasic scripts</a></li>
+<li><a href="#8.2.4">8.2.4 Logins with missions</a></li>
+<li><a href="#8.2.5">8.2.5 Advanced login missions</a></li>
+<li><a href="#8.3">8.3 Configuring the Attack task</a></li>
+<li><a href="#8.4">8.4 Recognising prompts</a></li>
+<li><a href="#8.5">8.5 Getting and dropping, buying and selling</a></li>
+<li><a href="#8.6">8.6 The Divert and Channels tasks</a></li>
+</ul>
+<hr>
+<h2><a name="8.1">8.1 Introduction</a></h2>
+<p>This is the final part of a four-part tutorial, showing you how Axmud's pre-configured worlds were created. In this part we'll cover a number of things, some of which will be useful at your favourite worlds, and some of which won't. As always, you can configure the things you want, and ignore everything else.</p>
+<h2><a name="8.2">8.2 Automatic logins</a></h2>
+<p>If you don't want to remember all your passwords, and don't want to type them every time you connect to a world, then automatic logins are for you!</p>
+<p>Most people set their characters and passwords before connecting, when the <strong>Connections</strong> window is open. If not, you can add them directly:</p>
+<ul>
+<li>In the main window, click <strong>Edit &gt; Edit current world</strong></li>
+<li>In the new edit window, click <strong>Settings &gt; Page 8</strong></li>
+<li>Click a character's name to select it</li>
+<li>Click the <strong>Edit password</strong> button, and set the new password</li>
+</ul>
+<p>If the character isn't visible there, you can create it in the normal way (for example, with the <strong>;addcharacter</strong> command).</p>
+<p>There a number of different types of automatic login covering all possible situations.</p>
+<ul>
+<li>In the main window, click <strong>Edit &gt; Edit current world</strong></li>
+<li>In the new edit window, click <strong>Settings &gt; Page 4</strong></li>
+<li>Choose one of the options in the list</li>
+<li>Some of the options are covered in more detail below</li>
+</ul>
+<h2><a name="8.2.1">8.2.1 LP/Diku/AberMUD/TinyMUD/telnet logins</a></h2>
+<p>The most common login is the one favoured by <strong>LP</strong>, Diku and AberMUD worlds. The server will send you some text, followed by two prompts. At the first prompt, Axmud sends the character's name. At the second prompt, it sends the password.</p>
+<p>Note that Axmud doesn't examine the text of the prompts themselves; any prompt wll do.</p>
+<p>On the other hand, if you choose the <strong>telnet</strong> option, Axmud <em>will</em> examine the text of the prompts, expecting the first one to be <strong>login:</strong> and the second to be <strong>password:</strong>.</p>
+<p><strong>Tiny</strong>MUD-style logins send a single prompt, and expect you to send a single command in the form <strong>connect &lt;NAME> &lt;PASSWORD></strong>. In the <strong>Page 5</strong> tab you can specify a pattern that matches a line sent when the world is ready to receive this command.</p>
+<p>For all of these options, on <strong>Page 5</strong> you should specify a pattern that matches a line like <strong>You have connected!</strong>, signifying success. When a matching line is received, Axmud marks the character as logged in.</p>
+<h2><a name="8.2.2">8.2.2 Logins with a sequence of world commands</a></h2>
+<p>The <strong>world_cmd</strong> option might be useful for a public server that doesn't require passwords. When Axmud receives the first prompt, it sends back one or more commands. For example, it might be possible to 'log in' with the character name <strong>guest</strong> and password <strong>guest</strong>, in which case you would add these commands to the box in <strong>Page 5</strong></p>
+<pre><code>    guest
+    guest
+</code></pre>
+<p>Alternatively, you might want to automatically navigate through several menus to reach your favourite one, in which you could just send the numbers of the successive menu items:</p>
+<pre><code>    1
+    2
+    5
+</code></pre>
+<p>You <em>could</em> send a real name and password this way, if you really wanted to, but that is only feasible if you have a single character at the world.</p>
+<pre><code>    gandalf
+    mysecretpassword
+</code></pre>
+<h2><a name="8.2.3">8.2.3 Logins with Axbasic scripts</a></h2>
+<p>The <strong>script</strong> (and <strong>script_task</strong>) options execute an Axbasic script which handles the login. (The <strong>task</strong> option executes an Axbasic task; writing your own tasks is outside the scope of this Section.)</p>
+<p>On <strong>Page 5</strong> you can specify the <em>name</em> of the Axbasic script to run. </p>
+<p>If you haven't already, you should read the Axbasic tutorial, which will teach you everything you need to know about programming in Axbasic. A good login script should contain the LOGIN statement just before the END.</p>
+<pre><code>    REM My login script
+
+    PEEK name$ = "char.current.name"
+    PEEKSHOW pass$ = "world.current.passwordHash", name$
+
+    WAITTRIG "What is your name"
+    SEND name$
+    WAITTRIG "What is your password"
+    SEND pass$
+    WAITTRIG "You have connected"
+    LOGIN
+    END
+</code></pre>
+<h2><a name="8.2.4">8.2.4 Logins with missions</a></h2>
+<p>Missions are extremely simple scripts that require no programming knowledge. They are described in <a href="ch09.html">Section 9</a></p>
+<p>Missions are useful at worlds where logging in is more complicated than typing a password. Some worlds, for example, might want you to navigate a series of menus.</p>
+<p>Here is a simpler example from <em>Aardwolf</em>, that asks you to type a name and password, and then press RETURN separately (for the third time).</p>
+<pre><code>    t What be thy name, adventurer
+    n       
+    t Password
+    w
+    t Press Return to continue
+    &gt; x
+    ;login
+</code></pre>
+<p>To create such a mission, first think of a suitable name. Missions are available in all worlds, so the name should probably include the name of the world.</p>
+<ul>
+<li>Type <strong>;addmission deathmud_login</strong></li>
+<li>Type <strong>;editmission deathmud_login</strong></li>
+<li>In the new edit window, click the <strong>Contents</strong> tab</li>
+<li>Enter the text above</li>
+<li>Press the <strong>OK</strong> button to apply your changes</li>
+</ul>
+<p>Taking each line in sequence:</p>
+<ul>
+<li>Line 1: Creates a trigger matching the line <strong>What be thy name, adventurer</strong>, and then waits for the trigger to fire</li>
+<li>Line 2: Sends the current character's name</li>
+<li>Line 3: Creates a trigger matching the line <strong>Password</strong>, and then waits for the trigger to fire</li>
+<li>Line 4: Sends the current character's password</li>
+<li>Line 5: Creates a trigger matching the line <strong>Press Return to continue</strong>, and then waits for the trigger to fire</li>
+<li>Line 6: Missions can't send an empty command to a world, but luckily <em>DeathMUD</em> will accept any command, so we just send the command <strong>x</strong></li>
+<li>Line 7: Tells Axmud to mark the character as logged in</li>
+</ul>
+<p>When you have finished, set up automatic logins to use this mission.</p>
+<ul>
+<li>In the main window, click <strong>Edit &gt; Edit current world</strong></li>
+<li>In the new edit window, click <strong>Settings &gt; Page 4</strong></li>
+<li>Select the option <strong>mission</strong></li>
+<li>Now open the tab <strong>Page 5</strong></li>
+<li>In the <strong>Task/script/mission to start</strong> box, enter the name of the mission, <strong>deathmud_login</strong></li>
+<li>Click <strong>OK</strong> to apply your changes</li>
+</ul>
+<h2><a name="8.2.5">8.2.5 Advanced login missions</a></h2>
+<p>Axmud can easily handle the situation imagined above, in which the player must login by navigating a sequence of menus. Consider this example, in which the player must choose a character by typing a number:</p>
+<pre><code>    Choose a character
+    1. Gandalf
+    2. Bilbo
+    3. Sauron
+</code></pre>
+<p>These three lines would all match the following pattern. The pattern has a single group which matches the number (1, 2 or 3). The sequence <strong>\w+</strong>, if you didn't know, means 'one or more letters', so it would match <strong>Gandalf</strong>, <strong>Bilbo</strong> and <strong>Sauron</strong>.</p>
+<pre><code>    ^(\d+)\. \w+
+</code></pre>
+<p>Now, while the mission is running, Axmud looks for lines containing the current character's name and which <em>also</em> match the pattern. Let's add that check now.</p>
+<ul>
+<li>In the main window, click <strong>Edit &gt; Edit current world</strong></li>
+<li>In the new edit window, click <strong>Settings &gt; Page 6</strong></li>
+<li>In the <strong>Pattern</strong> box, add the pattern <strong>^(\d+). \w+</strong></li>
+<li>In the <strong>Substring #</strong> box, add the group number. In this case there is only one group, so add <strong>1</strong></li>
+<li>In the <strong>World command</strong> box, add the world command to send in response.</li>
+</ul>
+<p>In most cases, the world command to send is just the number, in which case you should add <strong>$1</strong>. You probably already know that the sequence <strong>$1</strong> means 'the part of the line that matches the first group', which in this case is the number 1, 2 or 3.</p>
+<p>If you were required to send a command like <strong>select 1</strong>, then the world command would be <strong>select $1</strong>. For the second or third menu item, you could use <strong>$2</strong> or <strong>select $3</strong>.</p>
+<p>Now we can write the login mission itself. Let's assume that the player must enter their account name and their account password, then choose one of their registered characters from a list. Here is the mission that does that.</p>
+<pre><code>    t Your account
+    a
+    t Password
+    w
+    t Welcome back to DeathMUD
+    ;login
+</code></pre>
+<p>Taking each line in sequence:</p>
+<ul>
+<li>Line 1: Creates a trigger matching the line <strong>Your account</strong>, and then waits for the trigger to fire</li>
+<li>Line 2: Sends the current character's account name</li>
+<li>Line 3: Creates a trigger matching the line <strong>Password</strong>, and then waits for the trigger to fire</li>
+<li>Line 4: Sends the current character's password</li>
+<li>Line 5: Creates a trigger matching the line <strong>Welcome back to DeathMUD</strong>, and then waits for the trigger to fire</li>
+<li>Line 6: Tells Axmud to mark the character as logged in</li>
+</ul>
+<p>Now, while we are waiting for the <strong>Welcome back</strong> trigger to fire, Axmud is navigating the menu as described above, finding the correct character and sending the corresponding command. As soon as the world receives the choice, it sends us the <strong>Welcome back</strong> line, the trigger fires, and the mission can complete itself.</p>
+<h2><a name="8.3">8.3 Configuring the Attack task</a></h2>
+<p>The Attack task, when running, keeps track of your character's fights and interactions, updating the values stored in the current character profile. These values are often visible in the Status task window.</p>
+<p>In Axmud terminology, a <em>fight</em> is a fight to the death. An <em>interaction</em> is some other kind of confrontation. Imagine, for example, a world where peace-loving bards gain experience not by fighting their victims, but by singing to them. These interactions can have a successful conclusion or can end in failure (just like a fight to the death).</p>
+<ul>
+<li>In the main window, click <strong>Edit &gt; Edit current world</strong></li>
+<li>See the <strong>Attack</strong>, <strong>Fight</strong> and <strong>Interaction</strong> tabs</li>
+</ul>
+<p>These tabs specify patterns a large number of patterns. Most of the patterns don't do anything until you write a script. For example, the <strong>Fight &gt; Page 1</strong> tab specifies patterns that match a line such as <strong>You attack the troll!</strong> occuring at the start of a fight. It would be possible to write a script that uses all the patterns in this tab, creating a trigger for each one.</p>
+<p>A few of the tabs specify patterns that are used directly by the Attack task. When you're setting up your world, you only need to add some of these patterns (and then again, only if you want to use the Attack task.)</p>
+<ul>
+<li>Fight &gt; Page 5, patterns matching lines like <strong>You kill the troll!</strong></li>
+<li>Interaction &gt; Page 4, patterns matching lines like <strong>You enchant the troll with your song!</strong></li>
+<li>Interaction &gt; Page 5, patterns matching lines like <strong>The troll hates your song, and leaves!</strong></li>
+<li>Interaction &gt; Page 7, patterns matching lines like <strong>The troll hates your song, and attacks you!</strong>, meaning that the interaction is over, and a fight has started</li>
+<li>Interaction &gt; Page 8, patterns matching lines like <strong>The troll hates your song, and kills you!</strong>, meaning that the interaction is over, and urgent action is required</li>
+</ul>
+<h2><a name="8.4">8.4 Recognising prompts</a></h2>
+<p>A prompt is a line that doesn't end with an instruction to start writing a new line. Typically, a prompt requires the player to type something, for example <strong>What is your name?</strong></p>
+<p>It might be surprising to learn that, at many worlds, there is <em>no way to reliably detect a prompt</em>; Axmud doesn't know whether it has received an actual prompt, or the first half of a line whose second half hasn't arrived yet. In that case, Axmud tries to use its best judgement to guess when a prompt has been received.</p>
+<p>The presence (or absence) of a prompt might be important in a few situations. For example, you can create hooks that fire when a prompt is received.</p>
+<p>You can reduce the amount of guessing Axmud is obliged to do by specifying patterns that match the prompts the world sends. Many worlds use prompts that include the character's current health, for example.</p>
+<pre><code>    hp: 90/100  mp: 40/50  sp: 5/99 &gt;
+</code></pre>
+<p>The pattern matching this line is</p>
+<pre><code>    hp:\s+(.*)/(.*)\s+mp:\s+(.*)/(.*)\s+sp:\s+(.*)/(.*)\s+&gt;\s
+</code></pre>
+<p>If you have already created a pattern to match this line (for use with the Status task), then you can simply re-use it.</p>
+<ul>
+<li>In the main window, click <strong>Edit &gt; Edit current world</strong></li>
+<li>In the new edit window, click <strong>Settings &gt; Page 11</strong></li>
+<li>In the <strong>Command prompt patterns</strong> box, add the pattern <strong>hp:\s+(.<em>)/(.</em>)\s+mp:\s+(.<em>)/(.</em>)\s+sp:\s+(.<em>)/(.</em>)\s+&gt;\s</strong></li>
+<li>Click the <strong>OK</strong> button to save your changes</li>
+</ul>
+<p>If you don't want to use complicated patterns, then a simple one like this is much better than nothing:</p>
+<pre><code>    \&gt;\s$
+</code></pre>
+<p>This pattern represents a line ending with the <strong>&gt;</strong> character followed by a single space.</p>
+<h2><a name="8.5">8.5 Getting and dropping, buying and selling</a></h2>
+<p>Some of the patterns specified by the world definition aren't actually used by any built-in task or script. If you think that you might want to write a script to be used in several different worlds, then you could add some of these patterns.</p>
+<p>For example, imagine a script that detects when someone drops something, so your character can automatically pick it up. You would need a pattern that match lines like <strong>Gandalf drops the ring</strong>. You would also need patterns that match lines like <strong>You take the ring</strong> and <strong>The ring is too heavy</strong>, so that your script would know whether the opportunistic theft was successful, or not.</p>
+<ul>
+<li>In the main window, click <strong>Edit &gt; Edit current world</strong></li>
+<li>In the new edit window, click <strong>Commands &gt; Page 1 - 2</strong></li>
+</ul>
+<p>The tabs inside the main <strong>Commands</strong> tab are self-explanatory, and none of them are required; add patterns there only if you need them.</p>
+<h2><a name="8.6">8.6 The Divert and Channels tasks</a></h2>
+<p>The Divert and Channels tasks 'divert' messages from the main window into a separate task window. Typically, this is where all the player chat goes:</p>
+<pre><code>    Gandalf tells you, "Hello!"
+    You tell Gandalf, "Hello to you, too!"
+</code></pre>
+<p>However, you can divert any text you like, especially if it's something important that you don't want to miss.</p>
+<pre><code>    There is an enormous pile of coins here.
+</code></pre>
+<p>Adding new patterns is simple enough; this is how to add a pattern matching the line just above.</p>
+<ul>
+<li>In the main window, click <strong>Edit &gt; Edit current world</strong></li>
+<li>In the new edit window, click <strong>Channels &gt; Page 1</strong></li>
+<li>In the <strong>Pattern</strong> box, add <strong>There is an enormous pile of coins here</strong></li>
+<li>In the <strong>Channel name</strong> box, add <strong>custom</strong></li>
+<li>If you don't want the line to be visible in the main window, click <strong>Only in the task window?</strong> to select it</li>
+<li>Click the <strong>Add button</strong></li>
+<li>Click the <strong>Save</strong> button to apply your changes</li>
+<li>Reset the Divert or Channels task, if they are open<pre><code>;resettask divert
+;rtt divert
+
+;resettask channels
+;rtt channels
+</code></pre>
+</li>
+</ul>
+<p>There are standard three types of <strong>Channel name</strong>: <strong>tell</strong> for direct communications between two players, <strong>social</strong> for communications that many players can see, and <strong>custom</strong> for everything else. It doesn't really matter which type you choose, but note that the Divert task uses that choice to choose a background colour, and the Channels task has a different tab for each type.</p>
+<hr>
+<p><a href="tut07.html">Previous</a> <a href="index.html">Index</a></p>
+
+</body>
+</html>

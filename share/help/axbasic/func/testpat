@@ -2,13 +2,13 @@ Testpat (regex)
 
    Synopsis:
       Checks the validity of a pattern (regular expression)
-         
+
    Notes:
       'regex' is a Perl regular expression like "orc", "^orc" or "^orc (.*)$".
          If it's a valid pattern, Testpat () returns 1; if it's an invalid
          pattern (or if 'regex' is an empty string), returns 0.
       See also the help for Testpat$ () which, for an invalid patterns, returns
-         a string value containing the Perl error message. 
+         a string value containing the Perl error message.
 
    Compatibility:
       Since Axbasic v1.001

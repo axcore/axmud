@@ -1,18 +1,18 @@
 cr / clonerace                Clones a race profile
- 
+
    Format:
       ;cr <original> <copy>
                Clones the race profile <original> into one named <copy>
- 
+
    Notes:
-      This operation clones the race and all its associated cages, including all 
+      This operation clones the race and all its associated cages, including all
          the interfaces stored in the cages.
-      Profile names must be no longer than 16 characters, contain only A-Z, a-z, 
-         underlines and 0-9 (not the first character) and not be one of Axmud's 
+      Profile names must be no longer than 16 characters, contain only A-Z, a-z,
+         underlines and 0-9 (not the first character) and not be one of Axmud's
          reserved names (see the ';listreserved' command). Non-Latin alphabets
          are acceptable.
       The operation will fail if a profile called <copy> already exists or if
          <copy> is an invalid name.
- 
+
    User commands:
       cr / copyrace / clonerace

@@ -1,7 +1,7 @@
 eds / editsession             Opens a preference window for the current session
- 
+
    Format:
       ;eds                    Edits preferences for the current session
-  
+
    User commands:
       eds / editsession

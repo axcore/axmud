@@ -1,9 +1,9 @@
 arm / addroom                 Adds a room to the world model
- 
+
    Format:
       ;arm <region> <x> <y> <z>
                Adds a new room
- 
+
    Notes:
       The world model stores information about the regions, rooms, characters
          and objects in the game world. The automapper window uses the model to
@@ -11,10 +11,10 @@ arm / addroom                 Adds a room to the world model
       Most model objects can be added with ';addmodelobject', but rooms must be
          added with this command.
 
-      <region> is the name of the region in which the room is added, and <x>, 
-         <y> and <z> are the coordinates of the new room's position in the 
-         regionmap. 
-      Rooms can't be added to a portion of the regionmap that is already 
+      <region> is the name of the region in which the room is added, and <x>,
+         <y> and <z> are the coordinates of the new room's position in the
+         regionmap.
+      Rooms can't be added to a portion of the regionmap that is already
          occupied by another room. Unless you know exactly where you want to put
          a room, it's usually easier to create it in the automapper window.
 

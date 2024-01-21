@@ -4,7 +4,7 @@
       "A S Lewis <aslewis@cpan.org>"
    ],
    "dynamic_config" : 1,
-   "generated_by" : "ExtUtils::MakeMaker version 7.34, CPAN::Meta::Converter version 2.150010",
+   "generated_by" : "ExtUtils::MakeMaker version 7.62, CPAN::Meta::Converter version 2.150010",
    "license" : [
       "gpl_3"
    ],
@@ -55,7 +55,6 @@
             "Gtk3" : "0",
             "HTTP::Tiny" : "0",
             "IO::Socket::INET" : "0",
-            "IO::Socket::INET6" : "0",
             "IPC::Run" : "0",
             "JSON" : "0",
             "Math::Round" : "0",
@@ -87,6 +86,6 @@
          "web" : "https://github.com/axcore/axmud"
       }
    },
-   "version" : "v1.3.029",
-   "x_serialization_backend" : "JSON::PP version 4.02"
+   "version" : "v2.0.0",
+   "x_serialization_backend" : "JSON::PP version 4.06"
 }

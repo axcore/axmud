@@ -1,5 +1,5 @@
 caw / closeaboutwindow        Closes the Axmud information window
- 
+
    Format:
       ;caw                    Closes the window
 

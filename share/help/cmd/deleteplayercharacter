@@ -1,16 +1,16 @@
 dpc / deleteplayercharacter   Deletes a player character (PC) from the model
- 
+
    Format:
       ;dpc <name>             Deletes the PC <name>
- 
+
    Notes:
       The world model stores information about the regions, rooms, characters
          and objects in the game world. The automapper window uses the model to
          display its maps.
-      Most model objects can be deleted with ';deletemodelobject', including 
-         player characters (model objects which represent a character in the 
-         world). Player characters can also be deleted from the model using 
+      Most model objects can be deleted with ';deletemodelobject', including
+         player characters (model objects which represent a character in the
+         world). Player characters can also be deleted from the model using
          this command.
- 
+
    User commands:
       dpc / delpc / deletepc / deleteplayercharacter

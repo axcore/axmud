@@ -1,5 +1,5 @@
 ads / addsecondary            Adds a secondary direction
- 
+
    Format:
       ;ads <custom>
       ;ads <custom> <abbrev>  Adds the direction
@@ -14,7 +14,7 @@ ads / addsecondary            Adds a secondary direction
          directions such as 'out' and 'in', this set can contain as many or as
          few directions as you want.
       For a list of primary and secondary directions stored in the current
-         dictionary, use the 'listdirection' command.         
+         dictionary, use the 'listdirection' command.
 
       This command adds a new secondary direction.
       <custom> must not already exist in the current dictionary as a custom
@@ -36,6 +36,6 @@ ads / addsecondary            Adds a secondary direction
          ;ads enter en
          ;mds leave enter
          ;mds enter leave
- 
+
    User commands:
       ads / addsecond / addsecondary

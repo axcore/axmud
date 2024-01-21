@@ -2,9 +2,9 @@ Getlostroom ()
 
    Synopsis:
       Returns the world model number of the 'lost' room
-              
+
    Synopsis:
       When the automapper gets lost, it remembers the last room that was the
-         current room. This function returns the world model number of that 
+         current room. This function returns the world model number of that
          room, if the automapper is lost.
       If the automapper isn't lost, returns 0.

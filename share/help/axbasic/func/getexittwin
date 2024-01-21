@@ -1,5 +1,5 @@
 Getexittwin (number)
-        
+
    Synopsis:
       Returns the twin of an exit in the automapper's current room
 
@@ -8,7 +8,7 @@ Getexittwin (number)
          the opposite direction. 'number' is the position of the exit in the
          room's ordered list of exits (the first exit is numbered 1). The return
          value is the exit model number of the twin exit.
-      If there is no current room, if the numbered exit doesn't exist or if the 
+      If there is no current room, if the numbered exit doesn't exist or if the
          exit doesn't have a twin exit, returns 0.
       To get the number of exits in the current room, see the Getroomexits ()
          function.

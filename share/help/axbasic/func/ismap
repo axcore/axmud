@@ -2,6 +2,6 @@ Ismap (string)
 
    Synopsis:
       Tests whether the automapper window is open
-      
+
    Notes:
       Returns 1 if the automapper window is open, 0 if not.

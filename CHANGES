@@ -1,4 +1,152 @@
-v1.3.029 (3 Mar 2021)
+v2.0.0 (21 Jan 2024)
+--------------------------------------------------------------------------------
+
+Axbasic new statements (for Axbasic version 1.005)
+- WINADDGAUGE, WINDADDCONGAUGE, WINDELGAUAGE, WINSETGAUGE
+- WINADDSTATUS, WINADDCONSTATUS, WINDELSTATUS, WINSETSTATUS
+
+Axbasic new functions
+- Isregion(), Istempregion(), Isroom(), Isexit(), Ishiddenexit(), Isfinished()
+- Delroom()
+- Addexit(), Addtwinexit(), Connectexit(), Delexit(), Disconnectexit()
+- Getornament$(), Getrandomexit$()
+- Sethiddenexit(), Setornament(), Setrandomexit()
+
+Major fixes
+- On recent GTK-perl installations, all dialogue windows caused an immediate
+    crash, leaving Axmud (and all other GTK-perl software) unusable. Implemented
+    a fix
+- MXP tokens sent by CoffeeMud cause a freeze/crash soon after logging in.
+    Fixed (Git #18)
+- Fixed several MXP issues for which the Status task was incompatible
+- The automapper window's screenshot button caused a crash, when clicked. Fixed
+- When the automapper was pre-drawing regions, while trying to select items in
+    the current region the selection box caused a crash. Fixed
+- Fixed an ancient error that failed to correctly update the list of triggers,
+    aliases, macros, timers and hooks when the user made a change, in certain
+    circumstances
+- In the special mode for visually-impaired users, the specified character and
+    password was not used by Axmud's automatic login. Fixed
+- When a very large world model (map) is saved, it can be split into smaller
+    pieces. The default size (5000 rooms) can now be changed: click
+    'Edit > Axmud preferences... > Client > Page 4', add a new value to the
+    'Split file size (rooms)' box, and then click the 'Set size' button. Also
+    fixed the broken ;splitmodel command, and the broken buttons for the
+    'Retain backup copies after saving' option in the same tab. Also fixed a
+    failure to save the files at all in some circumstances (Git #6)
+- Fixed the Debian installer (which did not work at all in the previous release)
+- Created a new MS Windows installer, since the old one relied on software
+    repositories that no longer exist. The new installer resolves several other
+    compatibility and dependency issues. It is probably not possible to run
+    Axmud with Strawberry Perl or with ActivePerl any more, but MSYS2 still
+    works just fine, as long as it is set up correctly
+- On MS Windows, the code that aligns windows on a grid does not work as
+    intended because of unresolved problems with the Gtk graphics library, or
+    perhaps the MS Windows desktop itself. I have added a workaround which
+    compensates for these problems. If it doesn't improve things on your system,
+    you can disable the workaround by clicking 'Edit > Axmud preferences... >
+    Workspaces > Page 1', deselecting the button 'Tweak the size/position...'
+    and then by setting the sizes of window controls/panels manually in the
+    'Workspaces > Page 2' tab; see the help for the ;setwindowcontrol and
+    ;setpanel commands)
+
+Minor fixes
+- In the automapper window, graffiti mode (when enabled) made no visible changes
+    to rooms. Tweaked the code which should resolve the problem
+- Fixed rare crashes caused by the Channels task
+- Fixed a few minor problems with text-to-speech (TTS) settings being ignored by
+    the Axmud code
+- In the special mode for visually-impaired users, the Divert task's window no
+    longer opens by default
+- In the session preferences window, Interfaces > Pages 3-6, the 'Edit
+    interface model' buttons opened a new window showing triggers, rather than
+    aliases, macros, timers and hooks. Fixed
+- In the Data Viewer window (formerly called the Object Viewer window), in the
+    list on the left side, the 'Profiles > Current profiles' item would not
+    open when clicked. Fixed
+- Fixed typos in the Axbasic tutorials that made some links un-clickable
+- When changing a colour scheme font, the dialogue window did not open with the
+    current font visible; fixed
+
+Major new features
+- All edit and preference windows now have a subject index on the left side.
+    Double click an item to open the corresponding tab. This index can be
+    disabled, if desired, by clicking 'Edit > Axmud preferences... > Windows >
+    Page 1', and de-selecting the 'Show a topic index...' button
+- The client and session preferences windows (only) have been simplified, hiding
+    many of the less useful tabs by default. If you want to see all tabs, open
+    either window and click the button at the top, or click 'Edit >
+    Axmud preferences... > Windows > Page 1' and de-select the 'Hide less
+    useful tabs...' button
+- You can now export triggers, aliases, macros, timers and hooks from one
+    profile to another. For example, you could connect to two worlds
+    simultaneously (in online or offline mode). In the first, click
+    'Interfaces > Triggers > World triggers', click one or more triggers to
+    select them, then click the Export button. In the second, click
+    'Interfaces > Triggers > World triggers', and click the Import button.
+    Export/import works using a clipboard, so it's much like using copy and
+    paste in a text editor
+- Export/import can also be done with the new client commands, ;exporttrigger
+    and ;importtrigger (etc). See also the new commands ;listclipboard and
+    ;clearclipboard
+- Character profiles now have a nickname that's the same as the profile name by
+    default. However, whereas profiles names cannot contain spaces, the nickname
+    can contain any characters (including spaces). The nickname is the one now
+    used in automatic logins (Git #17)
+- The Axmud Guide and Axbasic tutorial have been updated with several new
+    chapters
+
+Minor new features
+- In the automapper window, regions can be marked as 'finished': click
+    'Regions > Current region > Set finished region'. This is merely an
+    aesthetic change; only the appearance of the list of regions on the left
+    side is different. A 'finished' region can still be edited, or updated when
+    your character is moving around the world
+- Added a new button to the main window's toolbar, on the far right side, which
+    is a convenient way to shut down Axmud (the button immediately to the left
+    closes sessions, one at a time). To make room for it, the 'Reset Locator'
+    button has been removed; you can still use the equivalent button in the
+    automapper window
+- The Locator wizard can now capture room descriptions up to 256 lines long
+    (Git #15)
+- You can now peek/poke the current room's data directly, using the new category
+    room.ABC, for example "room.last", "room.ghost", "room.locator"
+- You can now start some tasks directly from Axmud's main menu, for example by
+    clicking 'Tasks > Start new task > Compass task'
+- The ;stopsession and ;stopclient commands can be used with a new switch, -s,
+    which automatically saves any files (rather than prompting the user to save
+    them)
+- Tweaked the help files for several client commands for clarity
+- In the main window's menu, 'Axbasic > Edit script' will now create a script
+    that didn't already exist, rather than showing an error (the same change
+    applies to the ;editscript command, if you're using that)
+- Improved the layout of the Countdown task's window
+- Checkbuttons in some edit and preference windows were by design not clickable,
+    and the user was forced to use a separate button to change the setting (for
+    example, in the client preference window, Logs > Page 4). Many of these
+    buttons are now clickable directly
+- When text-to-speech (TTS) is enabled, Axmud no longer reads out 'System
+    message' before a system message (visible in yellow text). The former
+    behaviour can be restored by clicking 'Edit > Axmud preferences >
+    Sound > Page 2', and selecting the button 'Verbose output'
+- The new ;blind command will open Axmud help in a web browser, so that
+    visually-impaired users can 'read' it using TTS software of their own choice
+- In the special mode for visually-impaired users, it was not possible to
+    navigate the command history using the up/down cursor keys, because they had
+    been hijacked for TTS purposes. In this mode, you can now hold down the
+    SHIFT key while using the cursor keys (and a few others)
+- The new ;quickmacro command is a convenient way for users, and especially
+    visually-impaired users, to add a macro without having to specify a bunch of
+    switches
+- The Object Viewer has been re-named as the Data Viewer. Client commands have
+    been renamed as well, e.g. ;opendataviewer. (The former commands, e.g.
+    ;openobjectviewer, will still work)
+- In the Data Viewer window, 'Delete all' buttons will now prompt the user for
+    confirmation, before deleting everything
+- On MS Windows, restored the toolbutton separators that were removed in
+    previous versions because of Gtk bugs
+
+v1.3.029 (3 Mar 2022)
 --------------------------------------------------------------------------------
 
 Major fixes

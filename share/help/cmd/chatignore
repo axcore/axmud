@@ -1,13 +1,13 @@
 ignore / chatignore           Stops listening out for incoming calls
- 
+
    Format:
       ;ignore                 Ignores incoming calls
- 
+
    Notes:
       The Chat task is used to chat with other players directly via telnet.
          Calls can be placed (or accepted) with any user whose MUD client uses
          the zChat or MudMaster protocols.
       Use ';chatlisten' to resume listening out for incoming calls.
- 
+
    User commands:
       ignore / chatignore

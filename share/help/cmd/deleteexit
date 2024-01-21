@@ -1,11 +1,11 @@
 dex / deleteexit              Deletes an exit from the exit model
- 
+
    Format:
       ;dex <exit>             Deletes the exit number <exit>
 
       ;dex -t <exit>          Deletes both the exit and its twin
       ;dex <exit> -t
- 
+
    Notes:
       The world model stores information about the regions, rooms, characters
          and objects in the game world. The automapper window uses the model to
@@ -14,6 +14,6 @@ dex / deleteexit              Deletes an exit from the exit model
       Many exits have a twin exit, which leads from the exit's destination room
          back to the exit's own room, in the opposite direction. If the '-t'
          switch is specified, the twin exit (if any) is also deleted.
- 
+
    User commands:
       dex / delexit / deleteexit

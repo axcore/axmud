@@ -1,0 +1,12 @@
+Ishiddenexit (number)
+
+   Synopsis:
+      Tests whether an exit is hidden
+
+   Notes:
+      'Hidden' exits exist in the world, but are not always visible in the room
+         description. A idden exit is always visible in Axmud's automapper
+         window.
+
+      Returns 1 if the exit is hidden. Returns 0 if the exit is not hidden, or
+         if the specified exit doesn't exist.

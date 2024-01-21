@@ -1,22 +1,22 @@
 csg / chatsetgroup            Sets the members of a chat group
- 
+
    Format:
       ;csg <group> <list>     Sets members of the group called <name>
       ;csg <group>            Empties the group called <group>
- 
+
    Notes:
       The Chat task is used to chat with other players directly via telnet.
          Calls can be placed (or accepted) with any user whose MUD client uses
          the zChat or MudMaster protocols.
-      This command creates (or resets) a group of chat contacts. Only the first 
-         15 characters of the <group> name are used. 
-      If <list> is specified, the group will contain all chat contacts whose 
+      This command creates (or resets) a group of chat contacts. Only the first
+         15 characters of the <group> name are used.
+      If <list> is specified, the group will contain all chat contacts whose
          nicknames appear in the list, e.g.
-         
+
             ';chatsetgroup mygroup alice bob charlie'
-            
-      If <list> is not specified, the group is deleted. Any existing chat 
+
+      If <list> is not specified, the group is deleted. Any existing chat
          sessions in that group are marked as being in no group at all.
- 
+
    User commands:
       csg / setgroup / chatsetgroup

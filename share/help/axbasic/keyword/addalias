@@ -1,29 +1,29 @@
 ADDALIAS expression , expression [ , expression ]
-    
+
    Synopsis:
       Adds an independent alias
-    
+
    Notes:
       A convenient way to create aliases. The first expression is the stimulus
          (a pattern), the second is the response (a subsitution). If the third
          expression is specified, it is used as the alias name; otherwise Axmud
          assigns a name to the alias.
       The following Axbasic statements are therefore interchangeable:
-      
+
          ADDALIAS "stimulus", "response", "name"
          CLIENT "addalias -s stimulus -p response -n name"
-         
+
       If Axmud can't create the new alias, execution of the Axbasic script
          continues as normal. No error message is generated.
       All aliases created by this statement are 'inactive' aliases, and are
-         assigned to a cage belonging to the current world (unless an earlier 
-         PROFILE statement specified a different profile). If there are no 
-         higher-priority aliases with the same name, the corresponding 'active' 
+         assigned to a cage belonging to the current world (unless an earlier
+         PROFILE statement specified a different profile). If there are no
+         higher-priority aliases with the same name, the corresponding 'active'
          alias will be created automatically.
       Aliases created with this statement are automatically deleted when the
          script terminates (unless you use an OPTION PERSIST statement somewhere
          in the code).
-    
+
    Examples:
       ADDALIAS "^sw$", "sail west", "sailalias"
       ADDALIAS "^lb$", "leave boat"

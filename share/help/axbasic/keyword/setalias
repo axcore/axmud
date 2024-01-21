@@ -6,11 +6,11 @@ SETALIAS expression [ , expression ]
    Notes:
       A convenient way to create an alias that launches another Axbasic script
          (or notifies this script's parent task) whenever it fires.
-         
+
       The first expression is the stimulus (a pattern). For aliases, the
          pattern is matched against a world command.
       (Axmud automatically assigns its own name to dependent triggers.)
-      
+
       If the second expression is specified, it should be the name of an Axbasic
          script to run immediately (without a parent task) when the alias fires.
       If the second expression is omitted, this script's parent task receives a
@@ -24,10 +24,10 @@ SETALIAS expression [ , expression ]
          second expression (specifying another script to run) is ignored (and no
          error message is generated). Execution continues with the next
          statement.
-         
+
    Compatibility:
       Since Axbasic v1.4
-      
+
    Examples:
       SETALIAS "^kill orc$"
       SETALIAS "^kill orc$", "check_equipment"

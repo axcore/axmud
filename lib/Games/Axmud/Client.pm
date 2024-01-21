@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2022 A S Lewis
+# Copyright (C) 2011-2024 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -19,7 +19,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
     # Include module here, as well as in axmud.pl, so that .../t/00-compile.t won't fail
@@ -741,7 +741,7 @@
                     'SimulateWorld', 'SimulatePrompt', 'SimulateCommand', 'SimulateHook',
                     'DebugToggle', 'DebugConnection', 'Restart', 'Peek', 'Poke', 'PeekHelp',
                 '@Client commands',
-                    'Help', 'Hint', 'QuickHelp', 'SearchHelp', 'ListReserved',
+                    'Help', 'Hint', 'QuickHelp', 'SearchHelp', 'Blind', 'ListReserved',
                     'About', 'OpenAboutWindow', 'CloseAboutWindow',
                     'EditQuick', 'EditClient', 'EditSession',
                     'SwitchSession', 'MaxSession', 'ListSession', 'SetSession',
@@ -790,7 +790,7 @@
                         'ListAttribute', 'AddConfig', 'CloneConfig', 'EditConfig', 'ModifyConfig',
                         'DeleteConfig', 'ListConfig',
                 '@Other windows',
-                    'OpenObjectViewer', 'CloseObjectViewer',
+                    'OpenDataViewer', 'CloseDataViewer',
                     'OpenAutomapper', 'CloseAutomapper', 'ToggleAutomapper',
                     'LocatorWizard',
                 '@Dictionaries',
@@ -830,11 +830,16 @@
                     'EnableActiveInterface', 'DisableActiveInterface', 'MoveActiveInterface',
                         'EditActiveInterface', 'ListActiveInterface',
                     'EditInterfaceModel', 'ListInterfaceModel',
-                    'AddTrigger', 'ModifyTrigger', 'DeleteTrigger', 'ListTrigger',
-                    'AddAlias', 'ModifyAlias', 'DeleteAlias', 'ListAlias',
-                    'AddMacro', 'ModifyMacro', 'DeleteMacro', 'ListMacro',
-                    'AddTimer', 'ModifyTimer', 'DeleteTimer', 'ListTimer',
-                    'AddHook', 'ModifyHook', 'DeleteHook', 'ListHook',
+                    'ClearClipboard', 'ListClipboard',
+                    'AddTrigger', 'ModifyTrigger', 'ExportTrigger', 'ImportTrigger',
+                        'DeleteTrigger', 'ListTrigger',
+                    'AddAlias', 'ModifyAlias', 'ExportAlias', 'ImportAlias', 'DeleteAlias',
+                        'ListAlias',
+                    'AddMacro', 'QuickMacro', 'ModifyMacro', 'ExportMacro', 'ImportMacro',
+                        'DeleteMacro', 'ListMacro',
+                    'AddTimer', 'ModifyTimer', 'ExportTimer', 'ImportTimer', 'DeleteTimer',
+                        'ListTimer',
+                    'AddHook', 'ModifyHook', 'ExportHook', 'ImportHook', 'DeleteHook', 'ListHook',
                 '@Keycodes',
                     'ListKeycode', 'ListKeycodeAlternative',
                 '@Task package names',
@@ -2307,6 +2312,14 @@
             # Registry hash of interface model objects, in the form
             #   $interfaceModelHash{interface_type} = blessed_reference_to_interface_model_object
             interfaceModelHash          => {},
+
+            # A 'clipboard' into which interfaces can be exported, and from which they can be
+            #   imported. This allows the user to easily copy interfaces from (for example) one
+            #   world to another, when sessions are open for both
+            # A list of GA::Interface::Trigger, GA::Interface::Alias, GA::Interface::Macro,
+            #   GA::Interface::Timer and/or GA::Interface::Hook objects currently stored in the
+            #   'clipboard'
+            interfaceClipboardList      => [],
 
             # Macros use keycodes - ways of naming keys on the keyboard (F1, Escape, grave etc)
             # Axmud uses a standard set of keycodes that don't vary from system to system. For
@@ -4572,7 +4585,7 @@
             storeGridPosnHash           => {},              # [config]
             #
             # Constant hash of standard 'grid' window types (any type of window that can be put onto
-            #   a workspace grid; includes 'external' windows, but doesn't include the object viewer
+            #   a workspace grid; includes 'external' windows, but doesn't include the data viewer
             #   window, 'edit' windows, 'pref' windows, 'dialogue' windows etc)
             # NB 'Internal' windows are a sub-class of 'grid' window handled by GA::Win::Internal,
             #   consisting of the window types 'main', 'protocol' and 'custom'
@@ -4606,7 +4619,7 @@
             #   $constFreeWinTypeHash{window_type} = 'undef'
             # ...where 'window_type' matches GA::Generic::FreeWin->winType
             constFreeWinTypeHash        => {
-                # The object viewer window
+                # The data viewer window
                 'viewer'                => undef,
                 # All 'edit' windows
                 'edit'                  => undef,
@@ -4907,6 +4920,18 @@
             # The maximum number of characters per line, when that is done
             constDialogueLabelSize      => 50,
             #
+            # Flag set to TRUE if the treeview index is visible in edit/preference windows, FALSE if
+            #   not
+            configWinIndexFlag          => TRUE,            # [config]
+            # Flag set to TRUE if the treeview index is simplified (less important tabs are not
+            #   added), FALSE if not
+            configWinSimplifyFlag       => TRUE,            # [config]
+            # Width of the treeview index on the left side of all 'edit' and 'pref' windows (when
+            #   visible)
+            constConfigWinIndexWidth    => 250,
+            # Customisable treeview index width
+            customConfigWinIndexWidth   => undef,           # [config] Set below
+            #
             # The edges of the workspace may not be available to windows because of panels (called
             #   'taskbars' in MS Windows). These IVs hold the sizes, in pixels, of the area
             #   unavailable on each edge of the workspace. If 0, Axmud assumes windows can be placed
@@ -4953,6 +4978,12 @@
             customControlsTopSize       => undef,           # [config]
             customControlsBottomSize    => undef,           # [config]
             #
+            # DEBUG
+            # Hack for incorrect window positioning on MS Windows (Axmud v2.0)
+            # If True, use zero-width window controls on the left/right/bottom (but not top) sides,
+            #   and when moving windows, move them a few pixels to the left
+            mswinWinPosnTweakFlag        => TRUE,            # [config]
+            #
             # Constant default colour scheme for the pane objects (GA::Table::Pane), each of which
             #   displays a Gtk3::TextView in an 'internal' windows
             # (These values never change; each value MUST be a standard colour tag, not an Xterm or
@@ -4961,7 +4992,7 @@
             constUnderlayColour         => 'ul_black',
             constBackgroundColour       => 'black',
             constFont                   => 'monospace',
-            constFontSize               => 10,
+            constFontSize               => 10,              # Updated for MS Windows below
             # In Pueblo mode, the default colour for clickable links (not used otherwise)
             constPuebloLinkColour       => 'CYAN',
             # Registry hash of colour scheme objects, each of which defines a colour scheme that can
@@ -5162,12 +5193,13 @@
                     ';openautomapper',
                     TRUE,                       # Requires current session
                     TRUE,                       # Requires connection to world
-                'reset_loc',
-                    'Reset the Locator task',
-                    'roadworks.png',
-                    ';resetlocator',
-                    TRUE,                       # Requires current session
-                    TRUE,                       # Requires connection to world
+                # v1.3.051 commented out to leave room in widescreen mode for the stop client button
+#                'reset_loc',
+#                    'Reset the Locator task',
+#                    'roadworks.png',
+#                    ';resetlocator',
+#                    TRUE,                       # Requires current session
+#                    TRUE,                       # Requires connection to world
                 # separator
                 'separator',
                 'active_int',
@@ -5233,9 +5265,9 @@
                     TRUE,                       # Requires current session
                     TRUE,                       # Requires connection to world
                 'open_viewer',
-                    'Open object viewer window',
+                    'Open data viewer window',
                     'watermark_table.png',
-                    ';openobjectviewer',
+                    ';opendataviewer',
                     TRUE,                       # Requires current session
                     TRUE,                       # Requires connection to world
                 # separator
@@ -5282,6 +5314,12 @@
                     'Stop session or client',
                     'quit.png',
                     ';stopsession',
+                    FALSE,                      # Always available
+                    FALSE,                      # Doesn't require connection to world
+                'quit_client',
+                    'Stop client',
+                    'quit_client.png',
+                    ';stopclient',
                     FALSE,                      # Always available
                     FALSE,                      # Doesn't require connection to world
             ],
@@ -5757,6 +5795,8 @@
             ttsDialogueFlag             => TRUE,                    # [config]
             # Convert (some) text displayed in (some) task windows
             ttsTaskFlag                 => FALSE,                   # [config]
+            # Verbose speech (if enabled, preface lines with 'System message', 'Received text', etc)
+            ttsVerboseFlag              => FALSE,                   # [config]
 
             # Regardless of whether $self->ttsPromptFlag is set or not, and whether login has been
             #   completed or not, $self->tts checks received text against
@@ -5765,7 +5805,7 @@
             ttsLastPrompt               => undef,
 
             # Paths to the binaries for various speech engines on MS Windows (ignored on other
-            #   operating systems). Not that there are two possible paths for eSpeak
+            #   operating systems). Note that there are two possible paths for eSpeak
             msWinPathESpeak             => "C:\\Program Files\\espeak\\command_line\\espeak.exe",
             msWinAltPathESpeak
                 => "C:\\Program Files (x86)\\espeak\\command_line\\espeak.exe",
@@ -5779,7 +5819,7 @@
             constTtsFestivalServerPort  => 1314,
             # The actual server port to use, when required. If 'undef' (or an empty string), the
             #   command-line Festival engine is used
-            ttsFestivalServerPort       => undef,
+            ttsFestivalServerPort       => undef,                   # [config]
             # Flag set to TRUE, the first time that $self->tts is called to use the Festival engine.
             #   On that occasion, if $self->ttsFestivalServerPort is set, we try to start the
             #   Festival server
@@ -5813,6 +5853,12 @@
             # Axmud must not try to start the server again, if a previous attempt succeeded (even if
             #   the port has changed). Flag set to TRUE if we succeeded in starting the server
             ttsFestivalSuccessFlag      => FALSE,
+
+            # When $axmud::BLIND_MODE_FLAG is TRUE, show the user a helpful message about the help
+            #   for visually-impaired users
+            # Flag is set to TRUE the first time this message is shown, after which it is never
+            #   shown again
+            blindHelpMsgShownFlag       => FALSE,                   # [config]
 
             # Other IVs
             # ---------
@@ -6111,6 +6157,14 @@
         $self->{customGridWinHeight}    = $self->constGridWinHeight;
         $self->{customFreeWinWidth}     = $self->constFreeWinWidth;
         $self->{customFreeWinHeight}    = $self->constFreeWinHeight;
+
+        $self->{customConfigWinIndexWidth}
+                                        = $self->constConfigWinIndexWidth;
+
+        if ($^O eq 'MSWin32') {
+
+            $self->{constFontSize} = 13;
+        }
 
         $self->{customInsertCmdColour}  = $self->constInsertCmdColour;
         $self->{customShowSystemTextColour}
@@ -9417,7 +9471,6 @@
         # Get a list of worlds, favourite worlds first, then all visited worlds sorted by number
         #   of visits, finally unvisited worlds sorted alphabetically
         # (Code borrowed from GA::OtherWin::Connect->resetTreeView)
-
         $newWorldString = 'Create new world';
         $newCharString = 'Create new character';
 
@@ -9669,10 +9722,8 @@
 
                 } elsif ($choice ne $newCharString) {
 
-                    $connectChar = $choice;
-
                     ($connectHost, $connectPort, $connectChar, $connectPwd, $connectAccount)
-                        = $connectWorldObj->getConnectDetails($connectChar);
+                        = $connectWorldObj->getConnectDetails($choice);
                 }
             }
 
@@ -9701,11 +9752,19 @@
                     );
                 }
 
+                # Set the world profile's new password hash, just as the Connections window
+                #   (GA::OtherWin::Connect->updateProfile) does in this situation
+                if (! defined $connectWorldObj->ivShow('passwordHash', $connectChar)) {
+
+                    $connectWorldObj->ivAdd('newPasswordHash', $connectChar, $connectPwd);
+                }
+
+                # Also get the host/port, ready for the call below
                 ($connectHost, $connectPort) = $connectWorldObj->getConnectDetails();
             }
         }
 
-        # The TTS job list has almost certainly been interrupted. Reset some iVs, so that the we
+        # The TTS job list has almost certainly been interrupted. Reset some IVs, so that the we
         #   can start performing TTS jobs immediately (start reading aloud the session's text
         #   immediately)
         $self->ttsRestart();
@@ -15654,7 +15713,7 @@
             $self->ttsFestivalServerMode eq 'server'
             && $self->ttsFestivalConnectMode eq 'connected'
         ) {
-            # !!! DEBUG N.B. For unknown reasons, this should interrupt the Festival server engine,
+            # DEBUG N.B. For unknown reasons, this should interrupt the Festival server engine,
             #   but does not
             $self->ttsFestivalSend("(audio_mode 'shutup)");
         }
@@ -16479,6 +16538,45 @@
     }
 
     # External applications
+
+    sub openFileInBrowser {
+
+        # Called by GA::Cmd::Blind->do or any other function
+        # Opens a file in an external web browser (if allowed)
+        #
+        # Expected arguments
+        #   $path   - The file path to open
+        #
+        # Return values
+        #   'undef' on improper arguments or if the path can't be opened
+        #   1 otherwise
+
+        my ($self, $path, $check) = @_;
+
+        # Local variables
+        my $cmd;
+
+        # Check for improper arguments
+        if (! defined $path || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->openFileInBrowser', @_);
+        }
+
+        if (! $self->browserCmd || ! ($self->browserCmd =~ m/%s/)) {
+
+            # No browser command set, or it doesn't contain a %s (which is substituted for the path)
+            return undef;
+
+        } else {
+
+            $cmd = $self->browserCmd;
+            $cmd =~ s/%s/$path/;
+
+            system $cmd;
+
+            return 1;
+        }
+    }
 
     sub openURL {
 
@@ -18983,6 +19081,31 @@
         return 1;
     }
 
+    sub set_blindHelpMsgShownFlag {
+
+        my ($self, $flag, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $flag || defined $check) {
+
+            return $axmud::CLIENT->writeImproper(
+                $self->_objClass . '->set_blindHelpMsgShownFlag',
+                @_,
+            );
+        }
+
+        if ($flag) {
+            $self->ivPoke('blindHelpMsgShownFlag', TRUE);
+        } else {
+            $self->ivPoke('blindHelpMsgShownFlag', FALSE);
+        }
+
+        # The data stored in this IV is saved in the 'config' file
+        $self->setModifyFlag('config', TRUE, $self->_objClass . '->set_blindHelpMsgShownFlag');
+
+        return 1;
+    }
+
     sub set_blockWorldHintFlag {
 
         my ($self, $flag, $check) = @_;
@@ -19313,6 +19436,53 @@
         return 1;
     }
 
+    sub set_configWinIndexFlag {
+
+        my ($self, $flag, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $flag || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->set_configWinIndexFlag', @_);
+        }
+
+        if ($flag) {
+            $self->ivPoke('configWinIndexFlag', TRUE);
+        } else {
+            $self->ivPoke('configWinIndexFlag', FALSE);
+        }
+
+        # The data stored in this IV is saved in the 'config' file
+        $self->setModifyFlag('config', TRUE, $self->_objClass . '->set_configWinIndexFlag');
+
+        return 1;
+    }
+
+    sub set_configWinSimplifyFlag {
+
+        my ($self, $flag, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $flag || defined $check) {
+
+            return $axmud::CLIENT->writeImproper(
+                $self->_objClass . '->set_configWinSimplifyFlag',
+                @_,
+            );
+        }
+
+        if ($flag) {
+            $self->ivPoke('configWinSimplifyFlag', TRUE);
+        } else {
+            $self->ivPoke('configWinSimplifyFlag', FALSE);
+        }
+
+        # The data stored in this IV is saved in the 'config' file
+        $self->setModifyFlag('config', TRUE, $self->_objClass . '->set_configWinSimplifyFlag');
+
+        return 1;
+    }
+
     sub set_configWorldProfList {
 
         my ($self, @list) = @_;
@@ -19572,6 +19742,25 @@
 
         # The data stored in this IV is saved in the 'config' file
         $self->setModifyFlag('config', TRUE, $self->_objClass . '->set_customCmdBufferSize');
+
+        return 1;
+    }
+
+    sub set_customConfigWinIndexWidth {
+
+        my ($self, $width, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $width || defined $check) {
+
+            return $axmud::CLIENT->writeImproper(
+                $self->_objClass . '->set_customConfigWinIndexWidth',
+                @_,
+            );
+        }
+
+        # Update IVs
+        $self->ivPoke('customConfigWinIndexWidth', $width);
 
         return 1;
     }
@@ -20828,6 +21017,45 @@
         return 1;
     }
 
+    sub add_interfaceClipboardList {
+
+        my ($self, $interfaceObj, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $interfaceObj || defined $check) {
+
+            return $axmud::CLIENT->writeImproper(
+                $self->_objClass . '->add_interfaceClipboardList',
+                @_,
+            );
+        }
+
+        if (! $self->ivFind('interfaceClipboardList', $interfaceObj)) {
+
+            $self->ivPush('interfaceClipboardList', $interfaceObj);
+        }
+
+        return 1;
+    }
+
+    sub reset_interfaceClipboardList {
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper(
+                $self->_objClass . '->reset_interfaceClipboardList',
+                @_,
+            );
+        }
+
+        $self->ivEmpty('interfaceClipboardList');
+
+        return 1;
+    }
+
     sub set_ipLookupList {
 
         my ($self, @args) = @_;
@@ -21297,6 +21525,31 @@
 
         # The data stored in these IVs are saved in the 'config' file
         $self->setModifyFlag('config', TRUE, $self->_objClass . '->toggle_mspFlag');
+
+        return 1;
+    }
+
+    sub set_mswinWinPosnTweakFlag {
+
+        my ($self, $flag, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $flag || defined $check) {
+
+            return $axmud::CLIENT->writeImproper(
+                $self->_objClass . '->set_mswinWinPosnTweakFlag',
+                @_,
+            );
+        }
+
+        if ($flag) {
+            $self->ivPoke('mswinWinPosnTweakFlag', TRUE);
+        } else {
+            $self->ivPoke('mswinWinPosnTweakFlag', FALSE);
+        }
+
+        # The data stored in these IVs are saved in the 'config' file
+        $self->setModifyFlag('config', TRUE, $self->_objClass . '->set_mswinWinPosnTweakFlag');
 
         return 1;
     }
@@ -22599,7 +22852,7 @@
             || (
                 $type ne 'receive' && $type ne 'login' && $type ne 'prompt' && $type ne 'system'
                 && $type ne 'error' && $type ne 'command' && $type ne 'cmd' && $type ne 'dialogue'
-                && $type ne 'task' && $type ne 'smooth'
+                && $type ne 'task' && $type ne 'verbose' && $type ne 'smooth'
             ) || defined $check
         ) {
 
@@ -22622,6 +22875,8 @@
             $iv = 'ttsDialogueFlag';
         } elsif ($type eq 'task') {
             $iv = 'ttsTaskFlag';
+        } elsif ($type eq 'verbose') {
+            $iv = 'ttsVerboseFlag';
         } elsif ($type eq 'smooth') {
             $iv = 'ttsSmoothFlag';
         }
@@ -23282,6 +23537,8 @@
 
     sub interfaceModelHash
         { my $self = shift; return %{$self->{interfaceModelHash}}; }
+    sub interfaceClipboardList
+        { my $self = shift; return @{$self->{interfaceClipboardList}}; }
 
     sub constKeycodeHash
         { my $self = shift; return %{$self->{constKeycodeHash}}; }
@@ -23774,6 +24031,15 @@
     sub constDialogueLabelSize
         { $_[0]->{constDialogueLabelSize} }
 
+    sub configWinIndexFlag
+        { $_[0]->{configWinIndexFlag} }
+    sub configWinSimplifyFlag
+        { $_[0]->{configWinSimplifyFlag} }
+    sub constConfigWinIndexWidth
+        { $_[0]->{constConfigWinIndexWidth} }
+    sub customConfigWinIndexWidth
+        { $_[0]->{customConfigWinIndexWidth} }
+
     sub constPanelSize
         { $_[0]->{constPanelSize} }
     sub constPanelLeftSize
@@ -23811,6 +24077,9 @@
         { $_[0]->{customControlsTopSize} }
     sub customControlsBottomSize
         { $_[0]->{customControlsBottomSize} }
+
+    sub mswinWinPosnTweakFlag
+        { $_[0]->{mswinWinPosnTweakFlag} }
 
     sub constTextColour
         { $_[0]->{constTextColour} }
@@ -24054,6 +24323,8 @@
         { $_[0]->{ttsDialogueFlag} }
     sub ttsTaskFlag
         { $_[0]->{ttsTaskFlag} }
+    sub ttsVerboseFlag
+        { $_[0]->{ttsVerboseFlag} }
 
     sub ttsLastPrompt
         { $_[0]->{ttsLastPrompt} }
@@ -24091,6 +24362,9 @@
         { $_[0]->{ttsFestivalFailFlag} }
     sub ttsFestivalSuccessFlag
         { $_[0]->{ttsFestivalSuccessFlag} }
+
+    sub blindHelpMsgShownFlag
+        { $_[0]->{blindHelpMsgShownFlag} }
 
     sub constMonthList
         { my $self = shift; return @{$self->{constMonthList}}; }

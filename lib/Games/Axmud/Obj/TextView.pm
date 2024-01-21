@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2022 A S Lewis
+# Copyright (C) 2011-2024 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -19,7 +19,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -4138,12 +4138,13 @@
 
                 # ...before converting text to speech
                 if (
-                    defined $self->session->ttsLastType
-                    && $self->session->ttsLastType eq 'system'
+                    $axmud::CLIENT->ttsVerboseFlag
+                    && defined $self->session->ttsLastType
+                    && $self->session->ttsLastType ne 'system'
                 ) {
-                    # (Don't read out 'system message' again and again and again!
+                    # Last TTS conversion was something other than a system message
                     $axmud::CLIENT->tts(
-                        $self->systemTextBuffer,
+                        'System message: ' . $self->systemTextBuffer,
                         'system',
                         'system',
                         $self->session,
@@ -4151,9 +4152,9 @@
 
                 } else {
 
-                    # Last TTS conversion was something other than a system message
+                    # (Don't read out 'system message' again and again and again!
                     $axmud::CLIENT->tts(
-                        'System message: ' . $self->systemTextBuffer,
+                        $self->systemTextBuffer,
                         'system',
                         'system',
                         $self->session,
@@ -4395,7 +4396,7 @@
         #   containing no readable characters)
         if (
             $axmud::CLIENT->systemAllowTTSFlag
-            && $axmud::CLIENT->ttsSystemFlag
+            && $axmud::CLIENT->ttsSystemErrorFlag
             && defined $text
             && $text =~ m/\w/
             # Also, temporarily don't convert system messages if the GA::Session flag is set
@@ -4405,15 +4406,18 @@
             $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->showError');
 
             # ...before converting text to speech
-            if (defined $self->session->ttsLastType && $self->session->ttsLastType eq 'error') {
-
-                # (Don't read out 'system error' again and again and again!
-                $axmud::CLIENT->tts($text, 'error', 'error', $self->session);
+            if (
+                $axmud::CLIENT->ttsVerboseFlag
+                && defined $self->session->ttsLastType
+                && $self->session->ttsLastType ne 'error'
+            ) {
+                # Last TTS conversion was something other than a system error (etc) message
+                $axmud::CLIENT->tts('System error: ' . $text, 'error', 'error', $self->session);
 
             } else {
 
-                # Last TTS conversion was something other than a system error (etc) message
-                $axmud::CLIENT->tts('System error: ' . $text, 'error', 'error', $self->session);
+                # (Don't read out 'system error' again and again and again!
+                $axmud::CLIENT->tts($text, 'error', 'error', $self->session);
             }
         }
 
@@ -4644,7 +4648,7 @@
         #   containing no readable characters)
         if (
             $axmud::CLIENT->systemAllowTTSFlag
-            && $axmud::CLIENT->ttsSystemFlag
+            && $axmud::CLIENT->ttsSystemErrorFlag
             && defined $text
             && $text =~ m/\w/
             # Also, temporarily don't convert system messages if the GA::Session flag is set
@@ -4654,15 +4658,18 @@
             $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->showWarning');
 
             # ...before converting text to speech
-            if (defined $self->session->ttsLastType && $self->session->ttsLastType eq 'error') {
-
-                # (Don't read out 'system warning' again and again and again!
-                $axmud::CLIENT->tts($text, 'error', 'error', $self->session);
+            if (
+                $axmud::CLIENT->ttsVerboseFlag
+                && defined $self->session->ttsLastType
+                && $self->session->ttsLastType ne 'error'
+            ) {
+                # Last TTS conversion was something other than a system error (etc) message
+                $axmud::CLIENT->tts('System warning: ' . $text, 'error', 'error', $self->session);
 
             } else {
 
-                # Last TTS conversion was something other than a system error (etc) message
-                $axmud::CLIENT->tts('System warning: ' . $text, 'error', 'error', $self->session);
+                # (Don't read out 'system warning' again and again and again!
+                $axmud::CLIENT->tts($text, 'error', 'error', $self->session);
             }
         }
 
@@ -4892,7 +4899,7 @@
         #   containing no readable characters)
         if (
             $axmud::CLIENT->systemAllowTTSFlag
-            && $axmud::CLIENT->ttsSystemFlag
+            && $axmud::CLIENT->ttsSystemErrorFlag
             && defined $text
             && $text =~ m/\w/
             # Also, temporarily don't convert system messages if the GA::Session flag is set
@@ -4902,15 +4909,18 @@
             $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->showDebug');
 
             # ...before converting text to speech
-            if (defined $self->session->ttsLastType && $self->session->ttsLastType eq 'error') {
-
-                # (Don't read out 'system debug' again and again and again!
-                $axmud::CLIENT->tts($text, 'error', 'error', $self->session);
+            if (
+                $axmud::CLIENT->ttsVerboseFlag
+                && defined $self->session->ttsLastType
+                && $self->session->ttsLastType ne 'error'
+            ) {
+                # Last TTS conversion was something other than a system error (etc) message
+                $axmud::CLIENT->tts('System debug: ' . $text, 'error', 'error', $self->session);
 
             } else {
 
-                # Last TTS conversion was something other than a system error (etc) message
-                $axmud::CLIENT->tts('System debug: ' . $text, 'error', 'error', $self->session);
+                # (Don't read out 'system debug' again and again and again!
+                $axmud::CLIENT->tts($text, 'error', 'error', $self->session);
             }
         }
 

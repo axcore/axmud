@@ -1,5 +1,5 @@
 Getmapmode$ ()
-        
+
    Synopsis:
       Returns the automapper's current mode
 

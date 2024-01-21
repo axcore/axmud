@@ -1,16 +1,16 @@
 scm / simulatecommand         Simulates a world command
- 
+
    Format:
       ;scm <cmd>              Simulates <cmd>
- 
+
    Notes:
       This command allows you to simulate sending a world command. Axmud will
-         behave exactly as if the command were actually being sent. It's a 
+         behave exactly as if the command were actually being sent. It's a
          convenient way to test aliases without interrupting the world itself.
-      If the command includes spaces, it must be enclosed within diamond 
+      If the command includes spaces, it must be enclosed within diamond
          brackets <..>, e.g.
-         
+
             ;simulatecommand <drink potion>
- 
+
    User commands:
       scm / simcmd / simulatecmd / simulatecommand

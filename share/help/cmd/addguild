@@ -1,17 +1,17 @@
 ag / addguild                 Adds a guild profile
- 
+
    Format:
       ;ag <name>              Adds the guild profile <name>
- 
+
    Notes:
       Profile names must be no longer than 16 characters, contain only A-Z, a-z,
-         underlines and 0-9 (not the first character) and not be one of Axmud's 
+         underlines and 0-9 (not the first character) and not be one of Axmud's
          reserved names (see the ';listreserved' command). Non-Latin alphabets
          are acceptable.
       The operation will fail if a profile called <name> already exists or if
          <name> is invalid.
-      To create a guild profile and set it as the current guild profile, use the 
+      To create a guild profile and set it as the current guild profile, use the
          ';setguild' command.
- 
+
    User commands:
       ag / addguild

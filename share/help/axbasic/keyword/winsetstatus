@@ -1,0 +1,38 @@
+WINSETSTATUS expression , expression , expression
+
+   Synopsis:
+      Updates a task window status bar
+
+   Notes:
+      Updates a status bar that was added to the task window with a WINADDSTATUS
+         or WINADDCONSTATUS statement.
+      The first expression is the status bar's unique number. If the status bar
+         doesn't exist, the WINSETSTATUS statement is ignored, but the number
+         isn't an integer, 0 or above, you'll see an error message.
+      The second and third expressions should evaluate to numbers displayed in
+         the status bar. Any decimal number is acceptable, even negative
+         numbers. If these expressions don't evaluate to a number, a question
+         mark is displayed in its place.
+      After a WINADDSTATUS statement, the first number is expected (but not
+         required) to be less than or equal to the second one. After a
+         WINADDCONSTATUS statement, the sum of the two numbers is expected (but
+         not required) to be constant, at least in the short term.
+
+   Requires:
+      If the script is not being run as a task, the WINSETSTATUS statement is
+         ignored (and no error message is generated). Execution continues with
+         the next statement.
+
+   Examples:
+      ! Character's health points are at 50%
+      WINADDSTATUS 1, "HP"
+      WINSETSTATUS 1, 50, 100
+
+      ! Character's energy points are very low
+      WINADDSTATUS 2, "EP"
+      WINSETSTATUS 2, 0.017, 1
+
+      ! Show a status bar where the two numbers are added
+      ! Character has 900xp, and needs 100 more to level up
+      WINADDCONSTATUS 3, "XP"
+      WINSETSTATUS 3, 900, 100

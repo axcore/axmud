@@ -4,10 +4,10 @@ GOTO expression
       Causes execution of the script to jump to the specified line number
 
    Notes:
-      The expression must evaluate to a line number or an error will occur. 
-         Complex expressions like '(x + 10) / 2' can be used as well as simple 
+      The expression must evaluate to a line number or an error will occur.
+         Complex expressions like '(x + 10) / 2' can be used as well as simple
          line numbers like 100.
-      The use of GOTO statements in your Axbasic scripts is strongly 
+      The use of GOTO statements in your Axbasic scripts is strongly
          discouraged.
       In the example below, the lines are executed in the order 10, 20, 100,
          110.

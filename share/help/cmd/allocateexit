@@ -1,5 +1,5 @@
 alx / allocateexit            Allocates an unallocated exit
- 
+
    Format:
       ;alx <new> <old>        Allocates the exit
 
@@ -14,7 +14,7 @@ alx / allocateexit            Allocates an unallocated exit
          quickly become tedious at some worlds. (For example, a MUSH will often
          use exits called 'kitchen', 'bathroom' and 'cellar', and will hardly
          use exits called 'north', 'south' and 'down' at all.)
-         
+
       In such cases, you might prefer to use this command.
       <new> is the primary direction you'd like to use, for example 'north',
          'northeast', 'eastnortheast', 'up'. You can use any standard or
@@ -32,7 +32,7 @@ alx / allocateexit            Allocates an unallocated exit
          acceptable:
 
             enter    pub
-         
+
       In fact, you can miss out the 'allocateexit' part altogether. The
          following pairs of commands are identical:
 
@@ -47,6 +47,6 @@ alx / allocateexit            Allocates an unallocated exit
 
       If you do miss out the command, Axmud will update your map and then send a
          world command in that direction, moving you to the new room.
-   
+
    User commands:
       alx / allocexit / allocateexit

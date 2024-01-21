@@ -1,18 +1,18 @@
 kk / kkill                    Attacks all matching target(s) in the current room
- 
+
    Format:
       ;kk                     Attacks the first NPC in the room
       ;kk <word>              Attack all targets matching <word>
       ;kk <word_list>         Attacks all targets matching <word_list>
- 
+
    Notes:
       ';kkill' works in exactly the same way as ';kill', but with one important
-         difference: whereas ';kill' only matches a single target for each 
+         difference: whereas ';kill' only matches a single target for each
          argument, ';kkill' matches all possible targets for each argument.
       So, ';kkill guard' will attack every guard in the room, and
          ';kill hairy orc' will attack every orc, and every being described as
          'hairy'.
       See also the help for ';kill'.
- 
+
    User commands:
       kk / kkill

@@ -6,7 +6,7 @@ lrd / listreserved            Lists all reserved names
    Notes:
       Reserved names are a list of words that can't be used as names for
          profiles, dictionaries, and so on.
-      An operation like ';addworld name' will fail because the word 'name' is 
+      An operation like ';addworld name' will fail because the word 'name' is
          itself a reserved name.
 
    User commands:

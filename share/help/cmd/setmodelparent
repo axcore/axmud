@@ -1,25 +1,25 @@
 smp / setmodelparent          Sets (or resets) the parent of a model object
- 
+
    Format:
       ;smp <object>
                Sets the object to have no parent
       ;smp <object> <parent>
                Sets the object's <parent>
- 
+
    Notes:
       The world model stores information about the regions, rooms, characters
-         and objects in the game world. The automapper window uses the 
+         and objects in the game world. The automapper window uses the
          information stored in the world model to draw its maps.
-      If the parent of an object is a room, the object is considered to be in 
-         the room. If the parent is a different kind of object, the object is 
-         considered to be 'inside' the parent. 
+      If the parent of an object is a room, the object is considered to be in
+         the room. If the parent is a different kind of object, the object is
+         considered to be 'inside' the parent.
       An object can have a region set as its parent (especially if the object's
-         location varies frequently) or even have no parent set at all. 
+         location varies frequently) or even have no parent set at all.
 
-      <object> and <parent> must be valid world model object numbers. If 
+      <object> and <parent> must be valid world model object numbers. If
          <parent> is not specified, the object will have no parent.
-      If <object> is a region, the <parent> (if specified) must also be a 
-         region. This command cannot be used to set or reset the parent of a 
+      If <object> is a region, the <parent> (if specified) must also be a
+         region. This command cannot be used to set or reset the parent of a
          room object - use ';moveroom' to do that.
 
    User commands:

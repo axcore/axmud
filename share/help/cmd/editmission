@@ -1,5 +1,5 @@
 emn / editmission             Opens an 'edit' window for a mission
- 
+
    Format:
       ;emn <name>             Edits the mission <name>
 

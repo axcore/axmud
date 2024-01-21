@@ -1,14 +1,14 @@
 flw / flashwindow             Sets a 'grid' window's urgency hint
- 
+
    Format:
       ;flw <number>           Makes window <number> flash
       ;flw                    Makes the session's 'main' window flash
- 
+
    Notes:
       The effect of setting a window's urgency hint varies depending on the
          desktop environment you're using. Often, it causes the window to flash
          in the panel at the bottom (or top) of the screen.
-      For a list of 'grid' window <number>s, use the ';listwindow' command.   
- 
+      For a list of 'grid' window <number>s, use the ';listwindow' command.
+
    User commands:
       flw / flashwin / flashwindow

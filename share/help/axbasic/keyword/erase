@@ -4,8 +4,8 @@ ERASE #channel
       Erases the contents of an open file
 
    Notes:
-      Erases the contents of a file created with an earlier OPEN statement. 
-      An error will be generated if the file channel is not open or if the 
+      Erases the contents of a file created with an earlier OPEN statement.
+      An error will be generated if the file channel is not open or if the
          channel has been opened in read-only mode.
 
    Examples:

@@ -12,6 +12,7 @@
 * [15.4 Setting gauge values](#15.4)
 * [15.5 Using constant gauges](#15.5)
 * [15.6 Status bars](#15.6)
+* [15.7 Gauges in task windows](#15.7)
 
 ---
 
@@ -133,6 +134,23 @@ If you want a status bar that shows some kind of ratio, you can use an ADDCONSTA
         LET pens = 7
         ADDCONSTATUS 400, "pockets"
         SETSTATUS 400, pencils, pens
+
+##<a name="15.7">15.7 Gauges in task windows</a>
+
+Gauges and status bars can be displayed in the task's own window, as well as in the main window. The code is exactly the same, except that ADDGAUGE becomes WINADDGAUGE, ADDSTATUS becomes WINADDSTATUS, and so on.
+
+Don't forget that you'll need an OPENWIN statement, in order to open the task window in the first place.
+
+        OPENWIN
+        WINADDGAUGE 100, "health points"
+        WINSETGAUGE 100, 10, 20
+        PAUSE 5
+        WINDELGAUGE 100
+        PAUSE 5
+        CLOSEWIN
+        END
+
+Once again, gauge numbers and status bar numbers in the two windows are separate. You can create two gauges numbered 100, one in the main window and the other in the task window, and both will be visible.
 
 ---
 

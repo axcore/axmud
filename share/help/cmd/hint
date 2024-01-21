@@ -1,13 +1,13 @@
 hint / hint                   Shows the current world's hint text again
- 
+
    Format:
       ;hint                   Shows the warning text
- 
+
    Notes:
       The first time you connect to certain pre-configured worlds, you'll see a
          'dialogue' window containing hint(s) about the current world; usually a
          reminder of things to do, before Axmud's automapper will work.
       You can see the same hint again by typing this command at any time.
-   
+
    User commands:
       hint

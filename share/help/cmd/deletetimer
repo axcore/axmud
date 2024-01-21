@@ -1,20 +1,20 @@
 dti / deletetimer             Deletes a timer
- 
+
    Format:
       ;dti <switches>         Deletes a timer
- 
+
    Notes:
-      Timers are one of five types of Axmud interface (the others being 
+      Timers are one of five types of Axmud interface (the others being
          triggers, aliases, macros and hooks).
       Timers allow you to send a world (or client) command repeatedly, at fixed
          intervals, and also to specify a command to be executed later.
-      This command deletes an existing 'inactive' timer (one associated with a 
+      This command deletes an existing 'inactive' timer (one associated with a
          particular profile) and its corresponding 'active' timer, if there is
          one.
       It's not possible to delete an active timer directly; enable or disable
          the timer using ';modifytimer' to set its 'enabled' attribute instead.
 
-      To delete the inactive timer (and the active timer based on it, if there 
+      To delete the inactive timer (and the active timer based on it, if there
          is one), one of the following (group 1) switch options must be used:
          <name>               - Deletes timer belonging to the current world
          <name> -w            - Deletes timer belonging to the current world
@@ -25,6 +25,6 @@ dti / deletetimer             Deletes a timer
                                    profile <category>
          <name> -d <prof>     - Deletes timer belonging to the profile named
                                    <prof>
- 
+
    User commands:
       dti / delti / deltimer / deleteti / deletetimer

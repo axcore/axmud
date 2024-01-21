@@ -1,14 +1,14 @@
 ach / addchar                 Adds a character profile
- 
+
    Format:
       ;ach <name>             Adds the character profile <name>
       ;ach <name> <pass>      Adds a character profile and password
       ;ach <name> <pass> <account>
                               Adds a character, password and account name
- 
+
    Notes:
       Profile names must be no longer than 16 characters, contain only A-Z, a-z,
-         underlines and 0-9 (not the first character) and not be one of Axmud's 
+         underlines and 0-9 (not the first character) and not be one of Axmud's
          reserved names (see the ';listreserved' command). Non-Latin alphabets
          are acceptable.
       The operation will fail if a profile called <name> already exists or if
@@ -20,6 +20,6 @@ ach / addchar                 Adds a character profile
          with this character.
       To create a character profile and set it as the current character profile,
          use the ';setchar' command.
- 
+
    User commands:
       ach / addchar

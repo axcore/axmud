@@ -5,5 +5,5 @@ Version ()
 
    Notes:
       Returns a number like '1.2'.
-      The Axbasic version number is not the same as the Axmud client's version 
+      The Axbasic version number is not the same as the Axmud client's version
          number. To get the latter, use the Clientversion$ () function.

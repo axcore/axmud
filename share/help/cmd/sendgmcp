@@ -1,15 +1,15 @@
 sgmcp / sendgmcp              Sends encoded JSON data to the world via GMCP
- 
+
    Format:
       ;sgmcp <payload>        Sends a GMCP request to the world
- 
+
    Notes:
-      The world can use the GMCP protocol to send extra information about the 
-         game state (see the help for ';gmcp'). 
-      The client can also use GMCP to send information back to the world, 
-         typically to request more data. A GMCP <payload> is usually in the 
+      The world can use the GMCP protocol to send extra information about the
+         game state (see the help for ';gmcp').
+      The client can also use GMCP to send information back to the world,
+         typically to request more data. A GMCP <payload> is usually in the
          form:
-            
+
          Package[.SubPackages].Message data
 
       Consult the world's own documentation for details of which GMCP requests

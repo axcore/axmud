@@ -1,27 +1,27 @@
 swo / setworld                Sets the current world profile
- 
+
    Format:
       ;swo <world>            Sets the current world profile to <world>
       ;swo <world> <char>     Sets the current world and character profiles
- 
+
    Notes:
       This command sets current profiles for this session.
       If a world profile named <world> doesn't already exist, it is created. If
          a dictionary with the same name as the world doesn't already exist, it
-         too is created. 
+         too is created.
       If a world profile named <world> already exists, the world profile and all
-         its associated profiles, profile templates and cages are loaded from 
+         its associated profiles, profile templates and cages are loaded from
          files.
       If <char> is not specified, the session won't have a current character
-         profile (and by extension, a current guild or race profile). One should 
+         profile (and by extension, a current guild or race profile). One should
          be set as soon as possible with the ';setchar' command.
       If <char> is specified but the profile doesn't yet exist, it is created.
 
-      Profile names must be no longer than 16 characters, contain only A-Z, a-z, 
-         underlines and 0-9 (not the first character) and not be one of Axmud's 
+      Profile names must be no longer than 16 characters, contain only A-Z, a-z,
+         underlines and 0-9 (not the first character) and not be one of Axmud's
          reserved names (see the ';listreserved' command). Non-Latin alphabets
          are acceptable.
       The operation will fail if <world> or <char> are specified, but invalid.
- 
+
    User commands:
       swo / setworld

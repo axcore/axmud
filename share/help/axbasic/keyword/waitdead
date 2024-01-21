@@ -9,7 +9,7 @@ WAITDEAD [ expression ]
          asleep, passed out or dead, they're considered alive.
       The expression is a timeout measured in seconds. If specified, the script
          gives up waiting after that period and resumes execution.
-         
+
       WAITDEAD relies on the Status task to supply the character's current life
          status. If the Status task is not running, the Axbasic script pauses
          pauses briefly and resumes execution on the next task loop.
@@ -21,7 +21,7 @@ WAITDEAD [ expression ]
       If the script is not being run as a task, the WAITDEAD statement is
          ignored (and no error message is generated). Execution continues with
          the next statement.
-         
+
    Examples:
       WAITDEAD
       WAITDEAD 100

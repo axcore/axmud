@@ -1,5 +1,5 @@
 ssy / setsystemcolour         Sets colours of Axmud system messages
- 
+
    Format:
       ;ssy <switch> <colour>  Sets a system message colour
       ;ssy <switch>           Resets a system message colour
@@ -18,9 +18,9 @@ ssy / setsystemcolour         Sets colours of Axmud system messages
          -d   System debug message colours
          -i   System improper arguments message colours (used to show an Axmud
                  internal error of some kind)
- 
-      Use the ';listsystemcolour' command for a current list of system colours. 
-         Use the ';setcolour' command to change the colours of Axmud standard 
+
+      Use the ';listsystemcolour' command for a current list of system colours.
+         Use the ';setcolour' command to change the colours of Axmud standard
          colour tags.
 
    User commands:

@@ -1,0 +1,7 @@
+Delexit (number)
+
+   Synopsis:
+      Deletes an exit from the exit model
+
+   Notes:
+      Returns 1 on success, 0 on failure.

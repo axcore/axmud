@@ -1,11 +1,11 @@
 zmp / zmp                     Shows supported ZMP packages/commands
- 
+
    Format:
       ;zmp                    Shows all ZMP packages
       ;zmp <name>             Shows the package called <name>
- 
+
    Notes:
-      The world can use the ZMP protocol to send extra information about the 
+      The world can use the ZMP protocol to send extra information about the
          game state.
       A few ZMP commands are 'core' commands, handled (invisibly) by Axmud
          itself. Everything else is handled by a ZMP package.

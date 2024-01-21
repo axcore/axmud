@@ -1,5 +1,5 @@
 sv / save                     Saves a file (or files)
- 
+
    Format:
       ;save                   Saves files for this session
       ;save -f                Force-saves all files for this session
@@ -9,10 +9,10 @@ sv / save                     Saves a file (or files)
 
       ;save -a                Saves files in all sessions
       ;save -f -a             Force-saves files in all sessions
-      
+
    Notes:
       Axmud stores its data across a number of files (use ';showfile' for a list
-         of them). 
+         of them).
       This command saves files whose data has been modified during this session.
          If the '-a' switch is specified, files whose data has been modified by
          all sessions are saved.
@@ -20,13 +20,13 @@ sv / save                     Saves a file (or files)
          their data has been modified, or not.
 
       If you want to save specific files, you can use <options>.
-      <options> should consist of a list of switch options and/or file names. 
+      <options> should consist of a list of switch options and/or file names.
       The switch options used are:
          -i   Saves the .ini / .conf config file
          -d   Saves all files related to profiles (including all 'worldprof'
                  files, plus the 'otherprof', 'worldmodel' and 'config' files)
          -c   Saves all files related to the current world profile (including
-                 the 'worldprof' file for the current world, plus the 
+                 the 'worldprof' file for the current world, plus the
                  'otherprof', 'worldmodel' and 'config' files)
          -o <world>
               Saves the 'worldprof' file for the named world profile (which must
@@ -47,10 +47,10 @@ sv / save                     Saves a file (or files)
          'usercmds', 'zonemaps', 'winmaps', 'tts'.
 
       <options> can be specified in any order:
-      
+
          ';save -n tasks -z dicts'
-         
+
       Each file is only saved once, so duplicate <options> won't cause an error.
- 
+
    User commands:
       sv / save

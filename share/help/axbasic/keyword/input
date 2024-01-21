@@ -5,7 +5,7 @@ INPUT #channel: variable-name [ , variable-name ... ]
       Prompts the user to input data or reads data from a file
 
    Notes:
-      The first form of the INPUT statement prompts the user to enter one or 
+      The first form of the INPUT statement prompts the user to enter one or
          more items of data, which are stored in the specified variables.
       The string constant, if specified, is displayed as a prompt to the user;
          otherwise no prompt is displayed.
@@ -17,9 +17,9 @@ INPUT #channel: variable-name [ , variable-name ... ]
          "" (an empty string) and numeric variables are given the value 0.
 
       The second form of the INPUT statement reads data from a file channel
-         created with an earlier OPEN statement. If the file channel is closed, 
+         created with an earlier OPEN statement. If the file channel is closed,
          if it was opened in write-only mode or if the end-of-file has already
-         been reached, an error is generated. 
+         been reached, an error is generated.
 
    Examples:
       ! Prompt the user for input

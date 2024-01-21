@@ -1,18 +1,18 @@
 lp / listproperty             Lists a profile template's properties
- 
+
    Format:
       ;lp <template>          Lists the <template>'s properties
       ;lp -r                  Lists reserved properties
- 
+
    Notes:
-      The blueprint for a new category of profile is called a profile template. 
+      The blueprint for a new category of profile is called a profile template.
          Several custom profiles can be based on a single template.
-      This command lists all of the properties of the blueprint (a property can 
+      This command lists all of the properties of the blueprint (a property can
          be used interchangeably with the terms 'instance variable' and 'IV').
       If the switch '-r' is specified instead, a list of the reserved properties
          (those which are the same for all custom profiles and which can't be
          modified on the parent template) is displayed.
       (See the help for ';listprofile' for more information about profiles.)
- 
+
    User commands:
       lp / listprop / listproperty

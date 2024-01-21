@@ -1,26 +1,26 @@
 h / help                      Shows help for client commands
- 
+
    Format:
       ;h <command>            Shows detailed help for <command>
 
       ;h                      Lists all client commands
       ;h -d                   Shows client commands available after disconnect
       ;h -s                   Displays a short list of client commands
-  
+
    Notes:
-      <command>, if specified, can be any client command (in its standard form) 
+      <command>, if specified, can be any client command (in its standard form)
          or any user command.
       Many client commands aren't available at all after a disconnection (though
          they are still available in 'connect offline' mode). Commands that are
-         still available are generally only those ones which display 
-         information; after a disconnection, you can't change Axmud's internal 
+         still available are generally only those ones which display
+         information; after a disconnection, you can't change Axmud's internal
          data.
-      When disconnected, you can see which commands are available by typing 
-         ';help' without any switches; you can force this behaviour (even when 
+      When disconnected, you can see which commands are available by typing
+         ';help' without any switches; you can force this behaviour (even when
          connected) by using the '-d' switch.
       The '-s' shows each client command in its standard form and the shortest
          corresponding user command.
       See also the help for ';hint', ';quickhelp' and ';searchhelp'.
-   
+
    User commands:
       h / help

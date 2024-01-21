@@ -5,8 +5,8 @@ UNFLASHWIN
 
    Notes:
       The FLASHWIN statement sets the window's urgency hint and this statement
-         resets it. The effect of setting a window's urgency hint varies 
-         depending on the desktop environment you're using. Often, it causes the 
+         resets it. The effect of setting a window's urgency hint varies
+         depending on the desktop environment you're using. Often, it causes the
          window to flash in the panel at the bottom (or top) of the screen.
 
    Requires:

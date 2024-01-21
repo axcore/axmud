@@ -1,8 +1,8 @@
 ars / addregionscheme         Adds a region colour scheme
- 
+
    Format:
       ;ars <name>             Adds a scheme called <name>
- 
+
    Notes:
       A region colour scheme defines a set of colours for one or more regions.
          The automapper window uses these colours when it draws the region(s).

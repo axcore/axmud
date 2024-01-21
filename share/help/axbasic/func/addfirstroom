@@ -1,10 +1,10 @@
 Addfirstroom ()
-        
+
    Synopsis:
       Adds the first room to the automapper window's current region
 
    Notes:
-      The request is performed by the automapper window, which sets the new room 
+      The request is performed by the automapper window, which sets the new room
          as the current room and switches to 'update' mode.
       If the Locator task is running and knows about the current location, the
          new room will be created with matching properties (descriptions, exits

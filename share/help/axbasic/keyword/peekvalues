@@ -5,33 +5,33 @@ PEEKVALUES ARRAY variable-name = axmud-object-property
       Fetches all values from key-value pairs in an Axmud internal hash property
 
    Notes:
-      PEEK gives Axbasic scripts access to most of Axmud's internal data (see 
+      PEEK gives Axbasic scripts access to most of Axmud's internal data (see
          the help for the PEEK statement for a full explanation).
-      PEEKVALUES can only be used with hash properties such as 
+      PEEKVALUES can only be used with hash properties such as
          "world.current.currencyHash". It cannot be used with a scalar property
-         such as "world.current.name", a list property such as 
-         "world.current.doorPatternList" or a Perl object such as 
+         such as "world.current.name", a list property such as
+         "world.current.doorPatternList" or a Perl object such as
          "world.current".
-      'variable-name' is always an Axbasic array, regardless of whether you 
+      'variable-name' is always an Axbasic array, regardless of whether you
          include the ARRAY keyword, or not. The array is set to a list of values
          from the hash property in a pseudo-random order. If the hash property
          is empty, the Axbasic array is empty, too.
       Unless you are certain that all of the values in the hash property are
          numeric, it's best to use a string array. If you use a numeric array
-         and just one of the hash property's values is not a string, you'll get 
+         and just one of the hash property's values is not a string, you'll get
          an error.
 
       All Axbasic arrays have a maximum number of cells of 1,000,000. If the
          PEEKVALUES statement exceeds this maximum, the excess values are not
          added to the array (and no error message is generated).
-         
+
    Examples:
-      ! Store the values of a hash property in an Axbasic global array 
+      ! Store the values of a hash property in an Axbasic global array
       ! The following two statements behave in exactly the same way
       PEEKVALUES values$ = "world.current.currencyHash"
       PEEKVALUES ARRAY values$ = "world.current.currencyHash"
- 
-      ! Store values of a hash property in an Axbasic local array 
+
+      ! Store values of a hash property in an Axbasic local array
       DIM LOCAL values$(1)
       PEEKVALUES values$ = "world.current.currencyHash"
 

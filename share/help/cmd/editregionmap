@@ -1,7 +1,7 @@
 erm / editregionmap           Opens an 'edit' window for a regionmap
- 
+
    Format:
       ;erm <name>             Edits the regionmap <name>
-  
+
    User commands:
       erm / editregion / editregionmap

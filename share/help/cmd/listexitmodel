@@ -1,21 +1,21 @@
 lem / listexitmodel           Lists exit model objects
- 
+
    Format:
       ;lem                    Shows the current state of the exit model
       ;lem <number>           Shows the exit model object <number>
       ;lem <start> <stop>     Lists exit objects numbered <start> to <stop>
- 
+
    Notes:
       The world model stores information about the regions, rooms, characters
          and objects in the game world. The automapper window uses the model to
          display its maps.
       This command lists information about the state of the exit model, or else
-         displays a summary for a selection of model objects (use 
+         displays a summary for a selection of model objects (use
          ';dumpexitmodel' to display a list of all exit model objects).
 
       If <number> doesn't exist in the exit model, an error is displayed; but if
          either <start> or <stop> (or both) don't exist, all objects with
          numbers between them will be displayed.
- 
+
    User commands:
       lem / listexit / listexitmodel

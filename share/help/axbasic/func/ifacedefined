@@ -2,7 +2,7 @@ Ifacedefined (number)
 
    Synopsis:
       Tests whether the interface provided additional data, or not
-      
+
    Notes:
       The interface notification list contains all the notifications received,
          and not yet processed, as the result of an earlier SETTRIG, SETALIAS,
@@ -18,7 +18,7 @@ Ifacedefined (number)
       In the case of triggers and aliases, a pattern (regular expression) is
          tested against some text. The pattern may contain groups and, if so,
          the matching portions of the text are available to your scripts as
-         additional data.         
+         additional data.
       You might want a trigger to match any of the following lines:
 
          The warrior hits you with axe
@@ -31,7 +31,7 @@ Ifacedefined (number)
 
       In that case, you might use the following pattern, containing a single
          group (inside brackets):
-      
+
          The warrior hits you with (hand|pole)?axe
 
       Additionally, you might want to capture the type of weapon used, and
@@ -42,7 +42,7 @@ Ifacedefined (number)
       When the pattern matches a line containing "handaxe" or "poleaxe", the
          additional data consists of two substrings, one of them an undefined
          value:
-         
+
             ( "hand", undefined )
             ( undefined, "pole" )
 

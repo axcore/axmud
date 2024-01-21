@@ -1,17 +1,17 @@
 telnet / telnet               Connects to an unnamed world via telnet
- 
+
    Format:
       ;telnet <host> <port>   Connects to the world
       ;telnet <host>          Connects to the world using the generic port
 
    Notes:
-      Axmud offers three types of connection to a world - ordinary telnet, SSH 
-         (Secure Shell) and SSL (Secure Sockets Layer).    
+      Axmud offers three types of connection to a world - ordinary telnet, SSH
+         (Secure Shell) and SSL (Secure Sockets Layer).
       This command first creates a temporary world profile - which isn't saved,
-         even if you use the ';save -f' command - and then connects to the 
+         even if you use the ';save -f' command - and then connects to the
          specified world using the telnet protocol. The connection opens in a
          new 'main' window (or in a new tab in a shared 'main' window).
       See also the help for the ';ssh' and ';ssl' commands.
-      
+
    User commands:
       telnet

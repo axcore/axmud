@@ -1,8 +1,8 @@
 ldi / listdirection           Lists primary/secondary directions
- 
+
    Format:
       ;ldi                    Lists directions
-                              
+
    Notes:
       Axmud provides eighteen 'standard' primary directions - the sixteen
          compass directions (including 'north', 'northeast' and
@@ -18,6 +18,6 @@ ldi / listdirection           Lists primary/secondary directions
          in the current dictionary.
 
       See also the help for ';listautosecondary'.
-         
+
    User commands:
       ldi / listdirection

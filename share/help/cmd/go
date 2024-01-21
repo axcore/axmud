@@ -1,25 +1,25 @@
 go / go                       Moves the character to a new room
- 
+
    Format:
       ;go <tag>               Moves to the room tagged <tag>
       ;go <number>            Moves to the room <number>
-      ;go -n <number> 
- 
+      ;go -n <number>
+
    Notes:
       This command moves the character from one room in the world model to
          another using the shortest possible path. It's the equivalent of
-         double-clicking on a room in the automapper window (or right-clicking 
+         double-clicking on a room in the automapper window (or right-clicking
          on a room, and selecting 'Go to room').
 
       You can specify <tag>, the room tag for the target room, or <number>, the
          target room's unique number in the world model.
-      Room tags can be numerical, so if you want to go to room #100 - not the 
+      Room tags can be numerical, so if you want to go to room #100 - not the
          room whose room tag is 100 - use the optional '-n' switch.
       Note that <tag> refers to a tag in the world model, not to the set of
          room tags used in Axmud's pre-defined routes (see the help for
          ';addroute'.
-         
-      This command can be used even when the automapper window isn't open. Use 
+
+      This command can be used even when the automapper window isn't open. Use
          the ';setroom' command to set your location first.
 
    User commands:

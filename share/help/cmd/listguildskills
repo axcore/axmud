@@ -1,12 +1,12 @@
 lgs / listguildskills         Lists guild skills for the current character
- 
+
    Format:
       ;lgs                    Displays the list
- 
+
    Notes:
       Displays a list of this character's available guild skills.
-      See the help for the ';advance' command for more information about guild 
+      See the help for the ';advance' command for more information about guild
          skills.
- 
+
    User commands:
       lgs / listgs / listguildskills

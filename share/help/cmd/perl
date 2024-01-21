@@ -1,62 +1,62 @@
 perl / perl                   Executes a Perl string as a programme
- 
+
    Format:
       ;perl <string>          Executes the programme store in the <string>
-      
+
    Notes:
       Perl commands can be typed in the 'main' window's command entry box. These
          commands start with the Perl sigil, a forward slash character:
-      
+
          /$a = "kill"; $b = "orc"; $a . $b;
-         
-      Everything after the sigil is run as a mini-Perl programme. The 
-         programme's return value (if any) is then executed as an Axmud 
+
+      Everything after the sigil is run as a mini-Perl programme. The
+         programme's return value (if any) is then executed as an Axmud
          instruction. If there's a Perl error, no instruction is executed.
-      The resulting instruction is typically a world command that's sent 
-         straight to the world - for example, the Perl command above sends a 
+      The resulting instruction is typically a world command that's sent
+         straight to the world - for example, the Perl command above sends a
          'kill orc' command. The resulting instruction can be any kind of Axmud
          instruction except for another Perl command.
 
       Perl sigils are turned off by default (use ';togglesigil -p' to turn them
          on again). However, this client command is always available, and you
          don't need to type the sigil:
-         
+
          ;perl <Hello world!>
 
       When using this client command, the entire Perl programme must be enclosed
          within diamond brackets <...>:
-         
+
          ;perl < $a = "kill"; $b = "orc"; $a . $b; >
-                  
-      For security, the programme has limited functionality (as it's all too 
-         easy to accidentally execute a Perl programme that deletes files from 
-         your hard drive, especially when working with Axmud interfaces and 
+
+      For security, the programme has limited functionality (as it's all too
+         easy to accidentally execute a Perl programme that deletes files from
+         your hard drive, especially when working with Axmud interfaces and
          their unpredictable outputs).
-         
-      Within the scope of the Perl programme, certain global variables and 
+
+      Within the scope of the Perl programme, certain global variables and
          blessed references are available for use. The variable names all start
          with an underline so they don't clash with any variables the Perl
          programme itself defines:
-         
-         $_scriptName       > (corresponds to) $axmud::SCRIPT   
+
+         $_scriptName       > (corresponds to) $axmud::SCRIPT
          $_scriptVersion    > $axmud::VERSION;
          $_scriptDate       > $axmud::DATE;
-         
+
          $_client           > $axmud::CLIENT;
          $_session          > The GA::Session from which this command was run
-         
+
          $_world, $_guild, $_race, $_char
                             > Names of the current world/guild/race/character
                                  profiles (empty strings if not set)
-                    
-      The following variables are only set when the Perl command is created by 
-         an Axmud interface:                            
-         $_interface        > The interface object (inheriting from 
+
+      The following variables are only set when the Perl command is created by
+         an Axmud interface:
+         $_interface        > The interface object (inheriting from
                                  GA::Generic::Interface) which fired and created
                                  this Perl command (will be 'undef')
          $_line, $_stripLine, $_modeLine
                             > The line that caused a trigger to fire, the line
-                                 when stripped of control sequences, and the 
+                                 when stripped of control sequences, and the
                                  line after it was modified by the trigger (will
                                  all be empty strings)
          $_originalCmd      > The command that caused an alias to fire (will be
@@ -64,24 +64,24 @@ perl / perl                   Executes a Perl string as a programme
          $_keycode          > The keycode that caused a macro to fire (will be
                                  an empty string)
          $_timerExpect, $_timerTime
-                            > The time intervals that caused a timer to fire 
+                            > The time intervals that caused a timer to fire
                                  (will all be empty strings)
          $_hookEvent, $_hookVar, $_hookVal
                             > The hook event that caused a hook to fire and the
                                  optional data produced by the hook event (will
                                  all be empty strings)
-                                 
+
       A blessed reference's accessor methods are accessible to the programmes
          specified by Perl commands; for example:
-         
-         $obj = $_client; return $obj                   
+
+         $obj = $_client; return $obj
                             > Perl programme returns a blessed reference
-         $obj = $_client->mainWin; return $obj;         
+         $obj = $_client->mainWin; return $obj;
                             > Returns a blessed reference
-         $num = $_session->number; return $num;         
+         $num = $_session->number; return $num;
                             > Returns value stored in a scalar IV
          @list = $_session->profPriorityList; return $list[0];
                             > Returns the first item in a list IV
-          
+
    User commands:
       perl

@@ -1,26 +1,26 @@
 dcb / dumpcommandbuffer       Displays contents of a world command buffer
- 
+
    Format:
       ;dcb -s                 Shows most recent world command in session buffer
-      ;dcb                    
+      ;dcb
       ;dcb -s <number>        Shows command <number>
       ;dcb <number>
       ;dcb -s <start> <stop>  Shows commands between <start> and <stop>
-      ;dcb -s <start> <stop> 
+      ;dcb -s <start> <stop>
 
       ;dcb -c                 Shows most recent world command in combined buffer
       ;dcb -c <number>        Shows command <number>
       ;dcb -c <start> <stop>  Shows command between <start> and <stop>
- 
+
    Notes:
-      World command buffers are Axmud's records of individual commands sent to 
+      World command buffers are Axmud's records of individual commands sent to
          the world (see the help for ';commandbuffer').
-      Every session has its own world command buffer, storing world commands 
+      Every session has its own world command buffer, storing world commands
          sent by that session. There is also a combined world command buffer
          storing world commands sent by all sessions.
 
-      If specified, <number>, <start> and <stop> must be valid item numbers 
-         within the buffer. If the buffer is full, the earliest items are 
+      If specified, <number>, <start> and <stop> must be valid item numbers
+         within the buffer. If the buffer is full, the earliest items are
          deleted to make room for new ones. Use the ';commandbuffer' command to
          get the current bounds of the buffer.
       <number>, <start> and <stop> can be replaced by the words 'start'/'first'
@@ -31,6 +31,6 @@ dcb / dumpcommandbuffer       Displays contents of a world command buffer
       If the line numbers are specified in the wrong order, e.g. ';dcb 40 30' or
          ';dcb stop start', the contents of the buffer will be listed in reverse
          order.
- 
+
    User commands:
       dcb / dumpcmdbuff / dumpcommandbuffer

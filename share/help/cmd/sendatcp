@@ -1,15 +1,15 @@
 satcp / sendatcp              Sends encoded JSON data to the world via ATCP
- 
+
    Format:
       ;satcp <payload>        Sends an ATCP request to the world
- 
+
    Notes:
-      The world can use the ATCP protocol to send extra information about the 
-         game state (see the help for ';atcp'). 
-      The client can also use ATCP to send information back to the world, 
-         typically to request more data. An ATCP <payload> is usually in the 
+      The world can use the ATCP protocol to send extra information about the
+         game state (see the help for ';atcp').
+      The client can also use ATCP to send information back to the world,
+         typically to request more data. An ATCP <payload> is usually in the
          form:
-            
+
          Package[.SubPackages].Message data
 
       Consult the world's own documentation for details of which ATCP requests

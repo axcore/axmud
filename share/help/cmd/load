@@ -1,16 +1,16 @@
 load / load                   Loads a file (or files)
- 
+
    Format:
       ;load                   Loads files for this session
       ;load <options>         Loads specific file(s) for this session
-      
+
    Notes:
       Axmud stores its data across a number of files (use ';showfile' for a list
          of them). This command loads data from those files, overwriting any
          data stored in memory.
 
       If you want to load specific files, you can use <options>.
-      <options> should consist of a list of switch options and/or file names. 
+      <options> should consist of a list of switch options and/or file names.
       The switch options used are:
          -m   Loads the world model data file, 'worldmodel'
          -t   Loads the task data file, 'tasks'
@@ -26,9 +26,9 @@ load / load                   Loads a file (or files)
          'usercmds', 'zonemaps', 'winmaps', 'tts'.
 
       <options> can be specified in any order:
-      
+
          ';load -n tasks -z dicts'
-         
+
       Each file is only loaded once, so duplicate <options> won't cause an
          error.
       The config file can't be loaded with this command; it is only ever loaded

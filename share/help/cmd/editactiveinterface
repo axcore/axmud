@@ -1,9 +1,9 @@
 eda / editactiveinterface     Opens an 'edit' window for an active interface
- 
+
    Format:
       ;eda <name>             Edits active interface called <name>
       ;eda <number>           Edits active interface with <number>
       ;eda                    Opens window to display all active interfaces
-  
+
    User commands:
       eda / editactive / editactiveinterface

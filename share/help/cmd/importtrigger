@@ -1,0 +1,42 @@
+itr / importtrigger           Imports trigger(s) from the interface clipboard
+
+   Format:
+      ;itr <name> <switches>  Imports the trigger called <name>
+      ;itr <switches>         Imports all clipboard triggers
+
+   Notes:
+      Triggers are one of five types of Axmud interface (the others being
+         aliases, macros, timers and hooks).
+      Triggers allow you to react automatically to text received from the world.
+         The reaction can have one of three forms: the trigger can execute an
+         instruction (including world commands, forced world commands, client
+         commands, echo commands, Perl commands, script commands and multi
+         commands) or it can split a line into two (a 'splitter' trigger), or it
+         can change the way the received text is displayed in the 'main' window
+         (a 'rewriter' trigger).
+      This command provides a simple way to copy triggers from one profile/cage
+         to another (perhaps even in a different world, in a different session).
+         Having 'exported' the trigger to Axmud's interface clipboard using the
+         ';importtrigger' command, that trigger can then be 'imported'.
+      Note that the contents of the clipboard are not saved. Note also that the
+         trigger's attributes might change while stored in the clipboard. In
+         other words, it's up to you to perform the export, then the import,
+         before doing anything else.
+      If an active trigger was exported, an inactive trigger is imported. The
+         imported trigger will not replace an existing trigger with the same
+         name.
+
+      <switches> allows you to specify which profile's trigger cage should
+         receive the imported triggers. One of the following (group 1) switches
+         may be specified:
+         (no switch)   - Imports trigger(s) to the current world
+         -w            - Imports trigger(s) to the current world
+         -r            - Imports trigger(s) to the current race
+         -g            - Imports trigger(s) to the current guild
+         -c            - Imports trigger(s) to the current char
+         -x <category> - Imports trigger(s) to the current custom profile
+                            <category>
+         -d <prof>     - Imports trigger(s) to the profile named <prof>
+
+   User commands:
+      itr / imptrig / imptrigger / importtrig / importtrigger

@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2022 A S Lewis
+# Copyright (C) 2011-2024 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -19,7 +19,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -212,6 +212,90 @@
         return 1;
     }
 
+    sub cloneToInactiveInterface {
+
+        # Called by GA::Generic::Cmd->importInterface
+        # Creates an inactive interface, cloning the attributes of this active interface
+        #
+        # Expected arguments
+        #   $category   - 'trigger', 'alias', 'macro', 'timer' or 'hook'
+        #
+        # Return values
+        #   'undef' on improper arguments, or if $category is invalid
+        #   Blessed reference to the newly-created object on success
+
+        my ($self, $category, $check) = @_;
+
+        # Local variables
+        my ($class, $parentFile, $parentWorld);
+
+        # Check for improper arguments
+        if (! defined $category || defined $check) {
+
+            return $axmud::CLIENT->writeImproper(
+                $self->_objClass . '->cloneToInactiveInterface',
+                @_,
+            );
+        }
+
+        if ($category eq 'trigger') {
+            $class = 'Games::Axmud::Interface::Trigger';
+        } elsif ($category eq 'alias') {
+            $class = 'Games::Axmud::Interface::Alias';
+        } elsif ($category eq 'macro') {
+            $class = 'Games::Axmud::Interface::Macro';
+        } elsif ($category eq 'timer') {
+            $class = 'Games::Axmud::Interface::Timer';
+        } elsif ($category eq 'hook') {
+            $class = 'Games::Axmud::Interface::Hook';
+        } else {
+            return undef;
+        }
+
+        if ($self->assocProf) {
+
+            $parentFile = 'otherprof';
+            $parentWorld = $self->assocProf;
+        }
+
+        # Setup
+        my $clone = {
+            _objName                    => $self->name,
+            _objClass                   => $class,
+            _parentFile                 => $parentFile,
+            _parentWorld                => $self->assocProf,
+            _privFlag                   => TRUE,            # All IVs are private
+
+            # Interface category
+            # ------------------
+
+            category                    => $category,
+
+            # Standard interface attributes
+            # -----------------------------
+
+            name                        => $self->name,
+            stimulus                    => $self->stimulus,
+            response                    => $self->response,
+            enabledFlag                 => $self->enabledFlag,
+
+            # Trigger attributes
+            # ------------------
+
+            attribHash                  => {$self->attribHash},
+
+            # Ordering
+            # --------
+
+            beforeHash                  => {},
+            afterHash                   => {},
+        };
+
+        # Bless the object into existence
+        bless $clone, $class;
+        return $clone;
+    }
+
     ##################
     # Accessors - set
 
@@ -349,7 +433,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -487,7 +571,8 @@
 
     sub clone {
 
-        # Creates a clone of an existing interface; only used when the parent cage is cloned
+        # Creates a clone of an existing interface; only used when the parent cage is cloned, or
+        #   when interfaces are exported to the GA::Client's interface clipboard
         #
         # Expected arguments
         #   $profName       - The parent profile's name (e.g. matches the object's ->name)
@@ -576,7 +661,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -691,7 +776,8 @@
 
     sub clone {
 
-        # Creates a clone of an existing interface; only used when the parent cage is cloned
+        # Creates a clone of an existing interface; only used when the parent cage is cloned, or
+        #   when interfaces are exported to the GA::Client's interface clipboard
         #
         # Expected arguments
         #   $profName       - The parent profile's name (e.g. matches the object's ->name)
@@ -780,7 +866,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -893,7 +979,8 @@
 
     sub clone {
 
-        # Creates a clone of an existing interface; only used when the parent cage is cloned
+        # Creates a clone of an existing interface; only used when the parent cage is cloned, or
+        #   when interfaces are exported to the GA::Client's interface clipboard
         #
         # Expected arguments
         #   $profName       - The parent profile's name (e.g. matches the object's ->name)
@@ -982,7 +1069,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -1099,7 +1186,8 @@
 
     sub clone {
 
-        # Creates a clone of an existing interface; only used when the parent cage is cloned
+        # Creates a clone of an existing interface; only used when the parent cage is cloned, or
+        #   when interfaces are exported to the GA::Client's interface clipboard
         #
         # Expected arguments
         #   $profName       - The parent profile's name (e.g. matches the object's ->name)
@@ -1188,7 +1276,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -1301,7 +1389,8 @@
 
     sub clone {
 
-        # Creates a clone of an existing interface; only used when the parent cage is cloned
+        # Creates a clone of an existing interface; only used when the parent cage is cloned, or
+        #   when interfaces are exported to the GA::Client's interface clipboard
         #
         # Expected arguments
         #   $profName       - The parent profile's name (e.g. matches the object's ->name)

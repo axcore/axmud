@@ -1,20 +1,20 @@
 shf / showfile                Shows information about data files
- 
+
    Format:
       ;shf                    Shows data files
       ;shf <name>             Shows metadata for data file <name>
- 
+
    Notes:
-      Global data files store the data which applies across every session (every 
+      Global data files store the data which applies across every session (every
          open tab in the 'main' window).
       Session data files store only the data for a single session (one open tab
          in the 'main' window) connected to a single world.
-      The list of global data files includes all single profiles. The session 
+      The list of global data files includes all single profiles. The session
          list includes only the current single profile (if any) and its
-         associated guild, race, character or custom profiles (if any). 
+         associated guild, race, character or custom profiles (if any).
       If you use initial tasks on startup, it's inevitable that some of them
          will make changes to Axmud's data. This will mark some data files as
          'not saved', even though you've only just loaded them.
- 
+
    User commands:
       shf / showfile

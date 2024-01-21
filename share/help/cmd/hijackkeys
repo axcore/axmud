@@ -1,10 +1,10 @@
 hjk / hijackkeys              Toggles cursor (etc) keys for replaying TTS
- 
+
    Format:
       ;hjk                    Toggles cursor (etc) keys
-      
+
    Notes:
-      When running the version of Axmud that's optimised for visually-impaired 
+      When running the version of Axmud that's optimised for visually-impaired
          users, some keys are used for replaying text that has been converted
          to speech.
       This command can be used to enable or disable that functionality, when

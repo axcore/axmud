@@ -1,14 +1,14 @@
 chata / chatall               Sends a message to all chat contacts
- 
+
    Format:
       ;chata <text>           Sends the <text> to everyone
- 
+
    Notes:
       The Chat task is used to chat with other players directly via telnet.
          Calls can be placed (or accepted) with any user whose MUD client uses
          the zChat or MudMaster protocols.
       This command is the equivalent of typing ';chatall <text>' in any Chat
          task window.
- 
+
    User commands:
       chata / chatall

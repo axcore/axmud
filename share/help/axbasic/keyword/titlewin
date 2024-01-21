@@ -5,16 +5,16 @@ TITLEWIN expression
 
    Notes:
       If the script is being run from within a task, this statement asks the
-         task to change the title of its task window. If an expression is 
-         specified, it is used as the new title. If an empty string, zero or no 
-         expression at all is specified, the window is reset to use its default 
+         task to change the title of its task window. If an expression is
+         specified, it is used as the new title. If an empty string, zero or no
+         expression at all is specified, the window is reset to use its default
          title.
 
    Requires:
       If the script is not being run as a task, or if not task window is open,
          the TITLEWIN statement is ignored (and no error message is generated).
          Execution continues with the next statement.
-         
+
    Examples:
       OPENWIN
       WRITEWIN "Hello world!"

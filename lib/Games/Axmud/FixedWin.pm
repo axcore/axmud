@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2022 A S Lewis
+# Copyright (C) 2011-2024 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -16,7 +16,7 @@
 # All 'fixed' window objects
 
 use strict;
-use diagnostics;
+#use diagnostics;
 use warnings;
 
 # (This file has been left blank deliberately)

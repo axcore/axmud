@@ -1,0 +1,46 @@
+xhk / exporthook              Exports a hook to the interface clipboard
+
+   Format:
+      ;xhk <switches>         Exports a hook
+
+   Notes:
+      Hooks are one of five types of Axmud interface (the others being triggers,
+         aliases, macros and timers).
+      Hooks allow you to specify instructions to be executed automatically when
+         certain events happen.
+      This command provides a simple way to copy hooks from one profile/cage to
+         another (perhaps even in a different world, in a different session). It
+         'exports' the hook to Axmud's interface clipboard, from where it can be
+         'imported'.
+      Note that the contents of the clipboard are not saved, when Axmud saves
+         its files. Note also that the hook's attributes might change while
+         stored in the clipboard. In other words, it's up to you to perform the
+         export, then the import, before doing anything else.
+      You can repeat this command as often as you like, to add multiple hook
+         to the clipboard, before importing them all together with
+         ';importhook'. Use ';emptyclipboard' when you want to start afresh.
+         Note that 'Export' buttons in preference/edit windows empty the
+         clipboard, before adding one or interfaces to it.
+      Both active and inactive hooks can be exported.
+
+      <switches> allows you to define which hook (and which of its attributes)
+         should be exported.
+
+      To export an active hook directly, one of the following (group 0) switch
+         options must be used:
+         -i <name>            - Exports the active hook <name>
+         -i <number>          - Exports the active hook <number>
+      However, to export an inactive hook, one of the following (group 1)
+         switch options must be used instead:
+         <name>               - Exports hook belonging to the current world
+         <name> -w            - Exports hook belonging to the current world
+         <name> -r            - Exports hook belonging to the current race
+         <name> -g            - Exports hook belonging to the current guild
+         <name> -c            - Exports hook belonging to the current char
+         <name> -x <category> - Exports hook belonging to the current custom
+                                   profile <category>
+         <name> -d <prof>     - Exports hook belonging to the profile named
+                                   <prof>
+
+   User commands:
+      xhk / exphk / exphook / exporthk / exporthook

@@ -3,15 +3,15 @@ cqs / clonequest              Clones an existing quest
    Format:
       ;cqs <original> <copy>
                Clones the <original> quest into one named <copy>
- 
+
    Notes:
-      Axmud is able to store information about the current world's quests. This 
+      Axmud is able to store information about the current world's quests. This
          command clones a new quest using the contents of an existing one.
       Quests are stored in the current world profile. Quest names must be no
-         longer than 16 characters, contain only A-Z, a-z, underlines and 0-9 
-         (not the first character) and not be one of Axmud's reserved names (see 
+         longer than 16 characters, contain only A-Z, a-z, underlines and 0-9
+         (not the first character) and not be one of Axmud's reserved names (see
          the ';listreserved' command). Non-Latin alphabets are acceptable.
       See the help for ';addquest' for more information about quests.
- 
+
    User commands:
       cqs / cloneqs / clonequest

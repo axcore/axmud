@@ -1,10 +1,10 @@
 chu / chathangup              Hangs up on chat contacts
- 
+
    Format:
       ;chu -n <name>          Hangs up on chat contacts called <name>
       ;chu -g <group>         Hangs up on everyone in the <group>
       ;chu                    Hangs up on everyone
- 
+
    Notes:
       The Chat task is used to chat with other players directly via telnet.
          Calls can be placed (or accepted) with any user whose MUD client uses
@@ -12,6 +12,6 @@ chu / chathangup              Hangs up on chat contacts
       This command is the equivalent of typing ';hangup' in the relevant Chat
          task windows.
       The switches -n and -g can't be combined.
- 
+
    User commands:
       chu / hangup / chathangup

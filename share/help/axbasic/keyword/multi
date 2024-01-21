@@ -2,15 +2,15 @@ MULTI expression
 
    Synopsis:
       Executes a world command in multiple sessions
-      
+
    Notes:
       This is the equivalent of a multi command typed in the 'main' window's
          command entry box.
       The expression is executed as a world command in muliple sessions; either
-         in all sessions connected to the same world as this session, or in 
-         every single session (use ';toggleinstruction -m' to switch between 
+         in all sessions connected to the same world as this session, or in
+         every single session (use ';toggleinstruction -m' to switch between
          these two settings).
-      If the multi command produces any kind of error, the Axbasic script 
+      If the multi command produces any kind of error, the Axbasic script
          continues as normal. No Axbasic error message is generated.
       See also the help for PERL, SPEED and BYPASS.
 

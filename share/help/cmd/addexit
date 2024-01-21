@@ -3,7 +3,7 @@ aex / addexit                 Adds an exit to the exit model
    Format:
       ;aex <direction> <room>
                Adds an exit in <direction> belonging to <room>
- 
+
    Notes:
       The world model stores information about the regions, rooms, characters
          and objects in the game world. The automapper window uses the model to
@@ -15,6 +15,6 @@ aex / addexit                 Adds an exit to the exit model
          and so on. <direction> must be no longer than 32 characters.
       <room> is the number of a room object in the world model. A valid room
          number must be specified.
- 
+
    User commands:
       aex / addexit

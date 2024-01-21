@@ -1,16 +1,16 @@
 ucp / unsetcustomprofile      Unsets a current custom profile
- 
+
    Format:
       ;ucp <profile>          Unsets a current custom profile
- 
+
    Notes:
-      Besides having a guild profile and a race profile, characters can have any 
+      Besides having a guild profile and a race profile, characters can have any
          number of custom profiles marked as a current profile.
-      After using this command, the custom <profile> will no longer be current. 
-         All interfaces used by the profile will become unavailable. (They will 
+      After using this command, the custom <profile> will no longer be current.
+         All interfaces used by the profile will become unavailable. (They will
          be restored the next time this profile is made current.)
       You can select the next current custom profile with the
          ';setcustomprofile' command.
- 
+
    User commands:
       ucp / unsetcustom / unsetcustomprof / unsetcustomprofile

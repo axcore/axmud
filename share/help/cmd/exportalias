@@ -1,0 +1,46 @@
+xal / exportalias             Exports an alias to the interface clipboard
+
+   Format:
+      ;xal <switches>         Exports an alias
+
+   Notes:
+      Aliases are one of five types of Axmud interface (the others being
+         triggers, macros, timers and hooks).
+      Aliases allow you to define shortcuts for world commands and to have those
+         commands modified before being sent to the world.
+      This command provides a simple way to copy aliases from one profile/cage
+         to another (perhaps even in a different world, in a different session).
+         It 'exports' the alias to Axmud's interface clipboard, from where it
+         can be 'imported'.
+      Note that the contents of the clipboard are not saved, when Axmud saves
+         its files. Note also that the alias's attributes might change while
+         stored in the clipboard. In other words, it's up to you to perform the
+         export, then the import, before doing anything else.
+      You can repeat this command as often as you like, to add multiple aliases
+         to the clipboard, before importing them all together with
+         ';importalias'. Use ';emptyclipboard' when you want to start afresh.
+         Note that 'Export' buttons in preference/edit windows empty the
+         clipboard, before adding one or interfaces to it.
+      Both active and inactive aliases can be exported.
+
+      <switches> allows you to define which alias (and which of its attributes)
+         should be exported.
+
+      To export an active alias directly, one of the following (group 0) switch
+         options must be used:
+         -i <name>            - Exports the active alias <name>
+         -i <number>          - Exports the active alias <number>
+      However, to export an inactive alias, one of the following (group 1)
+         switch options must be used instead:
+         <name>               - Exports alias belonging to the current world
+         <name> -w            - Exports alias belonging to the current world
+         <name> -r            - Exports alias belonging to the current race
+         <name> -g            - Exports alias belonging to the current guild
+         <name> -c            - Exports alias belonging to the current char
+         <name> -x <category> - Exports alias belonging to the current custom
+                                   profile <category>
+         <name> -d <prof>     - Exports alias belonging to the profile named
+                                   <prof>
+
+   User commands:
+      xal / expal / expalias / exportal / exportalias

@@ -4,30 +4,30 @@ WAITACTIVE expression
       Waits for an Axmud task to become active
 
    Notes:
-      All Axmud tasks have a property called 'activeFlag'. 
-      Many tasks don't make use of this property - they are designed to be 
+      All Axmud tasks have a property called 'activeFlag'.
+      Many tasks don't make use of this property - they are designed to be
          running (when they are added to the current tasklist), or not running
-         (when they are removed from it). For those tasks, the 'activeFlag' 
-         property is always set to a FALSE value. 
+         (when they are removed from it). For those tasks, the 'activeFlag'
+         property is always set to a FALSE value.
       Some tasks, however, are designed to run 'in the background', so to speak.
          When their 'activeFlag' property gets set to a TRUE value, the task
          becomes active. When the 'activeFlag' property is returned to a FALSE
-         value, the task becomes disactivated and goes back to running in the 
+         value, the task becomes disactivated and goes back to running in the
          background.
       Precisely how this is implemented can vary from task to task, but any
-         running task has an 'activeFlag' property which is set to either TRUE 
+         running task has an 'activeFlag' property which is set to either TRUE
          or FALSE.
 
       WAITACTIVE pauses execution of the script until a task matching the
-         expression becomes active (i.e. when the task's 'activeFlag' property 
-         is set to a TRUE value). 
-      The expression is the name of a task in the current tasklist. It can be a 
-         task label (e.g. "stat", "status"), a task's formal name (e.g. 
+         expression becomes active (i.e. when the task's 'activeFlag' property
+         is set to a TRUE value).
+      The expression is the name of a task in the current tasklist. It can be a
+         task label (e.g. "stat", "status"), a task's formal name (e.g.
          "status_task") or a task's unique name (e.g. "status_task_9").
       If more than one task matches the expression, only the first matching task
          is used.
       If there is no matching task in the current tasklist, the script will not
-         resume execution until a matching task has started, and has become 
+         resume execution until a matching task has started, and has become
          active.
       See also the help for WAITNOTACTIVE.
 
@@ -35,7 +35,7 @@ WAITACTIVE expression
       If the script is not being run as a task, the WAITACTIVE statement is
          ignored (and no error message is generated). Execution continues with
          the next statement.
-         
+
    Examples:
       WAITACTIVE "condition"
       PRINT "I'm back, baby!"

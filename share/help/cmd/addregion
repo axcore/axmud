@@ -1,20 +1,20 @@
 arn / addregion               Adds a region to the world model
- 
+
    Format:
       ;arn <name>             Adds a new region <name>
       ;arn <name> -t
 
       ;arn <name> <parent>    Adds a new region belonging to a <parent> region
-      ;arn <name> <parent> -t 
- 
+      ;arn <name> <parent> -t
+
    Notes:
       The world model stores information about the regions, rooms, characters
          and objects in the game world. The automapper window uses the model to
          display its maps.
-      Most model objects can be added with ';addmodelobject', but regions must 
+      Most model objects can be added with ';addmodelobject', but regions must
          be added with this command.
 
-      <name> and <parent> are the names of regions. If the region <parent> is 
+      <name> and <parent> are the names of regions. If the region <parent> is
          specified, the new region <name> will appear below it in the automapper
          window's list of regions.
       If the '-t' switch is specified, the new region will be a temporary region

@@ -1,10 +1,10 @@
-The Locator task keeps track of the character's current location in the 
+The Locator task keeps track of the character's current location in the
    world.
 A summary of the data gathered is usually displayed in the task window, if it
    is open. Many built-in tasks won't run unless the Locator task is running
    (and neither will the Automapper).
- 
-Client commands used with this task are: 
+
+Client commands used with this task are:
    ;godirection               Sends a movement command to the world
    ;resetlocatortask          Resets the Locator task
    ;pseudobriefmode           Toggles pseudo brief mode on/off

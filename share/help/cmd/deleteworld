@@ -1,14 +1,14 @@
 dwo / deleteworld             Deletes a world profile
- 
+
    Format:
       ;dwo <name>             Deletes the world profile <name>
- 
+
    Notes:
       This operation deletes not only the world, but all its associated guild,
          race, character and custom profiles, their cages, any associated
          profile templates and the world model. (However, no dictionaries are
          deleted.)
       The operation will fail if <name> is the current world in any session.
- 
+
    User commands:
       dwo / delworld / deleteworld

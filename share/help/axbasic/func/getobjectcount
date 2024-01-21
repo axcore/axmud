@@ -1,15 +1,15 @@
 Getobjectcount (number)
-        
+
    Synopsis:
       Returns the number of (real) world objects stored in a single model object
 
    Notes:
-      The Locator task's current room has a numbered list of objects; 'number' 
-         is the position of an object in that list (the first object is numbered 
+      The Locator task's current room has a numbered list of objects; 'number'
+         is the position of an object in that list (the first object is numbered
          1).
-      When the world sends some text like '10 gold coins', Axmud is able to 
-         store it in a single model object whose 'multiple' property is set to 
-         10. For most objects, the 'multiple' property is set to 1. This 
+      When the world sends some text like '10 gold coins', Axmud is able to
+         store it in a single model object whose 'multiple' property is set to
+         10. For most objects, the 'multiple' property is set to 1. This
          function returns the value stored in the object's 'multiple' property.
       If the Locator task isn't running, if it doesn't know about the current
          location or if the numbered object doesn't exist, 0 is returned.

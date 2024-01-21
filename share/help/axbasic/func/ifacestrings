@@ -3,7 +3,7 @@ Ifacestrings ()
    Synopsis:
       Returns the number of items of additional data provided by the interface
          when it fired
-         
+
    Notes:
       The interface notification list contains all the notifications received,
          and not yet processed, as the result of an earlier SETTRIG, SETALIAS,
@@ -14,7 +14,7 @@ Ifacestrings ()
       The Ifacetext$ () function returns whatever caused the interface to fire.
          Some interfaces provide additional data when they fire, but some do
          not. The help for Ifacedefined () contains more information about this.
-         
+
       This function returns how many pieces of additional data were provided. If
          the notification list is empty, returns 0.
 

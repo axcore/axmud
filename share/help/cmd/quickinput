@@ -1,17 +1,17 @@
 inp / quickinput              Opens the Quick Input window
- 
+
    Format:
       ;inp                    Opens the window
- 
+
    Notes:
       Commands are usually entered in the entry box in the 'main' window. This
          command opens a larger window in which you can type multiple commands.
          The commands are executed when you click the 'Send' button.
-         
+
       The window can also be used to type a quick Axbasic script. The script is
-         executed when you click the 'Run' button. 
+         executed when you click the 'Run' button.
       The script is not saved in Axmud's data directory. If you want to create
          and edit scripts from within Axmud, use the Launch task.
-         
+
    User commands:
       inp / qinput / quickinput

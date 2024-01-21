@@ -1,12 +1,12 @@
 rsm / resetsmiley             Resets Chat task smileys to the default list
- 
+
    Format:
       ;rsm                    Resets the smiley list
- 
+
    Notes:
-      For the benefit of Axmud users under the age of ten, the Chat task 
+      For the benefit of Axmud users under the age of ten, the Chat task
          automatically converts smileys such as :) and ;) into colourful icons
-         (unless this behaviour has been turned off by using the 
+         (unless this behaviour has been turned off by using the
          ';chatsetsmiley off' command).
       This command resets Axmud's list of smileys to the default list.
 

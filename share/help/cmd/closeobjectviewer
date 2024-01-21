@@ -1,7 +1,0 @@
-cov / closeobjectviewer       Closes the object viewer window
- 
-   Format:
-      ;cov                    Closes the window
-
-   User commands:
-      cov / closeviewer / closeobjectviewer

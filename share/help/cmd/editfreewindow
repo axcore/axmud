@@ -1,17 +1,17 @@
 efw / editfreewindow          Opens an 'edit' window for a 'free' window
- 
+
    Format:
       ;efw <number>           Views settings for 'free' window <number>
- 
+
    Notes:
       'Free' windows are temporary windows that are never arranged on Axmud's
-         workspace grids. 'Free' windows include the object viewer window, the
+         workspace grids. 'Free' windows include the data viewer window, the
          Connections window, the About window, and all edit, preference, wizard
          and dialogue windows.
 
-      This command open an 'edit' window to view settings for the specified 
-         'free' window. Use the ';listfreewindow' command to get a list of 
+      This command open an 'edit' window to view settings for the specified
+         'free' window. Use the ';listfreewindow' command to get a list of
          'free' window numbers.
- 
+
    User commands:
       efw / editfreewin / editfreewindow

@@ -1,11 +1,11 @@
 drm / deleteroom              Deletes a world model room
- 
+
    Format:
       ;drm <number>           Deletes the room <number>
 
    Notes:
       The world model stores information about the regions, rooms, characters
-         and objects in the game world. The automapper window uses the 
+         and objects in the game world. The automapper window uses the
          information stored in the world model to draw its maps.
       This command deletes the room along with any child objects and exits.
 

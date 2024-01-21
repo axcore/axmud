@@ -1,25 +1,25 @@
 gmcp / gmcp                   Shows GMCP data reported by the current world
- 
+
    Format:
       ;gmcp                   Shows all GMCP packages
       ;gmcp <name>            Shows the package called or starting with <name>
- 
+
    Notes:
-      The world can use the GMCP protocol to send extra information about the 
+      The world can use the GMCP protocol to send extra information about the
          game state. This information is normally invisible to the user when it
-         is received by Axmud, but it is available for use with your tasks and 
+         is received by Axmud, but it is available for use with your tasks and
          scripts, and can also be viewed using this command.
-      A GMCP package contains one or more pieces of data. Typical package 
+      A GMCP package contains one or more pieces of data. Typical package
          <name>s include 'char.stats', 'char.items.inv' and 'room.info'. Names
          are case-insensitive.
-      If you don't specify a <name>, all GMCP packages are shown. 
-      If a package called <name> doesn't exist, a list of GMCP packages that 
+      If you don't specify a <name>, all GMCP packages are shown.
+      If a package called <name> doesn't exist, a list of GMCP packages that
          start with the <name> (if any) are shown. For example, you can use the
          <name> 'char' to show the packages 'char.stats' and 'char.items.inv'.
 
       Some GMCP packages are not sent to the client unless the client requests
          it in some way. For details about which GMCP packages you can request
-         (if any), consult the world's own documentation and then use the Axmud 
+         (if any), consult the world's own documentation and then use the Axmud
          client command ';sendgmcp'.
       The ATCP protocol is very similar (see the help for ';atcp').
 

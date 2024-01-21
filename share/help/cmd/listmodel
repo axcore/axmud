@@ -1,17 +1,17 @@
 lmd / listmodel               Lists world model objects
- 
+
    Format:
       ;lmd     Shows the current state of the world model
       ;lmd <number>
                Shows the model object <number>
       ;lmd <start> <stop>
                Lists model objects numbered <start> to <stop>
- 
+
       ;lmd <type>
                Lists all model objects of <type>
       ;lmd <type> <start> <stop>
                Lists <type> model objects numbered <start> to <stop>
- 
+
    Notes:
       The world model stores information about the regions, rooms, characters
          and objects in the game world. The automapper window uses the model to
@@ -20,7 +20,7 @@ lmd / listmodel               Lists world model objects
          displays a summary for a selection of model objects (use ';dumpmodel'
          to display a list of all world model objects).
 
-      If <number> doesn't exist in the world model, an error is displayed; but 
+      If <number> doesn't exist in the world model, an error is displayed; but
          if either <start> or <stop> (or both) don't exist, all objects with
          numbers between them will be displayed.
       <type> must be one of the following switches:
@@ -33,6 +33,6 @@ lmd / listmodel               Lists world model objects
          weapons and armours, whereas ';lmo -r -w -a 1 100' will show all rooms,
          weapons and armours numbered between #1 and #100
       This command doesn't list exits (which are in the exit model).
- 
+
    User commands:
       lmd / listmd / listmodel

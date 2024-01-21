@@ -5,7 +5,7 @@ The window usually changes colour for a few seconds to alert you that some
    sound is turned on).
 The Channels task performs a similar function, but using multiple tabs. You
    can't run both tasks at the same time.
- 
+
 Client commands used with this task are:
    ;addchannelpattern         Adds a Channels/Divert task pattern
    ;deletechannelpattern      Deletes Channels/Divert task patterns

@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2023 A S Lewis
+# Copyright (C) 2011-2024 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -21,7 +21,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -122,7 +122,7 @@
 
             # The Session Console window (only one can be open per session)
             consoleWin                  => undef,       # Set by $self->set_consoleWin
-            # Blessed reference to the object viewer window (GA::OtherWin::Viewer) for this session
+            # Blessed reference to the data viewer window (GA::OtherWin::Viewer) for this session
             #   (only one can be opened per session, set to 'undef' when it's not open)
             viewerWin                   => undef,       # Set by $self->set_viewerWin
             # Blessed reference to any 'wiz' window (inherited from GA::Generic::WizWin) opened by
@@ -2185,6 +2185,23 @@
         #   displayed, before any text-to-speech stuff is done
         $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->start');
 
+        # In blind mode, and only for the first session, display some helpful information
+        if (
+            $axmud::BLIND_MODE_FLAG
+            && $axmud::CLIENT->sessionCount <= 1
+            && ! $axmud::CLIENT->blindHelpMsgShownFlag
+        ) {
+            $self->writeText(
+                'Axmud is ready to start. You might like to read the help for visually-impaired'
+                . ' users. You can open it in your web browser. In this window, type a semicolon'
+                . ' followed by the word blind, without any spaces. Then press return.',
+            );
+
+            $self->writeText(' ');
+
+            $axmud::CLIENT->set_blindHelpMsgShownFlag(TRUE);
+        }
+
         # Start the session loop (to which the maintenance, timer, incoming data, task and replay
         #   loops are subservient)
         if (! $self->startSessionLoop()) {
@@ -2821,8 +2838,7 @@
                 );
             }
 
-        # Mode 'task' - run a task (character is logged in if when the task calls
-        #   GA::Session->doLogin)
+        # Mode 'task' - run a task (character is logged in when the task calls GA::Session->doLogin)
         } elsif ($mode eq 'task' && $self->currentWorld->loginObjName) {
 
             # $self->findTaskPackageName recognises unique names of currently running tasks (e.g.
@@ -3607,8 +3623,15 @@
         @loginCmdList = $self->currentWorld->loginCmdList;
         # Prepare to substitute '@account@, '@name@' and '@password@' in any commands that
         #   contain them
-        $initChar = $self->initChar;
-        if (! $initChar) {
+        if ($self->currentChar) {
+
+            $initChar = $self->currentChar->nickname;
+
+        } elsif (defined $self->initChar) {
+
+            $initChar = $self->initChar;
+
+        } else {
 
             # We will use '@name@' literally, if character name not set
             $initChar = '';
@@ -5045,7 +5068,7 @@
 
                 # An inferior cage has an inactive interface with the same name. We must destroy the
                 #   corresponding active interface
-                if (! $self->removeInterface($interfaceObj)) {
+                if (! $self->removeInterface($self->ivShow('interfaceHash', $interfaceName))) {
 
                     # Couldn't destroy existing active interface (error message already displayed)
                     return undef;
@@ -9451,7 +9474,7 @@
 
         # Local variables
         my (
-            $cage, $exitFlag, $cmdLimit, $cmdDelay,
+            $nickname, $cage, $exitFlag, $cmdLimit, $cmdDelay,
             @repeatObjList, @excessCmdList, @soundObjList,
         );
 
@@ -9499,9 +9522,17 @@
 
             if ($self->loginPromptsMode eq 'tiny') {
 
+                # Get the character nickname, for use in automatic logins (using the character name
+                #   as a backup)
+                if ($self->currentChar) {
+                    $nickname = $self->currentChar->nickname;
+                } else {
+                    $nickname = $self->initChar;
+                }
+
                 # In mode 3, send a standard 'connect' world command, using the current command
                 #   cages
-                $self->sendModCmd('connect', 'name', $self->initChar, 'password', $self->initPass);
+                $self->sendModCmd('connect', 'name', $nickname, 'password', $self->initPass);
 
                 # Wait for login success patterns (if there are any), otherwise mark the character
                 #   as logged in
@@ -10854,7 +10885,7 @@
             }
         }
 
-        # If the object viewer window is open at the tab containing the list of current tasks,
+        # If the data viewer window is open at the tab containing the list of current tasks,
         #   re-draw the list
         if ($self->viewerWin) {
 
@@ -11782,9 +11813,12 @@
             # Make sure the received text is visible in the 'main' window...
             $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->spinIncomingLoop');
             # ...before converting text to speech
-            if (defined $self->ttsLastType && $self->ttsLastType ne 'receive') {
-
-                # (Don't read out 'received text' again and again and again!
+            if (
+                $axmud::CLIENT->ttsVerboseFlag
+                && defined $self->ttsLastType
+                && $self->ttsLastType ne 'receive'
+            ) {
+                # Last TTS conversion was something other than received text
                 $axmud::CLIENT->tts(
                     'Received text: ' . $self->ttsBuffer,
                     'receive',
@@ -11794,7 +11828,7 @@
 
             } else {
 
-                # Last TTS conversion was something other than received text
+                # (Don't read out 'received text' again and again and again!
                 $axmud::CLIENT->tts($self->ttsBuffer, 'receive', 'receive', $self);
             }
         }
@@ -19420,7 +19454,7 @@
 
         # Local variables
         my (
-            $bufferObj, $pattern, $initChar, $initAccount, $initPass,
+            $nickname, $bufferObj, $pattern, $initChar, $initAccount, $initPass,
             @loginCmdList,
         );
 
@@ -19439,6 +19473,14 @@
             return 1;
         }
 
+        # Get the character nickname, for use in automatic logins (using the character name as a
+        #   backup)
+        if ($self->currentChar) {
+            $nickname = $self->currentChar->nickname;
+        } else {
+            $nickname = $self->initChar;
+        }
+
         # Otherwise, process the prompt
         $self->ivIncrement('promptCount');
         # We'll need the current line of text, after any non-text tokens have been stripped from it,
@@ -19455,7 +19497,7 @@
                 if ($self->promptCount == 1) {
 
                     # Send the character name
-                    $self->worldCmd($self->initChar);
+                    $self->worldCmd($nickname);
 
                 } elsif ($self->promptCount == 2) {
 
@@ -19481,7 +19523,7 @@
                     if ($self->loginPromptPatternList) {
 
                         # Send the character name
-                        $self->worldCmd($self->initChar);
+                        $self->worldCmd($self->nickname);
 
                     } else {
 
@@ -37941,8 +37983,21 @@
 
             # Make sure the received text is visible in the 'main' window...
             $axmud::CLIENT->desktopObj->updateWidgets($self->_objClass . '->dispatchCmd');
+
             # ...before converting text to speech
-            $axmud::CLIENT->tts('Sent: ' . $cmd, 'command', 'command', $self);
+            if (
+                $axmud::CLIENT->ttsVerboseFlag
+                && defined $self->session->ttsLastType
+                && $self->session->ttsLastType ne 'command'
+            ) {
+                # Last TTS conversion was something other than a world command
+                $axmud::CLIENT->tts('Sent: ' . $cmd, 'command', 'command', $self);
+
+            } else {
+
+                # (Don't read out 'sent' again and again and again!
+                $axmud::CLIENT->tts($cmd, 'command', 'command', $self);
+            }
         }
 
         # Write to logs
@@ -42831,7 +42886,7 @@
 
                     $error = 'Locator task not running, current location unknown';
 
-                    
+
                 } elsif (! $self->locatorTask->roomObj) {
 
                     $error = 'Locator task\'s current room not set';
@@ -42850,7 +42905,7 @@
                         $objFlag = TRUE;
                     }
                 }
-                
+
             } else {
 
                 $error = $genError;
@@ -43544,6 +43599,7 @@
             # F tts.enable.cmd
             # F tts.enable.dialogue
             # F tts.enable.task
+            # F tts.enable.verbose
             %clientHash = (
                 'tts.flag.allow'        => 'customAllowTTSFlag',
                 'tts.flag.smooth'       => 'ttsSmoothFlag',
@@ -43555,6 +43611,7 @@
                 'tts.enable.cmd'        => 'ttsWorldCmdFlag',
                 'tts.enable.dialogue'   => 'ttsDialogueFlag',
                 'tts.enable.task'       => 'ttsTaskFlag',
+                'tts.enable.verbose'    => 'ttsVerboseFlag',
             );
 
             if (exists $clientHash{$string}) {
@@ -45777,7 +45834,6 @@
 
         return 1;
     }
-
 
     sub add_textViewScrollDown {
 

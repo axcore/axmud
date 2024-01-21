@@ -1,4 +1,4 @@
-[Previous](tut04.html) [Index](index.html)
+[Previous](tut04.html) [Index](index.html) [Next](tut06.html)
 
 ---
 
@@ -27,7 +27,7 @@
 
 ##<a name="5.1">5.1 Introduction</a>
 
-Axmud comes with over a hundred pre-configured worlds. This is the first of three tutorials which will show, step by step, how those pre-configured worlds were created.
+Axmud comes with over a hundred pre-configured worlds. This is the first of four tutorials which will show, step by step, how those pre-configured worlds were created.
 
 Different worlds behave in a myriad of different ways, and Axmud aims to able to handle them all. As a result, there is rather a lot to read; however, much of it won't apply to your favourite MUD. You can skip the parts that you don't actually need.
 
@@ -35,7 +35,7 @@ You *must* be familiar with regular expressions/regexes/patterns (we use these t
 
 If you haven't used Axmud's automapper before, you should get used to it first: connect to any of the pre-configured worlds, and try drawing a simple map. The first few parts of [Section 15](ch15.html) can help you with that, if necessary.
 
-This tutorial deals with the Locator Task and automapper. In the remaining tutorials, we'll cover the Status Task and the Inventory Task.
+This tutorial deals with the Locator Task and automapper. In the remaining tutorials, we'll cover the Status Task, the Inventory and Condition tasks, and a few other things.
 
 ##<a name="5.2">5.2 Mapping Definitions</a>
 
@@ -376,5 +376,5 @@ You could repeat this process for the **verb_title** component, but since it's a
 
 ---
 
-[Previous](tut04.html) [Index](index.html)
+[Previous](tut04.html) [Index](index.html) [Next](tut06.html)
 

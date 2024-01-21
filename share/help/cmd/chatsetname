@@ -1,9 +1,9 @@
 cname / chatsetname           Sets your chat nickname
- 
+
    Format:
       ;cname <name>           Sets your nickname to <name>
       ;cname                  Uses the current character as your nickname
- 
+
    Notes:
       The Chat task is used to chat with other players directly via telnet.
          Calls can be placed (or accepted) with any user whose MUD client uses
@@ -13,6 +13,6 @@ cname / chatsetname           Sets your chat nickname
          sessions. If you don't specify a <name>, the current character's name
          will be used instead.
       <name> must be between 3 and 16 characters.
- 
+
    User commands:
       cname / chatsetname

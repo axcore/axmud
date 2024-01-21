@@ -1,21 +1,21 @@
 The Inventory task is used to keep track of things in your character's
    inventory. The list of objects is usually displayed in the task's window.
 You can activate and disactivate the task. While activated, the task sends
-   the 'inventory' command for the current world (as specified by the 
-   command cages) periodically. The task then looks out for the world's 
-   response and updates its list accordingly. When the task is disactivated, 
-   the list is updated every time you type the world's 'inventory' command 
+   the 'inventory' command for the current world (as specified by the
+   command cages) periodically. The task then looks out for the world's
+   response and updates its list accordingly. When the task is disactivated,
+   the list is updated every time you type the world's 'inventory' command
    yourself.
-The task is also used to apply certain actions to everything in your 
+The task is also used to apply certain actions to everything in your
    inventory except those you want to protect. The most common such action is
-   to sell everything. The ';sellall' command will sell everything in the 
-   task's list of objects, one by one, except those which have been marked as 
+   to sell everything. The ';sellall' command will sell everything in the
+   task's list of objects, one by one, except those which have been marked as
    protected.
-The Inventory task is often used in partnership with the Condition task, 
-   which periodically sends world commands (like 'examine sword') to ask 
-   about the condition of items in the character's inventory, hoping for a 
+The Inventory task is often used in partnership with the Condition task,
+   which periodically sends world commands (like 'examine sword') to ask
+   about the condition of items in the character's inventory, hoping for a
    response like 'Your sword is in excellent condition'.
- 
+
 Client commands used with the Inventory/Condition tasks are:
    ;activateinventory         Activates the Inventory/Condition tasks
    ;disactivateinventory      Disactivates the Inventory/Condition tasks

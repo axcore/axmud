@@ -4,7 +4,7 @@ WAITTASK expression
       Starts an Axmud task and waits for it to terminate
 
    Notes:
-      Starts a new Axmud task. The script waits until the new task has 
+      Starts a new Axmud task. The script waits until the new task has
          terminated, before resuming execution.
       The expression is the name of the new task. It can be a task label (e.g.
          "stat", "status") or its formal name (e.g. "status_task").
@@ -13,7 +13,7 @@ WAITTASK expression
       If the script is not being run as a task, the WAITTASK statement is
          ignored (and no error message is generated). Execution continues with
          the next statement.
-                  
+
    Examples:
       WAITTASK "advance"
       PRINT "I'm back, baby!"

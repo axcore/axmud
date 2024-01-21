@@ -1,8 +1,8 @@
 eg / editguild                Opens an 'edit' window for a guild profile
- 
+
    Format:
       ;eg <name>              Edits the guild profile <name>
       ;eg                     Edits the current guild profile
-  
+
    User commands:
       eg / editguild

@@ -1,5 +1,5 @@
 arl / addrelative             Adds a relative direction
- 
+
    Format:
       ;arl <type> <dir>
       ;arl <type> <dir> <abbrev>
@@ -12,7 +12,7 @@ arl / addrelative             Adds a relative direction
          arrived).
       Axmud stores relative directions in a circle which assumes that the
          character is facing north.
-         
+
                        0 - north
          7 - northwest           1 - northeast
       6 - west                      2 - east
@@ -27,7 +27,7 @@ arl / addrelative             Adds a relative direction
       6 - left                      2 - right
          5 - backward-left       3 - backward-right
                        4 - backward
-         
+
       Axmud translates a room's relative directions into primary directions,
          rotating the circle as required. For example, if the character is known
          to have arrived from the east, and is therefore facing west:
@@ -51,6 +51,6 @@ arl / addrelative             Adds a relative direction
          abbreviated relative directions, you can specify <abbrev>.
       If either <dir> or <abbrev> contain spaces, they must be enclosed within
          diamond brackets.
- 
+
    User commands:
       arl / addrel / addrelative

@@ -1,8 +1,8 @@
 ast / activatestatustask      Activates the Status task
- 
+
    Format:
       ;ast                    Activates the Status task
- 
+
    Notes:
       In 'active' mode, the Status task sends commands to the world every few
          seconds (usually commands like 'score', 'sc' and 'time') to keep the
@@ -12,6 +12,6 @@ ast / activatestatustask      Activates the Status task
       The commands sent are taken from the current character profile (which in
          turn inherits them from the current world profile).
       Use ';disactivatestatustask' to disactivate the Status task.
- 
+
    User commands:
       ast / activatestatustask

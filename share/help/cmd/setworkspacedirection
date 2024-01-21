@@ -1,5 +1,5 @@
 swd / setworkspacedirection   Sets the way in which new workspaces are used
- 
+
    Format:
       ;swd                    Shows the current setting
       ;swd -l                 Move left from the default workspace
@@ -10,12 +10,12 @@ swd / setworkspacedirection   Sets the way in which new workspaces are used
    Notes:
       Axmud supports multiple desktops or 'workspaces'. Workspaces can be both
          real and virtual. If you have multiple physical monitors, each one is a
-         workspace. If your computer has a workspace switcher, allowing you to 
+         workspace. If your computer has a workspace switcher, allowing you to
          switch between virtual desktops, each one is a workspace.
-      The workspace in which Axmud starts is the 'default workspace'. If 
+      The workspace in which Axmud starts is the 'default workspace'. If
          additional workspaces are required, this command sets how Axmud selects
          them.
-      
+
          -l  - Move left from the default workspace until reaching the far left
                   (and then stop)
          -r  - Move right from the default workspace until reaching the far

@@ -1,13 +1,13 @@
 lsc / liststatuscommand       Lists commands sent to world by Status task
- 
+
    Format:
       ;lsc                    Lists Status task commands
- 
+
    Notes:
       In 'active' mode, the Status task sends commands to the world every few
          seconds (usually commands like 'score', 'sc' and 'time') to keep the
          task's statistics up to date.
       Use ';activatestatustask' to activate the Status task.
- 
+
    User commands:
       lsc / liststatuscommand

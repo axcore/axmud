@@ -62,21 +62,22 @@
     * [15.29.1 Auto-compare mode](#15.29.1)
     * [15.29.2 Auto-rescue mode](#15.29.2)
     * [15.29.3 Auto-slide mode](#15.29.3)
-* [15.30 Backing up maps](#15.29)
-    * [15.30.1 Sharing maps](#15.29.1)
-* [15.31 Miscellaneous features](#15.30)
-    * [15.31.1 Opening the automapper window automatically](#15.30.1)
-    * [15.31.2 Creating temporary regions](#15.30.2)
-    * [15.31.3 Organising regions](#15.30.3)
-    * [15.31.4 Favourite regions](#15.30.4)
-    * [15.31.5 Running scripts](#15.30.5)
-    * [15.31.6 Tooltips](#15.30.6)
-    * [15.31.7 Using the automapper without a window](#15.30.7)
-    * [15.31.8 Using unusual exits](#15.30.8)
-    * [15.31.9 Primary directions in other languages](#15.30.9)
-    * [15.31.10 Secondary directions](#15.30.10)
-    * [15.31.11 Secondary directions in Cryosphere](#15.30.11)
-    * [15.31.12 Relative directions](#15.30.12)
+* [15.30 Backing up maps](#15.30)
+    * [15.30.1 Sharing maps](#15.30.1)
+* [15.31 Miscellaneous features](#15.31)
+    * [15.31.1 Opening the automapper window automatically](#15.31.1)
+    * [15.31.2 Creating temporary regions](#15.31.2)
+    * [15.31.3 Finished regions](#15.31.3)
+    * [15.31.4 Organising regions](#15.31.4)
+    * [15.31.5 Favourite regions](#15.31.5)
+    * [15.31.6 Running scripts](#15.31.6)
+    * [15.31.7 Tooltips](#15.31.7)
+    * [15.31.8 Using the automapper without a window](#15.31.8)
+    * [15.31.9 Using unusual exits](#15.31.9)
+    * [15.31.10 Primary directions in other languages](#15.31.10)
+    * [15.31.11 Secondary directions](#15.31.11)
+    * [15.31.12 Secondary directions in Cryosphere](#15.31.12)
+    * [15.31.13 Relative directions](#15.31.13)
 
 ---
 
@@ -1274,7 +1275,15 @@ However, you can delete temporary regions at any time. If you want to delete *al
 
 * From the automapper menu, click **Regions > Delete temporary regions**
 
-###<a name="15.31.3">15.31.3 Organising regions</a>
+###<a name="15.31.3">15.31.3 Finished regions</a>
+
+For your own convenience, you can mark a region as *finished*, meaning that you have finished exploring it.
+
+* From the automapper menu, click **Regions > Current region > Set finished region**
+
+In the list of regions on the left of the window, a *finished* region is underlined (whereas a temporary region is shown in italics).
+
+###<a name="15.31.4">15.31.4 Organising regions</a>
 
 If your map has a lot of regions it's possible to organise them into groups.
 
@@ -1294,14 +1303,14 @@ The list of regions will now look like this:
 * Click on the minus ( - ) sign, next to **town**, to hide its child regions
 * Click on the new plus ( + ) to reveal its child regions
 
-##<a name="15.31.4">15.31.4 Favourite regions</a>
+##<a name="15.31.5">15.31.5 Favourite regions</a>
 
 The region list is normally in alphabetical order. If one region is at the centre of the world, or if you spend most of your time in a particular region, you can move it to the top of the list.
 
 * In the region list, double-click on **town** to make it the current region
 * From the automapper window, click **View > Window components > Move current region to top**
 
-##<a name="15.31.5">15.31.5 Running scripts</a>
+##<a name="15.31.6">15.31.6 Running scripts</a>
 
 You can specify an Axbasic script that should be run, every time your character enters a particular room.
 
@@ -1309,7 +1318,7 @@ You can specify an Axbasic script that should be run, every time your character 
 * When the edit window is open, click on **Room > Page 1**
 * Enter the name of one or more Axbasic scripts in the box at the bottom of the window
 
-###<a name="15.31.6">15.31.6 Tooltips</a>
+###<a name="15.31.7">15.31.7 Tooltips</a>
 
 If you want to find out more about a room, one method is to open its edit window. Exits also have their own edit windows. (Those edit windows can be opened from the automapper window's menus.)
 
@@ -1327,7 +1336,7 @@ You can add notes to a room, and these notes are visible in the tooltip.
 * When the edit window is open, click on the **Notes** tab
 * Enter any notes you like, then cick the **OK** button
 
-###<a name="15.31.7">15.31.7 Using the automapper without a window</a>
+###<a name="15.31.8">15.31.8 Using the automapper without a window</a>
 
 The automapper actually consists of three separate components - the *automapper object*, which tracks the character's current position, the *world model*, which stores the data, and the automapper window itself, which draws rooms, exits and labels.
 
@@ -1368,7 +1377,7 @@ If you want to stop tracking your character's position, without opening the auto
         ;resetroom
         ;rrm
 
-###<a name="15.31.8">15.31.8 Using unusual exits</a>
+###<a name="15.31.9">15.31.9 Using unusual exits</a>
 
 Cryosphere, which is one of Axmud's pre-configured worlds, uses the standard north-south west-east directions, but some zones in the game use a fore-aft port-starboard system. In addition, areas of the game set on a radial space station use a hubwards-rimwards anticlockwise-clockwise system.
 
@@ -1414,7 +1423,7 @@ Even though they aren't listed, directions like *northnorthwest* are always avai
 * In this window, you can click the checkbutton near the top of the window (**Show all intercardinal directions**)
 * In the automapper window, click on the menu item **Mode > Other flags > Show all directions in dialogues**. This setting will apply to most automapper dialogue windows
 
-###<a name="15.31.9">15.31.9 Primary directions in other languages</a>
+###<a name="15.31.10">15.31.10 Primary directions in other languages</a>
 
 Axmud knows how to set custom primary directions for about a dozen languages.
 
@@ -1439,7 +1448,7 @@ If Axmud doesn't know about a language you can set the custom primary directions
 
 By the way, Axmud continues to use a set of *standard* primary directions - the English words 'north', 'southeast', 'up' and so on - internally, regardless of which *custom* primary directions you set. (You will probably only notice this if you start poking around deep inside Axmud's edit windows.)
 
-###<a name="15.31.10">15.31.10 Secondary directions</a>
+###<a name="15.31.11">15.31.11 Secondary directions</a>
 
 Axmud uses exactly eighteen primary directions - the ones described in [Section 15.30.8](#15.30.8) - but it also uses a set of 'secondary' directions.
 
@@ -1462,7 +1471,7 @@ It's not necessary to add *every possible word* to your list of secondary direct
 
 (The previous Section demonstrated how you could change Axmud's custom primary directions, which are English words, into a set of French words at the click of a button. Doing so will not affect this list of secondary directions, which must be modified separately.)
 
-###<a name="15.31.11">15.31.11 Secondary directions in Cryosphere</a>
+###<a name="15.31.12">15.31.12 Secondary directions in Cryosphere</a>
 
 To set custom secondary directions, first open the current dictionary's edit window:
 
@@ -1485,7 +1494,7 @@ In the new window, click on **Directions > Page 2** tab. You'll see a list of se
 
 Some zones of *Cryosphere* use *rimwards* (north), *hubwards* (south), *anticlockwise* (west) and *clockwise* (east). These can be added in the same way. Remember that the game abbreviates both *aft* and *anticlockwise* with *a*, so you'll need to decide which direction you want to abbreviate. (The pre-configured world profile abbreviates *anticlockwise*, not *aft*, as *a*.)
 
-###<a name="15.31.12">15.31.12 Relative directions</a>
+###<a name="15.31.13">15.31.13 Relative directions</a>
 
 Relative directions are used by a handful of worlds in which a room's exits change depending on the direction in which the character is facing (which usually means the direction from which the character arrived).
 

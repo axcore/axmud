@@ -2,7 +2,7 @@ Ifacedata$ ()
 
    Synopsis:
       Returns the first item of additional data provided by the interface when
-         it fired   
+         it fired
 
    Notes:
       The interface notification list contains all the notifications received,
@@ -22,7 +22,7 @@ Ifacedata$ ()
          pattern itself specifies one or more groups.
       In both cases, this function returns the first substring (or an empty
          string, if the pattern contained no groups).
-         
+
       After a SETMACRO statement, always returns an empty string.
 
       Timers can have a stimulus set to a clock time, in the form "HH:MM" (the
@@ -32,12 +32,12 @@ Ifacedata$ ()
         returns the time at which the timer was due to fire (which will be
         equal to, or slightly earlier than, the time at which the timer actually
         fired, which is the value returned by Ifacetext () ).
-        
+
       Some hook events generate an one or two additional items of data. If so,
          after a SETHOOK statement, this function returns the first item of
          data, or an empty string if no additional data was available.
       (To retrieve the second item of data, when required, you can use the
          Ifaceselect () function.)
-         
+
    Compatibility:
       Since Axbasic v1.4

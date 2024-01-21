@@ -1,20 +1,20 @@
 aep / addexitpattern          Adds exit pattern to current world profile
- 
+
    Format:
       ;aep <switch> <pattern>
                Adds an exit <pattern> of the type specified by <switch>
- 
+
    Notes:
-      The Locator task uses exit patterns, defined by the current world profile, 
-         to spot when a character's attempts to move fail (or when the character 
-         is moved involuntarily). Every exit pattern is a Perl regular 
+      The Locator task uses exit patterns, defined by the current world profile,
+         to spot when a character's attempts to move fail (or when the character
+         is moved involuntarily). Every exit pattern is a Perl regular
          expression.
-      Because they also appear just after a character move, this command can 
+      Because they also appear just after a character move, this command can
          also be used to add a dark room pattern or an unspecified room pattern.
          (Unspecified room patterns match lines received from the world when the
-         character has arrived in a new room for which the world hasn't sent a 
+         character has arrived in a new room for which the world hasn't sent a
          new room statement, as it normally would.)
- 
+
       <switch> must be one of the following:
          -d   Adds a door pattern, e.g. '^You bump into a door!'
          -l   Adds a locked door pattern, e.g. '^It's locked!'
@@ -29,6 +29,6 @@ aep / addexitpattern          Adds exit pattern to current world profile
           diamond brackets <...>
       The Locator task must be reset (usually with the ';resetlocatortask'
           command) or restarted before your changes will take effect.
- 
+
    User commands:
       aep / addexitpattern

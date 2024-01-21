@@ -1,11 +1,11 @@
 csf / chatsendfile            Sends a file to chat contacts
- 
+
    Format:
       ;csf -n <name> <file>   Sends the <file> to chat contacts called <name>
       ;csf -g <group> <file>  Sends the <file> to everyone in the <group>
       ;csf <file>             Sends the <file> to everyone
 
-      ;csf -n <name>          Sends a file to chat contacts called <name> 
+      ;csf -n <name>          Sends a file to chat contacts called <name>
       ;csf -g <group>         Sends a file to everyone in the <group>
       ;csf                    Sends a file to everyone
 
@@ -18,6 +18,6 @@ csf / chatsendfile            Sends a file to chat contacts
       <file> is the full path to the file, e.g. '/home/myname/myfiles/pic.jpg'.
          If you don't specify a <file> you will be prompted to choose one.
       The switches -n and -g can't be combined.
- 
+
    User commands:
       csf / sendfile / chatsendfile

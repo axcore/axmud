@@ -1,10 +1,10 @@
 ii / iinteract                Interacts with all matching target(s) in the room
- 
+
    Format:
       ;ii                     Interacts with the first PC or NPC in the room
       ;ii <word>              Interacts with all targets matching <word>
       ;ii <word_list>         Interacts with all targets matching <word_list>
- 
+
    Notes:
       ';iinteract' works in exactly the same way as ';interact', but with one
          important difference: whereas ';interact' only matches a single target
@@ -14,6 +14,6 @@ ii / iinteract                Interacts with all matching target(s) in the room
          ';iinteract hairy orc' will attack every orc, and every being described
          as 'hairy'.
       See also the help for ';interact'.
- 
+
    User commands:
       ii / iint / iinteract

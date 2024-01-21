@@ -1,0 +1,16 @@
+ccb / clearclipboard          Clears the interface clipboard
+
+   Format:
+      ;ccb <switches>         Clears the clipboard
+
+   Notes:
+      Axmud interfaces are triggers, aliases, macros, timers and hooks.
+      Interfaces can be exported and imported between profiles (for example,
+         between two different world profiles).
+      When exporting (for example, using ';exporttrigger', the interfaces are
+         stored temporarily in Axmud's own interface clipboard. This command
+         empties the clipboard.
+      See also the help for ';listclipboard'.
+
+   User commands:
+      ccb / clearclipboard

@@ -1,26 +1,26 @@
 lor / listorphan              Lists world model orphan objects
- 
+
    Format:
-      ;lor     
+      ;lor
                Lists all orphans (world model objects with no parents)
-      ;lor -r  
+      ;lor -r
                Lists orphaned rooms (which have no parent regions)
-      ;lor -o  
+      ;lor -o
                Lists other objects (which have no parent regions/rooms)
- 
+
    Notes:
       The world model stores information about the regions, rooms, characters
          and objects in the game world. The automapper window uses the model to
          display its maps.
       Objects in the world model can have a parent. The parent describes where
          the objects are found in the game world.
-      Regions can have other regions as their parent. A room's parent is always 
-         the region where it is found. 
+      Regions can have other regions as their parent. A room's parent is always
+         the region where it is found.
       Other kinds of objects can have a room for a parent, if they are usually
-         found in that room. They might also have a creature as a parent, if 
-         they are 'carried' by that creature, or a some kind of box as a parent, 
+         found in that room. They might also have a creature as a parent, if
+         they are 'carried' by that creature, or a some kind of box as a parent,
          if they are found 'inside' the box.
-      This command lists objects which don't have a parent object. It doesn't 
+      This command lists objects which don't have a parent object. It doesn't
          list exits (which are in the exit model).
 
    User commands:

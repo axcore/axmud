@@ -1,10 +1,10 @@
 lrw / listrestoreworld        Shows the list of pre-configured worlds
- 
+
    Format:
       ;lrw                    Lists pre-configured worlds
- 
+
    Notes:
-      Axmud comes with a number of pre-configured worlds. This command displays 
+      Axmud comes with a number of pre-configured worlds. This command displays
          a list of those worlds.
 
    User commands:

@@ -1,11 +1,11 @@
 ady / adddictionary           Adds a new dictionary
- 
+
    Format:
       ;ady <name>
                Adds a new dictionary called <name>
       ;ady <name> <language>
                Adds a new dictionary <name> using <language>
- 
+
    Notes:
       Dictionaries help Axmud to interpret the text it receives from the world.
       An Axmud dictionary stores groups of words. It contains a group of weapon
@@ -25,13 +25,13 @@ ady / adddictionary           Adds a new dictionary
 
       If you want to create multiple dictionaries using another language, use
          ';adddictionary <name> <new_language>', change the default settings for
-         that language, and then use ';clonedictionary' to create individual 
+         that language, and then use ';clonedictionary' to create individual
          dictionaries with the same language and initial settings.
-      Dictionary names must be no longer than 16 characters, contain only A-Z, 
-         a-z, underlines and 0-9 (not the first character) and not be one of 
+      Dictionary names must be no longer than 16 characters, contain only A-Z,
+         a-z, underlines and 0-9 (not the first character) and not be one of
          Axmud's reserved names (see the ';listreserved' command). The same
          restriction applies to the language. Non-Latin alphabets are
          acceptable.
- 
+
    User commands:
       ady / adddict / adddictionary

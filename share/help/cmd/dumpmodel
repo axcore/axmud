@@ -1,16 +1,16 @@
 dmd / dumpmodel               Lists all world model objects
- 
+
    Format:
       ;dmd                    Shows all model objects
- 
+
    Notes:
       The world model stores information about the regions, rooms, characters
          and objects in the game world. The automapper window uses the model to
          display its maps.
-      This command dumps the list of model objects to the 'main' window. It 
-         should be used cautiously (because a large world model will take a very 
+      This command dumps the list of model objects to the 'main' window. It
+         should be used cautiously (because a large world model will take a very
          long time to be displayed).
       This command doesn't list exits (which are in the exit model).
- 
+
    User commands:
       dmd / dumpmd / dumpmodel

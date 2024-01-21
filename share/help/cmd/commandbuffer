@@ -1,20 +1,20 @@
 cb / commandbuffer            Shows the status of a world command buffer
- 
+
    Format:
       ;cb -s                  Shows session's buffer status
-      ;cb                     
+      ;cb
 
-      ;cb -c                  Shows status of client's combined buffer 
- 
+      ;cb -c                  Shows status of client's combined buffer
+
    Notes:
-      World command buffers are Axmud's records of individual commands sent to 
-         the world (if you type 'north;kill orc;eat corpse', that counts as 
+      World command buffers are Axmud's records of individual commands sent to
+         the world (if you type 'north;kill orc;eat corpse', that counts as
          three separate world commands).
-      Every session has its own world command buffer, storing world commands 
+      Every session has its own world command buffer, storing world commands
          sent by that session. There is also a combined world command buffer
          storing world commands sent by all sessions.
 
-      Each world command has its own entry, or 'item', in the buffer. The number 
+      Each world command has its own entry, or 'item', in the buffer. The number
          of the items in the combined buffer and session buffers won't match if
          there is more than one session open.
       This command shows basic information about one of the buffers. To show the

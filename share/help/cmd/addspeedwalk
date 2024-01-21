@@ -1,46 +1,46 @@
 awk / addspeedwalk            Adds a speedwalk character
- 
+
    Format:
       ;awk <char> <cmd>       Adds a speedwalk <char> for a movement <cmd>
-      
+
    Notes:
       Speedwalking is a method of moving from one location in the world to
          another with a minimum of typing.
       Speedwalk commands can be typed in the 'main' window's command entry box.
          These commands start with the speedwalk sigil, a full stop/period
          character:
-      
+
          .3ne2s
-   
+
       ...which is the equivalent of typing 'north;north;north;east;south;south'.
          See the help for ';speedwalk' for a full explanation of Axmud's
          speedwalking capabilities.
-      
+
       In the example above, the speedwalk characters 'n', 'e' and 's' represent
          the movement commands 'north', 'east' and 'south'
       This command can be used to add a new speedwalk character to the current
-         dictionary (or to modify an existing one). 
+         dictionary (or to modify an existing one).
       <char> can be any letter in the range a-z. Non-Latin alphabets are
         acceptable.
       <cmd> should be a movement command. Any type of movement command can be
          added (e.g. 'enter', 'exit', 'portal'). If the movement command
          contains spaces, it should be surrounded by diamond brackets:
-         
+
          ;addspeedwalk x <enter portal>
-         
-      If <cmd> is a standard primary direction ('north', 'northeast', 
+
+      If <cmd> is a standard primary direction ('north', 'northeast',
          'northnortheast', etc, as well as 'up' and 'down'), it is converted
          into the corresponding custom primary direction when it's used. The
          default English-language dictionary creates this output:
-         
+
          .3ne2s         > north;north;north;east;south;south
 
       But a French-language dictionary might create this output:
-      
+
          .3ne2s         > nord;nord;nord;est;sud;sud
-         
-      ...and, in that case, there would be no need to modify the default set of 
+
+      ...and, in that case, there would be no need to modify the default set of
          speedwalk characters using this command.
- 
+
    User commands:
       awk / addspeed / addspeedwalk

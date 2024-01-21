@@ -1,13 +1,13 @@
 dms / deleteminionstring      Deletes minion string(s) from the world model
- 
+
    Format:
       ;dms <pattern>          Deletes minion strings matching <pattern>
- 
+
    Notes:
       The world model stores information about the regions, rooms, characters
          and objects in the game world. The automapper window uses the model to
          display its maps.
-      The world model can also keep track of minions - non-player characters 
+      The world model can also keep track of minions - non-player characters
          which are controlled directly by players.
 
       Minion objects are treated a little differently to other model objects.
@@ -19,6 +19,6 @@ dms / deleteminionstring      Deletes minion string(s) from the world model
          <pattern>. No minion objects are removed from the model.
       If <pattern> contains spaces, it must be enclosed within diamond brackets
          <...>. Minion strings are case-insensitive.
- 
+
    User commands:
       dms / delms / deleteminionstring

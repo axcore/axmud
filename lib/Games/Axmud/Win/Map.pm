@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2022 A S Lewis
+# Copyright (C) 2011-2024 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -19,7 +19,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -464,6 +464,9 @@
             drawRegionmap               => undef,
             drawParchment               => undef,
             drawScheme                  => undef,
+            # IV used only while the selection box is active, specifying the scheme to use (we can't
+            #   use ->drawScheme, because other code may reset it in the meantime)
+            selectDrawScheme            => undef,
             # $self->drawCycleExitHash contains a list of exits drawn during a single drawing cycle.
             #   Before drawing an exit, we can check whether it has a twin exit (which occupies the
             #   same space) and, if so, we don't need to draw it a second time - thus each exit-twin
@@ -5649,6 +5652,15 @@
 
             $subMenu_currentRegion->append(Gtk3::SeparatorMenuItem->new());  # Separator
 
+            my $item_regionFinished = Gtk3::MenuItem->new('Set f_inished region');
+            $item_regionFinished->signal_connect('activate' => sub {
+
+                $self->regionFinishedCallback();
+            });
+            $subMenu_currentRegion->append($item_regionFinished);
+
+            $subMenu_currentRegion->append(Gtk3::SeparatorMenuItem->new());  # Separator
+
             my $item_convertRegionExit = Gtk3::MenuItem->new('_Convert all region exits');
             $item_convertRegionExit->signal_connect('activate' => sub {
 
@@ -10294,18 +10306,9 @@
         #   FALSE and a session not in 'connect offline' mode
         $self->ivAdd('menuToolItemHash', 'icon_set_update_mode', $radioButton_updateMode);
 
-#        # Separator
-#        my $separator = Gtk3::SeparatorToolItem->new();
-#        push (@buttonList, $separator);
-
-        # DEBUG
-        # Temporary fix for Gtk problems: on MSWin, don't show separators (this applies to several
-        #   functions in the automapper window)
-        if ($^O ne 'MSWin32') {
-
-            my $separator = Gtk3::SeparatorToolItem->new();
-            push (@buttonList, $separator);
-        }
+        # Separator
+        my $separator = Gtk3::SeparatorToolItem->new();
+        push (@buttonList, $separator);
 
         # Toolbutton for 'move up level'
         my $toolButton_moveUpLevel = Gtk3::ToolButton->new(
@@ -10341,14 +10344,9 @@
         # (Requires $self->currentRegionmap)
         $self->ivAdd('menuToolItemHash', 'icon_move_down_level', $toolButton_moveDownLevel);
 
-#        # Separator
-#        my $separator2 = Gtk3::SeparatorToolItem->new();
-#        push (@buttonList, $separator2);
-        if ($^O ne 'MSWin32') {
-
-            my $separator = Gtk3::SeparatorToolItem->new();
-            push (@buttonList, $separator);
-        }
+        # Separator
+        my $separator2 = Gtk3::SeparatorToolItem->new();
+        push (@buttonList, $separator2);
 
         # Toolbutton for 'reset locator'
         my $toolButton_resetLocator = Gtk3::ToolButton->new(
@@ -10458,7 +10456,7 @@
         $toolButton_visibleScreenshot->set_tooltip_text('Take screenshot of visible map');
         $toolButton_visibleScreenshot->signal_connect('clicked' => sub {
 
-            $self->visibleScreenshotCallback();
+            $self->regionScreenshotCallback('visible');
         });
         push (@buttonList, $toolButton_visibleScreenshot);
         # (Requires $self->currentRegionmap)
@@ -10669,14 +10667,9 @@
         # (Never desensitised)
         $self->ivAdd('menuToolItemHash', 'icon_obscured_radius', $toolButton_obscuredRadius);
 
-#        # Separator
-#        my $separator = Gtk3::SeparatorToolItem->new();
-#        push (@buttonList, $separator);
-        if ($^O ne 'MSWin32') {
-
-            my $separator = Gtk3::SeparatorToolItem->new();
-            push (@buttonList, $separator);
-        }
+        # Separator
+        my $separator = Gtk3::SeparatorToolItem->new();
+        push (@buttonList, $separator);
 
         # Toolbutton for 'horizontal exit length'
         my $toolButton_horizontalLengths = Gtk3::ToolButton->new(
@@ -10708,14 +10701,9 @@
         # (Requires $self->currentRegionmap)
         $self->ivAdd('menuToolItemHash', 'icon_vertical_lengths', $toolButton_verticalLengths);
 
-#        # Separator
-#        my $separator2 = Gtk3::SeparatorToolItem->new();
-#        push (@buttonList, $separator2);
-        if ($^O ne 'MSWin32') {
-
-            my $separator = Gtk3::SeparatorToolItem->new();
-            push (@buttonList, $separator);
-        }
+        # Separator
+        my $separator2 = Gtk3::SeparatorToolItem->new();
+        push (@buttonList, $separator2);
 
         # Toggle button for 'draw exit ornaments'
         my $toggleButton_drawExitOrnaments = Gtk3::ToggleToolButton->new();
@@ -10757,14 +10745,9 @@
         #   $self->selectedExitHash)
         $self->ivAdd('menuToolItemHash', 'icon_no_ornament', $toolButton_noOrnament);
 
-#        # Separator
-#        my $separator3 = Gtk3::SeparatorToolItem->new();
-#        push (@buttonList, $separator3);
-        if ($^O ne 'MSWin32') {
-
-            my $separator = Gtk3::SeparatorToolItem->new();
-            push (@buttonList, $separator);
-        }
+        # Separator
+        my $separator3 = Gtk3::SeparatorToolItem->new();
+        push (@buttonList, $separator3);
 
         # Toolbutton for 'openable exit'
         my $toolButton_openableExit = Gtk3::ToolButton->new(
@@ -11079,14 +11062,9 @@
         # (Requires $self->session->currentWorld->basicMappingFlag to be FALSE)
         $self->ivAdd('menuToolItemHash', 'icon_paint_border', $radioButton_paintBorderRooms);
 
-#        # Separator
-#        my $separator = Gtk3::SeparatorToolItem->new();
-#        push (@buttonList, $separator);
-        if ($^O ne 'MSWin32') {
-
-            my $separator = Gtk3::SeparatorToolItem->new();
-            push (@buttonList, $separator);
-        }
+        # Separator
+        my $separator = Gtk3::SeparatorToolItem->new();
+        push (@buttonList, $separator);
 
         my $toolButton_addRoomFlag = Gtk3::ToolButton->new(
             Gtk3::Image->new_from_file($axmud::SHARE_DIR . '/icons/map/icon_add_room_flag.png'),
@@ -11258,14 +11236,9 @@
         });
         push (@buttonList, $radioButton_quickMulti);
 
-#        # Separator
-#        my $separator = Gtk3::SeparatorToolItem->new();
-#        push (@buttonList, $separator);
-        if ($^O ne 'MSWin32') {
-
-            my $separator = Gtk3::SeparatorToolItem->new();
-            push (@buttonList, $separator);
-        }
+        # Separator
+        my $separator = Gtk3::SeparatorToolItem->new();
+        push (@buttonList, $separator);
 
         my $toolButton_addRoomFlag = Gtk3::ToolButton->new(
             Gtk3::Image->new_from_file($axmud::SHARE_DIR . '/icons/map/icon_add_quick_flag.png'),
@@ -11517,14 +11490,9 @@
         });
         push (@buttonList, $toggleButton_colourAllLevel);
 
-#        # Separator
-#        my $separator = Gtk3::SeparatorToolItem->new();
-#        push (@buttonList, $separator);
-        if ($^O ne 'MSWin32') {
-
-            my $separator = Gtk3::SeparatorToolItem->new();
-            push (@buttonList, $separator);
-        }
+        # Separator
+        my $separator = Gtk3::SeparatorToolItem->new();
+        push (@buttonList, $separator);
 
         # Toolbutton for 'add background colour'
         my $toolButton_addColour = Gtk3::ToolButton->new(
@@ -11721,14 +11689,9 @@
             $toolButton_centreMiddleGrid,
         );
 
-#        # Separator
-#        my $separator = Gtk3::SeparatorToolItem->new();
-#        push (@buttonList, $separator);
-        if ($^O ne 'MSWin32') {
-
-            my $separator = Gtk3::SeparatorToolItem->new();
-            push (@buttonList, $separator);
-        }
+        # Separator
+        my $separator = Gtk3::SeparatorToolItem->new();
+        push (@buttonList, $separator);
 
         # Toggle button for 'track current room'
         my $toggleButton_trackCurrentRoom = Gtk3::ToggleToolButton->new();
@@ -11958,14 +11921,9 @@
         #   $self->selectedRoomHash)
         $self->ivAdd('menuToolItemHash', 'icon_reset_visits', $toolButton_resetVisits);
 
-#        # Separator
-#        my $separator = Gtk3::SeparatorToolItem->new();
-#        push (@buttonList, $separator);
-        if ($^O ne 'MSWin32') {
-
-            my $separator = Gtk3::SeparatorToolItem->new();
-            push (@buttonList, $separator);
-        }
+        # Separator
+        my $separator = Gtk3::SeparatorToolItem->new();
+        push (@buttonList, $separator);
 
         # Toggle button for 'graffiti mode'
         my $toggleButton_graffitMode = Gtk3::ToggleToolButton->new();
@@ -12011,14 +11969,9 @@
         # (Requires $self->currentRegionmap, $self->graffitiModeFlag and one or more selected rooms
         $self->ivAdd('menuToolItemHash', 'icon_toggle_graffiti', $toolButton_toggleGraffiti);
 
-#        # Separator
-#        my $separator2 = Gtk3::SeparatorToolItem->new();
-#        push (@buttonList, $separator2);
-        if ($^O ne 'MSWin32') {
-
-            my $separator = Gtk3::SeparatorToolItem->new();
-            push (@buttonList, $separator);
-        }
+        # Separator
+        my $separator2 = Gtk3::SeparatorToolItem->new();
+        push (@buttonList, $separator2);
 
         # Toolbutton for 'edit world model'
         my $toolButton_editWorldModel = Gtk3::ToolButton->new(
@@ -12151,14 +12104,9 @@
             $radioButton_releaseAllFilters,
         );
 
-#        # Separator
-#        my $separator = Gtk3::SeparatorToolItem->new();
-#        push (@buttonList, $separator);
-        if ($^O ne 'MSWin32') {
-
-            my $separator = Gtk3::SeparatorToolItem->new();
-            push (@buttonList, $separator);
-        }
+        # Separator
+        my $separator = Gtk3::SeparatorToolItem->new();
+        push (@buttonList, $separator);
 
         # Filter icons
         foreach my $filter ($axmud::CLIENT->constRoomFilterList) {
@@ -12340,14 +12288,9 @@
             # (Add a separator after the first toolbar button)
             if ($mode eq 'none') {
 
-#                # Separator
-#                my $separator = Gtk3::SeparatorToolItem->new();
-#                push (@buttonList, $separator);
-                if ($^O ne 'MSWin32') {
-
-                    my $separator = Gtk3::SeparatorToolItem->new();
-                    push (@buttonList, $separator);
-                }
+                # Separator
+                my $separator = Gtk3::SeparatorToolItem->new();
+                push (@buttonList, $separator);
             }
         }
 
@@ -12872,12 +12815,17 @@
             } elsif ($regionObj->tempRegionFlag) {
 
                 push (@tempList, $regionObj);
-                $markupHash{$regionObj} = "<i>" . $regionObj->name . "</i>";
+                $markupHash{$regionObj} = '<i>' . $regionObj->name . '</i>';
 
             } else {
 
                 push (@otherList, $regionObj);
                 $markupHash{$regionObj} = $regionObj->name;
+            }
+
+            if ($regionObj->finishedFlag) {
+
+                $markupHash{$regionObj} = '<u>' . $markupHash{$regionObj} . '</u>';
             }
         }
 
@@ -13018,7 +12966,7 @@
             }
         }
 
-        # Store the hash of pointers ($self->treeViewSelectLine needs them)
+        # Store the hash of pointers ($self->treeViewSelectRow needs them)
         $self->ivPoke('treeViewPointerHash', %pointerHash);
 
         # If a specific region was specified as $expandRegion, it must be visible (we must expand
@@ -13135,8 +13083,8 @@
                 } else {
 
                     # Remove any markup to get the actual region name
-                    $regionName =~ s/^\<i\>//;
-                    $regionName =~ s/\<\/i\>$//;
+                    $regionName =~ s/^\<[iu]\>//;
+                    $regionName =~ s/\<\/[iu]\>$//;
 
                     if ($self->worldModelObj->ivExists('regionmapHash', $regionName)) {
 
@@ -13270,7 +13218,7 @@
         return 1;
     }
 
-    sub treeViewSelectLine {
+    sub treeViewSelectRow {
 
         # Called by $self->setCurrentRegion when the current region is set (or unset)
         # Makes sure that, if there's a new current region, it is the one highlighted in the
@@ -13292,7 +13240,7 @@
         # Check for improper arguments
         if (! defined $region || defined $check) {
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->treeViewSelectLine', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->treeViewSelectRow', @_);
         }
 
         # Highlight the region named $region
@@ -13310,6 +13258,48 @@
 
         # Highlight the region
         $self->treeView->set_cursor($path, undef, 0);
+
+        return 1;
+    }
+
+    sub treeViewUpdateRow {
+
+        # Called by $self->enableRegionsColumn when the current region's 'finished' status is set
+        # Updates the markup for the treeview row for this region
+        #
+        # Expected arguments
+        #   $region     - The name of the current region
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $region, $check) = @_;
+
+        # Local variables
+        my ($regionmapObj, $regionObj, $markup, $model, $pointer);
+
+        # Check for improper arguments
+        if (! defined $region || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->treeViewUpdateRow', @_);
+        }
+
+        # Prepare the markup
+        $regionmapObj = $self->worldModelObj->ivShow('regionmapHash', $region);
+        $regionObj = $self->worldModelObj->ivShow('regionModelHash', $regionmapObj->number);
+        if ($regionObj->tempRegionFlag) {
+            $markup = '<i>' . $region . '</i>';
+        } elsif ($regionObj->finishedFlag) {
+            $markup = '<u>' . $region . '</u>';
+        } else {
+            $markup = $region;
+        }
+
+        # Update the markup for the region's line in the treeview
+        $model = $self->treeView->get_model();
+        $pointer = $self->ivShow('treeViewPointerHash', $region);
+        $model->set( $pointer, [0], [$markup] );
 
         return 1;
     }
@@ -17078,7 +17068,7 @@
         #   we were in a drawing cycle (i.e. a call to $self->doDraw). They are reset by
         #   $self->stopSelectBox
         $self->ivPoke(
-            'drawScheme',
+            'selectDrawScheme',
             $self->worldModelObj->getRegionScheme($self->currentRegionmap),
         );
 
@@ -17157,8 +17147,8 @@
                 'width' => $x2 - $x1 + 1,
                 'height' => $y2 - $y1 + 1,
 #                'line-width' => 2,
-                'stroke-color' => $self->drawScheme->selectBoxColour,
-#                'fill-color' => $self->drawScheme->selectBoxColour,
+                'stroke-color' => $self->selectDrawScheme->selectBoxColour,
+#                'fill-color' => $self->selectDrawScheme->selectBoxColour,
             );
 
             # Move it above everything else
@@ -17238,7 +17228,7 @@
         $self->ivUndef('selectBoxCurrentXPos');
         $self->ivUndef('selectBoxCurrentYPos');
 
-        $self->ivUndef('drawScheme');
+        $self->ivUndef('selectDrawScheme');
 
         return 1;
     }
@@ -20954,7 +20944,60 @@
             #   model as necessary
             $self->resetTreeView($self->currentRegionmap->name);
             # Make sure the current region is highlighted
-            $self->treeViewSelectLine($self->currentRegionmap->name);
+            $self->treeViewSelectRow($self->currentRegionmap->name);
+        }
+
+        return 1;
+    }
+
+    sub regionFinishedCallback {
+
+        # Called by $self->enableRegionsColumn
+        # Toggles a region's 'finished' status
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if the standard callback check fails
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my $regionObj;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->regionFinishedCallback', @_);
+        }
+
+        # Standard callback check
+        if (! $self->currentRegionmap) {
+
+            return undef;
+        }
+
+        # Toggle the region, if permitted
+        $regionObj = $self->worldModelObj->ivShow(
+            'regionModelHash',
+            $self->currentRegionmap->number,
+        );
+
+        if ($regionObj->tempRegionFlag) {
+
+            $self->showMsgDialogue(
+                'Set finished region',
+                'error',
+                'Temporary regions can\'t be marked finished',
+                'ok',
+            );
+
+        } else {
+
+            $regionObj->toggleFinished();
+            $self->treeViewUpdateRow($regionObj->name);
         }
 
         return 1;
@@ -33631,7 +33674,7 @@
         $self->restrictWidgets();
 
         # Make sure the correct region is highlighted in the treeview region list
-        $self->treeViewSelectLine($self->currentRegionmap->name);
+        $self->treeViewSelectRow($self->currentRegionmap->name);
 
         # Update IVs
         $self->ivPoke('emptyMapFlag', FALSE);
@@ -36838,7 +36881,7 @@
 
     sub drawRoomBox {
 
-        # Called by $self->drawRoom/->doQuickDraw to draw the room box in two colours - a border,
+        # Called by $self->drawRoom->doQuickDraw to draw the room box in two colours - a border,
         #   and an interior (and some graffiti, if this room has been tagged with graffiti)
         #
         # Expected arguments
@@ -37061,10 +37104,13 @@
 
             $slaveObj = $levelObj->ivIndex('slaveCanvasObjList', 3);
 
-            if ($newObj3) {
+            $newObj->lower($slaveObj);
+            $self->setupCanvasObjEvent('room', $newObj, $roomObj);
 
-                $newObj3->lower($slaveObj);
-                $self->setupCanvasObjEvent('room', $newObj3, $roomObj);
+            if ($newObj2) {
+
+                $newObj2->lower($slaveObj);
+                $self->setupCanvasObjEvent('room', $newObj2, $roomObj);
             }
 
             if ($newObj4) {
@@ -37073,14 +37119,11 @@
                 $self->setupCanvasObjEvent('room', $newObj4, $roomObj);
             }
 
-            if ($newObj2) {
+            if ($newObj3) {
 
-                $newObj2->lower($slaveObj);
-                $self->setupCanvasObjEvent('room', $newObj2, $roomObj);
+                $newObj3->lower($slaveObj);
+                $self->setupCanvasObjEvent('room', $newObj3, $roomObj);
             }
-
-            $newObj->lower($slaveObj);
-            $self->setupCanvasObjEvent('room', $newObj, $roomObj);
         }
 
         # Store the canvas object(s)
@@ -37180,7 +37223,7 @@
 
     sub drawRoomEcho {
 
-        # Called by $self->drawRoom/->doQuickDraw
+        # Called by $self->drawRoom->doQuickDraw
         # Draws a room echo for a room just above or just below the current level
         #
         # Expected arguments
@@ -37291,7 +37334,7 @@
 
     sub drawRoomInteriorInfo {
 
-        # Called by $self->drawRoom/->doQuickDraw
+        # Called by $self->drawRoom->doQuickDraw
         # Draws information displayed in the room interior. Which information to display depends on
         #   GA::Obj::WorldModel->roomInteriorMode (for example, in mode 'temp_count', the number of
         #   living and non-living things in the Locator's current room is displayed)
@@ -37783,7 +37826,7 @@
 
     sub drawUnallocatableCount {
 
-        # Called by $self->drawRoom/->doQuickDraw to display the number of unallocatable exits for
+        # Called by $self->drawRoom->doQuickDraw to display the number of unallocatable exits for
         #   this room in the bottom-centre of the room box
         #
         # Expected arguments
@@ -39166,7 +39209,7 @@
 
     sub drawCheckedDir {
 
-        # Called by $self->drawRoom/->doQuickDraw to draw a checked direction (after a character
+        # Called by $self->drawRoom->doQuickDraw to draw a checked direction (after a character
         #   tries to move in a certain direction, and that attempt generates a failed exit message)
         #
         # Expected arguments
@@ -43881,7 +43924,7 @@
         my $dialogueWin = Gtk3::Dialog->new(
             'Select gridblock',
             $self->winWidget,          # Parent window is this window
-            [qw/modal destroy-with-parent/],
+            Gtk3::DialogFlags->new([qw/modal destroy-with-parent/]),
             'gtk-cancel' => 'reject',
             'gtk-ok'     => 'accept',
         );
@@ -44080,7 +44123,7 @@
         my $dialogueWin = Gtk3::Dialog->new(
             $title,
             $self->winWidget,
-            [qw/modal destroy-with-parent/],
+            Gtk3::DialogFlags->new([qw/modal destroy-with-parent/]),
             'gtk-cancel'    => 'reject',
             'gtk-ok'        => 'accept',
         );
@@ -44332,7 +44375,7 @@
         my $dialogueWin = Gtk3::Dialog->new(
             $title,
             $self->winWidget,
-            [qw/modal destroy-with-parent/],
+            Gtk3::DialogFlags->new([qw/modal destroy-with-parent/]),
             'gtk-cancel'    => 'reject',
             'gtk-ok'        => 'accept',
         );
@@ -44718,7 +44761,7 @@
         my $dialogueWin = Gtk3::Dialog->new(
             'Add multiple exits',
             $self->winWidget,
-            [qw/modal destroy-with-parent/],
+            Gtk3::DialogFlags->new([qw/modal destroy-with-parent/]),
             'gtk-cancel' => 'reject',
             'gtk-ok'     => 'accept',
         );
@@ -44965,7 +45008,7 @@
         my $dialogueWin = Gtk3::Dialog->new(
             'Set file path',
             $self->winWidget,
-            [qw/modal destroy-with-parent/],
+            Gtk3::DialogFlags->new([qw/modal destroy-with-parent/]),
             'gtk-cancel' => 'reject',
             'gtk-ok' => 'accept',
         );
@@ -45122,7 +45165,7 @@
         my $dialogueWin = Gtk3::Dialog->new(
             'Adjacent regions regions mode',
             $self->winWidget,
-            [qw/modal destroy-with-parent/],
+            Gtk3::DialogFlags->new([qw/modal destroy-with-parent/]),
             'gtk-cancel' => 'reject',
             'gtk-ok'     => 'accept',
         );
@@ -45314,7 +45357,7 @@
         my $dialogueWin = Gtk3::Dialog->new(
             $title,
             $self->winWidget,
-            [qw/modal destroy-with-parent/],
+            Gtk3::DialogFlags->new([qw/modal destroy-with-parent/]),
             'gtk-cancel' => 'reject',
             'gtk-ok'     => 'accept',
         );
@@ -47792,7 +47835,7 @@
 
     sub findOccupiedMap {
 
-        # Called by $self->occupiedScreenshotCallback
+        # Called by $self->regionScreenshotCallback
         # Finds the boundaries of the regionmap occupied by rooms and labels on the current level
         #
         # Expected arguments
@@ -48483,6 +48526,8 @@
         { $_[0]->{drawParchment} }
     sub drawScheme
         { $_[0]->{drawScheme} }
+    sub selectDrawScheme
+        { $_[0]->{selectDrawScheme} }
     sub drawCycleExitHash
         { my $self = shift; return %{$self->{drawCycleExitHash}}; }
     sub drawRoomTextSize

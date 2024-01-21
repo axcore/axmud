@@ -21,7 +21,7 @@
          lines, the first of which discards a function's return value, the
          second of which assigns the return value to a variable.
 
-         PRINT 10 * (CALL MySub (...))         
+         PRINT 10 * (CALL MySub (...))
          LET result = CALL MySub (...)
 
       LET can also be used together with some other keywords, in order to
@@ -35,7 +35,7 @@
          you'll get an error.
 
    Examples:
-      ! Basic forms of LET 
+      ! Basic forms of LET
       LET greeting$ = "Hello world!"
       LET stuff (5) = 100
 

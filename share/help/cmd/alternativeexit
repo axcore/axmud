@@ -1,5 +1,5 @@
 ale / alternativeexit         Sets an exit's alternative direction(s)
- 
+
    Format:
       ;ale <dir> <string>     Sets the exit <dir>'s alt direction <string>
 
@@ -8,7 +8,7 @@ ale / alternativeexit         Sets an exit's alternative direction(s)
          that depends on the direction from which the character entered the
          room (for example, a room there might have an exit that's sometimes
          called 'forward', and sometimes called 'backward').
-         
+
       This command works on the automapper's current room.
       <dir> should be the direction of an exit in that room, for example
          'forward'.
@@ -18,6 +18,6 @@ ale / alternativeexit         Sets an exit's alternative direction(s)
          able to recognise any exit whose direction can be found in the string
          (in the example above, 'forward', 'back', 'backward', 'side',
          'side to side' and 'backward side' would all be recognised).
-   
+
    User commands:
       ale / altexit / alternativeexit

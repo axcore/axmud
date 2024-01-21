@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2022 A S Lewis
+# Copyright (C) 2011-2024 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # Lesser Public License as published by the Free Software Foundation, either version 3 of the
@@ -128,10 +128,10 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     # (This variable exists for the benefit of Kwalitee, and is never referenced by the code)
-    our $VERSION = '1.3.029';
+    our $VERSION = '2.0.0';
 
     use Glib qw(TRUE FALSE);
 
@@ -4143,7 +4143,7 @@ A S Lewis <aslewis@cpan.org>
 
 =head1 COPYRIGHT
 
-Copyright (C) 2011-2022 A S Lewis
+Copyright (C) 2011-2024 A S Lewis
 
 This program is free software: you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software

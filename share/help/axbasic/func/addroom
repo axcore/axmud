@@ -1,17 +1,17 @@
 Addroom (x, y, z)
-        
+
    Synopsis:
       Adds a new room near the automapper's current room
 
    Notes:
-      The three arguments are the coordinates of the gridblock, relative to the 
+      The three arguments are the coordinates of the gridblock, relative to the
          automapper's current room, at which the new room will be drawn.
-      If the operation is successful, the new room's world model number is 
-         returned. If there is no current room, if the coordinates x, y and z 
-         are invalid, if the gridblock is already occupied or if the operation 
-         fails, 0 is returned.    
+      If the operation is successful, the new room's world model number is
+         returned. If there is no current room, if the coordinates x, y and z
+         are invalid, if the gridblock is already occupied or if the operation
+         fails, 0 is returned.
       See also the Addfirstroom () function.
-        
+
    Examples:
       Addroom (1, 2, 0)    >> Adds a room one block below and two blocks to the
                               right of the current room

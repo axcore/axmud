@@ -1,31 +1,31 @@
 sch / setchar                 Sets the current character
- 
+
    Format:
       ;sch <name>             Sets the current character profile to <name>
       ;sch <name> <pass>      Sets the character profile and password
       ;sch <name> <pass> <account>
                               Sets the character, password and account name
- 
+
    Notes:
       This command sets the current character profile for this session.
       If a profile named <name> doesn't already exist, it is created. If the
          profile already exists, it is made the current character profile.
       If <pass> is specified, a new password is set (or an existing password is
-         updated). 
+         updated).
       Some worlds make a distinction between your account name and your
          character's name. If so, you can specify the <account> name associated
-         with this character, in which case a new account name is set (or an 
-         existing one is updated). 
-      Both passwords and account names can also be set in each world profile's 
+         with this character, in which case a new account name is set (or an
+         existing one is updated).
+      Both passwords and account names can also be set in each world profile's
          'edit' window and in the Connections window.
       The current guild and race profile for the character will also be set, as
          will any current custom profiles for the character.
-      Profile names must be no longer than 16 characters, contain only A-Z, a-z, 
-         underlines and 0-9 (not the first character) and not be one of Axmud's 
+      Profile names must be no longer than 16 characters, contain only A-Z, a-z,
+         underlines and 0-9 (not the first character) and not be one of Axmud's
          reserved names (see the ';listreserved' command). Non-Latin alphabets
          are acceptable.
       The operation will fail if <name> is invalid or if there is no current
          world (use the ';setworld' command to set one first).
- 
+
    User commands:
       sch / setchar

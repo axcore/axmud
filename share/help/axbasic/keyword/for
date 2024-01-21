@@ -13,7 +13,7 @@ FOR EACH variable-name IN variable-name
          FOR a = 1 to 10
 
       ...the variable 'a' will be set to 11.
-      
+
       The iterator can be updated during the loop. Thus, during the same loop,
          it would be possible (though not recommended) to change the value of
          the iterator, so as to repeat or skip a step. If the iterator's new
@@ -24,7 +24,7 @@ FOR EACH variable-name IN variable-name
          doing something with every value in the array, one after the other. It
          is especially useful with multi-dimensional arrays, because you can
          replace this:
-         
+
          DIM stuff (3, 3, 3)
          FOR a = 1 to 3
             FOR b = 1 to 3
@@ -57,7 +57,7 @@ FOR EACH variable-name IN variable-name
          END
 
       FOR..EACh cannot iterate over an empty array. If you try, you will get an
-         error.  
+         error.
 
    Notes:
       In a FOR..TO..NEXT loop, the expressions must be integers.
@@ -89,7 +89,7 @@ FOR EACH variable-name IN variable-name
       FOR EACH number IN list
          PRINT number
       NEXT number
-      
+
       ! Walk a two-dimensional array, displaying its values
       DATA "top left", "top middle", "top right"
       DATA "centre left", "centre middle", "centre right"

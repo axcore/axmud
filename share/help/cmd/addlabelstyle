@@ -1,11 +1,11 @@
 als / addlabelstyle           Adds a map label style
- 
+
    Format:
       ;als <name>
       ;als <name> <text>
       ;als <name> <text> <underlay>
                Adds a style called <name>
- 
+
    Notes:
       Map labels are drawn in the automapper window. It's possible to customise
          labels individually, but most labels are drawn using a map label style
@@ -21,6 +21,6 @@ als / addlabelstyle           Adds a map label style
          colour tags). It's not necessary to specify an underlay tag; both
          'RED' and 'UL_RED' are acceptable. If <underlay> is not specified, the
          label is drawn without an underlay.
- 
+
    User commands:
       als / addstyle / addlabelstyle

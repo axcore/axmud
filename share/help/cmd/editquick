@@ -1,5 +1,5 @@
 edq / editquick               Opens the quick preference window
- 
+
    Format:
       ;edq                    Edits quick preferences
 
@@ -9,6 +9,6 @@ edq / editquick               Opens the quick preference window
       Sometimes it can be difficult to find what you need. The quick preference
          window contains some of the most popular configuration options, grouped
          together in one window.
-  
+
    User commands:
       edq / editquick

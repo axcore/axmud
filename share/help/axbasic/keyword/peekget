@@ -5,11 +5,11 @@ PEEKGET ARRAY variable-name = axmud-object-property
       Imports data from an Axmud internal scalar property
 
    Notes:
-      PEEK gives Axbasic scripts access to most of Axmud's internal data (see 
+      PEEK gives Axbasic scripts access to most of Axmud's internal data (see
          the help for the PEEK statement for a full explanation).
       PEEKGET behaves in the same way as PEEK, but it only imports data from
-         scalar properties such as "world.current.name". It cannot be used to 
-         import a list property such as "world.current.doorPatternList", a hash 
+         scalar properties such as "world.current.name". It cannot be used to
+         import a list property such as "world.current.doorPatternList", a hash
          property such as "world.current.currencyHash" or a Perl object such as
          "world.current".
 
@@ -19,7 +19,7 @@ PEEKGET ARRAY variable-name = axmud-object-property
 
       ! Import a scalar property into an Axbasic global array
       PEEKGET ARRAY worlds$ = "world.current.name"
- 
+
       ! Import a scalar property into an Axbasic local scalar variable
       LOCAL name$
       PEEKGET name$ = "world.current.name"

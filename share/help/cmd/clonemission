@@ -1,18 +1,18 @@
 cmn / clonemission            Clones an existing mission
- 
+
    Format:
       ;cmn <original> <copy>
                Clones the <original> mission into one named <copy>
- 
+
    Notes:
       New missions can be created by using recordings. See the help for the
          ';record' command for information about making recordings.
       This command clones a new mission using the contents of an existing one.
       Missions are stored in the current world profile. Mission names must be no
-         longer than 16 characters, contain only A-Z, a-z, underlines and 0-9 
-         (not the first character) and not be one of Axmud's reserved names (see 
+         longer than 16 characters, contain only A-Z, a-z, underlines and 0-9
+         (not the first character) and not be one of Axmud's reserved names (see
          the ';listreserved' command). Non-Latin alphabets are acceptable.
       See the help for ';startmission' for more information about missions.
- 
+
    User commands:
       cmn / clonemn / clonemission

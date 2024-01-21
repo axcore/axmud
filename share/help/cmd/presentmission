@@ -3,9 +3,9 @@ pmn / presentmission          Shows the contents of a mission
    Format:
       ;pmn                    Shows the current mission
       ;pmn <name>             Shows the mission <name>
- 
+
    Notes:
       See the help for ';startmission' for more information about missions.
- 
+
    User commands:
       pmn / presentmn / presentmission

@@ -1,18 +1,18 @@
 sib / setinstructionbuffer    Sets the size of instruction buffers
- 
+
    Format:
       ;sib <size>             Sets the buffer <size>
       ;sib                    Sets the buffer size to 1000
- 
+
    Notes:
       Instruction buffers are Axmud's records of processed instructions (see the
          help for ';instructionbuffer').
-      Every session has its own instruction buffer, storing instructions 
+      Every session has its own instruction buffer, storing instructions
          processed by that session. There is also a combined instruction buffer
          storing instructions processed by all sessions.
 
       All instruction buffers have the same size, which can be changed with this
-         command. If specified, <size> must be an integer in the range 
+         command. If specified, <size> must be an integer in the range
          10-1000000.
 
    User commands:

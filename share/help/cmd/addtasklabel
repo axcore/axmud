@@ -1,20 +1,20 @@
 atl / addtasklabel            Adds task labels
- 
+
    Format:
       ;atl <task_name> <label_list>
                Adds a list of labels to the task
       ;atl <task_name>
                Empties the task's list of labels
- 
+
    Notes:
       Axmud tasks have formal names like 'status_task' and 'locator_task'. Task
-         labels are a convenient way of referring to tasks without having to 
+         labels are a convenient way of referring to tasks without having to
          type the whole name. For example, the Status task has the task labels
          'stat' and 'status' by default.
 
       <task_name> matches the task's formal name. <label_list> is a list of one
          or more labels, e.g. ';addtasklabel status_task stat status'
-      If <task_name> aleady exists, the labels in <label_list> will be added to 
+      If <task_name> aleady exists, the labels in <label_list> will be added to
          its existing list of labels.
 
       To reset a task's labels to the default list, use ';resettasklabel'.
@@ -26,6 +26,6 @@ atl / addtasklabel            Adds task labels
       Task label names must be no longer than 16 characters, and contain only
          A-Z, a-z, underlines and 0-9 (not the first character). Non-Latin
          alphabets are acceptable.
- 
+
    User commands:
       atl / addtl / addlabel / addtasklabel

@@ -18,7 +18,7 @@
     * [4.4.6 Bypass commands](#4.4.6)
     * [4.4.7 Instruction equivalents](#4.4.7)
 * [4.5 Main window  buttons](#4.5)
-* [4.6 The object viewer window](#4.6)
+* [4.6 The data viewer window](#4.6)
 * [4.7 Edit windows](#4.7)
 * [4.8 Preference windows](#4.8)
 * [4.9 The client preference window](#4.9)
@@ -308,20 +308,20 @@ This only works with world commands. It doesn't work with other types of command
 
 ![Window icon](img/ch04/icon_application.png) Splits the window into two portions
 
-##<a name="4.6">4.6 The object viewer window</a>
+##<a name="4.6">4.6 The data viewer window</a>
 
 Axmud organises its internal data into collections of data called 'objects'.
 
 We've already seen two kinds of object - the world profile, which stores data for a particular world, and the character profile, which stores data for a character in that world.
 
-There are many other kinds of object. Axmud lists many of them in its object viewer window.
+There are many other kinds of object. Axmud lists many of them in its data viewer window.
 
-![Object viewer icon](img/ch04/icon_watermark_table.png) To open the object viewer window, either click on the button, or select 'Display > Open object viewer' in the menu, or use the client command:
+![Data viewer icon](img/ch04/icon_watermark_table.png) To open the data viewer window, either click on the button, or select 'Display > Open object viewer' in the menu, or use the client command:
 
-        ;openobjectviewer
-        ;oov
+        ;opendataviewer
+        ;odv
 
-![Object viewer window](img/ch04/object_viewer.png)
+![Data viewer window](img/ch04/data_viewer.png)
 
 The different types of object are listed on the left. There are far too many to fit inside the window, so they have been divided into groups.
 
@@ -333,13 +333,13 @@ On the right is a strip of buttons; each one is the equivalent of a client comma
 
 * For a slightly longer explanation for each button, let your mouse hover above the button
 
-![Object viewer tooltip](img/ch04/viewer_tooltip.png)
+![Data viewer tooltip](img/ch04/viewer_tooltip.png)
 
 ##<a name="4.7">4.7 Edit windows</a>
 
 Each collection of data - each object - can be viewed and edited using an *edit window*.
 
-Edit windows can be opened from the object viewer window, or from the main window's menu and buttons, or by using a client command. For example, to edit the **dslocal** world profile:
+Edit windows can be opened from the data viewer window, or from the main window's menu and buttons, or by using a client command. For example, to edit the **dslocal** world profile:
 
         ;editworld dslocal
         ;ewo dslocal
@@ -349,6 +349,8 @@ If you don't specify a world profile, the current world profile is edited:
         ;editworld
 
 For world profiles, there are more tabs than can be arranged in the single window. Near the top-left and top-right corners of the window you'll see some kind of arrow; click the arrows to scroll through the additional tabs.
+
+You can also double-click a line in the index on the left.
 
 ![Edit window tabs](img/ch04/edit_win_tabs.png)
 

@@ -1,26 +1,26 @@
 irp / intervalrepeat          Sends a world command multiple times at intervals
- 
+
    Format:
       ;irp <number> <time> <cmd>
                               Sends the <cmd> at intervals
- 
+
    Notes:
       The command <cmd> is sent <number> times at intervals of <time> seconds.
       All the text following <time> is used as a single command, so you don't
          need to enclose it in diamond brackets:
-         
+
             e.g. ';intervalrepeat 10 1 unlock door with key;open door;north'
-            
-      However, you can still use diamond brackets to preserve unusual spacing 
+
+      However, you can still use diamond brackets to preserve unusual spacing
          (if you really want to):
-         
+
             e.g. ';intervalrepeat 10 1 <say hello...         and who are you?>'
 
       To send a command multiple times without intervals, use the ';repeat'
-         command. To stop sending these commands early, use ';stopcommand'. 
- 
-       Speedwalking is often a more convenient way of achieving the same thing 
+         command. To stop sending these commands early, use ';stopcommand'.
+
+       Speedwalking is often a more convenient way of achieving the same thing
          (see the help for ';speedwalk').
-         
+
    User commands:
       irp / intrep / intervalrepeat

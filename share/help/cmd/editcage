@@ -1,5 +1,5 @@
 ecg / editcage                Opens an 'edit' window for a cage
- 
+
    Format:
       ;ecg <name>             Edits the cage <name>
 
@@ -12,10 +12,10 @@ ecg / editcage                Opens an 'edit' window for a cage
       ;ecg -r                 Edits the current world's route cage
 
    Notes:
-      <name> is the cage's full name, e.g. 'trigger_guild_thief'. 
+      <name> is the cage's full name, e.g. 'trigger_guild_thief'.
       If you specify one of the switches instead of <name>, a cage belonging to
-         the current world will open at its second page; this is a convenient 
-         shortcut to display a list of triggers, aliases and so on with just one 
+         the current world will open at its second page; this is a convenient
+         shortcut to display a list of triggers, aliases and so on with just one
          command.
 
    User commands:

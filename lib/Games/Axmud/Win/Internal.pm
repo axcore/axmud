@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2022 A S Lewis
+# Copyright (C) 2011-2024 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -20,7 +20,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -1155,6 +1155,8 @@
 
             # In blind mode, and if this is a 'main' window, hijack the cursor keys and the escape
             #   key for navigating the text-to-speech buffer
+            # The user can bypass the hijack by holding down the shift key, for example by using
+            #   SHIFT+UP to navigate the command buffer
             if (
                 (
                     ($axmud::BLIND_MODE_FLAG && $axmud::CLIENT->ttsHijackFlag)
@@ -1162,6 +1164,7 @@
                 )
                 && $self->visibleSession
                 && $axmud::CLIENT->ivExists('ttsHijackKeycodeHash', $string)
+                && ! $self->shiftKeyFlag
             ) {
                 return $self->visibleSession->pseudoCmd(
                     $axmud::CLIENT->ivShow('ttsHijackKeycodeHash', $string),
@@ -1410,7 +1413,7 @@
                     return 1;
 
                 } elsif (
-                    ! $self->modifierKeyFlag
+                    (! $self->modifierKeyFlag || ($self->shiftKeyFlag && $axmud::BLIND_MODE_FLAG))
                     && $self->visibleSession
                     && $stripObj
                     && $stripObj->entry
@@ -1451,6 +1454,17 @@
                         }
 
                         $stripObj->entry->grab_focus();
+
+                        # In blind mode only, read allowed the selected command
+                        if ($axmud::BLIND_MODE_FLAG && $stripObj->entry->get_text() =~ m/\w/) {
+
+                            $axmud::CLIENT->tts(
+                                'Selected command: ' . $stripObj->entry->get_text(),
+                                'system',
+                                'system',
+                                $self->visibleSession,
+                            );
+                        }
 
                     } else {
 
@@ -2616,7 +2630,7 @@
             'show_triggers', 'show_aliases', 'show_macros', 'show_timers', 'show_hooks',
                 'show_cmds', 'show_routes',
             # 'Tasks' column
-            'freeze_tasks', 'chat_task',
+            'freeze_tasks', 'start_new_task', 'chat_task', 'chat_task_start',
             'run_locator_wiz_2',
             'other_task',
             # 'Display' column
@@ -2725,45 +2739,6 @@
         }
 
         # Menu bar items that require a 'main' window with a visible session whose status is
-        #   'connected' or 'offline' and an Advance task
-        @list = (
-            # 'Tasks' column
-            'edit_advance_task',
-        );
-
-        if (! $setupFlag && $openFlag && $self->visibleSession->advanceTask) {
-            push (@sensitiseList, @list);
-        } else {
-            push (@desensitiseList, @list);
-        }
-
-        # Menu bar items that require a 'main' window with a visible session whose status is
-        #   'connected' or 'offline' and a Connections task
-        @list = (
-            # 'Tasks' column
-            'edit_connections_task',
-        );
-
-        if (! $setupFlag && $openFlag && $self->visibleSession->connectionsTask) {
-            push (@sensitiseList, @list);
-        } else {
-            push (@desensitiseList, @list);
-        }
-
-        # Menu bar items that require a 'main' window with a visible session whose status is
-        #   'connected' or 'offline' and an Attack task
-        @list = (
-            # 'Tasks' column
-            'edit_attack_task',
-        );
-
-        if (! $setupFlag && $openFlag && $self->visibleSession->attackTask) {
-            push (@sensitiseList, @list);
-        } else {
-            push (@desensitiseList, @list);
-        }
-
-        # Menu bar items that require a 'main' window with a visible session whose status is
         #   'connected' or 'offline' and a Chat task
         @list = (
             # 'Tasks' column
@@ -2784,8 +2759,13 @@
         );
 
         if (! $setupFlag && $openFlag && $self->visibleSession->channelsTask) {
+
             push (@sensitiseList, @list);
+            push (@desensitiseList, 'channels_task_start');
+
         } else {
+
+            push (@sensitiseList, 'channels_task_start');
             push (@desensitiseList, @list);
         }
 
@@ -2797,6 +2777,24 @@
         );
 
         if (! $setupFlag && $openFlag && $self->visibleSession->compassTask) {
+
+            push (@sensitiseList, @list);
+            push (@desensitiseList, 'compass_task_start');
+
+        } else {
+
+            push (@sensitiseList, 'compass_task_start');
+            push (@desensitiseList, @list);
+        }
+
+        # Menu bar items that require a 'main' window with a visible session whose status is
+        #   'connected' or 'offline' and NO Condition task
+        @list = (
+            # 'Tasks' column
+            'condition_task_start',
+        );
+
+        if (! $setupFlag && $openFlag && ! defined $self->visibleSession->conditionTask) {
             push (@sensitiseList, @list);
         } else {
             push (@desensitiseList, @list);
@@ -2810,8 +2808,13 @@
         );
 
         if (! $setupFlag && $openFlag && $self->visibleSession->divertTask) {
+
             push (@sensitiseList, @list);
+            push (@desensitiseList, 'divert_task_start');
+
         } else {
+
+            push (@sensitiseList, 'divert_task_start');
             push (@desensitiseList, @list);
         }
 
@@ -2823,8 +2826,13 @@
         );
 
         if (! $setupFlag && $openFlag && $self->visibleSession->inventoryTask) {
+
             push (@sensitiseList, @list);
+            push (@desensitiseList, 'inventory_task_start');
+
         } else {
+
+            push (@sensitiseList, 'inventory_task_start');
             push (@desensitiseList, @list);
         }
 
@@ -2836,21 +2844,13 @@
         );
 
         if (! $setupFlag && $openFlag && $self->visibleSession->locatorTask) {
-            push (@sensitiseList, @list);
-        } else {
-            push (@desensitiseList, @list);
-        }
 
-        # Menu bar items that require a 'main' window with a visible session whose status is
-        #   'connected' or 'offline' and a RawToken task
-        @list = (
-            # 'Tasks' column
-            'raw_token_task',
-        );
-
-        if (! $setupFlag && $openFlag && $self->visibleSession->rawTokenTask) {
             push (@sensitiseList, @list);
+            push (@desensitiseList, 'locator_task_start');
+
         } else {
+
+            push (@sensitiseList, 'locator_task_start');
             push (@desensitiseList, @list);
         }
 
@@ -2862,21 +2862,13 @@
         );
 
         if (! $setupFlag && $openFlag && $self->visibleSession->statusTask) {
-            push (@sensitiseList, @list);
-        } else {
-            push (@desensitiseList, @list);
-        }
 
-        # Menu bar items that require a 'main' window with a visible session whose status is
-        #   'connected' or 'offline' and a System task
-        @list = (
-            # 'Tasks' column
-            'edit_system_task',
-        );
-
-        if (! $setupFlag && $openFlag && $self->visibleSession->systemTask) {
             push (@sensitiseList, @list);
+            push (@desensitiseList, 'status_task_start');
+
         } else {
+
+            push (@sensitiseList, 'status_task_start');
             push (@desensitiseList, @list);
         }
 
@@ -2888,8 +2880,13 @@
         );
 
         if (! $setupFlag && $openFlag && $self->visibleSession->watchTask) {
+
             push (@sensitiseList, @list);
+            push (@desensitiseList, 'watch_task_start');
+
         } else {
+
+            push (@sensitiseList, 'watch_task_start');
             push (@desensitiseList, @list);
         }
 
@@ -3333,7 +3330,8 @@
 
             return undef;
 
-        } else {
+        # (Most, but not all strip objects set a ->packingBox in their ->objEnable() function)
+        } elsif ($stripObj->packingBox) {
 
             if ($stripObj->allowFocusFlag) {
                 $stripObj->packingBox->set_can_focus(TRUE);

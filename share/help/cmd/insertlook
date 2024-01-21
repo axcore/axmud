@@ -1,8 +1,8 @@
 ilk / insertlook              Inserts fake 'look' into the Locator movement list
- 
+
    Format:
       ;ilk                    Insert the fake look
- 
+
    Notes:
       The Locator task keeps track of the number of look, glance and movement
          commands sent to the world, so it knows how many room statements to

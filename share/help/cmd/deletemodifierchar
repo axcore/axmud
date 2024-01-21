@@ -1,17 +1,17 @@
 dmc / deletemodifierchar      Deletes a speedwalk modifier character
- 
+
    Format:
       ;dmc <char>             Deletes the speedwalk modifier <char>
-      
+
    Notes:
       Speedwalking is a method of moving from one location in the world to
          another with a minimum of typing.
-      For more information on speedwalk modifier characters, see the help for 
+      For more information on speedwalk modifier characters, see the help for
          ';addmodifierchar'. For information on speedwalking in general, see the
          help for ';speedwalk'.
-         
+
       This command deletes the specified speedwalk modifier <char> from the
          current dictionary.
- 
+
    User commands:
       dmc / delmod / delmodchar / deletemodifierchar

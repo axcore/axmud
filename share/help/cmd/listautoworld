@@ -1,13 +1,13 @@
 law / listautoworld           Shows the list of auto-connecting worlds
- 
+
    Format:
       ;law                    Shows the list
- 
+
    Notes:
       Axmud can be set to auto-connect to one or more worlds when it starts.
       One way to do this is from the command line. Depending on your operating
          system, you might type one of these:
-         
+
          perl axmud.pl
          ./axmud.pl
 
@@ -30,7 +30,7 @@ law / listautoworld           Shows the list of auto-connecting worlds
          character profile names.
       Axmud won't connect to a world with the same character more than once, and
          it will ignore any world or character profiles that don't exist.
-         
+
       Here is an example list, created with multiple uses of ';setautoworld':
 
          deathmud bilbo
@@ -42,6 +42,6 @@ law / listautoworld           Shows the list of auto-connecting worlds
       If 'boringmud' exists, Axmud creates six connections. If it doesn't exist,
          it creates only four. (Note that the duplicate 'gandalf' character is
          not used.)
-         
+
    User commands:
       law / listautoworld

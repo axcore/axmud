@@ -1,14 +1,14 @@
 tp / teleport                 Teleports to another part of the world
- 
+
    Format:
-      ;tp <room tag>          Teleports to a location 
-      ;tp <room num>          
-      ;tp <room name>         
- 
+      ;tp <room tag>          Teleports to a location
+      ;tp <room num>
+      ;tp <room name>
+
    Notes:
       The ';teleport' command is a convenient way of jumping around any world
-         which implements some kind of teleportation system (in which you can 
-         jump to a destination room from many different departure rooms). 
+         which implements some kind of teleportation system (in which you can
+         jump to a destination room from many different departure rooms).
       The advantage of using this client command, rather than typing a world
          command like 'portal tower', is that the automapper won't get lost when
          you use ';teleport'.
@@ -17,8 +17,8 @@ tp / teleport                 Teleports to another part of the world
          list of destinations, or without one.
 
       The ';addteleport', ';deleteteleport' and ';listteleport' commands allow
-         you to specify a list of teleport destinations, and the world commands 
-         needed to jump to them. For example, you might use a world command like 
+         you to specify a list of teleport destinations, and the world commands
+         needed to jump to them. For example, you might use a world command like
          this:
 
             portal tower
@@ -34,20 +34,20 @@ tp / teleport                 Teleports to another part of the world
             ;addteleport myroom <portal tower>
             ;addteleport myroom <goto /domains/town/room/start>
 
-      Axmud now knows about the teleport destination, which you've given the 
+      Axmud now knows about the teleport destination, which you've given the
          name 'myroom'. You can teleport to this room directly:
 
             ;teleport myroom
 
-      At first, the automapper will get lost every time you ';teleport' 
-         somewhere because it doesn't know the location of the destination room 
-         on your map. However, if one of the rooms in your maps has the room tag 
+      At first, the automapper will get lost every time you ';teleport'
+         somewhere because it doesn't know the location of the destination room
+         on your map. However, if one of the rooms in your maps has the room tag
          'myroom', the automapper will know that room is the intended
          destination and it won't get lost.
       Room tags can be words like 'myroom' or numbers like 399. In addition, all
-         rooms in the world model have a unique model number which is not 
-         related to room tags. If you specify a number that isn't being used as 
-         a room tag, the automapper will assume that the destination room is the 
+         rooms in the world model have a unique model number which is not
+         related to room tags. If you specify a number that isn't being used as
+         a room tag, the automapper will assume that the destination room is the
          room with that model number:
 
             ;addteleport 399 <portal shop>
@@ -55,23 +55,23 @@ tp / teleport                 Teleports to another part of the world
 
       The second way of using ';teleport' is convenient at worlds which have
          given many rooms a unique name for the purposes of teleportation. If
-         you draw your maps using identical room tags, the automapper will know 
-         which room is the destination room; otherwise the automapper will get 
+         you draw your maps using identical room tags, the automapper will know
+         which room is the destination room; otherwise the automapper will get
          lost.
 
             ;teleport spookycastle
- 
+
       In this situation, the world command used is the one specified by the
          current highest-priority command cage. The default world command is in
          the form 'teleport room', where the word 'room' is automatically
-         replaced by your destination (the word 'spookycastle' in the example 
-         above.) 
+         replaced by your destination (the word 'spookycastle' in the example
+         above.)
       If the world uses a different teleportation command then you'll have to
          modify the command cages, replacing the word 'teleport' with the
-         required command. ('edit' windows for command cages can be opened from 
-         Axmud's object viewer window.)
+         required command. ('edit' windows for command cages can be opened from
+         Axmud's object data window.)
 
       See also the help for the ';deleteteleport' and ';listteleport' commands.
- 
+
    User commands:
       tp / tport / teleport

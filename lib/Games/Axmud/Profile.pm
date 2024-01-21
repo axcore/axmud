@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2022 A S Lewis
+# Copyright (C) 2011-2024 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -19,7 +19,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -429,7 +429,7 @@
             #
             # If this list is empty, it is ignored. If $self->loginMode is not 'mission', it is
             #   ignored
-            # If this list is set, GA::Session checks ever incoming line of text (complete, or not)
+            # If this list is set, GA::Session checks every incoming line of text (complete, or not)
             #   for patterns that match the current character's name (case-insensitively). If there
             #   are any lines that match the name and also match one of the patterns in the list
             #   (case-insensitively), the corresponding world command is sent, and the GA::Session
@@ -2954,7 +2954,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -3245,7 +3245,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -3501,7 +3501,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -3632,6 +3632,10 @@
             # Character profile IVs
             # ---------------------
 
+            # The character's nickname. By default, the same as $self->name. But, unlike
+            #   $self->name, this string can contain any text (including spaces)
+            # The nickname, not $self->name, is used in automatic logins
+            nickname                    => $name,
             # Which guild this character is (matches a guild profile name, or 'undef' if no guild)
             guild                       => undef,
             # Which race this character is (matches a race profile name, or 'undef' if no race)
@@ -3927,6 +3931,7 @@
             # Character profile IVs
             # ---------------------
 
+            nickname                    => $self->nickname,
             guild                       => $self->guild,
             race                        => $self->race,
             customProfHash              => {$self->customProfHash},
@@ -4185,6 +4190,8 @@
     ##################
     # Accessors - get
 
+    sub nickname
+        { $_[0]->{nickname} }
     sub guild
         { $_[0]->{guild} }
     sub race
@@ -4363,7 +4370,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -4374,7 +4381,7 @@
 
     sub new {
 
-        # Called by GA::Cmd::AddTemplate->do, ListProperty->do or by the object viewer window
+        # Called by GA::Cmd::AddTemplate->do, ListProperty->do or by the data viewer window
         # Creates a new kind of custom profile, called a 'profile template'
         #   Call ->new to create the bare bones of a custom profile - the instance variables that
         #       all custom profile must have
@@ -4820,7 +4827,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 

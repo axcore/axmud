@@ -1,5 +1,5 @@
 ecb / editcommandbuffer       Opens an 'edit' window for a command buffer item
- 
+
    Format:
       ;ecb -s <number>        Edits the session buffer item <number>
       ;ecb <number>
@@ -10,7 +10,7 @@ ecb / editcommandbuffer       Opens an 'edit' window for a command buffer item
       ;ecb -c                 Edits the most recent combined buffer item
 
    Notes:
-      World command buffers are Axmud's records of individual commands sent to 
+      World command buffers are Axmud's records of individual commands sent to
          the world (see the help for ';commandbuffer').
       Every session has its own world command buffer, storing world commands
          sent by that session. There is also a combined world command buffer

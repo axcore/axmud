@@ -9,20 +9,20 @@ ADDHOOK expression , expression [ , expression ]
          really need to create hooks, proceed with caution.
 
       A convenient way to create hooks. The first expression is the stimulus (a
-         hook event), the second is the response (an instruction). If the third 
-         expression is specified, it is used as the hook name; otherwise Axmud 
+         hook event), the second is the response (an instruction). If the third
+         expression is specified, it is used as the hook name; otherwise Axmud
          assigns a name to the hook.
       The following Axbasic statements are therefore interchangeable:
-      
+
          ADDHOOK "stimulus", "response", "name"
          CLIENT "addhook -s stimulus -p response -n name"
-         
+
       If Axmud can't create the new hook, execution of the Axbasic script
          continues as normal. No error message is generated.
       All hooks created by this statement are 'inactive' aliases, and are
-         assigned to a cage belonging to the current world (unless an earlier 
-         PROFILE statement specified a different profile). If there are no 
-         higher-priority hooks with the same name, the corresponding 'active' 
+         assigned to a cage belonging to the current world (unless an earlier
+         PROFILE statement specified a different profile). If there are no
+         higher-priority hooks with the same name, the corresponding 'active'
          hook will be created automatically.
       Hooks created with this statement are automatically deleted when the
          script terminates (unless you use an OPTION PERSIST statement somewhere

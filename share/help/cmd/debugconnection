@@ -1,9 +1,9 @@
 dco / debugconnection         Toggles connection debugging flags
- 
+
    Format:
       ;dco <switch>           Toggles a debugging flag
       ;dco                    Shows current settings for debugging flags
- 
+
    Notes:
       <switch> can be any of the following:
          -q   Show invalid escape sequences messages
@@ -20,8 +20,8 @@ dco / debugconnection         Toggles connection debugging flags
          -g   Display incoming GMCP data
          -m   Show messages for MCP errors
 
-      For debug messages relating to Axmud's internal processes and tasks, see 
+      For debug messages relating to Axmud's internal processes and tasks, see
          the ';debugtoggle' command.
-        
+
    User commands:
       dco / debugconnect / debugconnection

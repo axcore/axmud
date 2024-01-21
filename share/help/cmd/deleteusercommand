@@ -1,22 +1,22 @@
 duc / deleteusercommand       Deletes a user command
- 
+
    Format:
       ;duc <user_command>     Deletes a user command
- 
+
    Notes:
-      All client commands have a standard form, called the 'standard command' 
+      All client commands have a standard form, called the 'standard command'
           (for example, this command's standard form is 'deleteusercommand').
       Some of the standard commands are quite long, so Axmud allows the user to
           create abbreviated versions called 'user commands'.
       This command deletes one of those user commands - either one of the
-         built-in user commands or one you created yourself by using 
+         built-in user commands or one you created yourself by using
          ';addusercommand'.
 
-      You can't delete a user command that's exactly the same as its 
+      You can't delete a user command that's exactly the same as its
          corresponding standard command (because Axmud's internal code also uses
          them).
       (See the help for ';addusercommand' for more information about user
          commmands.)
- 
+
    User commands:
       duc / deluc / deleterusercmd / deleteusercommand

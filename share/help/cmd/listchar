@@ -1,5 +1,5 @@
 lch / listchar                Lists character profiles
- 
+
    Format:
       ;lch                    Lists character profiles
 
@@ -7,6 +7,6 @@ lch / listchar                Lists character profiles
       This commands lists all the character profiles for this session (in other
          words, all the character profiles associated with the session's current
          world profile).
- 
+
    User commands:
       lch / listchar

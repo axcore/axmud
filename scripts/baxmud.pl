@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 package axmud;
 
-# Copyright (C) 2011-2022 A S Lewis
+# Copyright (C) 2011-2024 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -23,7 +23,7 @@ package axmud;
 #   engine support
 
 use strict;
-use diagnostics;
+#use diagnostics;
 use warnings;
 
 use Glib qw(TRUE FALSE);
@@ -43,15 +43,15 @@ use vars qw(
 );
 
 $SCRIPT = 'Axmud';              # Name used in system messages
-$VERSION = '1.3.029';           # Version number for this client
-$DATE = '3 Mar 2022';
+$VERSION = '2.0.0';             # Version number for this client
+$DATE = '21 Jan 2024';
 $NAME_SHORT = 'axmud';          # Lower-case version of $SCRIPT; same as the package name above
 $NAME_ARTICLE = 'an Axmud';     # Name with an article
 $BASIC_NAME = 'Axbasic';        # Name of Axmud's built-in scripting library
 $BASIC_ARTICLE = 'an Axbasic';  # Name with an article
-$BASIC_VERSION = '1.004';       # Version number for the Axbasic library
+$BASIC_VERSION = '1.005';       # Version number for the Axbasic library
 $AUTHORS = 'A S Lewis';
-$COPYRIGHT = 'Copyright 2011-2022 A S Lewis';
+$COPYRIGHT = 'Copyright 2011-2024 A S Lewis';
 $URL = 'http://axmud.sourceforge.io/';
 $DESCRIP = 'A modern MUD client for MS Windows, Linux and *BSD';
 
@@ -175,7 +175,8 @@ use GooCanvas2;
 use Gtk3 '-init';
 use HTTP::Tiny;
 use IO::Socket::INET;
-use IO::Socket::INET6;
+#use IO::Socket::INET6;
+#use IO::Socket::SSL;
 use IPC::Run qw(start);
 use JSON;
 use Math::Round;
@@ -194,12 +195,25 @@ use Time::Piece;
 
 # Net::SSLeay issues can cause inability to install IO::Socket::SSL on some systems. If it's not
 #   available, set a global flag so that GA::Session won't try to connect to a world with SSL
-eval "use IO::Socket::SSL";
-if ($!) {
+my $rc = eval {
+    require IO::Socket::SSL;
+    IO::Socket::SSL->import();
+    1;
+};
+
+if ($rc) {
     $NO_SSL_FLAG = TRUE;
 } else {
     $NO_SSL_FLAG = FALSE;
 }
+
+# As of v2.0, IO::Socket::INET6 can't be installed on MS Windows. Since the module is not
+#   referenced directly by Axmud code, we don't need to set a global flag
+eval {
+    require IO::Socket::INET6;
+    IO::Socket::INET6->import();
+    1;
+};
 
 # Internal dependencies
 use Games::Axmud;

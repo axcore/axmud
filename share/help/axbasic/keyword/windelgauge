@@ -1,0 +1,19 @@
+WINDELGAUGE expression
+
+   Synopsis:
+      Deletes a task window gauge
+
+   Notes:
+      Deletes a gauge that was added to the task window with a WINADDGAUGE or
+         WINADDCONGAUGE statement.
+      The expression is the gauge's unique number. If the gauge doesn't exist,
+         the WINDELGAUGE statement is ignored, but the number isn't an integer,
+         0 or above, you'll see an error message.
+
+   Requires:
+      If the script is not being run as a task, the WINDELGAUGE statement is
+         ignored (and no error message is generated). Execution continues with
+         the next statement.
+
+   Examples:
+      WINDELGAUGE 1

@@ -1,13 +1,13 @@
 asd / abortselfdestruct       Aborts delayed quits/exits in all sessions
- 
+
    Format:
       ;asd                    Aborst delayed quits/exits
- 
+
    Notes:
       A delayed quit can be set up with the ';quit', ';qquit' and ';quitall'
          commands. A delayed exit can be set up with the ';exit', ';xxit' and
          ';exitall' commands.
       This command aborts delayed quits/exits in all sessions.
- 
+
    User commands:
       asd / abortquit / abortexit / abortselfdestruct

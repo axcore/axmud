@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2022 A S Lewis
+# Copyright (C) 2011-2024 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -19,7 +19,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -2375,6 +2375,41 @@
         # (Requires a visible session whose status is 'connected' or 'offline')
         $self->ivAdd('menuItemHash', 'freeze_tasks', $menuItem_freezeTasks);
 
+            # 'Start new task' submenu
+            my $subMenu_startNewTask = Gtk3::Menu->new();
+
+            my @taskList = (
+                'channels', 'chat', 'compass', 'condition', 'divert', 'inventory', 'locator',
+                'status', 'watch',
+            );
+
+            my @mnemonicList = (
+                '_Channels task', 'C_hat task', 'C_ompass task', 'Con_dition task', '_Divert task',
+                '_Inventory task', '_Locator task', '_Status task', '_Watch task',
+            );
+
+            foreach my $task (@taskList) {
+
+                my $menuItem_startNewTask_task = Gtk3::MenuItem->new(shift @mnemonicList);
+                $menuItem_startNewTask_task->signal_connect('activate' => sub {
+
+                    $self->winObj->visibleSession->pseudoCmd(
+                        'starttask ' . $task,
+                        $mode,
+                    );
+                });
+                $subMenu_startNewTask->append($menuItem_startNewTask_task);
+                # (Requires a visible session whose status is 'connected' or 'offline'; in addition,
+                #   some of these tasks must be unique)
+                $self->ivAdd('menuItemHash', $task . '_task_start', $menuItem_startNewTask_task);
+            }
+
+        my $menuItem_startNewTask = Gtk3::MenuItem->new('Start _new task');
+        $menuItem_startNewTask->set_submenu($subMenu_startNewTask);
+        $menuColumn_tasks->append($menuItem_startNewTask);
+        # (Requires a visible session whose status is 'connected' or 'offline')
+        $self->ivAdd('menuItemHash', 'start_new_task', $menuItem_startNewTask);
+
         $menuColumn_tasks->append(Gtk3::SeparatorMenuItem->new());  # Separator
 
             # 'Channels task' submenu
@@ -3151,152 +3186,6 @@
         #   Watch task)
         $self->ivAdd('menuItemHash', 'watch_task', $menuItem_watchTask);
 
-        $menuColumn_tasks->append(Gtk3::SeparatorMenuItem->new());  # Separator
-
-            # 'Other tasks' submenu
-            my $subMenu_otherTask = Gtk3::Menu->new();
-
-            my $menuItem_advanceTask_editTask = Gtk3::ImageMenuItem->new(
-                'Edit current Ad_vance task...',
-            );
-            my $menuImg_advanceTask_editTask = Gtk3::Image->new_from_stock('gtk-edit', 'menu');
-            $menuItem_advanceTask_editTask->set_image($menuImg_advanceTask_editTask);
-            $menuItem_advanceTask_editTask->signal_connect('activate' => sub {
-
-                my $session = $self->winObj->visibleSession;
-
-                # Open up a task 'edit' window to edit the task, with the 'main' window as the
-                #   parent
-                $self->winObj->createFreeWin(
-                    'Games::Axmud::EditWin::Task',
-                    $self->winObj,
-                    $session,
-                    'Edit ' . $session->advanceTask->prettyName . ' task',
-                    $session->advanceTask,
-                    FALSE,                          # Not temporary
-                    # Config
-                    'edit_flag' => FALSE,           # Some IVs for current tasks not editable
-                );
-            });
-            $subMenu_otherTask->append($menuItem_advanceTask_editTask);
-            # (Requires a visible session whose status is 'connected' or 'offline' and is running an
-            #   Advance task)
-            $self->ivAdd('menuItemHash', 'edit_advance_task', $menuItem_advanceTask_editTask);
-
-            my $menuItem_attackTask_editTask = Gtk3::ImageMenuItem->new(
-                'Edit current _Attack task...',
-            );
-            my $menuImg_attackTask_editTask = Gtk3::Image->new_from_stock('gtk-edit', 'menu');
-            $menuItem_attackTask_editTask->set_image($menuImg_attackTask_editTask);
-            $menuItem_attackTask_editTask->signal_connect('activate' => sub {
-
-                my $session = $self->winObj->visibleSession;
-
-                # Open up a task 'edit' window to edit the task, with the 'main' window as the
-                #   parent
-                $self->winObj->createFreeWin(
-                    'Games::Axmud::EditWin::Task',
-                    $self->winObj,
-                    $session,
-                    'Edit ' . $session->attackTask->prettyName . ' task',
-                    $session->attackTask,
-                    FALSE,                          # Not temporary
-                    # Config
-                    'edit_flag' => FALSE,           # Some IVs for current tasks not editable
-                );
-            });
-            $subMenu_otherTask->append($menuItem_attackTask_editTask);
-            # (Requires a visible session whose status is 'connected' or 'offline' and is running an
-            #   Attack task)
-            $self->ivAdd('menuItemHash', 'edit_attack_task', $menuItem_attackTask_editTask);
-
-            my $menuItem_connectTask_editTask = Gtk3::ImageMenuItem->new(
-                'Edit current _Connections task...',
-            );
-            my $menuImg_connectTask_editTask = Gtk3::Image->new_from_stock('gtk-edit', 'menu');
-            $menuItem_connectTask_editTask->set_image($menuImg_connectTask_editTask);
-            $menuItem_connectTask_editTask->signal_connect('activate' => sub {
-
-                my $session = $self->winObj->visibleSession;
-
-                # Open up a task 'edit' window to edit the task, with the 'main' window as the
-                #   parent
-                $self->winObj->createFreeWin(
-                    'Games::Axmud::EditWin::Task',
-                    $self->winObj,
-                    $session,
-                    'Edit ' . $session->connectionsTask->prettyName . ' task',
-                    $session->connectionsTask,
-                    FALSE,                          # Not temporary
-                    # Config
-                    'edit_flag' => FALSE,           # Some IVs for current tasks not editable
-                );
-            });
-            $subMenu_otherTask->append($menuItem_connectTask_editTask);
-            # (Requires a visible session whose status is 'connected' or 'offline' and is running a
-            #   Connections task)
-            $self->ivAdd('menuItemHash', 'edit_connections_task', $menuItem_connectTask_editTask);
-
-            my $menuItem_rawTokenTask_editTask = Gtk3::ImageMenuItem->new(
-                'Edit current Raw _Token task...',
-            );
-            my $menuImg_rawTokenTask_editTask = Gtk3::Image->new_from_stock('gtk-edit', 'menu');
-            $menuItem_rawTokenTask_editTask->set_image($menuImg_rawTokenTask_editTask);
-            $menuItem_rawTokenTask_editTask->signal_connect('activate' => sub {
-
-                my $session = $self->winObj->visibleSession;
-
-                # Open up a task 'edit' window to edit the task, with the 'main' window as the
-                #   parent
-                $self->winObj->createFreeWin(
-                    'Games::Axmud::EditWin::Task',
-                    $self->winObj,
-                    $session,
-                    'Edit ' . $session->rawTokenTask->prettyName . ' task',
-                    $session->rawTokenTask,
-                    FALSE,                          # Not temporary
-                    # Config
-                    'edit_flag' => FALSE,           # Some IVs for current tasks not editable
-                );
-            });
-            $subMenu_otherTask->append($menuItem_rawTokenTask_editTask);
-            # (Requires a visible session whose status is 'connected' or 'offline' and is running a
-            #   RawToken task)
-            $self->ivAdd('menuItemHash', 'edit_raw_token_task', $menuItem_rawTokenTask_editTask);
-
-            my $menuItem_systemTask_editTask = Gtk3::ImageMenuItem->new(
-                'Edit current _System task...',
-            );
-            my $menuImg_systemTask_editTask = Gtk3::Image->new_from_stock('gtk-edit', 'menu');
-            $menuItem_systemTask_editTask->set_image($menuImg_systemTask_editTask);
-            $menuItem_systemTask_editTask->signal_connect('activate' => sub {
-
-                my $session = $self->winObj->visibleSession;
-
-                # Open up a task 'edit' window to edit the task, with the 'main' window as the
-                #   parent
-                $self->winObj->createFreeWin(
-                    'Games::Axmud::EditWin::Task',
-                    $self->winObj,
-                    $session,
-                    'Edit ' . $session->systemTask->prettyName . ' task',
-                    $session->systemTask,
-                    FALSE,                          # Not temporary
-                    # Config
-                    'edit_flag' => FALSE,           # Some IVs for current tasks not editable
-                );
-            });
-            $subMenu_otherTask->append($menuItem_systemTask_editTask);
-            # (Requires a visible session whose status is 'connected' or 'offline' and is running a
-            #   System task)
-            $self->ivAdd('menuItemHash', 'edit_system_task', $menuItem_systemTask_editTask);
-
-        my $menuItem_otherTask = Gtk3::MenuItem->new('Other _built-in tasks');
-        $menuItem_otherTask->set_submenu($subMenu_otherTask);
-        $menuColumn_tasks->append($menuItem_otherTask);
-        # (Requires a visible session whose status is 'connected' or 'offline')
-        $self->ivAdd('menuItemHash', 'other_task', $menuItem_otherTask);
-
         # Setup complete
         return $menuColumn_tasks;
     }
@@ -3350,7 +3239,7 @@
         $menuItem_openViewer->set_image($menuImg_openViewer);
         $menuItem_openViewer->signal_connect('activate' => sub {
 
-            $self->winObj->visibleSession->pseudoCmd('openobjectviewer', $mode);
+            $self->winObj->visibleSession->pseudoCmd('opendataviewer', $mode);
         });
         $menuColumn_display->append($menuItem_openViewer);
         # (Requires a visible session whose status is 'connected' or 'offline')
@@ -4690,7 +4579,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -4947,22 +4836,11 @@
 
             if ($buttonName eq 'separator') {
 
-#                # Add a separator to the toolbar
-#                my $separator = Gtk3::SeparatorToolItem->new();
-#
-#                $self->toolbar->insert($separator, -1);
-#                push (@widgetList, $separator);
+                # Add a separator to the toolbar
+                my $separator = Gtk3::SeparatorToolItem->new();
 
-                # DEBUG
-                # Temporary fix for Gtk problems: on MSWin, don't show separators
-                if ($^O ne 'MSWin32') {
-
-                    # Add a separator to the toolbar
-                    my $separator = Gtk3::SeparatorToolItem->new();
-
-                    $self->toolbar->insert($separator, -1);
-                    push (@widgetList, $separator);
-                }
+                $self->toolbar->insert($separator, -1);
+                push (@widgetList, $separator);
 
             } else {
 
@@ -4996,9 +4874,9 @@
                 $toolButton_item->set_tooltip_text($buttonObj->descrip);
                 $toolButton_item->signal_connect('clicked' => sub {
 
-                    # The icons for ';connect', ';openaboutwindow -h' and ';stopsession' are
-                    #   sensitised even when there is no current session. Since we can't call
-                    #   ->doInstruct, process those commands directly
+                    # The icons for ';connect', ';openaboutwindow -h', ';stopsession' and
+                    #   ';stopclient' are sensitised even when there is no current session. Since we
+                    #   can't call ->doInstruct, process those commands directly
 
                     # Special case: prompt the user before stopping an active session (if the flag
                     #   is set)
@@ -5033,6 +4911,21 @@
                                     $self->winObj->pseudoCmdMode,
                                 );
                             }
+
+                        } else {
+
+                            # No sessions open, so terminate the client
+                            $axmud::CLIENT->stop();
+                        }
+
+                    } elsif ($buttonObj->instruct eq ';stopclient') {
+
+                        if ($self->winObj->visibleSession) {
+
+                            $self->winObj->visibleSession->pseudoCmd(
+                                'stopclient',
+                                $self->winObj->pseudoCmdMode,
+                            );
 
                         } else {
 
@@ -5262,7 +5155,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -6443,7 +6336,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -7611,9 +7504,10 @@
         foreach my $gaugeLevelObj (
             sort {$a->number <=> $b->number} ($self->ivValues('gaugeLevelHash'))
         ) {
+            # (Session-specific gauges typically only apply to the main window)
             if (
-                $self->winObj->visibleSession
-                && $self->winObj->visibleSession eq $gaugeLevelObj->session
+                ! $self->winObj->visibleSession
+                || $self->winObj->visibleSession eq $gaugeLevelObj->session
             ) {
                 push (
                     @drawList,
@@ -8065,7 +7959,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -8737,7 +8631,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -11025,7 +10919,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -11502,7 +11396,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 

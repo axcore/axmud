@@ -1,15 +1,15 @@
 Getexittype$ (number)
-        
+
    Synopsis:
       Returns the type of an exit in the automapper's current room
 
    Notes:
       'number' is the position of the exit in the room's ordered list of exits
          (the first exit is numbered 1).
-      The return value is one of the strings "incomplete", "uncertain", 
+      The return value is one of the strings "incomplete", "uncertain",
          "random", "one_way", "two_way", "retrace", "unallocated", "impassable"
-         or "mystery". 
-      If there is no current room or if the numbered exit doesn't exist, 
+         or "mystery".
+      If there is no current room or if the numbered exit doesn't exist,
          returns an empty string.
       To get the number of exits in the current room, see the Getroomexits ()
          function. The Getexitstatus$ () function also provides information

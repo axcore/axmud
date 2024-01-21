@@ -1,5 +1,5 @@
 sdy / setdictionary           Sets the current dictionary for this session
- 
+
    Format:
       ;sdy <name>
                Sets the current dictionary to <name>
@@ -16,19 +16,19 @@ sdy / setdictionary           Sets the current dictionary for this session
       This command sets the dictionary used in this session by the current
          world profile.
       If the dictionary <name> doesn't already exist, it is created.
-      If a dictionary called <name> already exists and <language> is specified, 
+      If a dictionary called <name> already exists and <language> is specified,
          an error message is displayed - the language of an existing dictionary
          can't be changed with this command (use ';setlanguage' instead).
 
       If you want to create multiple dictionaries using another language, use
          ';adddictionary <name> <new_language>', change the default settings for
-         that language, and then use ';clonedictionary' to create individual 
+         that language, and then use ';clonedictionary' to create individual
          dictionaries with the same language and initial settings.
-      Dictionary names must be no longer than 16 characters, contain only A-Z, 
-         a-z, underlines and 0-9 (not the first character) and not be one of 
+      Dictionary names must be no longer than 16 characters, contain only A-Z,
+         a-z, underlines and 0-9 (not the first character) and not be one of
          Axmud's reserved names (see the ';listreserved' command). The same
          restriction applies to the language. Non-Latin alphabets are
          acceptable.
- 
+
    User commands:
       sdy / setdict / setdictionary

@@ -1,12 +1,12 @@
 ia / interactall              Interacts with all target(s) in the current room
- 
+
    Format:
       ;ia                     Interacts with all PCs and NPCs
- 
+
    Notes:
       ';interactall' has the same effect as ';interact all' (or whatever the
          word for 'all' is in the current world).
       See also the help for ';interact'.
- 
+
    User commands:
       ia / intall / interactall

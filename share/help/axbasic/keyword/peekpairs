@@ -5,28 +5,28 @@ PEEKPAIRS ARRAY variable-name = axmud-object-property
       Fetches the number of key-value pairs in an Axmud internal hash property
 
    Notes:
-      PEEK gives Axbasic scripts access to most of Axmud's internal data (see 
+      PEEK gives Axbasic scripts access to most of Axmud's internal data (see
          the help for the PEEK statement for a full explanation).
-      PEEKPAIRS can only be used with hash properties such as 
-         "world.current.currencyHash". It cannot be used with a scalar property 
-         such as "world.current.name", a list property such as 
-         "world.current.doorPatternList" or a Perl object such as 
+      PEEKPAIRS can only be used with hash properties such as
+         "world.current.currencyHash". It cannot be used with a scalar property
+         such as "world.current.name", a list property such as
+         "world.current.doorPatternList" or a Perl object such as
          "world.current".
       'variable-name' is set to the number of key-value pairs in the hash
-         property. If the hash is empty, the size is 0. If 'variable-name' is a 
-         string variable (or a string array), a string value such as "3" is 
-         used.         
-                           
+         property. If the hash is empty, the size is 0. If 'variable-name' is a
+         string variable (or a string array), a string value such as "3" is
+         used.
+
    Examples:
-      ! Store the number of key-value pairs from a hash property in an Axbasic 
+      ! Store the number of key-value pairs from a hash property in an Axbasic
       ! scalar variable
       PEEKPAIRS size = "world.current.currencyHash"
 
-      ! Store the number of key-value pairs from a hash property in an Axbasic 
+      ! Store the number of key-value pairs from a hash property in an Axbasic
       ! global array
       PEEKNUMBER ARRAY sizes = "world.current.currencyHash"
- 
-      ! Store the number of key-value pairs from a hash property in an Axbasic 
-      ! local scalar variable 
+
+      ! Store the number of key-value pairs from a hash property in an Axbasic
+      ! local scalar variable
       DIM LOCAL size
       PEEKPAIRS size = "world.current.currencyHash"

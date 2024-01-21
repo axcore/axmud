@@ -7,7 +7,7 @@ td, th { border: 1px solid #c3c3c3; padding: 0 3px 0 3px; }
 table { border-collapse: collapse; }
 img { max-width: 100%; }
 </style>
-<meta name="generator" content="ReText 7.1.0">
+<meta name="generator" content="ReText 7.2.3">
 <title>ch17</title>
 <style type="text/css">
 </style>
@@ -972,6 +972,16 @@ S regex.email
      Regex matching valid email addresses (GA::Client-&gt;constEmailRegex)
 
 
+o room.map
+     Shortcut to the automapper's current room (GA::Session-&gt;mapObj-&gt;currentRoom)
+o room.last
+     Shortcut to the automapper's last known room (GA::Session-&gt;mapObj-&gt;lastKnownRoom)
+o room.ghost
+     Shortcut to the automapper's ghost room (GA::Session-&gt;mapObj-&gt;ghostRoom)
+o room.locator
+     Shortcut to the Locator task's room (GA::Session-&gt;locatorTask-&gt;roomObj)
+
+
 L script.init.list
      List of scripts that start in every session
         (GA::Client-&gt;initScriptOrderList)
@@ -1151,7 +1161,8 @@ F tts.enable.dialogue
      Convert 'dialogue' windows (GA::Client-&gt;ttsDialogueFlag)
 F tts.enable.task
      Convert (some) task window text (GA::Client-&gt;ttsTaskFlag)
-
+F tts.enable.verbose
+     Verbose TTS output (GA::Client-&gt;ttsVerboseFlag)
 
 F window.main.share
      Share 'main' windows (GA::Client-&gt;shareMainWinFlag)

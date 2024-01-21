@@ -1,6 +1,6 @@
 Getroomdescrip$ ()
 Getroomdescrip$ (string)
- 
+
    Synopsis:
       Returns the verbose description of the automapper's current room
 
@@ -9,7 +9,7 @@ Getroomdescrip$ (string)
       'string' is one of world model's recognised light statuses (the default
          light status is "day"). If 'string' is not specified, returns the
          verbose description matching the current light status.
-      If there is no current room or if the room doesn't have a verbose 
-         description stored that matches the light status, returns an empty 
+      If there is no current room or if the room doesn't have a verbose
+         description stored that matches the light status, returns an empty
          string.
       To get the current light status, see the Getlight$ () function.

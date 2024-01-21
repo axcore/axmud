@@ -1,5 +1,5 @@
 rsc / resetcounter            Resets the Status task's counters
- 
+
    Format:
       ;rsc                    Resets all the counters
       ;rsc -a                 Resets all the counters
@@ -10,9 +10,9 @@ rsc / resetcounter            Resets the Status task's counters
       ;rsc -m                 Resets the bank and purse counters
       ;rsc -b                 Resets the bank counter
       ;rsc -p                 Resets the purse counter
- 
+
    Notes:
       Multiple switches are allowed, e.g. ';rsc -f -x -q'
- 
+
    User commands:
       rsc / resetcounter

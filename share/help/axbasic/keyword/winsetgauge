@@ -1,0 +1,38 @@
+WINSETGAUGE expression , expression , expression
+
+   Synopsis:
+      Updates a task window gauge
+
+   Notes:
+      Updates a gauge that was added to the task window with a WINADDGAUGE or
+         WINADDCONGAUGE statement.
+      The first expression is the gauge's unique number. If the gauge doesn't
+         exist, the WINSETGAUGE statement is ignored, but the number isn't an
+         integer, 0 or above, you'll see an error message.
+      The second and third expressions should evaluate to numbers used to set
+         the length of the "full" and "empty" portions of the gauge. Any decimal
+         number is acceptable, even negative numbers. If these expressions don't
+         evaluate to a number, the gauge is blanked.
+      After a WINADDGAUGE statement, the first number is expected (but not
+         required) to be less than or equal to the second one. After an
+         WINADDCONGAUGE statement, the sum of the two numbers is expected (but
+         not required) to be constant, at least in the short term.
+
+   Requires:
+      If the script is not being run as a task, the SETGAUGE statement is
+         ignored (and no error message is generated). Execution continues with
+         the next statement.
+
+   Examples:
+      ! Character's health points are at 50%
+      WINADDGAUGE 1, "HP", "RED", "red", "WHITE"
+      WINSETGAUGE 1, 50, 100
+
+      ! Character's energy points are very low
+      WINADDGAUGE 2, "EP", "GREEN", "green", "black"
+      WINSETGAUGE 2, 0.017, 1
+
+      ! Show a gauge where the two numbers are added
+      ! Character has 900xp, and needs 100 more to level up
+      WINADDCONGAUGE 3, "XP", "MAGENTA", "magenta", "WHITE"
+      WINSETGAUGE 3, 900, 100

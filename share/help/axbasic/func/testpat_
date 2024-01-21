@@ -2,7 +2,7 @@ Testpat$ (regex)
 
    Synopsis:
       Checks the validity of a pattern (regular expression)
-         
+
    Notes:
       'regex' is a Perl regular expression like "orc", "^orc" or "^orc (.*)$".
          If it's a valid pattern, Testpat$ () returns an empty string. If

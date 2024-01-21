@@ -1,16 +1,16 @@
 Addlabel (string, x, y, z)
-        
+
    Synopsis:
       Adds a new label near the automapper's current room
 
    Notes:
-      'string' is the text to use in the label. The remaining three arguments 
-         are the coordinates of the gridblock, relative to the automapper's 
+      'string' is the text to use in the label. The remaining three arguments
+         are the coordinates of the gridblock, relative to the automapper's
          current room, at which the label will be drawn.
       If the operation is successful, the new label's number is returned. If
-         there is no current room, if 'string' is an empty string, if the 
+         there is no current room, if 'string' is an empty string, if the
          coordinates x, y and z are invalid or if the operation fails, 0 is
-         returned.    
+         returned.
 
    Examples:
       Addlabel ("text", 1, 2, 0)    >> Adds a label one block below and two

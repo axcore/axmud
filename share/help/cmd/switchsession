@@ -1,12 +1,12 @@
 sws / switchsession           Switches the current session
- 
+
    Format:
       ;sws                    Switches to the next session
       ;sws <number>           Switches to session <number>
       ;sws -c                 Switches to this session
       ;sws <world>            Switches to the first session using <world>
-      ;sws <world> <char>     Switches to the first session using <world>/<char> 
- 
+      ;sws <world> <char>     Switches to the first session using <world>/<char>
+
    Notes:
       The current session is the one that's visible in the 'main' window. If
          different sessions each have their own 'main' window, it's the session
@@ -15,14 +15,14 @@ sws / switchsession           Switches the current session
       The first session created is session <number> 0. Session numbers are not
          reused when you close a session, so even if there are two sessions
          running, the second one might not be session <number> 1.
-      The switch -c sets the session from which this command was processed as 
+      The switch -c sets the session from which this command was processed as
          the current session. The -c switch is most useful if you want to switch
          sessions from within an Axbasic script.
       <world> and <char> are world and character profiles, respectively. If you
          specify <world>, the first matching session becomes the current session
-         (sessions are checked in the order in which they were created.) If you 
-         specify <world> and <char>, the first session matching both profiles 
-         becomes the current session. 
+         (sessions are checked in the order in which they were created.) If you
+         specify <world> and <char>, the first session matching both profiles
+         becomes the current session.
 
    User commands:
       sws / swsession / switchsession

@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2022 A S Lewis
+# Copyright (C) 2011-2024 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -19,7 +19,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -128,7 +128,7 @@
             #   'l' identifies a Locator break; it waits for the Locator task to decide it's not
             #       expecting any more room descriptions (anything following the 'l' is ignored)
             # There are four initial characters for missions being used as login scripts:
-            #   'n' sends the current character profile's name (if set)
+            #   'n' sends the current character profile's nickname (if set)
             #   'w' sends the corresponding password (if known)
             #   'a' sends the corresponding account name (if known)
             #   'c' sends a combination of the three above; if the command contains '@name@', it is
@@ -369,7 +369,7 @@
         my ($self, $session, $singleFlag, $check) = @_;
 
         # Local variables
-        my ($count, $name, $pwd, $pwdFlag, $account);
+        my ($count, $name, $nickname, $pwd, $pwdFlag, $account);
 
         # Check for improper arguments
         if (! defined $session || defined $check) {
@@ -697,7 +697,7 @@
 
                     # Send the character's name as a normal world command (and don't add the
                     #   command to the mission's previous command list)
-                    $session->doInstruct($session->currentChar->name);
+                    $session->doInstruct($session->currentChar->nickname);
 
                 } elsif ($initChar eq 'w') {
 
@@ -724,7 +724,7 @@
                 # It's an instruction which should be modified to substitute @name@, @password@ and
                 #   @account@ for the current character's name and corresponding password and
                 #   account name; the modified instruction is then sent as an ordinary world
-                #   command (for missions being used as a login scrip)
+                #   command (for missions being used as a login script)
                 if ($session->loginFlag) {
 
                     $session->writeWarning(
@@ -765,7 +765,7 @@
                 );
 
                 # Substitute @name@
-                $cmd =~ s/\@name\@/$name/;
+                $cmd =~ s/\@name\@/$nickname/;
 
                 # Substitute @password@
                 if ($cmd =~ m/\@password\@/) {

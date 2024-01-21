@@ -1,19 +1,19 @@
 xcn / xconnect                Reconnects to the same world without saving files
- 
+
    Format:
       ;xcn                    Reconnects to the world
       ;xcn -o                 Reconnects to the world in 'offline' mode
- 
+
    Notes:
       This command reconnects to the same world, first terminating the current
          connection (if there is one) but without saving data files. The
          connection opens in a new 'main' window (or in a new tab in a shared
          'main' window).
-      If there is a current character profile, it is re-used. If that 
+      If there is a current character profile, it is re-used. If that
          character's password is known, automatic logins can take place.
       In offline mode, Axmud simulates a connection to the world; some client
          commands will be available, but others will not.
       Use the ';reconnect' command to save files before reconnecting.
- 
+
    User commands:
       xcn / xconnect

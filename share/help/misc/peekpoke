@@ -85,8 +85,8 @@ Peek / Poke list
         Current AARD102 status notification (GA::Session->aard102Status)
    S aard102.tick
         Time of last tick received via AARD102 (GA::Session->aard102TickTime)
-        
-   
+
+
    L atcp.list
         List of (all) ATCP packages received (from GA::Session->atcpDataHash)
    L atcp.list.PACKAGE
@@ -325,7 +325,7 @@ Peek / Poke list
    F debug.protocol.pueblo.comment
         Show Pueblo comments (GA::Client->debugPuebloCommentFlag)
    f debug.protocol.zmp
-        Show ZMP errors (GA::Client->debugZmpFlag)        
+        Show ZMP errors (GA::Client->debugZmpFlag)
    f debug.protocol.atcp
         Show ATCP data (GA::Client->debugAtcpFlag)
    f debug.protocol.gmcp
@@ -1008,6 +1008,19 @@ Peek / Poke list
         Regex matching valid email addresses (GA::Client->constEmailRegex)
 
 
+    o room.map
+         Shortcut to the automapper's current room
+            (GA::Session->mapObj->currentRoom)
+    o room.last
+         Shortcut to the automapper's last known room
+            (GA::Session->mapObj->lastKnownRoom)
+    o room.ghost
+         Shortcut to the automapper's ghost room
+            (GA::Session->mapObj->ghostRoom)
+    o room.locator
+         Shortcut to the Locator task's room (GA::Session->locatorTask->roomObj)
+
+
    L script.init.list
         List of scripts that start in every session
            (GA::Client->initScriptOrderList)
@@ -1308,7 +1321,7 @@ Peek / Poke list
         List of (all) ZMP packages created by plugins
    L zmp.list.PACKAGE[.SUBPACKAGE]
         Value of supported commands in the ZMP package
-           
+
 
    O zonemap.NAME
         Zonemap object called 'NAME' (from GA::Client->zonemapHash)

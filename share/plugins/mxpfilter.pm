@@ -26,7 +26,7 @@ package mxpfilter;
 #   3. The code which performs the conversion starts at line 101. Modify it in any way you please.
 
 use strict;
-use diagnostics;
+#use diagnostics;
 use warnings;
 
 use File::Copy qw(copy);

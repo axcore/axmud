@@ -1,7 +1,7 @@
 edc / editclient              Opens a preference window for the Axmud client
- 
+
    Format:
       ;edc                    Edits preferences for the client
-  
+
    User commands:
       edc / editclient

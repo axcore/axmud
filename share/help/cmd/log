@@ -1,24 +1,24 @@
 log / log                     Toggles logfile settings on/off
- 
+
    Format:
       ;log                    Shows current logfile settings
       ;log <switch>           Toggles a setting on or off
       ;log <logfile>          Starts/stops writing to a particular <logfile>
- 
+
    Notes:
-      Axmud writes logs to a number of different logfiles simultaneously. You 
+      Axmud writes logs to a number of different logfiles simultaneously. You
          can enable/disable writing to all logfiles at once, or you can enable/
          disable writing to individual logfiles, one at a time.
 
       If <switch> is specified, it can be any of the following:
          -l   Enables/disables all logging without affecting any other logfile
                  preferences (disabled by default)
-         -d   Toggles deletion of standard logfiles - those not associated with 
+         -d   Toggles deletion of standard logfiles - those not associated with
                  a particular world - when the client starts (off by default)
          -w   Toggles deletion of world logfiles - those associated with the
                  current world - when the session starts (off by default)
          -y   Toggles creation of new logfiles at the beginning of every day;
-                 otherwise new text is appended to existing files (on by 
+                 otherwise new text is appended to existing files (on by
                  default)
          -s   Toggles creation of new logfiles when the client starts; otherwise
                  new text is appended to existing files (on by default)
@@ -27,7 +27,7 @@ log / log                     Toggles logfile settings on/off
          -t   Toggles prefixing every line in logfiles with the current time (on
                  by default)
          -i   Toggles display of image filenames in logfiles
- 
+
       If <logfile> is specified, it toggles writing to that particular logfile.
       These <logfile>s record text generated in all sessions:
          main        - Logs everything displayed in the 'main' window
@@ -37,20 +37,20 @@ log / log                     Toggles logfile settings on/off
                      - Logs one kind of system error message
       These <logfile>s record text generated in the current session only:
          receive     - Logs all text received from the world
-         display     - Logs all text received from the world after it's been 
+         display     - Logs all text received from the world after it's been
                           modified by any matching rewriter triggers
          rooms       - Logs all room statements processed by the Locator task
          descrips    - Logs all room descriptions processed by the Locator task
-         contents    - Logs all room contents strings processed by the Locator 
+         contents    - Logs all room contents strings processed by the Locator
                           task
          attack      - Logs all attacks processed by the Attack task
          divert      - Logs all text processed by the Divert task
          chat        - Logs all conversations with chat contacts
-      These <logfile>s record text generated in the current session only, when 
+      These <logfile>s record text generated in the current session only, when
          the Status task detects certain events:
          sleep       - Logs lines leading up to the character falling asleep
          passout     - Logs lines leading up to the character passing out
          dead        - Logs lines leading up the character's death
- 
+
    User commands:
       log

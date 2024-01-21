@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2022 A S Lewis
+# Copyright (C) 2011-2024 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -19,7 +19,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
     # Include module here, as well as in axmud.pl, so that .../t/00-compile.t won't fail
@@ -790,6 +790,12 @@
             '# \'Free\' window default size',
                 $client->customFreeWinWidth,
                 $client->customFreeWinHeight,
+            '# \'Config\' windows have visible index',
+                $self->convert($client->configWinIndexFlag),
+            '# \'Config\' window indexes are simplified',
+                $self->convert($client->configWinSimplifyFlag),
+            '# Size of \'config\' window index',
+                $client->customConfigWinIndexWidth,
             '# World command colour',
                 $client->customInsertCmdColour,
             '# System message colour',
@@ -822,6 +828,8 @@
                 $client->customControlsTopSize,
             '# Custom window controls bottom size',
                 $client->customControlsBottomSize,
+            '# On MS Windows, tweak window size/position to compensate for unresolved issues',
+                $client->mswinWinPosnTweakFlag,
             '# Sessions share a \'main\' window',
                 $self->convert($client->shareMainWinFlag),
             '# (The setting to use when ' . $axmud::SCRIPT . ' next starts)',
@@ -983,8 +991,12 @@
                 $self->convert($client->ttsDialogueFlag),
             '# Use TTS for task windows',
                 $self->convert($client->ttsTaskFlag),
+            '# TTS output is verbose',
+                $self->convert($client->ttsVerboseFlag),
             '# Port for Festival server',
                 $client->ttsFestivalServerPort,
+            '# One-time blind mode introduction message has been shown',
+                $client->blindHelpMsgShownFlag,
             '@@@ eos',
         );
 
@@ -1596,6 +1608,18 @@
             $failFlag = $self->readValue($failFlag, \%dataHash, 'custom_free_win_width');
             $failFlag = $self->readValue($failFlag, \%dataHash, 'custom_free_win_height');
         }
+        if ($self->scriptConvertVersion >= 1_003_118) {
+
+            $failFlag = $self->readFlag($failFlag, \%dataHash, 'config_win_index_flag');
+        }
+        if ($self->scriptConvertVersion >= 1_003_135) {
+
+            $failFlag = $self->readFlag($failFlag, \%dataHash, 'config_win_simplify_flag');
+        }
+        if ($self->scriptConvertVersion >= 1_003_134) {
+
+            $failFlag = $self->readValue($failFlag, \%dataHash, 'custom_config_win_index_width');
+        }
         $failFlag = $self->readValue($failFlag, \%dataHash, 'custom_insert_cmd_colour');
         $failFlag = $self->readValue($failFlag, \%dataHash, 'custom_show_system_text_colour');
         $failFlag = $self->readValue($failFlag, \%dataHash, 'custom_show_error_colour');
@@ -1623,6 +1647,10 @@
         $failFlag = $self->readValueOrUndef($failFlag, \%dataHash, 'custom_controls_right_size');
         $failFlag = $self->readValueOrUndef($failFlag, \%dataHash, 'custom_controls_top_size');
         $failFlag = $self->readValueOrUndef($failFlag, \%dataHash, 'custom_controls_bottom_size');
+        if ($self->scriptConvertVersion >= 1_003_157) {
+
+            $failFlag = $self->readFlag($failFlag, \%dataHash, 'mswin_win_posn_tweak_flag');
+        }
         if ($self->scriptConvertVersion < 1_000_800) {
 
             $failFlag = $self->readFlag($failFlag, \%dataHash, 'discard_me');
@@ -1740,10 +1768,18 @@
             $failFlag = $self->readFlag($failFlag, \%dataHash, 'tts_world_cmd_flag');
             $failFlag = $self->readFlag($failFlag, \%dataHash, 'tts_dialogue_flag');
             $failFlag = $self->readFlag($failFlag, \%dataHash, 'tts_task_flag');
+            if ($self->scriptConvertVersion >= 1_003_105) {
+
+                $failFlag = $self->readFlag($failFlag, \%dataHash, 'tts_verbose_flag');
+            }
             $failFlag = $self->readValue($failFlag, \%dataHash, 'tts_festival_server_port');
             if ($self->scriptConvertVersion < 1_002_185) {
 
                 $failFlag = $self->readFlag($failFlag, \%dataHash, 'discard_me');
+            }
+            if ($self->scriptConvertVersion >= 1_003_110) {
+
+                $failFlag = $self->readFlag($failFlag, \%dataHash, 'blind_help_msg_shown_flag');
             }
             $failFlag = $self->readEndOfSection($failFlag, $fileHandle);
         }
@@ -2273,6 +2309,22 @@
             $client->ivPoke('customFreeWinHeight', $dataHash{'custom_free_win_height'});
         }
 
+        if ($self->scriptConvertVersion >= 1_003_118) {
+
+            $client->ivPoke('configWinIndexFlag', $dataHash{'config_win_index_flag'});
+        }
+        if ($self->scriptConvertVersion >= 1_003_135) {
+
+            $client->ivPoke('configWinSimplifyFlag', $dataHash{'config_win_simplify_flag'});
+        }
+        if ($self->scriptConvertVersion >= 1_003_134) {
+
+            $client->ivPoke(
+                'customConfigWinIndexWidth',
+                $dataHash{'custom_config_win_index_width'},
+            );
+        }
+
         $client->ivPoke('customInsertCmdColour', $dataHash{'custom_insert_cmd_colour'});
         $client->ivPoke('customShowSystemTextColour', $dataHash{'custom_show_system_text_colour'});
         $client->ivPoke('customShowErrorColour', $dataHash{'custom_show_error_colour'});
@@ -2295,6 +2347,10 @@
         $client->ivPoke('customControlsRightSize', $dataHash{'custom_controls_right_size'});
         $client->ivPoke('customControlsTopSize', $dataHash{'custom_controls_top_size'});
         $client->ivPoke('customControlsBottomSize', $dataHash{'custom_controls_bottom_size'});
+        if ($self->scriptConvertVersion >= 1_003_157) {
+
+            $client->ivPoke('mswinWinPosnTweakFlag', $dataHash{'mswin_win_posn_tweak_flag'});
+        }
         if ($self->scriptConvertVersion >= 1_000_800) {
 
             $client->ivPoke('shareMainWinFlag', $dataHash{'share_main_win_flag'});
@@ -2419,11 +2475,19 @@
             $client->ivPoke('ttsWorldCmdFlag', $dataHash{'tts_world_cmd_flag'});
             $client->ivPoke('ttsDialogueFlag', $dataHash{'tts_dialogue_flag'});
             $client->ivPoke('ttsTaskFlag', $dataHash{'tts_task_flag'});
+            if ($self->scriptConvertVersion >= 1_003_105) {
+
+                $client->ivPoke('ttsVerboseFlag', $dataHash{'tts_verbose_flag'});
+            }
             # (Prefer an 'undef' value over an empty string)
             if ($dataHash{'tts_festival_server_port'} eq '') {
                 $client->ivUndef('ttsFestivalServerPort');
             } else {
                 $client->ivPoke('ttsFestivalServerPort', $dataHash{'tts_festival_server_port'});
+            }
+            if ($self->scriptConvertVersion >= 1_003_110) {
+
+                $client->ivPoke('blindHelpMsgShownFlag', $dataHash{'blind_help_msg_shown_flag'});
             }
         }
 
@@ -3217,7 +3281,7 @@
         #   directory
         # There's a (small) possibility that two sessions might saving their world model at the same
         #   time, in which case, this save operation fails
-        $tempDir = $dir . '/temp/';
+        $tempDir = $dir . '/temp/split';
         if (-d $tempDir || ! mkdir ($tempDir, 0755)) {
 
             return undef;
@@ -3368,7 +3432,7 @@
         }
 
         # Save the 'main' file
-        $mainSavePath = $tempDir . 'worldmodel.axm';
+        $mainSavePath = $tempDir . '/worldmodel.axm';
         eval { Storable::lock_nstore(\%mainSaveHash, $mainSavePath) };
         if ($@) {
 
@@ -3461,7 +3525,7 @@
 
             foreach my $file (@fileList) {
 
-                File::Copy::move($tempDir . $file, $dir . '/' . $file);
+                File::Copy::move($tempDir . '/' . $file, $dir . '/' . $file);
             }
         }
 
@@ -7350,6 +7414,19 @@
                 }
             }
 
+            if ($version < 1_003_141 && $self->session) {
+
+                # Update character profiles with a new IV
+                foreach my $profObj ($self->session->ivValues('profHash')) {
+
+                    if ($profObj->{category} eq 'char' && ! exists $profObj->{nickname}) {
+
+                        $profObj->{nickname} = undef;
+                        $profObj->ivPoke('nickname', $profObj->name);
+                    }
+                }
+            }
+
         ### worldmodel ###########################################################################
 
         } elsif ($self->fileType eq 'worldmodel') {
@@ -9575,7 +9652,6 @@
                         $regionmapObj->ivPoke('obscuredExitRedrawFlag', FALSE);
                     }
                 }
-
             }
 
             if ($version < 1_002_150) {
@@ -9649,6 +9725,19 @@
                     $wmObj->ivPoke('roomInteriorXOffset', 0);
                     $wmObj->{roomInteriorYOffset} = undef;
                     $wmObj->ivPoke('roomInteriorYOffset', 0);
+                }
+            }
+
+            if ($version < 1_003_080) {
+
+                # This version adds new IVs to the all regions
+                foreach my $regionObj ($wmObj->ivValues('regionModelHash')) {
+
+                    if (! exists $regionObj->{finishedFlag}) {
+
+                        $regionObj->{finishedFlag} = undef;
+                        $regionObj->ivPoke('finishedFlag', FALSE);
+                    }
                 }
             }
         }
@@ -11264,6 +11353,24 @@
                     }
                 }
             }
+
+            if ($version < 1_003_095 && $self->session) {
+
+                # This version updated the Countdown task IVs. Update all initial/custom tasks
+                foreach my $taskObj ($self->compileTasks('countdown_task')) {
+
+                    if (! exists $taskObj->{textLen}) {
+
+                        delete $taskObj->{textLen};
+                        delete $taskObj->{labelTableObj};
+
+                        $taskObj->{textViewTableObj} = undef;
+                        $taskObj->ivUndef('textViewTableObj');
+                        $taskObj->{previousColour} = undef;
+                        $taskObj->ivUndef('previousColour');
+                    }
+                }
+            }
         }
 
         ### scripts ###############################################################################
@@ -11758,40 +11865,6 @@
                 $axmud::CLIENT->ivPoke('toolbarList', @buttonList);
             }
 
-            if ($version < 1_001_028) {
-
-                my (
-                    $buttonObj,
-                    @buttonList,
-                );
-
-                # This version renames one of the toolbar buttons, as the window it opens has also
-                #   been renamed
-                $buttonObj = $axmud::CLIENT->ivShow('toolbarHash', 'open_gui');
-                if ($buttonObj) {
-
-                    $buttonObj->ivPoke('name', 'open_viewer');
-
-                    $buttonObj->ivPoke('descrip', 'Open object viewer window');
-                    $buttonObj->ivPoke('iconPath', 'watermark_table.png');
-                    $buttonObj->ivPoke('instruct', ';openobjectviewer');
-
-                    $axmud::CLIENT->ivDelete('toolbarHash', 'open_gui');
-                    $axmud::CLIENT->ivAdd('toolbarHash', 'open_viewer', $buttonObj);
-
-                    foreach my $name ($axmud::CLIENT->toolbarList) {
-
-                        if ($name eq 'open_gui') {
-                            push (@buttonList, 'open_viewer');
-                        } else {
-                            push (@buttonList, $name);
-                        }
-                    }
-
-                    $axmud::CLIENT->ivPoke('toolbarList', @buttonList);
-                }
-            }
-
             if ($version < 1_001_507) {
 
                 my (
@@ -11822,6 +11895,39 @@
                 $axmud::CLIENT->ivPoke('toolbarList', @newList);
             }
 
+            if ($version < 1_003_137) {
+
+                my (
+                    $buttonObj,
+                    @buttonList,
+                );
+
+                # This version renames one of the toolbar buttons, as the window it opens has also
+                #   been renamed
+                $buttonObj = $axmud::CLIENT->ivShow('toolbarHash', 'open_gui');
+                if ($buttonObj) {
+
+                    $buttonObj->ivPoke('name', 'open_viewer');
+
+                    $buttonObj->ivPoke('descrip', 'Open data viewer window');
+                    $buttonObj->ivPoke('iconPath', 'watermark_table.png');
+                    $buttonObj->ivPoke('instruct', ';opendataviewer');
+
+                    $axmud::CLIENT->ivDelete('toolbarHash', 'open_gui');
+                    $axmud::CLIENT->ivAdd('toolbarHash', 'open_viewer', $buttonObj);
+
+                    foreach my $name ($axmud::CLIENT->toolbarList) {
+
+                        if ($name eq 'open_gui') {
+                            push (@buttonList, 'open_viewer');
+                        } else {
+                            push (@buttonList, $name);
+                        }
+                    }
+
+                    $axmud::CLIENT->ivPoke('toolbarList', @buttonList);
+                }
+            }
 
         ### usercmds ##############################################################################
 

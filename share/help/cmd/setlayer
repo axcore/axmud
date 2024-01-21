@@ -1,31 +1,31 @@
 layer / setlayer              Sets the session's workspace grid layer
- 
+
    Format:
       ;layer <number>         Sets the current layer to <number>
       ;layer                  Displays current layers
- 
+
    Notes:
       The workspace grid is an invisible grid, spanning the whole available
-         workspace, on which Axmud tries to arrange its windows so that they 
-         don't overlap (as far as possible). The grid is divided into zones 
-         within which one or more windows are arranged. The 'blueprint' for 
-         zones on a desktop is called a 'zonemap'. 
-      Only 'grid' windows (including the 'main' window, task windows and the 
+         workspace, on which Axmud tries to arrange its windows so that they
+         don't overlap (as far as possible). The grid is divided into zones
+         within which one or more windows are arranged. The 'blueprint' for
+         zones on a desktop is called a 'zonemap'.
+      Only 'grid' windows (including the 'main' window, task windows and the
          automapper window) are arranged on the workspace grid. Temporary
-         windows, including the object viewer window and all edit, preference,
+         windows, including the data viewer window and all edit, preference,
          wizard and dialogue windows, are not affected.
       The grid is divided into zones. When a window is created in a zone that
-         doesn't have room for it, the window is moved up or down into a new 
+         doesn't have room for it, the window is moved up or down into a new
          'layer'. All windows in the current layer are visible, and some windows
          in lower layers may be visible, if there are no windows above them. All
          windows above the current layer are minimised from the desktop so that
          they're not visible at all.
 
-      If <number> is specified, this command sets the current layer in all 
+      If <number> is specified, this command sets the current layer in all
          workspace grids used by this session. The default layer is the lowest
-         one, layer 0. 
-      To move up or down a layer at a time, use the ';layerup' and 
+         one, layer 0.
+      To move up or down a layer at a time, use the ';layerup' and
          ';layerdown' commands.
- 
+
    User commands:
       layer / setlayer

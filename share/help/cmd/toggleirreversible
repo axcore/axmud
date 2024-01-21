@@ -1,9 +1,9 @@
 tir / toggleirreversible      Toggles irreversible icons in 'edit' windows
- 
+
    Format:
-      ;tir                    Toggles irreversible icons      
+      ;tir                    Toggles irreversible icons
       ;tir -t                 Tests irreversible icons
-      
+
    Notes:
       When you make changes to Axmud's data using an 'edit' window, the changes
          are not normally applied until you click 'Save' or 'OK' at the bottom
@@ -18,6 +18,6 @@ tir / toggleirreversible      Toggles irreversible icons in 'edit' windows
          and icons in the same button. A 'dialogue' window appears; if you can
          see the purple icon, it's safe to enable that icon in all 'edit'
          windows.
-      
+
    User commands:
       tir / toggleir / toggleirreversible

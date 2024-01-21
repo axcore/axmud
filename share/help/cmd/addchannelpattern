@@ -10,7 +10,7 @@ achp / addchannelpattern      Adds a Channels/Divert task pattern
 
       ;achp -e <pattern>
                Adds an exception pattern
- 
+
    Notes:
       The Channels and Divert tasks intercept text received from the world and
          divert that text into their own task window. Sometimes the text is
@@ -19,14 +19,14 @@ achp / addchannelpattern      Adds a Channels/Divert task pattern
       The world profile stores a list of patterns. When a line of text which
          matches one of those patterns is received, it is diverted to the task
          window.
-         
-      Each pattern is also assigned a channel.      
+
+      Each pattern is also assigned a channel.
       In the Channels task window, each channel has its own tab. You might have
          a 'tell' channel for tell messages like 'Gandalf tells you...' and a
          'social' channel for lines like 'Bilbo shouts, I'm leaving now!'.
       You can use the task's 'edit' window to set which, if any, tabs should be
          opened automatically when the task starts.
-         
+
       In the Divert task window there is a single tab. The window's background
          colour briefly changes when text is diverted, indicating which channel
          the pattern is assigned to.
@@ -47,6 +47,6 @@ achp / addchannelpattern      Adds a Channels/Divert task pattern
          length. <pattern> is a Perl regular expression.
       If either <channel> or <pattern> contain spaces, they should be enclosed
          within diamond brackets <...>
- 
+
    User commands:
       achp / addchan / addchannel / addchannelpattern

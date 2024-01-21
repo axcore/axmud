@@ -1,19 +1,19 @@
 mnes / mnes                   Manages the MUD NEW-ENVIRON Standard (MNES)
- 
+
    Format:
       ;mnes                   Shows MNES settings
       ;mnes -s                Enables/disables sending user's IP address
- 
+
    Notes:
       The MUD NEW-ENVIRON Standard is an extension of the NEW-ENVIRON protocol
-         which sends more information about the client to the world. 
+         which sends more information about the client to the world.
       Most of this information is also sent by other protocols, but there is one
-         important exception: MNES can send the user's real IP address. 
+         important exception: MNES can send the user's real IP address.
       The intention is to allow MUD administrators to ban a misbehaving user's
          real IP address, rather than a whole range of proxies they may be
          using. Nevertheless, Axmud hides your real IP address by default.
-      You can use this command to allow MNES to send your real IP address, if 
+      You can use this command to allow MNES to send your real IP address, if
          that's what you want.
-         
+
    User commands:
       mnes

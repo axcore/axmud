@@ -4,8 +4,8 @@ SLEEP expression
       Pauses execution of the Axbasic script
 
    Notes:
-      When the Axbasic script is being run from within an Axmud task, execution 
-         can be suspended with statements such as PAUSE, SLEEP, BREAK and 
+      When the Axbasic script is being run from within an Axmud task, execution
+         can be suspended with statements such as PAUSE, SLEEP, BREAK and
          WAITTRIG.
       SLEEP causes execution of the script to halt for the specified number of
          seconds. Execution resumes when the parent task unpauses itself.
@@ -16,7 +16,7 @@ SLEEP expression
       If the script is not being run as a task, the SLEEP statement is ignored
          (and no error message is generated). Execution continues with the next
          statement.
-         
+
    Examples:
       SEND "drop treasure"
       SLEEP 3

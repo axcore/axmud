@@ -1,8 +1,8 @@
 nmn / nudgemission            Advances the current mission by one step
- 
+
    Format:
       ;nmn                    Continues the mission
- 
+
    Notes:
       Continues the current mission, one command at a time, until a break is
          reached or the mission is completed.
@@ -10,6 +10,6 @@ nmn / nudgemission            Advances the current mission by one step
          sends commands to the world  until a break or the end of the mission is
          reached.
       See the help for ';startmission' for more information about missions.
- 
+
    User commands:
       nmn / nmission / nudgemission

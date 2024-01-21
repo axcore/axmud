@@ -1,13 +1,13 @@
 ug / unsetguild               Unsets the current guild
- 
+
    Format:
       ;ug                     Unsets the current guild profile
- 
+
    Notes:
       After using this command, there will be no current guild profile. All
          interfaces used by the guild will become unavailable. (They will be
          restored the next time this guild is made current.)
       You can select the next current guild with the ';setguild' command.
- 
+
    User commands:
       ug / unsetguild

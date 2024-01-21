@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2022 A S Lewis
+# Copyright (C) 2011-2024 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # Lesser Public License as published by the Free Software Foundation, either version 3 of the
@@ -18,7 +18,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Fcntl qw(SEEK_SET SEEK_END);
     use File::Basename;
@@ -72,7 +72,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -194,7 +194,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -875,7 +875,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -954,7 +954,9 @@
             'upper', 'waitactive', 'waitalias', 'waitalive', 'waitarrive', 'waitdead', 'waitep',
             'waitgp', 'waithook', 'waithp', 'waitmacro', 'waitmp', 'waitnextxp', 'waitnotactive',
             'waitpassout', 'waitscript', 'waitsleep', 'waitsp', 'waittask', 'waittimer',
-            'waittotalxp', 'waittrig', 'waitxp', 'warning', 'while', 'write', 'writewin',
+            'waittotalxp', 'waittrig', 'waitxp', 'warning', 'while', 'winaddcongauge',
+            'winaddconstatus', 'winaddgauge', 'winaddstatus', 'windelgauge', 'windelstatus',
+            'winsetgauge', 'winsetstatus', 'write', 'writewin',
         );
 
         foreach my $keyword (@keywordList) {
@@ -1104,6 +1106,14 @@
                 'addconstatus'          => 'addstatus',
                 'elseif'                => 'else',
                 'sleep'                 => 'pause',
+                'winaddcongauge'        => 'addgauge',
+                'winaddconstatus'       => 'addstatus',
+                'winaddgauge'           => 'addgauge',
+                'winaddstatus'          => 'addstatus',
+                'windelgauge'           => 'delgauge',
+                'windelstatus'          => 'delstatus',
+                'winsetgauge'           => 'setgauge',
+                'winsetstatus'          => 'setstatus',
             },
             # A list of statements that interact directly with Axmud
             clientKeywordList           => [
@@ -1123,8 +1133,9 @@
                 'speed', 'titlewin', 'unflashwin', 'waitactive', 'waitalias', 'waitalive',
                 'waitarrive', 'waitdead', 'waitep', 'waitgp', 'waithook', 'waithp', 'waitmacro',
                 'waitmp', 'waitnextxp', 'waitpassout', 'waitscript', 'waitsleep', 'waitsp',
-                'waittask', 'waittimer', 'waittotalxp', 'waittrig', 'waitxp', 'warning', 'write',
-                'writewin',
+                'waittask', 'waittimer', 'waittotalxp', 'waittrig', 'waitxp', 'warning',
+                'winaddcongauge', 'winaddconstatus', 'winaddgauge', 'winaddstatus', 'windelgauge',
+                'windelstatus', 'winsetgauge', 'winsetstatus', 'write', 'writewin',
             ],
             # A list of keywords that are ignored when the Axbasic script isn't being run from
             #   within a task
@@ -1135,7 +1146,9 @@
                 'titlewin', 'unflashwin', 'waitactive', 'waitalias', 'waitalive', 'waitarrive',
                 'waitdead', 'waitep', 'waitgp', 'waithook', 'waithp', 'waitmacro',  'waitmp',
                 'waitnextxp', 'waitnotactive', 'waitpassout', 'waitscript', 'waitsleep', 'waitsp',
-                'waittask', 'waittimer', 'waittotalxp', 'waittrig', 'waitxp', 'writewin',
+                'waittask', 'waittimer', 'waittotalxp', 'waittrig', 'waitxp', 'winaddcongauge',
+                'winaddconstatus', 'winaddgauge', 'winaddstatus', 'windelgauge', 'windelstatus',
+                'winsetgauge', 'winsetstatus', 'writewin',
             ],
 
             # A list of logical operators ('and', 'or', 'not')
@@ -1381,15 +1394,21 @@
                 'trim$'                 => 'S',
                 'ucase$'                => 'S',
                 # Axmud-dependent functions (returning a numeric value)
+                'addexit'               => 'NS;S',
                 'addfirstroom'          => '',
                 'addlabel'              => 'SNNN',
                 'addregion'             => 'S',
                 'addroom'               => 'NNN',
                 'addtempregion'         => ';S',
+                'addtwinexit'           => 'N',
                 'closemap'              => '',
+                'connectexit'           => 'NN',
                 'counttask'             => 'S',
+                'delexit'               => 'N',
                 'delregion'             => 'S',
+                'delroom'               => 'N',
                 'deltempregions'        => '',
+                'disconnectexit'        => 'N',
                 'getexitdest'           => 'N',
                 'getexitnum'            => 'N',
                 'getexittwin'           => 'N',
@@ -1406,13 +1425,22 @@
                 'ifacenum'              => '',
                 'ifacestrings'          => '',
                 'ifacetime'             => '',
+                'isexit'                => 'N',
+                'isfinished'            => 'S',
+                'ishiddenexit'          => 'N',
+                'isregion'              => 'S',
+                'isroom'                => 'N',
                 'isscript'              => '',
                 'ismap'                 => '',
                 'istask'                => '',
+                'istempregion'          => 'S',
                 'iswin'                 => '',
                 'openmap'               => '',
+                'sethiddenexit'         => 'N',
                 'setlight'              => 'S',
                 'setmapmode'            => 'S',
+                'setornament'           => 'N;S',
+                'setrandomexit'         => 'N;S',
                 'setregion'             => 'S',
                 'setregionnum'          => 'N',
                 'setroomnum'            => ';N',
@@ -1433,6 +1461,8 @@
                 'getobject$'            => 'N',
                 'getobjectnoun$'        => 'N',
                 'getobjecttype$'        => 'N',
+                'getornament$'          => 'N',
+                'getrandomexit$'        => 'N',
                 'getregion$'            => '',
                 'getroomdescrip$'       => ';S',
                 'getroomguild$'         => '',
@@ -3583,7 +3613,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -3794,7 +3824,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -3907,7 +3937,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -4354,7 +4384,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -4590,7 +4620,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 

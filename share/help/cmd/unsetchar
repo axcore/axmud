@@ -1,8 +1,8 @@
 uch / unsetchar               Unsets the current character
- 
+
    Format:
       ;uch                    Unsets the current character profile
- 
+
    Notes:
       After using this command, there will be no current character profile. All
          interfaces used by the character will become unavailable. (They will be

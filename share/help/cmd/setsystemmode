@@ -1,9 +1,9 @@
 ssm / setsystemmode           Starts or configures the System task
- 
+
    Format:
       ;ssm                    Starts the task or displays current task modes
       ;ssm <switches>         Starts the task and/or modifies task modes
- 
+
    Notes:
       The System task diverts (or copies) system messages into a separate task
          window.
@@ -15,13 +15,13 @@ ssm / setsystemmode           Starts or configures the System task
          display the message in the 'main' window only, or in the task window
          only, or in both (the default mode). When the task isn't running,
          system messages are only displayed in the 'main' window.
-         
+
       If no <switches> are specified, the current System task's modes are
          listed; but if the task is not running, it is started using its default
          modes instead.
       If <switches> are specified, the current task's modes are modified; but if
          the task is not running, it is started using the specified mode(s).
-         
+
       <switches> can specify one or more types of system message:
          -s   System text messages
          -e   Error messages
@@ -31,9 +31,9 @@ ssm / setsystemmode           Starts or configures the System task
          -a   All system messages
       <switches>, if specified at all, must also include exactly one mode
          setting:
-         -m   the system message(s) are displayed in 'main' window only (what 
+         -m   the system message(s) are displayed in 'main' window only (what
                  happens when the System task is not running)
-         -b   the system message(s) are displayed in both the 'main' and task 
+         -b   the system message(s) are displayed in both the 'main' and task
                  windows (the default mode, when the System task is running)
          -t   the system message(s) are displayed in the task window only
       You can specify several types of system message, but only one mode, e.g.

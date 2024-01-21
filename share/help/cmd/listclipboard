@@ -1,0 +1,16 @@
+lcb / listclipboard           Lists the contents of the interface clipboard
+
+   Format:
+      ;lcb <switches>         Lists the clipboard
+
+   Notes:
+      Axmud interfaces are triggers, aliases, macros, timers and hooks.
+      Interfaces can be exported and imported between profiles (for example,
+         between two different world profiles).
+      When exporting (for example, using ';exporttrigger', the interfaces are
+         stored temporarily in Axmud's own interface clipboard. This command
+         displays the contents of the clipboard.
+      See also the help for ';clearclipboard'.
+
+   User commands:
+      lcb / listclipboard

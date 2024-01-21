@@ -1,0 +1,32 @@
+Setornament (number)
+Setornament (number, string)
+
+   Synopsis:
+      Sets an exit's ornament
+
+   Notes:
+      Exit ornaments give more information about an exit, and are drawn in a
+         different way by the automapper.
+      This function adds or removes an exit ornament from an exit.
+
+      'number' is the number of the exit in the exit model.
+
+      'string', if specified, is the type of ornament. Only the following
+         ornaments can be set with this function.
+      "break" is an exit such as a locked door, which can be broken down by your
+         character (perhaps using a crowbar or some such tool).
+      "pick" is an exit such as a locked door, which must be picked by your
+         character (perhaps using a lockpick).
+      "open" is an exit such as a door, which can be opened or closed.
+      "lock" is an exit such as a door, which can be locked or unlocked (as well
+         as being opened or closed).
+      "impass" is an impassable exit; it exists in the world, but the character
+         can never actually travel through it.
+      "mystery" is an exit whose destination the user doesn't know, but which
+         might not be impassable in certain situations.
+
+      If you don't specify 'string' at all, then the exit ornament is removed.
+      If this exit is one half of a pair of twin exits (such as a two-way exit),
+         then this function acts on both of them simultaneously.
+      Returns 1 on success, 0 on failure (including when you specify an invalid
+         'string').

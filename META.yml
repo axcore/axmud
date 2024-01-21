@@ -9,7 +9,7 @@ configure_requires:
   File::ShareDir::Install: '0'
   Path::Tiny: '0'
 dynamic_config: 1
-generated_by: 'ExtUtils::MakeMaker version 7.34, CPAN::Meta::Converter version 2.150010'
+generated_by: 'ExtUtils::MakeMaker version 7.62, CPAN::Meta::Converter version 2.150010'
 license: gpl
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
@@ -41,7 +41,6 @@ requires:
   Gtk3: '0'
   HTTP::Tiny: '0'
   IO::Socket::INET: '0'
-  IO::Socket::INET6: '0'
   IPC::Run: '0'
   JSON: '0'
   Math::Round: '0'
@@ -62,5 +61,5 @@ resources:
   bugtracker: https://github.com/axcore/axmud/issues
   homepage: https://axmud.sourceforge.io/
   repository: https://github.com/axcore/axmud.git
-version: v1.3.029
+version: v2.0.0
 x_serialization_backend: 'CPAN::Meta::YAML version 0.018'

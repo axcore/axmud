@@ -1,19 +1,19 @@
 ewt / editwindowtable         Opens an 'edit' window for a table object
- 
+
    Format:
-      ;ewt <window> <table>   Opens an 'edit' window 
- 
+      ;ewt <window> <table>   Opens an 'edit' window
+
    Notes:
-      Winmaps are a plan for arranging the layout of 'internal' windows 
-         (consisting of all 'main' windows, 'protocol' windows such as those 
+      Winmaps are a plan for arranging the layout of 'internal' windows
+         (consisting of all 'main' windows, 'protocol' windows such as those
          created by MXP, and 'custom' windows such as task windows; see the help
          for ';addwinmap' for more details).
       The winmap consists of two parts: a list of strip objects, and a list of
-         table objects (use the ';listwindow' command to get a list of 'grid' 
+         table objects (use the ';listwindow' command to get a list of 'grid'
          window numbers.
 
-      This command opens an 'edit' window for table object number <table> in 
+      This command opens an 'edit' window for table object number <table> in
          'grid' window number <window>.
- 
+
    User commands:
       ewt / edittable / editwindowtable

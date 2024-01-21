@@ -1,10 +1,10 @@
 lmn / listmission             Lists all missions
- 
+
    Format:
       ;lmn                    Lists missions
- 
+
    Notes:
       See the help for ';startmission' for more information about missions.
- 
+
    User commands:
       lmn / listmn / listmission

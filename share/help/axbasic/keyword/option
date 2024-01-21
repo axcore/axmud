@@ -23,7 +23,7 @@ OPTION TYPO
          OPTION ANGLE RADIANS will cause them to expect an angle measured in
          radians. If OPTION ANGLE isn't used at all, the functions will expect
          an angle measured in radians by default.
-      OPTION NEEDTASK allows you to specify that the Axbasic script should not 
+      OPTION NEEDTASK allows you to specify that the Axbasic script should not
          be allowed to run unless it is run within a task.
       OPTION NOLET allows you to omit the LET keyword in your Axbasic scripts:
          that is to say, instead of writing 'LET a$ = "hello"' all the time, you
@@ -35,27 +35,27 @@ OPTION TYPO
          statements persist beyond the end of the Axbasic script (normally, they
          are destroyed as soon as the script terminates.)
       OPTION PSEUDO changes the way the Axbasic script displays messages in the
-         'main' window. The expression shouled be one of the strings used 
+         'main' window. The expression shouled be one of the strings used
          internally by the Axmud code:
             "show_all" - show all system messages
             "hide_complete" - show system error messages, but suppress system
                success messages (the default value)
             "hide_system" - suppress all system messages
-            "win_error" - show system success messages, but display system error 
+            "win_error" - show system success messages, but display system error
                messages in 'dialogue' windows
-            "win_only" - suppress system success messages, but show system error 
+            "win_only" - suppress system success messages, but show system error
                messages in 'dialogue' windows
       OPTION REDIRECT specifies that, if the task window is not open, the output
-         of WRITEWIN statements should be redirected to the 'main' window 
+         of WRITEWIN statements should be redirected to the 'main' window
          (otherwise the output is not displayed at all).
       OPTION REQUIRE allows you to specify that the Axbasic script should not be
          allowed to run unless the version of Axbasic used by the client is at
-         least the value of the expression. 
-      Using OPTION REQUIRE 1.0 would allow the Axbasic script to run with all 
-         versions of Axbasic, as would omitting OPTION REQUIRE altogether. Note 
-         that the Axbasic version number is not the same as the Axmud version 
-         number. To get the current Axbasic version number, use the VERSION() 
-         function in your Axbasic script or use the client command 
+         least the value of the expression.
+      Using OPTION REQUIRE 1.0 would allow the Axbasic script to run with all
+         versions of Axbasic, as would omitting OPTION REQUIRE altogether. Note
+         that the Axbasic version number is not the same as the Axmud version
+         number. To get the current Axbasic version number, use the VERSION()
+         function in your Axbasic script or use the client command
          ';axbasichelp'.
       OPTION SILENT prevents Axbasic from displaying messages like
         'AXBASIC: Executing script' and 'AXBASIC: Execution of script complete',
@@ -69,7 +69,7 @@ OPTION TYPO
    Compatibility:
       Before Axbasic v1.002, OPTION REDIRECT was OPTION DIVERT
       OPTION SILENT is only available from Axbasic v1.003
-      
+
    Examples:
       OPTION NOLET
       string$ = "Hello world"

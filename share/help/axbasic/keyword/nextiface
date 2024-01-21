@@ -10,13 +10,13 @@ NEXTIFACE
       The interface notification list contains all the notifications received
          but not yet processed. One of them - usually the first one in the
          list - is the 'current' notification.
-         
+
       Axbasic functions like Ifacename$ () and Ifacenum () can be used to import
          information about the interface that caused the current notification.
       Once you have all the information you need, use a NEXTIFACE statement to
          remove that notification from the list (permanently).
       If the modified list is not empty, the first notification in the list is
-         marked as the new 'current' notification. If the list was already 
+         marked as the new 'current' notification. If the list was already
          empty, execution continues as normal and no error message is generated
          (so it is always safe to use a NEXTIFACE statement).
       See also the help for SKIPIFACE.

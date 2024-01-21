@@ -1,23 +1,23 @@
 aiv / activateinventory       Activates the Inventory/Condition tasks
- 
+
    Format:
       ;aiv                    Activate the tasks
- 
+
    Notes:
       When the Inventory task is in 'active' mode, it sends commands such as
-         'inventory' to the world at regular intervals, waits for the response 
-         and then displays a list of objects from the character's inventory in 
+         'inventory' to the world at regular intervals, waits for the response
+         and then displays a list of objects from the character's inventory in
          the task window.
       When the Condition task is in 'active' mode, it sends commands such as
          'examine axe' to the world at regular intervals, waits for the response
          and then updates the Inventory task's list of objects (the Condition
          task won't run without the Inventory task).
       If the Inventory and Condition tasks are both running, this command
-         activates them both. If only the Inventory task is running, it 
-         activates just that task. 
-      Both the Inventory and Condition tasks are in 'active' mode when they 
-         start (by default). Use the ';disactivateinventory' command to 
+         activates them both. If only the Inventory task is running, it
+         activates just that task.
+      Both the Inventory and Condition tasks are in 'active' mode when they
+         start (by default). Use the ';disactivateinventory' command to
          disactivate them.
- 
+
    User commands:
       aiv / actinv / activateinventory

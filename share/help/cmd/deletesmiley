@@ -1,12 +1,12 @@
 dsm / deletesmiley            Deletes a smiley used by the Chat task
- 
+
    Format:
       ;dsm <smiley>           Deletes a smiley
- 
+
    Notes:
-      For the benefit of Axmud users under the age of ten, the Chat task 
+      For the benefit of Axmud users under the age of ten, the Chat task
          automatically converts smileys such as :) and ;) into colourful icons
-         (unless this behaviour has been turned off by using the 
+         (unless this behaviour has been turned off by using the
          ';chatsetsmiley off' command).
       This command deletes a smiley from Axmud's list of smileys.
       Diamond brackets are disabled for this command, so you don't have to worry

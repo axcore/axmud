@@ -1,0 +1,36 @@
+ihk / importhook              Imports hook(s) from the interface clipboard
+
+   Format:
+      ;ihk <name> <switches>  Imports the hook called <name>
+      ;ihk <switches>         Imports all clipboard hooks
+
+   Notes:
+      Hooks are one of five types of Axmud interface (the others being triggers,
+         aliases, macros and timers).
+      Hooks allow you to specify instructions to be executed automatically when
+         certain events happen.
+      This command provides a simple way to copy hooks from one profile/cage to
+         another (perhaps even in a different world, in a different session).
+         Having 'exported' the hook to Axmud's interface clipboard using the
+         ';importhook' command, that hook can then be 'imported'.
+      Note that the contents of the clipboard are not saved. Note also that the
+         hook's attributes might change while stored in the clipboard. In other
+         words, it's up to you to perform the export, then the import, before
+         doing anything else.
+      If an active hook was exported, an inactive hook is imported. The imported
+         hook will not replace an existing hook with the same name.
+
+      <switches> allows you to specify which profile's hook cage should receive
+         the imported hooks. One of the following (group 1) switches
+         may be specified:
+         (no switch)   - Imports hook(s) to the current world
+         -w            - Imports hook(s) to the current world
+         -r            - Imports hook(s) to the current race
+         -g            - Imports hook(s) to the current guild
+         -c            - Imports hook(s) to the current char
+         -x <category> - Imports hook(s) to the current custom profile
+                            <category>
+         -d <prof>     - Imports hook(s) to the profile named <prof>
+
+   User commands:
+      ihk / imphk / imphook / importhk / importhook

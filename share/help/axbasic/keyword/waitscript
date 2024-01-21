@@ -13,7 +13,7 @@ WAITSCRIPT expression
       If the script is not being run as a task, the WAITSCRPT statement is
          ignored (and no error message is generated). Execution continues with
          the next statement.
-                        
+
    Examples:
       WAITSCRIPT "otherscript"
       PRINT "I'm back, baby!"

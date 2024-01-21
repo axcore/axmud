@@ -11,7 +11,7 @@ CLOSEWIN
       If the script is not being run as a task, or if not task window is open,
          the CLOSEWIN statement is ignored (and no error message is generated).
          Execution continues with the next statement.
-         
+
    Examples:
       OPENWIN
       WRITEWIN "Hello world!"

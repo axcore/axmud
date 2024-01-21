@@ -1,5 +1,5 @@
 smd / splitmodel              Sets hows Axmud stores large world models
- 
+
    Format:
       ;smd                    Show current settings
 
@@ -23,6 +23,6 @@ smd / splitmodel              Sets hows Axmud stores large world models
          weapons, creatures) per file. You can change this setting with the
          -d or <size> options.
       <size>, if used, must be an integer, 1000 or more.
-  
+
    User commands:
       smd / splitmodel

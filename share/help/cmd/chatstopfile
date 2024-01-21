@@ -1,10 +1,10 @@
 cst / chatstopfile            Stops files transfers with chat contacts
- 
+
    Format:
       ;cst -n <name>          Stops file transfers with contacts called <name>
       ;cst -g <group>         Stops file transfers with everyone in the <group>
       ;cst                    Stops file transfers with everyone
- 
+
    Notes:
       The Chat task is used to chat with other players directly via telnet.
          Calls can be placed (or accepted) with any user whose MUD client uses
@@ -12,6 +12,6 @@ cst / chatstopfile            Stops files transfers with chat contacts
       This command is the equivalent of typing ';stopfile' in the relevant Chat
          task windows. It will halt any file transfers in progress.
       The switches -n and -g can't be combined.
- 
+
    User commands:
       cst / stopfile / chatstopfile

@@ -1,0 +1,7 @@
+bl / blind                    Opens help for visually-impaired users
+
+   Format:
+      ;bl                     Shows help
+
+   User commands:
+      bl / blind

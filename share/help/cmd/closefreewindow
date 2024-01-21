@@ -1,20 +1,20 @@
 cfw / closefreewindow         Closes a 'free' window
- 
+
    Format:
       ;cfw                    Closes all 'free' windows
       ;cfw -s                 Closes this session's 'free' windows
       ;cfw <number>           Closes 'free' window <number>
- 
+
    Notes:
       'Free' windows are temporary windows that are never arranged on Axmud's
-         workspace grids. 'Free' windows include the object viewer window, the
+         workspace grids. 'Free' windows include the data viewer window, the
          Connections window, the About window, and all edit, preference, wizard
          and dialogue windows.
-      If <number> is specified, that window is closed. (Use the 
+      If <number> is specified, that window is closed. (Use the
          ';listfreewindow' command to get a list of 'free' window numbers.)
       Otherwise, all 'free' windows (except 'dialogue' windows) across all
-         sessions are closed. If -s is specified, only this session's 'free' 
+         sessions are closed. If -s is specified, only this session's 'free'
          windows are closed.
- 
+
    User commands:
       cfw / closefreewin / closefreewindow

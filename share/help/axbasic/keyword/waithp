@@ -14,14 +14,14 @@ WAITHP expression [ , expression ]
          the Status task is not running (or if it doesn't know anything about
          the character's HP), the Axbasic script pauses briefly and resumes
          execution on the next task loop.
-      See also the help for WAITEP, WAITGP, WAITMP, WAITSP, WAITTOTALXP and 
+      See also the help for WAITEP, WAITGP, WAITMP, WAITSP, WAITTOTALXP and
          WAITXP.
 
    Requires:
       If the script is not being run as a task, the WAITHP statement is ignored
          (and no error message is generated). Execution continues with the next
          statement.
-         
+
    Examples:
       ! Wait for HP to recover to at least 50% of maximum
       WAITHP 50

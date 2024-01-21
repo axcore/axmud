@@ -1,8 +1,8 @@
 llu / listlookup              Shows the list of IP lookup servers
- 
+
    Format:
       ;llu                    Shows the list
-      
+
    Notes:
       Some parts of the code need to know your IP address (for example, the Chat
          task, and the MNES protocol). Axmud does this by contacting some IP
@@ -10,6 +10,6 @@ llu / listlookup              Shows the list of IP lookup servers
       This command shows the customised and default lists of lookup servers, as
          well as your current IP address.
       See also the help for ';setlookup', ';resetlookup' and ';forcelookup'.
-      
+
    User commands:
       llu / listlu / listlookup

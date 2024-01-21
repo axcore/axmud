@@ -5,28 +5,28 @@ POKEADD axmud-object-property, expression
       Adds a key-value pair to an Axmud internal hash property
 
    Notes:
-      POKE gives Axbasic scripts access to some of Axmud's internal data (see 
-         the help for the POKE statement for a full explanation). 
+      POKE gives Axbasic scripts access to some of Axmud's internal data (see
+         the help for the POKE statement for a full explanation).
       POKEADD is similar to POKE, but it only modifies hash properties such as
-         "world.current.currencyHash". It cannot be used to modify a scalar 
+         "world.current.currencyHash". It cannot be used to modify a scalar
          property such as "world.current.longName", a list property such as
-         "world.current.doorPatternList" or a Perl object such as 
+         "world.current.doorPatternList" or a Perl object such as
          "world.current".
       POKEADD adds a key-value pair to the hash property. The first 'expression'
-         is the key, the second 'expression' is the key's corresponding value. 
-         If you omit the second expression, the value used is the Perl special 
+         is the key, the second 'expression' is the key's corresponding value.
+         If you omit the second expression, the value used is the Perl special
          value 'undef'. If the key already exists in the hash, the old key-value
          pair is replaced.
       Much of Axmud's internal data is read-only, and cannot be modified with
          POKE or with this statement. If you try to modify a read-only property
          you will get an 'operation failure' error.
 
-   Warning: 
-      Do not try to modify Axmud's internal data unless you know what you are 
+   Warning:
+      Do not try to modify Axmud's internal data unless you know what you are
          doing. Read the Axmud manual before you try to POKE anything. (The
          examples below are safe, but backup your data first.)
 
    Examples:
       ! Add a new unit of currency. On DeadSouls, this would make each diamond
       ! coin be worth 10 platinum coins
-      POKEADD "world.current.currencyHash", "diamond", 10 
+      POKEADD "world.current.currencyHash", "diamond", 10

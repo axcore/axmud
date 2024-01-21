@@ -2,6 +2,6 @@ Istask ()
 
    Synopsis:
       Tests whether the script is running from within an Axmud task
-      
+
    Notes:
       Returns 1 if the script is running from within a task, 0 if not.

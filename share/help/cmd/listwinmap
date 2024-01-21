@@ -1,25 +1,25 @@
 lwm / listwinmap              Lists all winmaps
- 
+
    Format:
       ;lwm                    Lists winmaps
       ;lwm -s                 Lists only standard winmaps
       ;lwm <name>             Shows properties of winmap <name>
- 
+
    Notes:
-      Winmaps are a plan for arranging the layout of 'internal' windows 
-         (consisting of all 'main' windows, 'protocol' windows such as those 
+      Winmaps are a plan for arranging the layout of 'internal' windows
+         (consisting of all 'main' windows, 'protocol' windows such as those
          created by MXP, and 'custom' windows such as task windows).
       See the help for ';addwinmap' for more information about winmaps.
 
-      The basic list shows how many winzones each winmap contains (each winzone 
-         is an area available to be occupied by a single table object), and 
+      The basic list shows how many winzones each winmap contains (each winzone
+         is an area available to be occupied by a single table object), and
          whether the winmap is full of winzones, or not.
-      The -s switch restricts the list to Axmud's standard winmaps (which can't 
+      The -s switch restricts the list to Axmud's standard winmaps (which can't
          be modified or deleted).
 
       If you specify a winmap <name>, the specified winmap's properties and a
          list of its strip objects are displayed. For a list of the winmap's
          winzones, and their properties, use the ';listwinzone' command.
- 
+
    User commands:
       lwm / listwm / listwinmap

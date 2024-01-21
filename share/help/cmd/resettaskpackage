@@ -1,5 +1,5 @@
 rtp / resettaskpackage        Resets task package names to defaults
- 
+
    Format:
       ;rtp <task_name>
                Resets task package name for <task_name> to the default
@@ -7,16 +7,16 @@ rtp / resettaskpackage        Resets task package names to defaults
                Resets all task package names to defaults
 
    Notes:
-      A task package name is the name of the Perl package that handles a task, 
+      A task package name is the name of the Perl package that handles a task,
          e.g. 'Games::Axmud::Task::Status' for the Status task.
       <task_name> matches the task's formal name, e.g. 'status_task',
          'locator_task', etc.
       If <task_name> is specified, the corresponding package name will be reset
          to the default. The operation will fail if an instance of the task is
          currently running.
-      If <task_name> is not specified, the package names of all tasks (except 
+      If <task_name> is not specified, the package names of all tasks (except
          Axmud's built-in tasks) will be removed, rendering them uncallable. The
          operation will fail if any tasks are currently running.
-         
+
    User commands:
       rtp / resettp / resettaskpackage

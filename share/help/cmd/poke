@@ -1,8 +1,8 @@
 poke / poke                   Modifies Axmud internal data
- 
+
    Format:
       ;poke <string> <data>   Writes <data> to an internal variable <string>
- 
+
    Notes:
       This debugging command can be used to modify some of Axmud's internal
          data.
@@ -11,53 +11,53 @@ poke / poke                   Modifies Axmud internal data
          and 'pref' windows available to you, both of which take care of the
          complications inherent in modifying a particular value that might not
          be obvious to you, even if you've glanced at the Axmud source code.
-      Testers who actually need this command should create a backup copy of 
+      Testers who actually need this command should create a backup copy of
          Axmud's data directory first.
 
-      <string> represents some data stored within a collection of data, 
+      <string> represents some data stored within a collection of data,
          implemented as a Perl object.
-      Some examples of <string> are: 
+      Some examples of <string> are:
 
          world.current
             - The Perl object containing data for the current world (a world
                  profile)
          world.current.name
-            - The name of the current world - a scalar property (instance 
+            - The name of the current world - a scalar property (instance
                  variable / IV) in the Perl object
          world.current.doorPatternList
-            - Some patterns which match lines of text when the character bumps 
+            - Some patterns which match lines of text when the character bumps
                  into a door - a list property in the Perl object
          world.current.currencyHash
             - Some units of currency in the current world, tied to their
                  absolute value - key-value pairs in a hash property in the Perl
                  Perl object
-                 
-      <string> usually refers directly to a Perl object or one of its 
-         properties. In a few cases, <string> refers to a value that must be 
+
+      <string> usually refers directly to a Perl object or one of its
+         properties. In a few cases, <string> refers to a value that must be
          extracted from one of the Perl object's properties.
       If <string> is not recognised, an error is displayed.
-      Axmud internal variables have camel-class names, so you must use the 
-         correct capitalisation: 'world.current.doorpatternlist' will not be 
+      Axmud internal variables have camel-class names, so you must use the
+         correct capitalisation: 'world.current.doorpatternlist' will not be
          recognised.
       Use the ';peek' command to view internal variables.
-                  
-      Most data cannot be modified with this command at all. 
-      Axmud's Perl objects are classified as 'public' or 'private'. 'public' 
+
+      Most data cannot be modified with this command at all.
+      Axmud's Perl objects are classified as 'public' or 'private'. 'public'
          objects don't do much more than store simple sets of data, and this
-         data can be modified with this command (even though it is still not 
-         wise to do so). 'private' objects are more complex and their data 
+         data can be modified with this command (even though it is still not
+         wise to do so). 'private' objects are more complex and their data
          cannot be directly modified by exterior code, including this command.
       Strings like 'world.current', which refer to a Perl object itself, not the
          data it contains, obviously can't be modified with this command.
 
-      <data> is a list of one or more values. If <string> represents a hash 
-         property, <data> should be in the form 
-         
+      <data> is a list of one or more values. If <string> represents a hash
+         property, <data> should be in the form
+
             key, value, key, value...
-            
-      Because this is a debugging command, a full list of recognised <string>s 
+
+      Because this is a debugging command, a full list of recognised <string>s
          is not given here, but you can see the list by typing the ';peekhelp'
-         command (which can also be written as ';pokehelp'. 
+         command (which can also be written as ';pokehelp'.
 
    User commands:
       poke

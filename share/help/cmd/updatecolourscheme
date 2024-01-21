@@ -1,13 +1,13 @@
 ucs / updatecolourscheme      Updates 'internal' windows using a colour scheme
- 
+
    Format:
       ;ucs <name>             Updates windows using the colour scheme <name>
- 
+
    Notes:
       A textview is a scrolling area of a window where text is displayed. A
          colour scheme determines the colours and font used in the textview.
       Axmud provides a standard set of colour schemes, one for each window type.
-      
+
       Colour schemes can be modified with the ';modifycolourscheme' command, but
          any changes are not automatically applied to all windows. Usually,
          colour schemes are used when a window is created or re-drawn.

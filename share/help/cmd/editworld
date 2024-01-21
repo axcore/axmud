@@ -1,8 +1,8 @@
 ewo / editworld               Opens an 'edit' window for a world profile
- 
+
    Format:
       ;ewo <name>             Edits the world profile <name>
       ;ewo                    Edits the current world profile
-  
+
    User commands:
       ewo / editworld

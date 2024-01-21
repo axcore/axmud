@@ -4,12 +4,12 @@ POKEINCHASH axmud-object-property, expression
       Increments a key-value pair in an Axmud internal hash property
 
    Notes:
-      POKE gives Axbasic scripts access to some of Axmud's internal data (see 
-         the help for the POKE statement for a full explanation). 
-      POKEINCHASH is similar to POKE, but it only modifies hash properties such 
-         as "world.current.currencyHash". It cannot be used to modify a scalar 
+      POKE gives Axbasic scripts access to some of Axmud's internal data (see
+         the help for the POKE statement for a full explanation).
+      POKEINCHASH is similar to POKE, but it only modifies hash properties such
+         as "world.current.currencyHash". It cannot be used to modify a scalar
          property such as "world.current.longName", a list property such as
-         "world.current.doorPatternList" or a Perl object such as 
+         "world.current.doorPatternList" or a Perl object such as
          "world.current".
       POKEINCHASH modifies a key-value pair in the hash property. 'expression'
          is a key which must exist in the hash. POKEINCHASH increases the key's
@@ -18,12 +18,12 @@ POKEINCHASH axmud-object-property, expression
          POKE or with this statement. If you try to modify a read-only property
          you will get an 'operation failure' error.
 
-   Warning: 
-      Do not try to modify Axmud's internal data unless you know what you are 
+   Warning:
+      Do not try to modify Axmud's internal data unless you know what you are
          doing. Read the Axmud manual before you try to POKE anything. (The
          examples below are safe, but backup your data first.)
 
    Examples:
       ! On DeadSouls, increase the relative value of a platinum coin (stored as
       ! a key-value pair, where the key is "platinum" and the value is 1)
-      POKEINCHASH "world.current.currencyHash", "platinum" 
+      POKEINCHASH "world.current.currencyHash", "platinum"

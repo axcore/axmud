@@ -1,0 +1,11 @@
+Isfinished (string)
+
+   Synopsis:
+      Tests whether a region is marked finished
+
+   Notes:
+      For their own convenience, users can mark a region as finished, meaning
+         that they have finished exploring it.
+
+      'string' is the name of a region in the world model. Returns 1 if the
+         named region exists and has been marked as finished, or 0 otherwise.

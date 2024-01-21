@@ -5,14 +5,14 @@ EMPTYWIN
 
    Notes:
       EMPTYWIN has exactly the same functionality as CLS.
-      If you want to empty text in the 'main' window, you can use the client 
+      If you want to empty text in the 'main' window, you can use the client
          command ';cls'.
 
    Requires:
       If the script is not being run as a task, or if not task window is open,
          the EMPTYWIN statement is ignored (and no error message is generated).
          Execution continues with the next statement.
-         
+
    Examples:
       ! Empty the task window
       EMPTYWIN

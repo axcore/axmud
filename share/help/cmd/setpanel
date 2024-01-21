@@ -1,8 +1,8 @@
 spn / setpanel                Sets custom workspace panel (taskbar) sizes
- 
+
    Format:
       ;spn <switches>         Sets custom panel sizes
- 
+
    Notes:
       Panels are the areas at the edge of the desktop (workspace) that aren't
          available to any window. Often, at least one panel has some kind of
@@ -10,12 +10,12 @@ spn / setpanel                Sets custom workspace panel (taskbar) sizes
          displaying the date and time.
       This command specifies custom sizes for one or more panels. Usually, Axmud
          detects panel sizes for every workspace it uses, so you'll probably
-         only need to use this command if detection fails. (Panel sizes 
+         only need to use this command if detection fails. (Panel sizes
          specified with this command override detected sizes).
       After specifying panel sizes, you can use the ';resetgrid' or ';testpanel'
          commands to adjust the position of windows on the desktop.
-      
-      <switches> consists of one or more of the following options, in any order: 
+
+      <switches> consists of one or more of the following options, in any order:
          -l <size>   - Sets the left panel size
          -l          - Resets the left panel size
          -r <size>   - Sets the right panel size

@@ -1,26 +1,26 @@
 lka / listkeycodealternative  Lists alternative forms for keycodes
- 
+
    Format:
       ;lka                    Lists alternate standard keycodes
- 
+
    Notes:
       Keycodes are used by the system to recognise the keys on your keyboard.
-         For example, the F5 key usually has the keycode 'F5', and the two SHIFT 
+         For example, the F5 key usually has the keycode 'F5', and the two SHIFT
          keys often have the keycodes 'Shift_L' and 'Shift_R'.
       Keycodes vary between systems, so Axmud offers a set of standard keycodes
          (for example 'f5' and 'shift'). Axmud represents two keys pressed down
-         together as a keycode string like 'shift f5' or 'ctrl c'. 
-      Axmud's standard keycodes are mostly used with macros; they allow you to 
-         design macros that will work on all systems, not just the one you're 
+         together as a keycode string like 'shift f5' or 'ctrl c'.
+      Axmud's standard keycodes are mostly used with macros; they allow you to
+         design macros that will work on all systems, not just the one you're
          using right now.
 
-      Some Axmud standard keycodes have alternative names that you can use 
-         freely in your macros (and with this command); for example, 'page_up' 
+      Some Axmud standard keycodes have alternative names that you can use
+         freely in your macros (and with this command); for example, 'page_up'
          can also be called 'pageup'.
       A few American English forms are also recognised; for example, 'full_stop'
          and 'period' are equivalent.
       Use this command to display a complete list of alternative forms for
          Axmud's standard keycodes.
- 
+
    User commands:
       lka / listka / listkeycodealternative

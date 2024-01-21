@@ -1,35 +1,35 @@
 smn / startmission            Starts a new mission
- 
+
    Format:
       ;smn <name>             Starts the mission <name>
       ;smn <name> -i          Starts the mission <name> (slowly)
- 
+
    Notes:
       Missions are a convenient way to get your character to perform a simple
          sequence of actions, without having to learn any programming languages.
          Missions are one of the three types of script that Axmud offers (along
          with Axbasic scripts and tasks, which do require some programming
-         knowledge). 
+         knowledge).
       Missions are ideally suited for doing quests, during which you sometimes
          have to type a long list of commands (such as movement commands), and
          sometimes just have to improvise.
-      A mission is just a list of instructions. When you start a new mission, 
-         Axmud starts sending world and client commands until it comes across a 
-         'break' - an instruction to wait. During a break, control of the 
-         character is returned to you. Breaks are often used when it's time to 
+      A mission is just a list of instructions. When you start a new mission,
+         Axmud starts sending world and client commands until it comes across a
+         'break' - an instruction to wait. During a break, control of the
+         character is returned to you. Breaks are often used when it's time to
          attack an NPC, solve a puzzle, or converse with someone.
       When you're ready to continue the next stage of the mission, just use the
          ';mission' or ';incrementmission' commands. (Use ';haltmission' to
          stop a mission early.)
- 
-      Also interspersed among the list of commands are 'comments', which cause 
-         Axmud to display something in the 'main' window. A comment is usually 
+
+      Also interspersed among the list of commands are 'comments', which cause
+         Axmud to display something in the 'main' window. A comment is usually
          preceded by a break and followed by a second break, in order to remind
          the user of what needs to be done next.
       In addition, there are three special instructions which send the current
-         character's name, password and associated account name - very useful 
-         for writing a mission which handles the character's login. (These 
-         instructions can't be used if the name and password are not known, or 
+         character's name, password and associated account name - very useful
+         for writing a mission which handles the character's login. (These
+         instructions can't be used if the name and password are not known, or
          if the character has already logged in.)
 
       The simplest missions consist of a sequence of world commands, client
@@ -38,16 +38,16 @@ smn / startmission            Starts a new mission
          missions.
       A trigger break creates a trigger. When the world sends some text matching
          a certain pattern, the trigger fires and the mission resumes.
-      A pause break pauses the mission for a certain time, after which it 
+      A pause break pauses the mission for a certain time, after which it
          resumes automatically.
       A Locator break waits until the Locator task is not expecting any more
          room descriptions. It's typically used after sending a lot of movement
-         commands to the world, so that the mission can resume only when the 
+         commands to the world, so that the mission can resume only when the
          character arrives.
- 
+
       New missions can be designed with the ';recording' command, then created
          with the ';addmission' command. See the help for the ';recording'
           command for more information.
- 
+
    User commands:
       smn / startmn / startmission

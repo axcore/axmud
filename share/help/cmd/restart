@@ -1,11 +1,11 @@
 res / restart                 Restarts suspended Axmud internal processes
- 
+
    Format:
       ;res                    Restarts suspended processes
- 
+
    Notes:
-      Axmud is written in the Perl language. If the code generates a Perl error, 
-         Axmud suspends its internal processes. Doing this prevents users from 
+      Axmud is written in the Perl language. If the code generates a Perl error,
+         Axmud suspends its internal processes. Doing this prevents users from
          seeing the same error message again and again, and potentially protects
          stored data from getting corrupted.
       Most errors of this kind are caused by invalid patterns (regular
@@ -13,9 +13,9 @@ res / restart                 Restarts suspended Axmud internal processes
          hooks). You can often correct them by opening an 'edit' window and by
          replacing the invalid pattern with a valid one or by deleting it
          altogether.
-      Sometimes the error is caused by faulty code in your plugins or 
+      Sometimes the error is caused by faulty code in your plugins or
          (occasionally) in Axmud itself. Faulty plugins can be disabled with the
-         ';disableplugin' command. Problems with the Axmud code should be 
+         ';disableplugin' command. Problems with the Axmud code should be
          reported to the authors.
       This command restarts suspended processes, which often returns Axmud to a
          more-or-less functional state. If not, you should should shut down

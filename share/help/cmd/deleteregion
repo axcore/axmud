@@ -1,12 +1,12 @@
 drn / deleteregion            Deletes a world model region
- 
+
    Format:
       ;drn <number>           Deletes the region <number>
       ;drn <name>             Deletes the region <name>
- 
+
    Notes:
       The world model stores information about the regions, rooms, characters
-         and objects in the game world. The automapper window uses the 
+         and objects in the game world. The automapper window uses the
          information stored in the world model to draw its maps.
       This command deletes the region along with all of its rooms and any other
          child objects. Any labels on the regionmap are also deleted. However,

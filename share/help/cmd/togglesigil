@@ -1,89 +1,89 @@
 tsg / togglesigil             Enables/disables instruction sigils
- 
+
    Format:
       ;tsg                    Shows current status of instruction sigils
-      
+
       ;tsg -e                 Toggles the echo command sigil
       ;tsg -p                 Toggles the Perl command sigil
       ;tsg -s                 Toggles the script command sigil
       ;tsg -m                 Toggles the multi command sigil
       ;tsg -w                 Toggles the speedwalk command sigil
       ;tsg -b                 Toggles the bypass command sigil
- 
+
    Notes:
-      Axmud offers several different kinds of instructions. Instructions are 
+      Axmud offers several different kinds of instructions. Instructions are
          usually typed in the 'main' window's command entry box, but any part of
          the Axmud code can generate its own instructions.
-      Each kind of instruction has its own instruction sigil. The sigil is a 
-         single character (or pair of characters) at the start of the 
-         instruction (for example, in this ';togglesigil' command, the sigil is 
+      Each kind of instruction has its own instruction sigil. The sigil is a
+         single character (or pair of characters) at the start of the
+         instruction (for example, in this ';togglesigil' command, the sigil is
          the semicolon character).
-      The sigil characters themselves cannot be modified. 
-         
+      The sigil characters themselves cannot be modified.
+
       The types of instructions are:
-      
+
          Echo commands, starting with a " (double quote) character
-         
+
             "hello world
-            
+
             Displays a 'hello world' message in the session's 'main' window
-        
+
          Perl commands, starting with a / (forward slash) character
-         
+
             /$a = 5; $b = 2; $a * $b;
-               
+
             Evaluates the text as a Perl programme and returns a value of 10,
             which is executed as a world command
-                  
+
          Scripts commands, starting with an & (ampersand) character
-         
+
             &wumpus
-               
+
             Runs the wumpus.bas script; it's the equivalent of
             ';runscript wumpus'
-                  
+
          Multi commands, starting with a : (colon) character
-          
+
             :shout I'm going for lunch
-               
+
             Executes the text as a forced world command in multiple sessions
- 
+
          Speedwalk commands, starting with a . (full stop) character
-         
+
             .3nw2e
-            
+
             Executes a series of world commands. This example is the equivalent
                of 'north;north;north;west;east;east'
 
          Bypass commands, starting with a > (greater than) character
-         
+
             >drink water
-            
-            Executes the world command immediately, perhaps to drink in order to 
-               increase the character's energy points before they run out, 
-               while still moving along a path (specifically, bypasses a queue 
+
+            Executes the world command immediately, perhaps to drink in order to
+               increase the character's energy points before they run out,
+               while still moving along a path (specifically, bypasses a queue
                of unsent world commands created in slowwalking or crawl mode)
-                          
+
          Client commands, starting with a ; (semicolon) character
-         
+
             ;about
-               
+
             Shows information about Axmud
-               
+
          Forced world commands, starting with ,, (two commas)
-         
+
             ,,/connect
-              
+
             Executes everything after the ,, as a forced world command. In this
-            case, '/connect' is sent directly to the world, not executed as a 
+            case, '/connect' is sent directly to the world, not executed as a
             Perl command
-                  
-      By default, echo, Perl, script, multi and speedwalk sigils are disabled. 
-         If you want to use them, you can use this command to enable them. 
+
+      By default, echo, Perl, script, multi and speedwalk sigils are disabled.
+         If you want to use them, you can use this command to enable them.
       You can use the ';echo', ';perl', ';multi', ';speedwalk' and ';bypass'
-         commands to execute echo, Perl, multi, speedwalk and bypass commands 
+         commands to execute echo, Perl, multi, speedwalk and bypass commands
          even when the sigils are disabled.
-      Client and forced world commands are never disabled. 
-      
+      Client and forced world commands are never disabled.
+
    User commands:
       tsg / sigil / togglesigil

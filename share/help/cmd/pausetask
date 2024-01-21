@@ -1,24 +1,24 @@
 pt / pausetask                Pauses a task
- 
+
    Format:
       ;pt <task>              Pauses <task>
       ;pt -a                  Pauses all current tasks
- 
+
    Notes:
-      <task> can be any Axmud built-in or external task that's currently 
+      <task> can be any Axmud built-in or external task that's currently
          running.
       <task> can be in the form of a task's label (e.g. 'stat, 'status'), its
-         formal name (e.g. 'status_task') or the task's unique name (e.g. 
+         formal name (e.g. 'status_task') or the task's unique name (e.g.
          'status_task_4').
       (Use the ';listtasklabel' command to list all task labels.)
       If there is more than one task matching <task>, they will all be paused.
- 
+
       ';pausetask' sets a task's status to 'paused'. When the task resumes, its
-         status is returned to the state it was in before it was paused 
+         status is returned to the state it was in before it was paused
          (usually, but not necessarily, 'active').
-      Use ';resumetask' (with no arguments) to resume only tasks that were 
+      Use ';resumetask' (with no arguments) to resume only tasks that were
          paused with ';pausetask', and use ';resumetask all' to resume all
          tasks.
- 
+
    User commands:
       pt / pausetask

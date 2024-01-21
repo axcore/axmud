@@ -1,5 +1,5 @@
 eim / editinterfacemodel      Opens an 'edit' window for an interface model
- 
+
    Format:
       ;eim -t                 Edits the trigger interface model
       ;eim -a                 Edits the alias interface model
@@ -8,7 +8,7 @@ eim / editinterfacemodel      Opens an 'edit' window for an interface model
       ;eim -h                 Edits the hook interface model
 
    Notes:
-      Axmud interfaces are triggers, aliases, macros, timers and hooks. 
+      Axmud interfaces are triggers, aliases, macros, timers and hooks.
       Interface models contain default settings for interfaces; this command
          lists some of those settings.
       As well as the switches above, the words 'trig', 'trigger', 'alias',

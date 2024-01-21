@@ -4,11 +4,11 @@ The Advance task can be used to advance (improve) the current character's
    and it can't be used as an initial or custom task.)
 A list of skills to advance, and the order in which to advance them, is
    stored in each guild profile. From there, it is imported into each new
-   character profile. (Use the ';resetguildskills' command to re-import the 
+   character profile. (Use the ';resetguildskills' command to re-import the
    current guild's list into the current character).
 The Advance task will be useful for some worlds, but useless at others,
    depending on how guild skills are implemented in each world.
- 
+
 Client commands used with this task are:
    ;listguildskills           Lists guild skills for the current character
    ;listadvance               Lists the skill order/cycle for the character

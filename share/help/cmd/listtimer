@@ -1,10 +1,10 @@
 lti / listtimer               Lists timers
- 
+
    Format:
       ;lti
                Lists all timers belonging to current profiles
       ;lti -w
-               Lists all timers associated with the current world 
+               Lists all timers associated with the current world
       ;lti -g
                Lists all timers associated with the current guild
       ;lti -r
@@ -18,6 +18,6 @@ lti / listtimer               Lists timers
                Lists all timers belonging to the profile <prof>
       ;lti -i
                Lists all active timer interfaces
- 
+
    User commands:
       lti / listti / listtimer

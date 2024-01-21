@@ -1,17 +1,17 @@
 dwk / deletespeedwalk         Deletes a speedwalk character
- 
+
    Format:
       ;dwk <char>             Deletes the speedwalk <char>
-      
+
    Notes:
       Speedwalking is a method of moving from one location in the world to
          another with a minimum of typing.
-      For more information on speedwalk characters, see the help for 
+      For more information on speedwalk characters, see the help for
          ';addspeedwalk'. For information on speedwalking in general, see the
          help for ';speedwalk'.
-         
+
       This command deletes the specified speedwalk <char> from the current
          dictionary.
- 
+
    User commands:
       dwk / delspeed / deletespeed / deletespeedwalk

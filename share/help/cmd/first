@@ -1,5 +1,5 @@
 fst / first                   Reads aloud the first piece of text
- 
+
    Format:
       ;first                  Reads aloud the earliest piece of text
 
@@ -9,14 +9,14 @@ fst / first                   Reads aloud the first piece of text
          interrupted. When reading text one sentence at a time, or one word at
          a time, the first sentence or word in the current line is replayed;
          otherwise, a whole line is replayed.
-      When running the version of Axmud that's optimised for visually-impaired 
-         users, the up cursor key can be used as a shortcut to this command 
-         (but only once Axmud is connected to a world, in online or offline 
+      When running the version of Axmud that's optimised for visually-impaired
+         users, the up cursor key can be used as a shortcut to this command
+         (but only once Axmud is connected to a world, in online or offline
          mode.)
       Axmud remembers the last 1000 pieces of text that have been read aloud, so
          you can replay them at any time.
       See also the help for ';split', ';skip', ';unskip', ';last', ';resume',
          ';shutup' and ';freekeys'.
-     
+
    User commands:
       fst / first

@@ -1,0 +1,7 @@
+cdv / closedataviewer         Closes the data viewer window
+
+   Format:
+      ;cdv                    Closes the window
+
+   User commands:
+      cdv / cov / closeviewer / closedataviewer / closeobjectviewer

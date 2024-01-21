@@ -1,32 +1,32 @@
 rpb / replaybuffer            Replays display/command buffers in 'offline' mode
- 
+
    Format:
       ;rpb                    Replays the whole of both buffers
       ;rpb <switches>         Replays part of the buffers
- 
+
    Notes:
-      The display buffer is Axmud's record of any text received from the world 
-         which was displayed in the session's default tab (see the help for 
+      The display buffer is Axmud's record of any text received from the world
+         which was displayed in the session's default tab (see the help for
          ';displaybuffer'). The world command buffer is Axmud's record of
          individual commands sent to the world. (See the help for
          ';displaybuffer' and ';commandbuffer').
-      ';savebuffer' can save the contents of one or both buffers, in whole or in 
-         part, to a buffer file. Later, when connected in 'offline' mode, the 
+      ';savebuffer' can save the contents of one or both buffers, in whole or in
+         part, to a buffer file. Later, when connected in 'offline' mode, the
          buffer file can be loaded with ';loadbuffer' and replayed, as if still
          connected to the world, with this command.
 
-      If specified, <switches> can be one or more of the following switch 
+      If specified, <switches> can be one or more of the following switch
          options, in any order:
             -d          Replay the display buffer
             -c          Replay the world command buffer
             -b <time>   Replay the buffer(s), beginning at the <time>
             -e <time>   Replay the buffer(s), ending at the <time>
-      If neither -d nor -c are specified, both buffers are replayed 
+      If neither -d nor -c are specified, both buffers are replayed
          simultaneously. If neither -b or -e are specified, the whole buffer is
          replayed.
-      Buffer files are saved in the 'buffers' data sub-directory. You can open 
+      Buffer files are saved in the 'buffers' data sub-directory. You can open
          the file in a text editor to get the <time>s you want (the first item
-         in the file has the <time> 0). 
+         in the file has the <time> 0).
 
    User commands:
       rpb / rpbuff / replaybuffer

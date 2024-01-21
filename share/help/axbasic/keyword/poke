@@ -8,69 +8,69 @@ POKE ARRAY axmud-object-property, variable-name
    Notes:
       POKE gives Axbasic scripts access to some of Axmud's internal data. It is
          the equivalent of the client command ';poke'.
-      Axmud objects are represented by strings like "world.current". (In 
-         computer terminology, an object is a collection of data. Examples of 
-         objects include Axmud profiles, cages, the world model and also all of 
+      Axmud objects are represented by strings like "world.current". (In
+         computer terminology, an object is a collection of data. Examples of
+         objects include Axmud profiles, cages, the world model and also all of
          the rooms and exits in the world model.)
       Objects have properties represented by strings like "world.current.name",
-         "world.current.doorPatternList" and "world.current.currencyHash". (See 
+         "world.current.doorPatternList" and "world.current.currencyHash". (See
          the Axmud manual for a full list of possible strings.)
       Properties are (almost always) in the form of a Perl scalar, list or hash.
-         Perl scalars are a single value. Perl lists are groups of 0, 1 or more 
-         scalars. Hashes are a collection of key-value pairs, with each key 
+         Perl scalars are a single value. Perl lists are groups of 0, 1 or more
+         scalars. Hashes are a collection of key-value pairs, with each key
          being unique in the hash. (Some languages use the term 'associative
          array' instead.)
 
       POKE statements set the value (or values) stored in a single
          'axmud-object-property'.
       For scalar properties, you can use either of the following formats:
-      
+
             POKE axmud-object-property, expression
             POKE axmud-object-property, variable-name
-            
+
       The value of the scalar property is set to the value of the expression or
          of the Axbasic scalar variable.
-      
+
       For list and hash properties, you must use the following format:
-      
+
             POKE ARRAY axmud-object-property, variable-name
-            
-      The ARRAY keyword specifies that Axbasic should use an Axbasic array 
-         called 'variable-name', not an Axbasic scalar variable called 
-         'variable-name'. POKE ARRAY statements cannot be used with scalar 
+
+      The ARRAY keyword specifies that Axbasic should use an Axbasic array
+         called 'variable-name', not an Axbasic scalar variable called
+         'variable-name'. POKE ARRAY statements cannot be used with scalar
          properties.
-      A list property is set to the contents of the Axbasic array. 
-      A hash property assumes that the Axbasic array is in the form (key, value, 
+      A list property is set to the contents of the Axbasic array.
+      A hash property assumes that the Axbasic array is in the form (key, value,
          key, value...). If the Axbasic array contains an odd number of values,
          the last value in the Axbasic array will be used as a key in the hash
          property. The key's corresponding value will be the Perl special value
-         'undef' (meaning undefined). 
-      When importing Axmud internal data using a PEEK statement, Axbasic 
-         converts 'undef' values into either the number 0 or the string 
-         "<<undef>>". However, POKE statements don't convert the string 
-         "<<undef>>" back into the Perl special value 'undef'. To add key-value 
-         pairs to a hash property, in which the key's corresponding value is 
+         'undef' (meaning undefined).
+      When importing Axmud internal data using a PEEK statement, Axbasic
+         converts 'undef' values into either the number 0 or the string
+         "<<undef>>". However, POKE statements don't convert the string
+         "<<undef>>" back into the Perl special value 'undef'. To add key-value
+         pairs to a hash property, in which the key's corresponding value is
          'undef', you should use a POKEADD statement.
       There are a number of statements besides POKE (such as POKESET, POKEINT,
-         and so on) that can be used to modify Axmud's internal data. In most 
-         cases it's better to use one of these statements, rather than using 
-         POKE itself. 
+         and so on) that can be used to modify Axmud's internal data. In most
+         cases it's better to use one of these statements, rather than using
+         POKE itself.
 
       Note that Axmud variable names are case sensitive, so the first of these
          statements is valid, but the second will produce an error:
-         
+
             POKE "world.current.doorPatternList", new_list$
             POKE "world.current.doorpatternlist", new_list$
-            
+
       Much of Axmud's internal data is read-only, and cannot be modified with
-         POKE or with other POKE... statements. If you try to modify a read-only 
-         property you will get an 'operation failure' error. If you don't 
+         POKE or with other POKE... statements. If you try to modify a read-only
+         property you will get an 'operation failure' error. If you don't
          understand why the operation has failed, try POKEing the same property
          using the ';poke' client command, which has more descriptive error
          messages.
 
-   Warning: 
-      Do not try to modify Axmud's internal data unless you know what you are 
+   Warning:
+      Do not try to modify Axmud's internal data unless you know what you are
          doing. Read the Axmud manual before you try to POKE anything. (The
          examples below are safe, but backup your data first.)
 

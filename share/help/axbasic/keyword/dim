@@ -14,7 +14,7 @@ DIM LOCAL variable-name [ arg-list ] [ , variable-name [ arg-list ] ... ]
 
       In scripts without line numbers, arrays are handled in a way very similar
          to True BASIC.
-         
+
       All arrays are global by default, so DIM and DIM GLOBAL statements are
          interchangeable. DIM LOCAL can also be used.
       An array must be created with a DIM statement before it can be used by
@@ -50,10 +50,10 @@ DIM LOCAL variable-name [ arg-list ] [ , variable-name [ arg-list ] ... ]
          keyword TO.
 
          DIM stuff (10 TO 20, 0 TO 100)
-         
+
       In scripts with line numbers, arrays are handled in a way very similar to
          the original Dartmouth BASIC.
-         
+
       Arrays are always global. An array is created as soon as it is used by
          your script. If you don't specify the size of the array using a DIM
          statement, then each dimension has cells in the range 0 to 10.
@@ -74,7 +74,7 @@ DIM LOCAL variable-name [ arg-list ] [ , variable-name [ arg-list ] ... ]
       Each expression in the arglist specifies the upper bound (highest cell
          number) for each dimension. The lower bound is always 0, and you cannot
          specify a different lower bound using the keyword TO.
-         
+
    Examples:
       ! An array containing 5 cells
       DIM stuff (5)

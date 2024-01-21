@@ -1,44 +1,44 @@
 alt / alert                   Tells a task to automatically read aloud alerts
- 
+
    Format:
       ;alt <attribute>
       ;alt <attribute> <value>
                               Tells a task to read aloud an alert
 
       ;alt                    Get a list of available <attribute>s
- 
+
    Notes:
       Tasks have various text-to-speech (TTS) capabilities, but some tasks don't
-         use TTS at all. The ';read', ';switch' and ';alert' commands allow you 
-         to interact with the TTS capabilities of individual tasks. 
+         use TTS at all. The ';read', ';switch' and ';alert' commands allow you
+         to interact with the TTS capabilities of individual tasks.
       To modify the way that tasks process speech in general, use the ';speech'
          and ';editconfig' commands. TTS for tasks is turned off, by default, so
-         you won't hear anything until you turn it on with the ';speech' 
+         you won't hear anything until you turn it on with the ';speech'
          command.
 
-      This command is used to tell the task to read something aloud 
+      This command is used to tell the task to read something aloud
          automatically, when some piece of data reaches a certain value; for
          example, it can be used to tell the Status task to read aloud an alert
          when your current character's health falls below a certain value, and
          then again when it recovers to a certain value.
-      <attribute> specifies what you would like the task to read. Some 
+      <attribute> specifies what you would like the task to read. Some
          <attribute>s have a <value>. For example, you can use the 'health down'
          attribute with a <value> of 20, to tell the Status task to read aloud
          an alert when your character's health points fall to 20%.
       <attributes> consist of one or more words. Actually, they are stored as a
-         single word, so the attribute 'health down' can be typed as 
+         single word, so the attribute 'health down' can be typed as
          'healthdown', if you prefer.
       If you don't specify an <attribute> at all, a list of available attributes
          will be displayed.
       In many cases, a task will store the <value> you specify, for example so
          that an alert can be read aloud every time your character's health
-         points fall to 20% (you can use the ';permalert' command to store the 
-         <value> in tasks which start automatically at the beginning of a 
-         session). All of Axmud's built-in tasks behave in this way. 
+         points fall to 20% (you can use the ';permalert' command to store the
+         <value> in tasks which start automatically at the beginning of a
+         session). All of Axmud's built-in tasks behave in this way.
       A task must be running before you can use this command to tell it to read
          something aloud.
 
-      This is a list of all the <attribute>s used by this command with Axmud's 
+      This is a list of all the <attribute>s used by this command with Axmud's
          built-in tasks. (The ';read' and ';switch' commands use different
          attributes.)
 
@@ -48,39 +48,39 @@ alt / alert                   Tells a task to automatically read aloud alerts
                points of the maximum. Note that world profiles are free to store
                anything in variables like these, so you might be read something
                different altogether
-         ;alert health down 
-            Reads an alert when your character's health points fall to 20% of 
+         ;alert health down
+            Reads an alert when your character's health points fall to 20% of
                the maximum
          ;alert health up <percent>
             Reads an alert when your character's health points recover to
                <percent> points of the maximum
-         ;alert health up 
-            Reads an alert when your character's health points recover to 90% of 
+         ;alert health up
+            Reads an alert when your character's health points recover to 90% of
                the maximum
 
          ;alert energy down <percent>
-         ;alert energy down 
+         ;alert energy down
          ;alert energy up <percent>
          ;alert energy up <percent>
             Reads an alert when your character's health points fall to a minimum
                or recover to a maximum
 
          ;alert magic down <percent>
-         ;alert magic down 
+         ;alert magic down
          ;alert magic up <percent>
          ;alert magic up <percent>
             Reads an alert when your character's magic points fall to a minimum
                or recover to a maximum
 
          ;alert guild down <percent>
-         ;alert guild down 
+         ;alert guild down
          ;alert guild up <percent>
          ;alert guild up <percent>
             Reads an alert when your character's guild points fall to a minimum
                or recover to a maximum
 
          ;alert social down <percent>
-         ;alert social down 
+         ;alert social down
          ;alert social up <percent>
          ;alert social up <percent>
             Reads an alert when your character's social points fall to a minimum

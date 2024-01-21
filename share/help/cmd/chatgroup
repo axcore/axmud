@@ -1,14 +1,14 @@
 chatg / chatgroup             Sends a message to a group of chat contacts
- 
+
    Format:
       ;chatg <group> <text>   Sends the <text> to the <group>
- 
+
    Notes:
       The Chat task is used to chat with other players directly via telnet.
          Calls can be placed (or accepted) with any user whose MUD client uses
          the zChat or MudMaster protocols.
       This command is the equivalent of typing ';chatgroup <text>' in any Chat
          task window in the <group>.
- 
+
    User commands:
       chatg / chatgroup

@@ -1,11 +1,11 @@
 mno / monitorobject           Sets objects monitored by the Condition task
- 
+
    Format:
       ;mno <list>
                Monitors all items in current inventory matching words in <list>
       ;mno <switch options>
                Creates a monitored object matching <switch options>
- 
+
    Notes:
       The Condition task is able to monitor the condition of objects in your
          character's inventory (at least, those which have been detected by the
@@ -19,18 +19,18 @@ mno / monitorobject           Sets objects monitored by the Condition task
 
       Actually, monitored objects can be used in two ways. Firstly, you can
          define a monitored object based on a real object in the world (usually
-         one that's currently in your character's inventory) by creating a 
-         monitored object with nouns and adjectives that will only match one 
+         one that's currently in your character's inventory) by creating a
+         monitored object with nouns and adjectives that will only match one
          real world object. So, to monitor the real 'the Sword of Excalibur',
          you could create a monitored object with the words 'sword' and
          'excalibur':
-         
+
             e.g. ';mno sword excalibur'
-            
+
       Note that the words in <list> are case-insensitive.
 
       Alternatively, you can give a monitored object one or more nouns and
-         adjectives that match a wide range of actual world objects. A single 
+         adjectives that match a wide range of actual world objects. A single
          monitored object can then be used to monitor many actual world objects.
       Monitored objects are independent of any actual objects from which they
          were created. If you create a monitored object for your Sword of
@@ -42,14 +42,14 @@ mno / monitorobject           Sets objects monitored by the Condition task
          -c category     - The object's category - should be one of 'weapon',
                               'armour', 'garment', 'portable', or 'custom'
                          - Other categories of model object such as 'region' or
-                              'decoration' can also be specified, although 
-                              (logically) they make no sense with this command 
+                              'decoration' can also be specified, although
+                              (logically) they make no sense with this command
          -n <noun>       - The object's main noun, e.g. 'sword'
          -o <other noun> - Any other nouns that can be used for the object - for
                               example, 'sharp' or 'sabre'
          -a <adjective>  - Any adjective that can be used for the object
          -p <pseudo-adj> - Pseudo-adjectives are terms like 'odd-looking' which
-                              Axmud normally reduces to a single word 
+                              Axmud normally reduces to a single word
                          - The replacement word (e.g. 'odd') for a pseudo-
                               adjective is stored in the current dictinoary
          -u <unknown>    - Any other descriptive word which isn't stored in the
@@ -62,12 +62,12 @@ mno / monitorobject           Sets objects monitored by the Condition task
       Only the first <noun> is used as the monitored object's main noun; any
          other nouns you specify will be used as an <other noun>.
       In <switch options> you may specify multiple categories. If you specify a
-         <list> instead, that list can contain categories, and all objects in 
+         <list> instead, that list can contain categories, and all objects in
          the character's inventory matching that category will be monitored:
-         
+
             e.g. ';mno weapon'    - monitors all weapons (but not garments)
-            
+
       See also the help for ';protectobject'.
- 
+
    User commands:
       mno / monitor / monitorobj / monitorobject

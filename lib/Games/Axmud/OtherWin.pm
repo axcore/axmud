@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2022 A S Lewis
+# Copyright (C) 2011-2024 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -52,13 +52,13 @@
 #   object
 #
 # Games::Axmud::OtherWin::Viewer
-# The object viewer window
+# The data viewer window
 
 { package Games::Axmud::OtherWin::About;
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -639,7 +639,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -3497,7 +3497,7 @@
             # The user has selected a world without an existing world profile, and has declined
             #   to create a profile in the earlier 'dialogue' window (if one was presented)
             $worldName = $self->miniWorldObj->ivShow('propHash', 'name');
-            if ($worldName ne '') {
+            if (defined $worldName && $worldName ne '') {
 
                 if (! $axmud::CLIENT->nameCheck($worldName, 16)) {
 
@@ -3876,7 +3876,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -4333,7 +4333,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -4733,7 +4733,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -5059,7 +5059,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -5575,7 +5575,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -6061,7 +6061,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -6743,7 +6743,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -7042,7 +7042,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -7417,7 +7417,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -7911,7 +7911,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -7926,7 +7926,7 @@
     sub new {
 
         # Called by GA::Generic::Win->createFreeWin
-        # Creates a new instance of the object viewer window, which provides easy access to Axmud's
+        # Creates a new instance of the data viewer window, which provides easy access to Axmud's
         #   stored data
         #
         # Expected arguments
@@ -7966,7 +7966,7 @@
             return $axmud::CLIENT->writeImproper($class . '->new', @_);
         }
 
-        # Object viewer windows are unique to their session. If no $session is specified, refuse to
+        # Data viewer windows are unique to their session. If no $session is specified, refuse to
         #   create a window object
         if (! $session) {
 
@@ -8053,7 +8053,7 @@
             spacingPixels               => $axmud::CLIENT->constFreeSpacingPixels,
 
             # A string to use as the window title. If 'undef', a generic title is used
-            title                       => $axmud::SCRIPT . ' object viewer',
+            title                       => $axmud::SCRIPT . ' data viewer',
             # Hash containing any number of key-value pairs needed for this particular 'free'
             #   window; for example, for example, GA::PrefWin::TaskStart uses it to specify a task
             #   name and type. Set to an empty hash if not required
@@ -8080,9 +8080,8 @@
             #   in the button strip
             buttonList                  => [],
 
-            # The object viewer window is divided into three areas - a treeview on the left,
-            #   something in the middle, and a strip of buttons on the right (which are sometimes
-            #   invisible)
+            # The data viewer window is divided into three areas - a treeview on the left, something
+            #   in the middle, and a strip of buttons on the right (which are sometimes invisible)
             # The widths of these areas (in pixels). When the strip of buttons is hidden, the middle
             #   area swallows up the right area, and the right area is hidden
             leftWidth                   => int ($axmud::CLIENT->constFreeWinWidth * 0.3),
@@ -8234,7 +8233,7 @@
     sub drawWidgets {
 
         # Called by $self->winSetup
-        # Sets up the object viewer window with its standard widgets
+        # Sets up the data viewer window with its standard widgets
         #
         # Expected arguments
         #   (none besides $self)
@@ -8377,7 +8376,7 @@
         $self->ivAdd('headerHash', 'All profiles', 'allProfHeader');
         $child = $model->append($pointer);
         $model->set($child, [0], ['Current profiles']);
-        $self->ivAdd('headerHash', 'Current profile', 'currentProfHeader');
+        $self->ivAdd('headerHash', 'Current profiles', 'currentProfHeader');
         $child = $model->append($pointer);
         $model->set($child, [0], ['Profile templates']);
         $self->ivAdd('headerHash', 'Profile templates', 'templateHeader');
@@ -8940,7 +8939,7 @@
 
             $self->winDestroy();
         });
-        $btn2->set_tooltip_text('Close the ' . $axmud::SCRIPT . ' object viewer');
+        $btn2->set_tooltip_text('Close the ' . $axmud::SCRIPT . ' data viewer');
         $self->vBox->pack_start($btn2, FALSE, FALSE, 0);
         $self->ivPush('buttonList', $btn2);
 
@@ -16274,7 +16273,7 @@
         my ($self, $check) = @_;
 
         # Local variables
-        my ($tab, $slWidget);
+        my ($response, $tab, $slWidget);
 
         # Check for improper arguments
         if (defined $check) {
@@ -16283,6 +16282,28 @@
                 $self->_objClass . '->buttonDeleteAll_initialTask',
                 @_,
             );
+        }
+
+        # Check there are some items to delete
+        if (! $axmud::CLIENT->initTaskHash) {
+
+            # Nothing selected
+            return 1;
+        }
+
+        # Get confirmation
+        $response = $self->showMsgDialogue(
+            'Delete all',
+            'question',
+            'Are you sure you want to delete all global initial tasks?',
+            'yes-no',
+            'yes',
+        );
+
+        if (! $response || $response ne 'yes') {
+
+            # Cancelled
+            return 1;
         }
 
         # Get the selected tab, and from there the tab's GA::Obj::SimpleList
@@ -16542,7 +16563,7 @@
         my ($self, $check) = @_;
 
         # Local variables
-        my ($tab, $slWidget);
+        my ($tab, $slWidget, $response);
 
         # Check for improper arguments
         if (defined $check) {
@@ -16551,6 +16572,29 @@
                 $self->_objClass . '->buttonDeleteAll_customTask',
                 @_,
             );
+        }
+
+
+        # Check there are some items to delete
+        if (! $axmud::CLIENT->customTaskHash) {
+
+            # Nothing selected
+            return 1;
+        }
+
+        # Get confirmation
+        $response = $self->showMsgDialogue(
+            'Delete all',
+            'question',
+            'Are you sure you want to delete all custom tasks?',
+            'yes-no',
+            'yes',
+        );
+
+        if (! $response || $response ne 'yes') {
+
+            # Cancelled
+            return 1;
         }
 
         # Get the selected tab, and from there the tab's GA::Obj::SimpleList

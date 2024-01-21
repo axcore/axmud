@@ -1,12 +1,12 @@
 dse / deletesoundeffect       Deletes a sound effect
- 
+
    Format:
       ;dse <name>             Deletes the sound effect <name>
       ;dse -a                 Deletes all sound effects
 
    Notes:
-      Axmud's sound effects bank contains a list of named sound effects, each of 
-         which corresponds to a sound file. 
+      Axmud's sound effects bank contains a list of named sound effects, each of
+         which corresponds to a sound file.
       You can use the ';resetsoundeffect' command to restore the default sound
          effects bank. See the help for ';sound' for more information about the
          default sound effects bank.

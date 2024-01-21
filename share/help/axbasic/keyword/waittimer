@@ -24,7 +24,7 @@ WAITTIMER expression [ , expression ]
       If the script is not being run as a task, the WAITTIMER statement is
          ignored (and no error message is generated). Execution continues with
          the next statement.
-         
+
    Examples:
       WAITTIMER 60
       WAITTIMER 60, 60

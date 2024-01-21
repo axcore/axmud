@@ -5,15 +5,15 @@ da / dumpascii                Tests display of ASCII characters
       ;da -e                  Displays ASCII chars 0-255
 
    Notes:
-      The most useful character sets for modern telnet clients are 
-         'iso-8859-1', 'utf8', 'utf-8-strict' and 'cp437'.          
+      The most useful character sets for modern telnet clients are
+         'iso-8859-1', 'utf8', 'utf-8-strict' and 'cp437'.
       Each session (connection) uses the character set specified by the current
-         world profile. 
-      If the world profile doesn't specify a character set, Axmud's default 
+         world profile.
+      If the world profile doesn't specify a character set, Axmud's default
          character set, 'iso-8859-1', is used.
-         
-      This command lists ASCII characters in the session's current character 
+
+      This command lists ASCII characters in the session's current character
          set. To change character sets, see the help for ';setcharset'.
-             
+
    User commands:
       da / dumpascii

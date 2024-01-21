@@ -1,13 +1,13 @@
 Addtempregion ()
 Addtempregion (string)
-        
+
    Synopsis:
       Adds a new temporary region to the world model
 
    Notes:
       Temporary regions are deleted automatically at the end of the session.
          'string' is the name of the new region. If a name isn't specified,
-         Axbasic will allocate a name to the region (in the form 'temp_x'). The 
+         Axbasic will allocate a name to the region (in the form 'temp_x'). The
          automapper window will be automatically updated, if it is open.
       If the operation is successful, the new region's world model number is
          returned. If the operation fails, 0 is returned.

@@ -1,21 +1,26 @@
 ahk / addhook                 Adds a hook
- 
+
    Format:
       ;ahk <switches>         Adds a hook
- 
+
    Notes:
-      Hooks are one of five types of Axmud interface (the others being triggers, 
+      Hooks are one of five types of Axmud interface (the others being triggers,
          aliases, macros and timers).
       Hooks allow you to specify instructions to be executed automatically when
          certain events happen.
-      This command creates a hook interface that's 'inactive' - it's associated 
+      This command creates a hook interface that's 'inactive' - it's associated
          with a particular profile (actually, stored in a 'cage' object
-         associated with that profile). When that profile becomes a current 
-         profile - and only if there isn't another hook with the same name, 
-         attached to a higher-priority profile - then an 'active' hook is 
+         associated with that profile). When that profile becomes a current
+         profile - and only if there isn't another hook with the same name,
+         attached to a higher-priority profile - then an 'active' hook is
          created with the same attributes.
       The hook created is also 'independent', meaning that it doesn't call some
          part of the Axmud code directly.
+
+      A simple example. When Axmud marks the character as logged in, sends the
+         command 'wield axe' to the world:
+
+         ;addtrigger -s login -p <wield axe>
 
       All interfaces have four standard attributes:
          'name'      - A name for the hook
@@ -51,12 +56,12 @@ ahk / addhook                 Adds a hook
                           one visible in the 'main' window that has focus)
                      - 'not_current' (fires when a different session becomes the
                           one visible in the 'main' window that has focus)
-                     - 'change_current' (fires in every session when the 
+                     - 'change_current' (fires in every session when the
                           visible session in the 'main' window that has focus
                           changes)
-                     - 'visible_session' (fires when this session becomes the 
+                     - 'visible_session' (fires when this session becomes the
                           one visible in its 'main' window)
-                     - 'change_visible' (fires when a different session becomes 
+                     - 'change_visible' (fires when a different session becomes
                           the one visible in this session's 'main' window)
                      - 'not_visible' (fires in every session when a 'main'
                           window's visible session changes)
@@ -65,10 +70,10 @@ ahk / addhook                 Adds a hook
                           visible or invisible)
                      - 'user_idle' (fires when no world commands have been sent
                           for 60 seconds)
-                     - 'world_idle' (fires when no text has been received from 
+                     - 'world_idle' (fires when no text has been received from
                           the world for 60 seconds)
                      - 'get_focus' (fires when the 'main' window gains focus)
-                     - 'lose_focus' (fires when the 'main' window loses focus)  
+                     - 'lose_focus' (fires when the 'main' window loses focus)
                      - 'close_disconnect' (fires just before the Axmud client
                            closes)
                      - 'map_room' (fires when the automapper's current room is
@@ -100,10 +105,10 @@ ahk / addhook                 Adds a hook
                           fractional). If 0, no cooldown period applies after
                           the hook fires. If above 0, the hook can't fire again
                           until the cooldown period has expired
-                                                
+
       <switches> allows you to define which attributes the hook will have and
          with which profile it will be associated.
- 
+
       Group 1 switch options: one of the following options must be used:
          -no option-          - Adds a hook belonging to the current world
          -w                   - Adds a hook belonging to the current world
@@ -116,7 +121,7 @@ ahk / addhook                 Adds a hook
 
       Group 2 switch options: both of the following options must be used:
          -s <event>           - Sets the 'stimulus' attribute (a hook event)
-         -p <instruction>     - Sets the 'response' attribute (the instruction  
+         -p <instruction>     - Sets the 'response' attribute (the instruction
                                    to execute)
       Group 3 switch options: 0, 1 or more of the following options can be used:
          -n <string>          - Sets the 'name' attribute (a string). If not
@@ -128,18 +133,18 @@ ahk / addhook                 Adds a hook
          -cd <number>         - Sets the 'cooldown' attribute (0 or above;
                                    default is 0)
       Group 4 switch options: 0, 1 or more of the following options can be used:
-         -b <name>            - This hook is checked before hooks called <name> 
+         -b <name>            - This hook is checked before hooks called <name>
                                    (when they both become active)
-         -f <name>            - This hook is checked after hooks called <name> 
+         -f <name>            - This hook is checked after hooks called <name>
                                    (when they both become active)
 
    General interface notes:
-      If <instruction>, <pattern>, <string> or <substitution> contain 
+      If <instruction>, <pattern>, <string> or <substitution> contain
          whitespace, they must be enclosed by diamond brackets
-         
+
             e.g. <You see (.*) exits>
-            
+
       <boolean> can be typed as 1 or 0, or any word beginning with t, T, f or F
- 
+
    User commands:
       ahk / addhk / addhook

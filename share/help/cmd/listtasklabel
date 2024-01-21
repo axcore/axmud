@@ -1,12 +1,12 @@
 ltl / listtasklabel           Lists task labels
- 
+
    Format:
       ;ltl                    Lists all task labels
       ;ltl -b                 List only built-in task labels
- 
+
    Notes:
       Axmud tasks have formal names like 'status_task' and 'locator_task'. Task
-         labels are a convenient way of referring to tasks without having to 
+         labels are a convenient way of referring to tasks without having to
          type the whole name. For example, the Status task has the task labels
          'stat' and 'status' by default.
 

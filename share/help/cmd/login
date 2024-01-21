@@ -1,16 +1,16 @@
 lgn / login                   Marks the current character as logged in
- 
+
    Format:
       ;lgn                    Marks the character as logged in
- 
+
    Notes:
-      When Axmud spots that the character has logged in, several things can 
+      When Axmud spots that the character has logged in, several things can
          happen, and in the following order:
          - Some of Axmud's stored data is updated
-         - Commands like 'term ansi', 'cols 80', 'rows 50' are sent to the 
+         - Commands like 'term ansi', 'cols 80', 'rows 50' are sent to the
               world, if the current world profile permits it
          - Any initial tasks are started. The global initial tasklist is checked
-              first, followed by each current profile's initial tasklist 
+              first, followed by each current profile's initial tasklist
          - Any initial scripts are started. The global initial scriptlist is
               checked first, followed by each current profile's initial
               scriptlist
@@ -20,14 +20,14 @@ lgn / login                   Marks the current character as logged in
               are sent, but duplicate commands are ignored
          - Any tasks now in the current tasklist which are waiting for a login
               can now initialise themselves
-      Profiles are always checked in the usual priority order; so, for example, 
-         an initial mission assigned to the current world profile (which always 
-         has the lowest priority) will only run if there are no missions 
+      Profiles are always checked in the usual priority order; so, for example,
+         an initial mission assigned to the current world profile (which always
+         has the lowest priority) will only run if there are no missions
          assigned to any other current profile.
       Axmud is able to log in to the world automatically - if the current world
          profile has been set up to allow it - but if not, you can use this
          command to override the automatic login process (if any) and mark the
          character as logged in.
- 
+
    User commands:
       lgn / login

@@ -1,59 +1,64 @@
 aal / addalias                Adds an independent alias
- 
+
    Format:
       ;aal <switches>         Adds an alias
- 
+
    Notes:
-      Aliases are one of five types of Axmud interface (the others being 
+      Aliases are one of five types of Axmud interface (the others being
          triggers, macros, timers and hooks).
       Aliases allow you to define shortcuts for world commands and to have those
          commands modified before being sent to the world.
-      This command creates an alias interface that's 'inactive' - it's 
-         associated with a particular profile (actually, stored in a 'cage' 
-         object associated with that profile). When that profile becomes a 
-         current profile - and only if there isn't another alias with the same 
-         name, attached to a higher-priority profile - then an 'active' alias is 
+      This command creates an alias interface that's 'inactive' - it's
+         associated with a particular profile (actually, stored in a 'cage'
+         object associated with that profile). When that profile becomes a
+         current profile - and only if there isn't another alias with the same
+         name, attached to a higher-priority profile - then an 'active' alias is
          created with the same attributes.
-      The alias created is also 'independent', meaning that it doesn't call some 
+      The alias created is also 'independent', meaning that it doesn't call some
          part of the Axmud code directly.
+
+      A simple example. When the user types the command 'kt', it is
+         automatically expanded to 'kill troll'.
+
+         ;addalias -s kt -p <kill troll with axe>
 
       All interfaces have four standard attributes:
          'name'      - A name for the alias
-         'stimulus'  - What causes the alias to 'fire'. The stimulus is a 
+         'stimulus'  - What causes the alias to 'fire'. The stimulus is a
                           pattern in the form of a Perl regular expression (or
                           'regex'). An example of a simple pattern would be
                           '^hello$', which causes the alias to fire whenever the
                           user types the (exact) command 'hello' - but regexes
                           of any complexity can be used.
-         'response'  - The substitution to perform. An example of a response 
+         'response'  - The substitution to perform. An example of a response
                           would be 'greet all', being the world command sent
-                          when the user types 'hello'. 
-                     - The substitution performed is in fact a standard Perl 
+                          when the user types 'hello'.
+                     - The substitution performed is in fact a standard Perl
                           s/// substitution, so valid alias responses include:
-                          
-                             'open $1; go $2; open $3' 
-                             
+
+                             'open $1; go $2; open $3'
+
                      - However, if the substitution begins with a forward slash,
                           it is treated as a Perl command which is evaluated
                           like any other Perl command. The return value (if any)
                           is sent as a world command, regardless of its first
                           character
          'enabled'   - A flag set to 1 (default) or 0. When set to 1, the active
-                          alias is enabled (does something). When set to 0, it 
+                          alias is enabled (does something). When set to 0, it
                           is disabled (temporarily does nothing)
       Aliases also have the following non-standard attributes:
          'ignore_case'
-                     - A flag set to 1 (default) or 0. - If set to 1, the 
-                          substitution ignores case (so the typed command 
-                          'HELLO' would match the stimulus pattern 'Hello'). If 
+                     - A flag set to 1 (default) or 0. - If set to 1, the
+                          substitution ignores case (so the typed command
+                          'HELLO' would match the stimulus pattern 'Hello'). If
                           set to 0, substitutions are case-sensitive
-         'keep_checking' 
-                     - A flag set to 1 or 0 (default). If set to 0, after the 
-                          first alias fires, the world command is sent 
+         'keep_checking'
+                     - A flag set to 1 or 0 (default). If set to 0, after the
+                          first alias fires, the world command is sent
                           immediately and no more aliases are checked. If set to
                           1, Axmud continues to check the command against other
                           aliases, meaning that it might be substituted several
-                          times before it is sent to the world 
+                          times before it is sent to the world
          'temporary' - A flag set to 1 or 0 (default). When set to 1, the active
                           interface is destroyed after the alias fires for the
                           first time. When set to 0, the interface can fire
@@ -62,10 +67,10 @@ aal / addalias                Adds an independent alias
                           fractional). If 0, no cooldown period applies after
                           the alias fires. If above 0, the alias can't fire
                           again until the cooldown period has expired
-                          
+
       <switches> allows you to define which attributes the alias will have and
          with which profile it will be associated.
- 
+
       Group 1 switch options: one of the following options must be used:
          -no option-          - Adds an alias belonging to the current world
          -w                   - Adds an alias belonging to the current world
@@ -78,7 +83,7 @@ aal / addalias                Adds an independent alias
 
       Group 2 switch options: both of the following options must be used:
          -s <pattern>         - Sets the 'stimulus' attribute (a regex)
-         -p <substitution>    - Sets the 'response' attribute (a Perl 
+         -p <substitution>    - Sets the 'response' attribute (a Perl
                                    substitution)
       Group 3 switch options: 0, 1 or more of the following options can be
          used:
@@ -86,9 +91,9 @@ aal / addalias                Adds an independent alias
                                    specified, a name is generated for you
          -e <boolean>         - Sets the 'enabled' attribute (1 or 0; default is
                                    1)
-         -o <boolean>         - Sets the 'ignore_case' attribute (1 or 0, 
+         -o <boolean>         - Sets the 'ignore_case' attribute (1 or 0,
                                    default is 1)
-         -k <boolean>         - Sets the 'keep_checking' attribute (1 or 0; 
+         -k <boolean>         - Sets the 'keep_checking' attribute (1 or 0;
                                    default is 0)
          -t <boolean>         - Sets the 'temporary' attribute (1 or 0; default
                                    is 0)
@@ -102,12 +107,12 @@ aal / addalias                Adds an independent alias
                                    <name> (when they both become active)
 
    General interface notes:
-      If <instruction>, <pattern>, <string> or <substitution> contain 
+      If <instruction>, <pattern>, <string> or <substitution> contain
          whitespace, they must be enclosed by diamond brackets
-         
+
             e.g. <You see (.*) exits>
-            
+
       <boolean> can be typed as 1 or 0, or any word beginning with t, T, f or F
- 
+
    User commands:
       aal / addal / addalias

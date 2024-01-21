@@ -1,8 +1,8 @@
 las / listautosecondary       Lists preferred ways to draw secondary directions
- 
+
    Format:
       ;las                    Lists preferred ways
-                              
+
    Notes:
       Axmud provides eighteen 'standard' primary directions - the sixteen
          compass directions (including 'north', 'northeast' and
@@ -14,7 +14,7 @@ las / listautosecondary       Lists preferred ways to draw secondary directions
          few directions as you want.
       For a list of primary and secondary directions stored in the current
          dictionary, use the 'listdirection' command.
-         
+
       When the automapper creates a room with a secondary direction like 'out'
          or 'in', normally you have to tell it which direction it should be
          drawn on the map.
@@ -23,6 +23,6 @@ las / listautosecondary       Lists preferred ways to draw secondary directions
          ';setautosecondary'.
       This command lists all custom secondary directions and the standard
          primary directions they've been allocated (if any).
-         
+
    User commands:
       las / listsecond / listautosecond / listautosecondary

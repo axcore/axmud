@@ -2,7 +2,7 @@ PUSH array-name , expression
 
    Synopsis:
       Adds a value to the end of an array
-      
+
    Notes:
       This statement only works on one-dimensional arrays (stacks). If you use
          it with a multi-dimensional array, you'll get an error.
@@ -15,10 +15,10 @@ PUSH array-name , expression
 
    Compatibility:
       Since Axbasic v1.4
-                         
+
    Examples:
       DATA "foo", "bar", "baz"
-      
+
       DIM stuff$ (3)
       FOR a = 1 TO 3
          READ stuff$ (a)

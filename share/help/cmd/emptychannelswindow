@@ -1,7 +1,7 @@
 ecw / emptychannelswindow     Empties the Channels task window
- 
+
    Format:
       ;ecw                    Empties the window
- 
+
    User commands:
       ecw / emptychan / emptychannelwindow / emptychannelswindow

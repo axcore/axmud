@@ -1,6 +1,6 @@
 The System task diverts (or copies) system messages (ordinary system
    text messages as well as error, warning, debug and improper arguments
-   messages) into a separate task window. 
- 
+   messages) into a separate task window.
+
 Client commands used with this task are:
    ;setsystemmode             Starts or configures the System task

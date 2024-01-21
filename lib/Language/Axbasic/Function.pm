@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2022 A S Lewis
+# Copyright (C) 2011-2024 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # Lesser Public License as published by the Free Software Foundation, either version 3 of the
@@ -18,7 +18,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -229,7 +229,7 @@
                 } else {
 
                     return $self->scriptObj->setError(
-                        'function_expecteds_string_argument_but_received_numeric',
+                        'function_expected_string_argument_but_received_numeric',
                         $self->_objClass . '->checkArgs',
                     );
                 }
@@ -287,7 +287,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -371,7 +371,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -385,7 +385,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -399,7 +399,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -546,7 +546,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -560,7 +560,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -574,7 +574,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -588,7 +588,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -604,7 +604,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -640,7 +640,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -687,7 +687,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -786,7 +786,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -838,7 +838,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -885,7 +885,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -932,7 +932,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -968,7 +968,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -1013,7 +1013,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -1049,7 +1049,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -1107,7 +1107,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -1199,7 +1199,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -1291,7 +1291,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -1346,7 +1346,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -1391,7 +1391,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -1427,7 +1427,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -1487,7 +1487,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -1523,7 +1523,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -1559,7 +1559,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -1595,7 +1595,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -1631,7 +1631,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -1671,7 +1671,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -1707,7 +1707,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -1743,7 +1743,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -1779,7 +1779,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -1815,7 +1815,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -1851,7 +1851,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -1896,7 +1896,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -1941,7 +1941,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -1981,7 +1981,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -2021,7 +2021,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -2059,7 +2059,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -2154,7 +2154,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -2259,7 +2259,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -2295,7 +2295,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -2395,7 +2395,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -2491,7 +2491,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -2527,7 +2527,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -2563,7 +2563,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -2602,7 +2602,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -2650,7 +2650,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
     # Include module here, as well as in Axbasic.pm, so that .../t/00-compile.t won't fail
@@ -2718,7 +2718,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -2760,7 +2760,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -2805,7 +2805,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -2841,7 +2841,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -2889,7 +2889,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -2952,7 +2952,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -3011,7 +3011,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -3055,7 +3055,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -3096,7 +3096,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -3164,7 +3164,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -3204,7 +3204,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -3242,7 +3242,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -3289,7 +3289,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -3335,7 +3335,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -3380,7 +3380,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -3416,7 +3416,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -3467,7 +3467,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -3505,7 +3505,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -3573,7 +3573,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -3628,7 +3628,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -3679,7 +3679,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -3717,7 +3717,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -3753,7 +3753,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -3799,7 +3799,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -3844,7 +3844,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -3883,7 +3883,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -3917,11 +3917,151 @@
 
 ### Axmud-dependent functions (numeric) ###
 
+{ package Language::Axbasic::Function::Intrinsic::Numeric::addexit;
+
+    use strict;
+    use warnings;
+#   use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    @Language::Axbasic::Function::Intrinsic::Numeric::addexit::ISA = qw(
+        Language::Axbasic::Function::Intrinsic::Numeric
+    );
+
+    # Addexit (number, string)
+    # Addexit (number, string, string)
+
+    ##################
+    # Methods
+
+    sub evaluate {
+
+        # Called by LA::Expression::Function->evaluate (using arguments in the form 'NS;S')
+        #
+        # Expected arguments
+        #   @args   - The list of arguments supplied to the function
+        #
+        # Return values
+        #   The return value of the function
+
+        my ($self, @args) = @_;
+
+        # Local variables
+        my (
+            $wmObj, $roomNum, $dir, $mapDir, $roomObj, $exitObj, $dictObj,
+            @shortList, @longList, @dirList,
+        );
+
+        # (No improper arguments to check)
+
+        # Evaluate the function and return the value
+        $wmObj = $self->scriptObj->session->worldModelObj;
+
+        $roomNum = $args[0];
+        $dir = $args[1];
+        $mapDir = $args[2];
+
+        # Check that the specified room exists
+        if (! $wmObj->ivExists('roomModelHash', $roomNum)) {
+
+            return 0;
+        }
+
+        # Check that an exit in the specified direction doesn't already exist
+        $roomObj = $wmObj->ivShow('roomModelHash', $roomNum);
+        if ($roomObj->ivExists('exitNumHash', $dir)) {
+
+            return 0;
+        }
+
+        # Check that a standard (i.e. primary) direction is valid, if specified
+        if (defined $mapDir) {
+
+            if (! $axmud::CLIENT->ivShow('constOppDirHash', $mapDir)) {
+
+                return 0;
+            }
+
+        } else {
+
+            $dictObj = $self->scriptObj->session->currentDict;
+            $mapDir = $dictObj->ivShow('combRevDirHash', $dir);
+            if (! defined $mapDir) {
+
+                # $dir is not a primary direction; map it onto the first available primary
+                #   direction
+                # This code is adapted from GA::Win::Map->allocateMapDirCallback and
+                #   ->getAvailableDirs. If Axmud is ever refactored, that code should probably be
+                #   moved from GA::Win::Map into the worldmodel, so this function can call it...
+                @shortList = qw(
+                    north northeast east southeast south southwest west northwest up down
+                );
+
+                @longList = qw(
+                    northnortheast eastnortheast eastsoutheast southsoutheast
+                    southsouthwest westsouthwest westnorthwest northnorthwest
+                );
+
+                if ($wmObj->showAllPrimaryFlag) {
+                    @dirList = (@shortList, @longList);
+                } else {
+                    @dirList = @shortList;
+                }
+
+                OUTER: foreach my $thisMapDir (@dirList) {
+
+                    INNER: foreach my $exitNum ($roomObj->ivValues('exitNumHash')) {
+
+                        my $thisExitObj = $wmObj->ivShow('exitModelHash', $exitNum);
+
+                        if (
+                            $thisExitObj->mapDir
+                            && $thisExitObj->mapDir eq $thisMapDir
+                            && (
+                                $thisExitObj->drawMode eq 'primary'
+                                || $thisExitObj->drawMode eq 'perm_alloc'
+                            )
+                        ) {
+                            # $mapDir isn't available
+                            next OUTER;
+                        }
+                    }
+
+                    # $mapDir is available
+                    $mapDir = $thisMapDir;
+                    last OUTER;
+                }
+            }
+        }
+
+        if (! defined $mapDir) {
+
+            return 0;
+        }
+
+        # Attempt to add the exit
+        $exitObj = $wmObj->addExit(
+            $self->scriptObj->session,
+            TRUE,               # Update Automapper windows now
+            $roomObj,
+            $dir,
+            $mapDir,
+        );
+
+        if (! $exitObj) {
+            return 0;
+        } else {
+            return $exitObj->number;
+        }
+    }
+}
+
 { package Language::Axbasic::Function::Intrinsic::Numeric::addfirstroom;
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -3979,7 +4119,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -4064,7 +4204,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -4113,7 +4253,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -4197,7 +4337,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -4290,11 +4430,128 @@
     }
 }
 
+{ package Language::Axbasic::Function::Intrinsic::Numeric::addtwinexit;
+
+    use strict;
+    use warnings;
+#   use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    @Language::Axbasic::Function::Intrinsic::Numeric::addtwinexit::ISA = qw(
+        Language::Axbasic::Function::Intrinsic::Numeric
+    );
+
+    # Addtwinexit (number)
+
+    ##################
+    # Methods
+
+    sub evaluate {
+
+        # Called by LA::Expression::Function->evaluate (using arguments in the form 'N')
+        #
+        # Expected arguments
+        #   $arg    - The first (and only) argument in the argument list
+        #
+        # Return values
+        #   The return value of the function
+
+        my ($self, $arg) = @_;
+
+        # Local variables
+        my ($wmObj, $exitObj, $oppExitObj, $roomObj, $destRoomObj, $dictObj, $oppMapDir);
+
+        # (No improper arguments to check)
+
+        # Evaluate the function and return the value
+        $wmObj = $self->scriptObj->session->worldModelObj;
+
+        # Find the specified exit, and check it is connected, and that it does not already have a
+        #   twin
+        $exitObj = $wmObj->ivShow('exitModelHash', $arg);
+        if (
+            ! defined $exitObj
+            || ! $exitObj->mapDir
+            || ! $exitObj->destRoom
+            || $exitObj->twinExit
+        ) {
+            return 0;
+        }
+
+        # If an exit in the opposite direction already exists, and is not connected to a room, then
+        #   make this a pair of twin exits
+        $roomObj = $wmObj->ivShow('roomModelHash', $exitObj->parent);
+        $oppExitObj = $wmObj->checkOppPrimary($exitObj);
+        if ($oppExitObj) {
+
+            # (As usual, we don't use unallocated exits)
+            if (
+                $oppExitObj->twinExit
+                || $oppExitObj->destRoom
+                || (
+                    $oppExitObj->drawMode ne 'primary'
+                    && $oppExitObj->drawMode ne 'perm_alloc'
+                )
+            ) {
+
+                return 0;
+
+            } else {
+
+                $destRoomObj = $wmObj->ivShow('roomModelHash', $oppExitObj->parent);
+
+            }
+
+        # Otherwise, create a new exit
+        } else {
+
+            $dictObj = $self->scriptObj->session->currentDict;
+            $oppMapDir = $axmud::CLIENT->ivShow('constOppDirHash', $exitObj->mapDir);
+            $destRoomObj = $wmObj->ivShow('roomModelHash', $exitObj->destRoom);
+
+            $oppExitObj = $wmObj->addExit(
+                $self->scriptObj->session,
+                TRUE,               # Update Automapper windows now
+                $destRoomObj,
+                $dictObj->ivShow('combDirHash', $oppMapDir),
+                $oppMapDir,
+            );
+
+            if (! $oppExitObj) {
+
+                return 0;
+            }
+        }
+
+        # Connect the rooms/exists together
+        if (
+            ! $wmObj->connectRooms(
+                $self->scriptObj->session,
+                TRUE,               # Update Automapper windows now
+                $destRoomObj,
+                $roomObj,
+                $oppExitObj->dir,
+                $oppExitObj->mapDir,
+                $oppExitObj,
+                $exitObj,
+            )
+        ) {
+
+            return 0;
+
+        } else {
+
+            return $oppExitObj->number;
+        }
+    }
+}
+
 { package Language::Axbasic::Function::Intrinsic::Numeric::closemap;
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -4350,11 +4607,85 @@
     }
 }
 
+{ package Language::Axbasic::Function::Intrinsic::Numeric::connectexit;
+
+    use strict;
+    use warnings;
+#   use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    @Language::Axbasic::Function::Intrinsic::Numeric::connectexit::ISA = qw(
+        Language::Axbasic::Function::Intrinsic::Numeric
+    );
+
+    # Connectexit (number, number)
+
+    ##################
+    # Methods
+
+    sub evaluate {
+
+        # Called by LA::Expression::Function->evaluate (using arguments in the form 'NN')
+        #
+        # Expected arguments
+        #   @args   - The list of arguments supplied to the function
+        #
+        # Return values
+        #   The return value of the function
+
+        my ($self, @args) = @_;
+
+        # Local variables
+        my ($wmObj, $exitNum, $roomNum, $exitObj, $roomObj, $departRoomObj);
+
+        # (No improper arguments to check)
+
+        # Evaluate the function and return the value
+        $wmObj = $self->scriptObj->session->worldModelObj;
+
+        $exitNum = $args[0];
+        $roomNum = $args[1];
+
+        # Check that the specified exit and room exist
+        $exitObj = $wmObj->ivShow('exitModelHash', $exitNum);
+        $roomObj = $wmObj->ivShow('roomModelHash', $roomNum);
+        if (! defined $exitObj || ! defined $roomObj) {
+
+            return 0;
+        }
+
+        # Check that the exit is not already connected to a room
+        if (defined $exitObj->destRoom) {
+
+            return 0;
+        }
+
+        # Attempt to connect the exit to the room
+        $departRoomObj = $wmObj->ivShow('roomModelHash', $exitObj->parent);
+        if (
+            ! $wmObj->connectRooms(
+                $self->scriptObj->session,
+                TRUE,               # Update Automapper windows now
+                $departRoomObj,
+                $roomObj,
+                $exitObj->dir,
+                $exitObj->mapDir,
+                $exitObj,
+            )
+        ) {
+            return 0;
+        } else {
+            return $exitObj->number;
+        }
+    }
+}
+
 { package Language::Axbasic::Function::Intrinsic::Numeric::counttask;
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -4397,11 +4728,70 @@
     }
 }
 
+{ package Language::Axbasic::Function::Intrinsic::Numeric::delexit;
+
+    use strict;
+    use warnings;
+#   use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    @Language::Axbasic::Function::Intrinsic::Numeric::delexit::ISA = qw(
+        Language::Axbasic::Function::Intrinsic::Numeric
+    );
+
+    # Delexit (number)
+
+    ##################
+    # Methods
+
+    sub evaluate {
+
+        # Called by LA::Expression::Function->evaluate (using arguments in the form 'N')
+        #
+        # Expected arguments
+        #   $arg    - The first (and only) argument in the argument list
+        #
+        # Return values
+        #   The return value of the function
+
+        my ($self, $arg) = @_;
+
+        # Local variables
+        my ($wmObj, $exitObj);
+
+        # (No improper arguments to check)
+
+        # Evaluate the function and return the value
+        $wmObj = $self->scriptObj->session->worldModelObj;
+
+        # Find the specified exit
+        $exitObj = $wmObj->ivShow('exitModelHash', $arg);
+        if (! defined $exitObj) {
+
+            return 0;
+        }
+
+        # Delete the exit
+        if (
+            ! $wmObj->deleteExits(
+                $self->scriptObj->session,
+                TRUE,       # Update Automapper windows now
+                ($exitObj),
+            )
+        ) {
+            return 0;
+        } else {
+            return 1;
+        }
+    }
+}
+
 { package Language::Axbasic::Function::Intrinsic::Numeric::delregion;
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -4464,11 +4854,70 @@
     }
 }
 
+{ package Language::Axbasic::Function::Intrinsic::Numeric::delroom;
+
+    use strict;
+    use warnings;
+#   use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    @Language::Axbasic::Function::Intrinsic::Numeric::delroom::ISA = qw(
+        Language::Axbasic::Function::Intrinsic::Numeric
+    );
+
+    # Delroom (number)
+
+    ##################
+    # Methods
+
+    sub evaluate {
+
+        # Called by LA::Expression::Function->evaluate (using arguments in the form 'N')
+        #
+        # Expected arguments
+        #   $arg    - The first (and only) argument in the argument list
+        #
+        # Return values
+        #   The return value of the function
+
+        my ($self, $arg) = @_;
+
+        # Local variables
+        my ($wmObj, $roomObj);
+
+        # (No improper arguments to check)
+
+        # Evaluate the function and return the value
+        $wmObj = $self->scriptObj->session->worldModelObj;
+
+        # Find the specified room
+        $roomObj = $wmObj->ivShow('roomModelHash', $arg);
+        if (! defined $roomObj) {
+
+            return 0;
+        }
+
+        # Delete the room
+        if (
+            ! $wmObj->deleteRooms(
+                $self->scriptObj->session,
+                TRUE,       # Update Automapper windows now
+                ($roomObj),
+            )
+        ) {
+            return 0;
+        } else {
+            return 1;
+        }
+    }
+}
+
 { package Language::Axbasic::Function::Intrinsic::Numeric::deltempregions;
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -4509,11 +4958,69 @@
     }
 }
 
+{ package Language::Axbasic::Function::Intrinsic::Numeric::disconnectexit;
+
+    use strict;
+    use warnings;
+#   use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    @Language::Axbasic::Function::Intrinsic::Numeric::disconnectexit::ISA = qw(
+        Language::Axbasic::Function::Intrinsic::Numeric
+    );
+
+    # Disconnectexit (number)
+
+    ##################
+    # Methods
+
+    sub evaluate {
+
+        # Called by LA::Expression::Function->evaluate (using arguments in the form 'N')
+        #
+        # Expected arguments
+        #   $arg    - The first (and only) argument in the argument list
+        #
+        # Return values
+        #   The return value of the function
+
+        my ($self, $arg) = @_;
+
+        # Local variables
+        my ($wmObj, $exitObj);
+
+        # (No improper arguments to check)
+
+        # Evaluate the function and return the value
+        $wmObj = $self->scriptObj->session->worldModelObj;
+
+        # Find the specified exit
+        $exitObj = $wmObj->ivShow('exitModelHash', $arg);
+        if (! defined $exitObj) {
+
+            return 0;
+        }
+
+        # Disconnect the exit
+        if (
+            ! $wmObj->disconnectExit(
+                TRUE,       # Update Automapper windows now
+                $exitObj,
+            )
+        ) {
+            return 0;
+        } else {
+            return 1;
+        }
+    }
+}
+
 { package Language::Axbasic::Function::Intrinsic::Numeric::getexitdest;
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -4591,7 +5098,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -4660,7 +5167,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -4738,7 +5245,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -4787,7 +5294,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -4856,7 +5363,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -4929,7 +5436,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -4978,7 +5485,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -5027,7 +5534,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -5077,7 +5584,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -5176,7 +5683,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -5214,7 +5721,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -5286,7 +5793,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -5340,7 +5847,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -5380,7 +5887,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -5434,7 +5941,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -5484,11 +5991,258 @@
     }
 }
 
+{ package Language::Axbasic::Function::Intrinsic::Numeric::isexit;
+
+    use strict;
+    use warnings;
+#   use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    @Language::Axbasic::Function::Intrinsic::Numeric::isexit::ISA = qw(
+        Language::Axbasic::Function::Intrinsic::Numeric
+    );
+
+    # Isexit (number)
+
+    ##################
+    # Methods
+
+    sub evaluate {
+
+        # Called by LA::Expression::Function->evaluate (using arguments in the form 'N')
+        #
+        # Expected arguments
+        #   $arg    - The first (and only) argument in the argument list
+        #
+        # Return values
+        #   The return value of the function
+
+        my ($self, $arg) = @_;
+
+        # Local variables
+        my ($wmObj, $exitObj);
+
+        # (No improper arguments to check)
+
+        # Evaluate the function and return the value
+        $wmObj = $self->scriptObj->session->worldModelObj;
+
+        # Find the specified room
+        $exitObj = $wmObj->ivShow('exitModelHash', $arg);
+        if (! defined $exitObj) {
+            return 0;
+        } else {
+            return 1;
+        }
+    }
+}
+
+{ package Language::Axbasic::Function::Intrinsic::Numeric::isfinished;
+
+    use strict;
+    use warnings;
+#   use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    @Language::Axbasic::Function::Intrinsic::Numeric::isfinished::ISA = qw(
+        Language::Axbasic::Function::Intrinsic::Numeric
+    );
+
+    # Isfinished (string)
+
+    ##################
+    # Methods
+
+    sub evaluate {
+
+        # Called by LA::Expression::Function->evaluate (using arguments in the form 'S')
+        #
+        # Expected arguments
+        #   $arg    - The first (and only) argument in the argument list
+        #
+        # Return values
+        #   The return value of the function
+
+        my ($self, $arg) = @_;
+
+        # Local variables
+        my ($wmObj, $regionmapObj, $regionObj);
+
+        # (No improper arguments to check)
+
+        # Evaluate the function and return the value
+        $wmObj = $self->scriptObj->session->worldModelObj;
+
+        # Find the specified region
+        $regionmapObj = $wmObj->ivShow('regionmapHash', $arg);
+        if (! defined $regionmapObj) {
+
+            return 0;
+        }
+
+        $regionObj = $wmObj->ivShow('regionModelHash', $regionmapObj->number);
+        if (! defined $regionObj || ! $regionObj->finishedFlag) {
+            return 0;
+        } else {
+            return 1;
+        }
+    }
+}
+
+{ package Language::Axbasic::Function::Intrinsic::Numeric::ishiddenexit;
+
+    use strict;
+    use warnings;
+#   use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    @Language::Axbasic::Function::Intrinsic::Numeric::ishiddenexit::ISA = qw(
+        Language::Axbasic::Function::Intrinsic::Numeric
+    );
+
+    # Ishiddenexit (number)
+
+    ##################
+    # Methods
+
+    sub evaluate {
+
+        # Called by LA::Expression::Function->evaluate (using arguments in the form 'N')
+        #
+        # Expected arguments
+        #   $arg    - The first (and only) argument in the argument list
+        #
+        # Return values
+        #   The return value of the function
+
+        my ($self, $arg) = @_;
+
+        # Local variables
+        my ($wmObj, $exitObj);
+
+        # (No improper arguments to check)
+
+        # Evaluate the function and return the value
+        $wmObj = $self->scriptObj->session->worldModelObj;
+
+        # Find the specified exit
+        $exitObj = $wmObj->ivShow('exitModelHash', $arg);
+        if (! defined $exitObj) {
+
+            return 0;
+        }
+
+        # Return the exit's status
+        if (! $exitObj->hiddenFlag) {
+            return 0;
+        } else {
+            return 1;
+        }
+    }
+}
+
+{ package Language::Axbasic::Function::Intrinsic::Numeric::isregion;
+
+    use strict;
+    use warnings;
+#   use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    @Language::Axbasic::Function::Intrinsic::Numeric::isregion::ISA = qw(
+        Language::Axbasic::Function::Intrinsic::Numeric
+    );
+
+    # Isregion (string)
+
+    ##################
+    # Methods
+
+    sub evaluate {
+
+        # Called by LA::Expression::Function->evaluate (using arguments in the form 'S')
+        #
+        # Expected arguments
+        #   $arg    - The first (and only) argument in the argument list
+        #
+        # Return values
+        #   The return value of the function
+
+        my ($self, $arg) = @_;
+
+        # Local variables
+        my ($wmObj, $regionmapObj);
+
+        # (No improper arguments to check)
+
+        # Evaluate the function and return the value
+        $wmObj = $self->scriptObj->session->worldModelObj;
+
+        # Find the specified region
+        $regionmapObj = $wmObj->ivShow('regionmapHash', $arg);
+        if (! defined $regionmapObj) {
+            return 0;
+        } else {
+            return 1;
+        }
+    }
+}
+
+{ package Language::Axbasic::Function::Intrinsic::Numeric::isroom;
+
+    use strict;
+    use warnings;
+#   use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    @Language::Axbasic::Function::Intrinsic::Numeric::isroom::ISA = qw(
+        Language::Axbasic::Function::Intrinsic::Numeric
+    );
+
+    # Isroom (number)
+
+    ##################
+    # Methods
+
+    sub evaluate {
+
+        # Called by LA::Expression::Function->evaluate (using arguments in the form 'N')
+        #
+        # Expected arguments
+        #   $arg    - The first (and only) argument in the argument list
+        #
+        # Return values
+        #   The return value of the function
+
+        my ($self, $arg) = @_;
+
+        # Local variables
+        my ($wmObj, $roomObj);
+
+        # (No improper arguments to check)
+
+        # Evaluate the function and return the value
+        $wmObj = $self->scriptObj->session->worldModelObj;
+
+        # Find the specified room
+        $roomObj = $wmObj->ivShow('roomModelHash', $arg);
+        if (! defined $roomObj) {
+            return 0;
+        } else {
+            return 1;
+        }
+    }
+}
+
 { package Language::Axbasic::Function::Intrinsic::Numeric::ismap;
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -5535,7 +6289,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -5587,7 +6341,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -5630,11 +6384,64 @@
     }
 }
 
+{ package Language::Axbasic::Function::Intrinsic::Numeric::istempregion;
+
+    use strict;
+    use warnings;
+#   use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    @Language::Axbasic::Function::Intrinsic::Numeric::istempregion::ISA = qw(
+        Language::Axbasic::Function::Intrinsic::Numeric
+    );
+
+    # Istempregion (string)
+
+    ##################
+    # Methods
+
+    sub evaluate {
+
+        # Called by LA::Expression::Function->evaluate (using arguments in the form 'S')
+        #
+        # Expected arguments
+        #   $arg    - The first (and only) argument in the argument list
+        #
+        # Return values
+        #   The return value of the function
+
+        my ($self, $arg) = @_;
+
+        # Local variables
+        my ($wmObj, $regionmapObj, $regionObj);
+
+        # (No improper arguments to check)
+
+        # Evaluate the function and return the value
+        $wmObj = $self->scriptObj->session->worldModelObj;
+
+        # Find the specified region
+        $regionmapObj = $wmObj->ivShow('regionmapHash', $arg);
+        if (! defined $regionmapObj) {
+
+            return 0;
+        }
+
+        $regionObj = $wmObj->ivShow('regionModelHash', $regionmapObj->number);
+        if (! defined $regionObj || ! $regionObj->tempRegionFlag) {
+            return 0;
+        } else {
+            return 1;
+        }
+    }
+}
+
 { package Language::Axbasic::Function::Intrinsic::Numeric::iswin;
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -5681,7 +6488,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -5732,11 +6539,70 @@
     }
 }
 
+{ package Language::Axbasic::Function::Intrinsic::Numeric::sethiddenexit;
+
+    use strict;
+    use warnings;
+#   use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    @Language::Axbasic::Function::Intrinsic::Numeric::sethiddenexit::ISA = qw(
+        Language::Axbasic::Function::Intrinsic::Numeric
+    );
+
+    # Sethiddenexit (number)
+
+    ##################
+    # Methods
+
+    sub evaluate {
+
+        # Called by LA::Expression::Function->evaluate (using arguments in the form 'N')
+        #
+        # Expected arguments
+        #   $arg    - The first (and only) argument in the argument list
+        #
+        # Return values
+        #   The return value of the function
+
+        my ($self, $arg) = @_;
+
+        # Local variables
+        my ($wmObj, $exitObj);
+
+        # (No improper arguments to check)
+
+        # Evaluate the function and return the value
+        $wmObj = $self->scriptObj->session->worldModelObj;
+
+        # Find the specified exit
+        $exitObj = $wmObj->ivShow('exitModelHash', $arg);
+        if (! defined $exitObj) {
+
+            return 0;
+        }
+
+        # Toggle the exit's hidden status
+        if (
+            ! $wmObj->setHiddenExit(
+                TRUE,       # Update Automapper windows now
+                $exitObj,
+                ! $exitObj->hiddenFlag,
+            )
+        ) {
+            return 0;
+        } else {
+            return 1;
+        }
+    }
+}
+
 { package Language::Axbasic::Function::Intrinsic::Numeric::setlight;
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -5788,7 +6654,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -5849,11 +6715,171 @@
     }
 }
 
+{ package Language::Axbasic::Function::Intrinsic::Numeric::setornament;
+
+    use strict;
+    use warnings;
+#   use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    @Language::Axbasic::Function::Intrinsic::Numeric::setornament::ISA = qw(
+        Language::Axbasic::Function::Intrinsic::Numeric
+    );
+
+    # Setornament (number)
+    # Setornament (number, string)
+
+    ##################
+    # Methods
+
+    sub evaluate {
+
+        # Called by LA::Expression::Function->evaluate (using arguments in the form 'N;S')
+        #
+        # Expected arguments
+        #   @args   - The list of arguments supplied to the function
+        #
+        # Return values
+        #   The return value of the function
+
+        my ($self, @args) = @_;
+
+        # Local variables
+        my ($wmObj, $exitNum, $type, $exitObj);
+
+        # (No improper arguments to check)
+
+        # Evaluate the function and return the value
+        $wmObj = $self->scriptObj->session->worldModelObj;
+
+        $exitNum = $args[0];
+        $type = $args[1];
+
+        if (! defined $type) {
+            $type = 'none';
+        } elsif (
+            $type ne 'break'
+            && $type ne 'pick'
+            && $type ne 'lock'
+            && $type ne 'open'
+            && $type ne 'impass'
+            && $type ne 'mystery'
+        ) {
+            return 0;
+        }
+
+        # Find the specified exit
+        $exitObj = $wmObj->ivShow('exitModelHash', $exitNum);
+        if (! defined $exitObj) {
+
+            return 0;
+        }
+
+        # Set (or reset) the exit ornament
+        if (
+            ! $wmObj->setExitOrnament(
+                TRUE,               # Update Automapper windows now
+                $exitObj,
+                $type,
+                TRUE,               # Set twin as well
+            )
+        ) {
+            return 0;
+        } else {
+            return 1;
+        }
+    }
+}
+
+{ package Language::Axbasic::Function::Intrinsic::Numeric::setrandomexit;
+
+    use strict;
+    use warnings;
+#   use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    @Language::Axbasic::Function::Intrinsic::Numeric::setrandomexit::ISA = qw(
+        Language::Axbasic::Function::Intrinsic::Numeric
+    );
+
+    # Setrandomexit (number)
+    # Setrandomexit (number, string)
+
+    ##################
+    # Methods
+
+    sub evaluate {
+
+        # Called by LA::Expression::Function->evaluate (using arguments in the form 'N;S')
+        #
+        # Expected arguments
+        #   @args   - The list of arguments supplied to the function
+        #
+        # Return values
+        #   The return value of the function
+
+        my ($self, @args) = @_;
+
+        # Local variables
+        my ($wmObj, $exitNum, $type, $exitObj);
+
+        # (No improper arguments to check)
+
+        # Evaluate the function and return the value
+        $wmObj = $self->scriptObj->session->worldModelObj;
+
+        $exitNum = $args[0];
+        $type = $args[1];
+
+        if (defined $type && $type ne 'same' && $type ne 'any' && $type ne 'temp') {
+            return 0;
+        }
+
+        # Find the specified exit
+        $exitObj = $wmObj->ivShow('exitModelHash', $exitNum);
+        if (! defined $exitObj) {
+
+            return 0;
+        }
+
+        # Set (or reset) the random exit
+        if (! defined $type) {
+
+            if (
+                ! $wmObj->restoreRandomExit(
+                    TRUE,               # Update Automapper windows now
+                    $exitObj,
+                )
+            ) {
+                return 0;
+            } else {
+                return 1;
+            }
+
+        } else {
+
+            if (
+                ! $wmObj->setRandomExit(
+                    TRUE,               # Update Automapper windows now
+                    $exitObj,
+                    $type . '_region',  # e.g. 'same_region'
+                )
+            ) {
+                return 0;
+            } else {
+                return 1;
+            }
+        }
+    }
+}
+
 { package Language::Axbasic::Function::Intrinsic::Numeric::setregion;
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -5907,7 +6933,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -5970,7 +6996,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -6055,7 +7081,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -6145,7 +7171,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -6183,7 +7209,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -6219,7 +7245,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -6255,7 +7281,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -6291,7 +7317,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -6327,7 +7353,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -6387,7 +7413,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -6445,7 +7471,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -6524,7 +7550,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -6604,7 +7630,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -6709,7 +7735,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -6745,7 +7771,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -6795,7 +7821,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -6865,7 +7891,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -6935,7 +7961,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -7001,11 +8027,119 @@
     }
 }
 
+{ package Language::Axbasic::Function::Intrinsic::String::getornament;
+
+    use strict;
+    use warnings;
+#   use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    @Language::Axbasic::Function::Intrinsic::String::getornament::ISA = qw(
+        Language::Axbasic::Function::Intrinsic::String
+    );
+
+    # Getornament$ (number)
+
+    ##################
+    # Methods
+
+    sub evaluate {
+
+        # Called by LA::Expression::Function->evaluate (using arguments in the form 'N')
+        #
+        # Expected arguments
+        #   $arg    - The first (and only) argument in the argument list
+        #
+        # Return values
+        #   The return value of the function
+
+        my ($self, $arg) = @_;
+
+        # Local variables
+        my ($mapObj, $wmObj, $exitObj);
+
+        # (No improper arguments to check)
+
+        # Evaluate the function and return the value
+        $wmObj = $self->scriptObj->session->worldModelObj;
+
+        # Find the specified exit
+        $exitObj = $wmObj->ivShow('exitModelHash', $arg);
+        if (! defined $exitObj) {
+
+            return 'none';
+        }
+
+        # Return the exit's ornament, if any
+        return $exitObj->exitOrnament;
+    }
+}
+
+{ package Language::Axbasic::Function::Intrinsic::String::getrandomexit;
+
+    use strict;
+    use warnings;
+#   use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    @Language::Axbasic::Function::Intrinsic::String::getrandomexit::ISA = qw(
+        Language::Axbasic::Function::Intrinsic::String
+    );
+
+    # Getrandomexit$ (number)
+
+    ##################
+    # Methods
+
+    sub evaluate {
+
+        # Called by LA::Expression::Function->evaluate (using arguments in the form 'N')
+        #
+        # Expected arguments
+        #   $arg    - The first (and only) argument in the argument list
+        #
+        # Return values
+        #   The return value of the function
+
+        my ($self, $arg) = @_;
+
+        # Local variables
+        my ($mapObj, $wmObj, $exitObj);
+
+        # (No improper arguments to check)
+
+        # Evaluate the function and return the value
+        $wmObj = $self->scriptObj->session->worldModelObj;
+
+        # Find the specified exit
+        $exitObj = $wmObj->ivShow('exitModelHash', $arg);
+        if (! defined $exitObj) {
+
+            return 'none';
+        }
+
+        # Return the exit's random status, if any
+        if ($exitObj->randomType eq 'same_region') {
+            return 'same';
+        } elsif ($exitObj->randomType eq 'any_region') {
+            return 'any';
+        } elsif ($exitObj->randomType eq 'temp_region') {
+            return 'temp';
+        } elsif ($exitObj->randomType eq 'room_list') {
+            return 'room';
+        } else {
+            return 'none';
+        }
+    }
+}
+
 { package Language::Axbasic::Function::Intrinsic::String::getregion;
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -7054,7 +8188,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -7117,7 +8251,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -7167,7 +8301,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -7224,7 +8358,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -7274,7 +8408,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -7326,7 +8460,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -7372,7 +8506,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -7452,7 +8586,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -7506,7 +8640,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -7577,7 +8711,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -7648,7 +8782,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -7719,7 +8853,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -7773,7 +8907,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -7827,7 +8961,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -7901,7 +9035,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -7940,7 +9074,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -7985,7 +9119,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 

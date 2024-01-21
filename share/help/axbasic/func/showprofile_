@@ -6,5 +6,5 @@ Showprofile$ ()
    Notes:
       ADDTRIG and DELTRIG (etc) assume that the trigger belongs to the current
          world unless the PROFILE statement has been used. This function returns
-         the name of the assumed profile; it's useful for checking that the 
+         the name of the assumed profile; it's useful for checking that the
          PROFILE statement worked.

@@ -1,0 +1,24 @@
+Addtwinexit (number)
+
+   Synopsis:
+      Converts a single exit into a two-way exit.
+
+   Notes:
+      A two-way exit might link rooms A and B together, with a "north" exit from
+         room A leading to room B, and a "south" exit from room B leading to
+         room A.
+
+      This function converts a single exit (such as a one-way exit) into a
+         two-way exit, creating a brand new exit in the opposite direction.
+         (Axmud stores two-way exits as two separate, but linked, exits.)
+      If an exit in the opposite direction already exists, then that exit is
+         used instead.
+
+      The original exit must already be connected to a room.
+      If the operation is succesful, the new exit's exit model number is
+         returned. If an exit in the opposite direction already existed, than
+         that exit's number is returned. If the operation fails, 0 is returned.
+
+      Note that separate Addexit() and Addtwinexit() functions give your
+         scripts the opportunity to check for the failure of the former, before
+         proceeding with the latter.

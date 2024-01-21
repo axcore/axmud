@@ -1,8 +1,8 @@
 ss / setsession               Changes various session settings
- 
+
    Format:
       ;ss                     Shows current settings
-      
+
       ;ss -b                  Changes tab format to 'deathmud (Gandalf)
       ;ss -h                  Changes tab format to 'deathmud - Gandalf'
       ;ss -w                  Changes tab format to 'deathmud'
@@ -10,14 +10,14 @@ ss / setsession               Changes various session settings
       ;ss -x                  Toggles display xterm titles in tabs
       ;ss -l                  Toggles display of long world names in tabs
       ;ss -s                  Toggles simple tabs
-      
+
       ;ss -m                  Opens prompt before click-closing 'main' window
       ;ss -t                  Opens prompt before click-closing session tab
       ;ss -e                  Opens prompt before closing session from menu
       ;ss -r                  Opens prompt before closing session from toolbar
-      
+
       ;ss -o                  Toggles between modes after disconnection
- 
+
    Notes:
       A session is a single connection to a world (even if it's in offline mode
          and after a disconnection.) Each session has its own tab in the main
@@ -35,6 +35,6 @@ ss / setsession               Changes various session settings
       If you use the '-o' switch, on disconnection the session will go into
          'offline' mode instead (just as if you had opened the Connections
          window and clicked the 'Connect offline' button).
-         
+
    User commands:
       ss / setsession

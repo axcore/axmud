@@ -1,20 +1,20 @@
 SETGAUGE expression , expression , expression
-    
+
    Synopsis:
       Updates a 'main' window gauge
-    
+
    Notes:
       Updates a gauge that was added to the 'main' window with an ADDGAUGE or
          ADDCONGAUGE statement.
-      The first expression is the gauge's unique number. If the gauge doesn't 
-         exist, the SETGAUGE statement is ignored, but the number isn't an 
+      The first expression is the gauge's unique number. If the gauge doesn't
+         exist, the SETGAUGE statement is ignored, but the number isn't an
          integer, 0 or above, you'll see an error message.
       The second and third expressions should evaluate to numbers used to set
-         the length of the "full" and "empty" portions of the gauge. Any decimal 
-         number is acceptable, even negative numbers. If these expressions don't 
+         the length of the "full" and "empty" portions of the gauge. Any decimal
+         number is acceptable, even negative numbers. If these expressions don't
          evaluate to a number, the gauge is blanked.
       After an ADDGAUGE statement, the first number is expected (but not
-         required) to be less than or equal to the second one. After an 
+         required) to be less than or equal to the second one. After an
          ADDCONGAUGE statement, the sum of the two numbers is expected (but not
          required) to be constant, at least in the short term.
 
@@ -22,7 +22,7 @@ SETGAUGE expression , expression , expression
       If the script is not being run as a task, the SETGAUGE statement is
          ignored (and no error message is generated). Execution continues with
          the next statement.
-         
+
    Examples:
       ! Character's health points are at 50%
       ADDGAUGE 1, "HP", "RED", "red", "WHITE"

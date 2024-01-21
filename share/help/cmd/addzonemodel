@@ -1,11 +1,11 @@
 azl / addzonemodel            Adds a new zone model
- 
+
    Format:
       ;azl <name> <switches>  Adds a zone model to the zonemap <name>
- 
+
    Notes:
       Zonemaps are a plan for arranging windows on a workspace grid. Zonemaps
-         contain one or more zone models, describing a region of the workspace 
+         contain one or more zone models, describing a region of the workspace
          and the kinds of window that region is allowed to contain.
       For a list of zonemaps, use the ';listzonemap' command.
 
@@ -17,7 +17,7 @@ azl / addzonemodel            Adds a new zone model
         -l                      - Single layer only (default: multiple layers)
         -c <corner>             - Which start corner (default: 'top_left')
         -o <orientation>        - Which orientation (default: 'vertical')
-        -m <number>             - Maximum windows (default: 0 = no maximum) 
+        -m <number>             - Maximum windows (default: 0 = no maximum)
         -v <number>             - Maximum visible windows (default: 0 = no max)
         -w <width>              - Default width (in blocks) (default: 0 = don't
                                      use a default width)
@@ -26,16 +26,16 @@ azl / addzonemodel            Adds a new zone model
         -r <name> <type>        - Reserves the zone for window <name> of <type>
         -i <string>             - Owner ID (any non-empty string; first session
                                      to use the zone claims that all zones with
-                                     that ID). If <string> is omitted, no owner 
+                                     that ID). If <string> is omitted, no owner
                                      ID is used
-        -a <winmap>             - Default winmap for 'main' windows when 
-                                     workspace grids are activated (generally). 
-                                     If <winmap> is omitted, no default winmap 
+        -a <winmap>             - Default winmap for 'main' windows when
+                                     workspace grids are activated (generally).
+                                     If <winmap> is omitted, no default winmap
                                      used
         -d <winmap>             - Default winmap for 'main' windows when grids
-                                     are disactivated (generally). If <winmap> 
+                                     are disactivated (generally). If <winmap>
                                      is omitted, no default winmap used
-        -g <winmap>             - Default winmap for other 'grid' windows. If 
+        -g <winmap>             - Default winmap for other 'grid' windows. If
                                      <winmap> is omitted, no default winmap used
       If specified:
          <corner> must be 'top_left', 'top_right', 'bottom_left', 'bottom_right'
@@ -53,9 +53,9 @@ azl / addzonemodel            Adds a new zone model
                                      windows is 'custom'
             external            - The external window's name (e.g. 'Notepad')
 
-      ';addzonemodel' can be used on a zonemap currently in use by a workspace 
+      ';addzonemodel' can be used on a zonemap currently in use by a workspace
          grid, but the changes won't be applied until the grid is reset (using
          ';resetgrid').
- 
+
    User commands:
       azl / addzl / addzonemodel

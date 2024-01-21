@@ -1,17 +1,17 @@
 lep / listexitpattern         Lists the world profile's exit patterns
- 
+
    Format:
       ;lep <switches>         Lists exit patterns
- 
+
    Notes:
       The Locator task uses exit patterns, defined by the current world profile,
          to spot when a character's attempts to move fail (or when the character
-         is moved involuntarily). Every exit pattern is a Perl regular 
+         is moved involuntarily). Every exit pattern is a Perl regular
          expression.
-      Because they also appear just after a character move, this command can 
+      Because they also appear just after a character move, this command can
          also be used to list dark room patterns and unspecified room patterns.
-         (Unspecified room patterns match lines sent by the world when the 
-         character has arrived in a new room for which the world hasn't sent a 
+         (Unspecified room patterns match lines sent by the world when the
+         character has arrived in a new room for which the world hasn't sent a
          new room statement, as it normally would.)
 
       <switches> can be one or more of the following:
@@ -22,6 +22,6 @@ lep / listexitpattern         Lists the world profile's exit patterns
          -u   Lists unspecified room patterns, e.g. '^You land with a thump'
          -i   Lists involuntary exit patterns, e.g. '^You run for your life!'
          -a   Lists of all these patterns
- 
+
    User commands:
       lep / listexitpattern

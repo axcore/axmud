@@ -4,7 +4,7 @@ WAITHOOK expression [ , expression ]
       Creates a temporary hook and pauses until the hook fires
 
    Notes:
-      The first expression is the hook stimulus (a hook event). The Axbasic 
+      The first expression is the hook stimulus (a hook event). The Axbasic
          script will pause until the hook fires, at which point the hook is
          destroyed and execution of the Axbasic script resumes.
       The second expression is a timeout measured in seconds. If specified, the
@@ -19,7 +19,7 @@ WAITHOOK expression [ , expression ]
       If the script is not being run as a task, the WAITHOOK statement is
          ignored (and no error message is generated). Execution continues with
          the next statement.
-         
+
    Examples:
       WAITHOOK "receive_text"
       WAITHOOK "receive_text", 60

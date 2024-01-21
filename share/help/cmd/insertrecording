@@ -1,18 +1,18 @@
 irc / insertrecording         Sets the insertion point for the current recording
- 
+
    Format:
       ;irc <number>           Sets the insertion point to line <number>
       ;irc                    Cancels the insertion point
- 
+
    Notes:
       When a recording is in progress, new commands are normally added to the
          end of the recording. If you want to add commmands somewhere else, use
-         this command to create an insertion point at line <number>. Line 
+         this command to create an insertion point at line <number>. Line
          numbers can be found with the ';listrecording' command.
       If you don't specify a line number, the insertion point is cancelled and
          all new commands will be added to the end of the recording.
       See the help for the ';record' command for more information about
          recordings.
- 
+
    User commands:
       irc / insert / insertrc / insertrecording

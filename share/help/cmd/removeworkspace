@@ -1,23 +1,23 @@
 rws / removeworkspace         Makes a workspace unavailable for Axmud use
- 
+
    Format:
       ;rws <number>           Removes workspace object <number>
 
    Notes:
       Axmud supports multiple desktops or 'workspaces'. Workspaces can be both
          real and virtual. If you have multiple physical monitors, each one is a
-         workspace. If your computer has a workspace switcher, allowing you to 
+         workspace. If your computer has a workspace switcher, allowing you to
          switch between virtual desktops, each one is a workspace too.
-      This command removes one of your system's workspaces from the list of 
-         workspaces Axmud is using. Any windows on that workspace will be 
+      This command removes one of your system's workspaces from the list of
+         workspaces Axmud is using. Any windows on that workspace will be
          closed.
-      The default workspace (#0 in Axmud's numbering system) can't be removed. 
-         In addition, if session are sharing a single 'main' window, the 
+      The default workspace (#0 in Axmud's numbering system) can't be removed.
+         In addition, if session are sharing a single 'main' window, the
          workspace which contains that window cannot be removed.
-          
+
       For a list of workspace object numbers, use the ';listworkspace' command.
       To modify which workspaces Axmud uses when it starts, see the help for
          ';addinitialworkspace'.
- 
+
    User commands:
       rws / removews / removeworkspace

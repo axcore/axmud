@@ -7,7 +7,7 @@ td, th { border: 1px solid #c3c3c3; padding: 0 3px 0 3px; }
 table { border-collapse: collapse; }
 img { max-width: 100%; }
 </style>
-<meta name="generator" content="ReText 7.1.0">
+<meta name="generator" content="ReText 7.2.3">
 <title>ch02</title>
 <style type="text/css">
 </style>
@@ -19,11 +19,7 @@ img { max-width: 100%; }
 <h4>Table of Contents</h4>
 <ul>
 <li><a href="#2.1">2.1 Downloading Axmud</a></li>
-<li><a href="#2.2">2.2 Installation on MS Windows</a><ul>
-<li><a href="#2.2.1">2.2.1 Installation on MS Windows using Strawberry Perl</a></li>
-<li><a href="#2.2.2">2.2.2 Installation on MS Windows using ActivePerl</a></li>
-</ul>
-</li>
+<li><a href="#2.2">2.2 Installation on MS Windows</a></li>
 <li><a href="#2.3">2.3 Installation on Linux</a><ul>
 <li><a href="#2.3.1">2.3.1 Installation on Linux using the .DEB package</a></li>
 <li><a href="#2.3.2">2.3.2 Installation on Linux using the .RPM package</a></li>
@@ -54,72 +50,9 @@ img { max-width: 100%; }
 </code></pre>
 <h2><a name="2.2">2.2 Installation on MS Windows</a></h2>
 <p>The easiest way to use Axmud on Windows is to download and run the Windows installer.</p>
-<p>The installer contains everything you need to run Axmud, including a copy of Strawberry Perl, a text-to-speech engine and all the required modules and libraries.</p>
-<p>Users who already have Strawberry Perl and/or ActivePerl installed on their system can install Axmud manually using the following methods.</p>
-<h3><a name="2.2.1">2.2.1 Installation on MS Windows using Strawberry Perl</a></h3>
-<p>Axmud v1.2.0 (and all later versions) is known to work with both 32-bit and 64-bit editions of Strawberry Perl.</p>
-<p>After installing Strawberry Perl on your system, open a command prompt. From the Windows Start menu, you can click:</p>
-<pre><code>'All Programs &gt; Strawberry Perl &gt; Perl (command line)'
-</code></pre>
-<p>Next, get some modules from CPAN:</p>
-<pre><code>    cpan Archive::Extract IO::Socket::INET6 IPC::Run Net::OpenSSH Path::Tiny Regexp::IPv6
-</code></pre>
-<p>Then get the following module:</p>
-<pre><code>    cpan File::ShareDir::Install
-</code></pre>
-<p>If the line above generates an error, try this line instead:</p>
-<pre><code>    cpanm --force --build-args SHELL=cmd.exe --install-args SHELL=cmd.exe File::ShareDir::Install
-</code></pre>
-<p>Now we need some modules from the Sisyphusion repo.</p>
-<p>(If you are reading this chapter some time in the distant future and find the repo is no longer available, you can either search around for a replacement, or you can use the installer.)</p>
-<pre><code>    ppm set repository sisyphusion http://sisyphusion.tk/ppm
-    ppm set save
-    ppm install Glib Gtk3 GooCanvas2
-</code></pre>
-<p>Before continuing, you should remove the following folder. When asked 'Are you sure (Y/N)?', type 'y'.</p>
-<pre><code>    rmdir /s C:\Strawberry\perl\site\lib\sisyphusion_gtk2_themes_temp
-</code></pre>
-<p>Now type this the following command. At the time of writing, it produces a 'cannot remove directory - permission denied' error. This is expected and does not affect Axmud installation.</p>
-<pre><code>    ppm install http://www.sisyphusion.tk/ppm/PPM-Sisyphusion-Gtk2_theme.ppd
-</code></pre>
-<p>Now we need to copy a .dll file from one location to another:</p>
-<pre><code>    copy C:\Strawberry\perl\site\lib\auto\Cairo\s1sfontconfig-1.dll C:\Strawberry\perl\bin\s1sfontconfig-1.dll
-</code></pre>
-<p>Download the Axmud source code file (ending .tar.gz), and extract it in a convenient location (e.g. your Downloads folder). If you don't have anything capable of extracting a .tar.gz archive, you can use 7-Zip.</p>
-<p>From the same command prompt window as earlier, change to that directory, for example:</p>
-<pre><code>    cd C:\Users\YOURNAME\Downloads\Games-Axmud-1.2.345
-</code></pre>
-<p>From this point, installation is standard.</p>
-<pre><code>    perl Makefile.PL
-    gmake
-    gmake install
-    axmud.pl
-</code></pre>
-<h3><a name="2.2.2">2.2.2 Installation on MS Windows using ActivePerl</a></h3>
-<p>Axmud is known to work with both 32-bit and 64-bit editions of ActivePerl.</p>
-<p>First, open a command prompt. From the Windows Start menu, type 'cmd' inside the 'Search programs and files' box.</p>
-<p>Then we can get some modules from CPAN:</p>
-<pre><code>    ppm install dmake
-    ppm install Archive::Extract File::ShareDir::Install IO::Socket::INET6 IPC::Run Net::OpenSSH Path::Tiny Regexp::IPv6
-</code></pre>
-<p>Now we need some modules from the Sisyphusion repo.</p>
-<p>(If you are reading this chapter some time in the distant future and find the repo is no longer available, you can either search around for a replacement, or you can use the installer.)</p>
-<pre><code>    ppm repo add http://www.sisyphusion.tk/ppm
-    ppm install Glib Gtk3 GooCanvas2 -- force
-</code></pre>
-<p>Download the Axmud source code file (ending .tar.gz), and extract it in a convenient location (e.g. your Downloads folder). If you don't have anything capable of extracting a .tar.gz archive, you can use 7-Zip.</p>
-<p>From the same command prompt window as earlier, change to that directory, for example:</p>
-<pre><code>cd C:\Users\YOURNAME\Downloads\Games-Axmud-1.2.345
-</code></pre>
-<p>From this point, installation is standard.</p>
-<pre><code>perl Makefile.PL
-dmake
-dmake install
-axmud.pl
-</code></pre>
-<h3><a name="2.2.3">2.2.3 Using Festival on MS Windows</a></h3>
-<p>Axmud cannot use the Festival text-to-speech engine without patching the <a href="https://metacpan.org/pod/IPC::Run&gt;">Perl IPC::Run module</a>. Instructions for doing this can be found in the Axmud source code, in the file <strong>../axmud/nsis/axmud_installer.nsi</strong>.</p>
-<p>The MS Windows installer already contains a patched version of IPC::Run.</p>
+<p>The installer contains everything you need to run Axmud, including all the required modules and libraries, and a copy of several text-to-speech engines.</p>
+<p>Note that, as of 2020, the sisyphusion repository no longer exists, so there is no longer any known method for running Axmud with ActivePerl or with Strawberry Perl. If installing Axmud manually, you must use MSYS2. The method is described in the installation script, <em>../nsis/axmud_install.nsi</em>.</p>
+<p>Note also that, as of 2024, MSYS2 does not support versions of Windows earlier than 8.1, and does not support 32-bit Windows at all. Therefore, <strong>the latest version of Axmud will not run on those systems</strong>. (Earlier versions of Axmud, for example v1.3.029, should still work; you can download the installers from Sourceforge.)</p>
 <h2><a name="2.3">2.3 Installation on Linux</a></h2>
 <p>There are three methods of installation on Linux - install using the .deb package, install using the .rpm package or install manually using the source code.</p>
 <h3><a name="2.3.1">2.3.1 Installation on Linux using the .DEB package</a></h3>

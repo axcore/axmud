@@ -180,7 +180,7 @@ You might also find the **;listtask** command useful. It displays a list of all 
         ;listtask
         ;lt
 
-All of these actions are also available in the object viewer window (see [Section 4.6](ch04.html#4.6)).
+All of these actions are also available in the data viewer window (see [Section 4.6](ch04.html#4.6)).
 
 * In the left-hand column, double-click on **Tasks** and then click on **Available tasks**.
 * Select a task by clicking on it

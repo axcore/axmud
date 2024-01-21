@@ -1,5 +1,5 @@
 etb / edittoolbar             Opens an 'edit' window for a toolbar button
- 
+
    Format:
       ;etb <name>             View settings for the toolbar button <name>
 
@@ -10,6 +10,6 @@ etb / edittoolbar             Opens an 'edit' window for a toolbar button
          this command to view settings for a particular button.
       Toolbar buttons can be added, deleted and modified in the client's
          preference window (use the ';editclient' command).
-  
+
    User commands:
       etb / edittool / edittoolbar

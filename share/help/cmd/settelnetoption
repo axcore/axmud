@@ -1,5 +1,5 @@
 sto / settelnetoption         Enables/disables telnet negotiation options
- 
+
    Format:
       ;sto                    Shows global telnet option settings
       ;sto -l                 Shows session telnet option status
@@ -14,16 +14,16 @@ sto / settelnetoption         Enables/disables telnet negotiation options
                                  option)
       ;sto -c                 Enables/disables CHARSET (Character Set and
                                  translation)
- 
+
    Notes:
-      Most worlds exchange (negotiate) information with the client that isn't 
+      Most worlds exchange (negotiate) information with the client that isn't
          usually visible to the user. In Axmud, all telnet options are enabled
          by default.
-      You can use this command to enable and disable telnet options. The action 
-         applies to every existing connection (and future ones). 
+      You can use this command to enable and disable telnet options. The action
+         applies to every existing connection (and future ones).
       Since Axmud negotiates telnet options passively, if you re-enable a telnet
-         option after disabling it, the option will still be disabled in 
-         existing connections; the change will be applied to all future 
+         option after disabling it, the option will still be disabled in
+         existing connections; the change will be applied to all future
          connections.
       See also the help for ';setmudprotocol'.
 

@@ -22,14 +22,14 @@
 
 When you first run Axmud, the Setup wizard window asks you which tasks should be started automatically at the beginning of each session.
 
-There are several lists of *initial tasks*. The main one - the so-called *global initial tasklist* - can be viewed from the object viewer window.
+There are several lists of *initial tasks*. The main one - the so-called *global initial tasklist* - can be viewed from the data viewer window.
 
-* Open the object viewer window using the **;openobjectviewer** command, or by clicking the button in the main window
+* Open the data viewer window using the **;opendataviewer** command, or by clicking the button in the main window
 * When the window opens, click on **Tasks > Global initial tasklist**
 
-The object viewer window also lists the *types* of task that are available, including both built-in tasks and any tasks you have written yourself.
+The data viewer window also lists the *types* of task that are available, including both built-in tasks and any tasks you have written yourself.
 
-* In the object viewer window , click on **Tasks > Available tasks**
+* In the data viewer window , click on **Tasks > Available tasks**
 * Click the Divert task to select it
 * Then click on **Add initial**
     * A few tasks, such as the Chat task, can only be started with a client command
@@ -80,7 +80,7 @@ Any changes you make to the *current* divert task are lost at the end of the ses
 
 However, you can edit initial tasks, and any changes you make will be changes are retained between sessions.
 
-* Open the object viewer window using the **;openobjectviewer** command, or by clicking the button in the main window
+* Open the data viewer window using the **;opendataviewer** command, or by clicking the button in the main window
 * When the window opens, click on **Tasks > Global initial tasklist**
 * Select the Divert task you created earlier by clicking on it
 * Click the **Edit** button
@@ -94,9 +94,9 @@ In this example, any changes you make will be applied the next time you connect 
 
 ###<a name="12.3.1">12.3.1 Adding custom tasks</a>
 
-You can create a new custom task from the object viewer window.
+You can create a new custom task from the data viewer window.
 
-* Open the object viewer window using the **;openguiwindow** command, or by clicking the button in the main window
+* Open the data viewer window using the **;openguiwindow** command, or by clicking the button in the main window
 * When the window opens, click on **Tasks > Available tasks**
 * Select the Watch task by clicking on it
 * Then click the **Add custom** button
@@ -109,7 +109,7 @@ Enter a name like **mywatch** and then click the **Add task** button at the bott
 
 Once the custom task has been created, you can modify its behaviour.
 
-* In the object viewer window, click on **Tasks > Custom tasklist**
+* In the data viewer window, click on **Tasks > Custom tasklist**
 * Select the task by click on it
 * Then click the **Edit** button
 

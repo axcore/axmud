@@ -1,23 +1,23 @@
 lwt / listwindowtable         Lists table objects in an 'internal' window
- 
+
    Format:
-      ;lwt <window>           Lists table objects 
+      ;lwt <window>           Lists table objects
 
       ;lwt <window> -i        Lists table objects and initialisation settings
       ;lwt -i <window>
- 
+
    Notes:
-      Winmaps are a plan for arranging the layout of 'internal' windows 
-         (consisting of all 'main' windows, 'protocol' windows such as those 
+      Winmaps are a plan for arranging the layout of 'internal' windows
+         (consisting of all 'main' windows, 'protocol' windows such as those
          created by MXP, and 'custom' windows such as task windows; see the help
          for ';addwinmap' for more details).
       The winmap consists of two parts: a list of strip objects, and a list of
-         table objects (use the ';listwindow' command to get a list of 'grid' 
+         table objects (use the ';listwindow' command to get a list of 'grid'
          window numbers.
 
       This command lists table objects for 'grid' window number <window>. If the
-         -i switch is specified, the table object's initialisation settings are 
+         -i switch is specified, the table object's initialisation settings are
          displayed, too.
- 
+
    User commands:
       lwt / listtable / listwindowtable

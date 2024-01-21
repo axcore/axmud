@@ -1,5 +1,5 @@
 mpr / modifyprimary           Modifies a primary direction
- 
+
    Format:
       ;mpr <standard> <custom>
       ;mpr <standard> <custom> <abbrev>
@@ -15,7 +15,7 @@ mpr / modifyprimary           Modifies a primary direction
          directions such as 'out' and 'in', this set can contain as many or as
          few directions as you want.
       For a list of primary and secondary directions stored in the current
-         dictionary, use the 'listdirection' command.               
+         dictionary, use the 'listdirection' command.
 
       If you want to modify the current dictionary's custom primary directions
          (often because you're playing a world whose language is not English),
@@ -33,6 +33,6 @@ mpr / modifyprimary           Modifies a primary direction
 
       However, for some languages (French among them), all directions can be
          updated at once using the button in the dictionary's edit window.
- 
+
    User commands:
       mpr / modprimary / modifyprimary

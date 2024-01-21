@@ -1,13 +1,13 @@
 lms / listminionstring        Lists minion strings stored in the world model
- 
+
    Format:
       ;lms                    Lists minion strings
- 
+
    Notes:
       The world model stores information about the regions, rooms, characters
          and objects in the game world. The automapper window uses the model to
          display its maps.
-      The world model can also keep track of minions - non-player characters 
+      The world model can also keep track of minions - non-player characters
          which are controlled directly by players.
 
       Minion objects are treated a little differently to other model objects.
@@ -15,8 +15,8 @@ lms / listminionstring        Lists minion strings stored in the world model
          describe a minion. The world might use more than one string for the
          same minion and some strings are independent of any specific minion
          (see the help for ';addminionstring' for more information).
-      This command lists all minion strings and their corresponding model 
+      This command lists all minion strings and their corresponding model
          objects (if any).
- 
+
    User commands:
       lms / listms / listminionstring

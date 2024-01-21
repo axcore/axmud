@@ -1,14 +1,14 @@
 tpp / togglepopup             Toggles popup windows
- 
+
    Format:
       ;tpp                    Toggles popup windows
-      
+
    Notes:
       Axmud is able to open a popup window when it's doing something that takes
          several seconds - loading a large file, or drawing a large map, for
          example.
       If you'd prefer not to see popup windows at all, you can use this command
          to turn them off (or back on again).
-      
+
    User commands:
       tpp / togglepop / togglepopup

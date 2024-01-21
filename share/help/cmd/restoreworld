@@ -1,26 +1,26 @@
 rwo / restoreworld            Restores pre-configured worlds
- 
+
    Format:
       ;rwo                    Restores all pre-configured worlds
       ;rwo <name>             Restores the pre-configured world <name>
- 
+
    Notes:
       Axmud comes with a number of pre-configured worlds. When Axmud starts for
-         the first time, those worlds are automatically loaded. However, over 
+         the first time, those worlds are automatically loaded. However, over
          time the world profiles will be modified, and perhaps even deleted;
          this command can be used to restore the pre-configured worlds to their
-         default state. 
+         default state.
       Because of the risk of corrupting your existing data files, this command
          is only available when you are not connected to any world. In addition,
-         when the operation is complete, Axmud will shut down without saving 
-         files (except for files belonging to the newly-restored world).  
-      For this reason, best results can be achieved by starting Axmud, opening a 
-         single connection to any world in 'offline' mode, running the command, 
-         and then re-starting Axmud to check the results. 
+         when the operation is complete, Axmud will shut down without saving
+         files (except for files belonging to the newly-restored world).
+      For this reason, best results can be achieved by starting Axmud, opening a
+         single connection to any world in 'offline' mode, running the command,
+         and then re-starting Axmud to check the results.
 
       You should definitely CREATE A BACK UP OF THE ENTIRE AXMUD DATA DIRECTORY
          before you start, in case anything goes wrong.
-      In most cases it's better to use the ';updateworld' command, which is able  
+      In most cases it's better to use the ';updateworld' command, which is able
          to read data stored in the pre-configured world files and then merge
          that data with the current world profile's existing properties. In
          addition, ';updateworld' can be used while conneceted to a world.

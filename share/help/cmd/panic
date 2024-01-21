@@ -1,16 +1,16 @@
 boss / panic                  Stops the client and doesn't save files
- 
+
    Format:
       ;boss                   Stops the client immediately
- 
+
    Notes:
       Use this command to clear your desktop when you accidentally over-extend
-         your lunchbreak (which is why the user command ';boss' redirects to 
+         your lunchbreak (which is why the user command ';boss' redirects to
          this command.) It's also the quickest way to terminate all of your
          connections in an emergency.
       By using this command, you will lose any changes you have made to Axmud's
          stored data. Use the ';stopclient' command to stop the client while
          still having the opportunity to save files.
- 
+
    User commands:
       boss / panic

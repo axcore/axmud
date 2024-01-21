@@ -4,22 +4,22 @@ REVPATH variable-name
       Attempts to reverse a list of directions
 
    Notes:
-      The variable should be an array containing the series of commands to be 
+      The variable should be an array containing the series of commands to be
          sent to the world in order to travel between two locations, e.g.
-         
+
             "north", "northwest", "up", "east"
-            
+
       REVPATH attempts to use Axmud's path-reversal functions to produce a list
           of commands for travelling in the opposite direction, e.g.
-          
+
             "west", "down", "southeast", "south"
-            
+
       If the current dictonary doesn't know the opposite of a particular
          direction, that direction remains unchanged, e.g.
-         
+
             "north", "perambulate", "west"
                >> "east", "perambulate", "south"
-               
+
       If the array is empty, no error message is generated: the array remains
          unmodified. REVPATH assumes that the array starts at element #1.
 

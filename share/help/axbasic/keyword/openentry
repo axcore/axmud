@@ -15,7 +15,7 @@ OPENENTRY
       If the script is not being run as a task, or if the task window is already
          open, the OPENENTRY statement is ignored (and no error message is
          generated). Execution continues with the next statement.
-   
+
    Examples:
       OPENENTRY
       WRITEWIN "Hello world!"

@@ -1,15 +1,15 @@
 dch / deletechar              Deletes a character profile
- 
+
    Format:
       ;dch <name>             Deletes the character profile <name>
- 
+
    Notes:
       This operation deletes the character and all its associated cages,
          including all the interfaces stored in the cages.
       If the character has been assigned a current guild, current race or any
-         current custom profiles, they will be unset as current profiles (but 
+         current custom profiles, they will be unset as current profiles (but
          not deleted).
-      If <name> is the current character profile, there will be no current 
+      If <name> is the current character profile, there will be no current
          character profile after using this command.
 
    User commands:

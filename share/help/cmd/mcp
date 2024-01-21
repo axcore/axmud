@@ -1,10 +1,10 @@
 mcp / mcp                     Shows supported MCP packages
- 
+
    Format:
       ;mcp                    Shows all MCP packages
- 
+
    Notes:
-      The world can use the MCP protocol to send extra information about the 
+      The world can use the MCP protocol to send extra information about the
          game state.
       Axmud provides three MCP packages (mcp-negotiate, mcp-cord and
             dns-org-mud-moo-simpleedit).

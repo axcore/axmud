@@ -24,10 +24,10 @@ SETHOOK expression [ , expression ]
          second expression (specifying another script to run) is ignored (and no
          error message is generated). Execution continues with the next
          statement.
-         
+
    Compatibility:
       Since Axbasic v1.4
-      
+
    Examples:
       REM A hook that fires whenever text is received from the world
       SETHOOK "receive_text"

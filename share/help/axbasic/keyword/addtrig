@@ -5,20 +5,20 @@ ADDTRIG expression , expression [ , expression ]
 
    Notes:
       A convenient way to create triggers. The first expression is the stimulus
-         (a pattern), the second is the response (an instruction or 
+         (a pattern), the second is the response (an instruction or
          substitution). If the third expression is specified, it is used as the
          trigger name; otherwise Axmud assigns a name to the trigger.
       The following Axbasic statements are therefore interchangeable:
-      
+
          ADDTRIG "stimulus", "response", "name"
          CLIENT "addtrigger -s stimulus -p response -n name"
-         
+
       If Axmud can't create the new trigger, execution of the Axbasic script
          continues as normal. No error message is generated.
       All triggers created by this statement are 'inactive' triggers, and are
          assigned to a cage belonging to the current world (unless an earlier
-         PROFILE statement specified a different profile). If there are no 
-         higher-priority triggers with the same name, the corresponding 'active' 
+         PROFILE statement specified a different profile). If there are no
+         higher-priority triggers with the same name, the corresponding 'active'
          trigger will be created automatically.
       Triggers created with this statement are automatically deleted when the
          script terminates (unless you use an OPTION PERSIST statement somewhere

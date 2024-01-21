@@ -1,0 +1,9 @@
+Isroom (number)
+
+   Synopsis:
+      Tests whether a room exists
+
+   Notes:
+      'number' is a room's number in the world model. Returns 1 if the room
+         exists, or 0 if it doesn't exist (or if it is some other type of
+         object, such as a weapon).

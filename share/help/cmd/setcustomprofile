@@ -1,21 +1,21 @@
 scp / setcustomprofile        Sets a current custom profile
- 
+
    Format:
-      ;scp <name> <template> 
+      ;scp <name> <template>
                Sets the current custom profile based on <template> to <name>
- 
+
       ;scp <name>
                Sets the current custom profile to <name>
- 
+
    Notes:
-      Besides having a guild profile and a race profile, characters can have any 
+      Besides having a guild profile and a race profile, characters can have any
          number of custom profiles marked as a current profile.
-      Profile names must be no longer than 16 characters, contain only A-Z, a-z, 
-         underlines and 0-9 (not the first character) and not be one of Axmud's 
+      Profile names must be no longer than 16 characters, contain only A-Z, a-z,
+         underlines and 0-9 (not the first character) and not be one of Axmud's
          reserved names (see the ';listreserved' command). Non-Latin alphabets
          are acceptable.
       If the custom profile <name> doesn't already exist, it is created (but, in
          that case, <template> must be specified).
- 
+
    User commands:
       scp / setcustom / setcustomprof / setcustomprofile

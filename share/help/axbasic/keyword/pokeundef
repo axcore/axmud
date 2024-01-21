@@ -4,21 +4,21 @@ POKEUNDEF axmud-object-property
       Sets the value of an Axmud internal scalar property to 'undef'
 
    Notes:
-      POKE gives Axbasic scripts access to some of Axmud's internal data (see 
-         the help for the POKE statement for a full explanation). 
+      POKE gives Axbasic scripts access to some of Axmud's internal data (see
+         the help for the POKE statement for a full explanation).
       POKEUNDEF is similar to POKE, but it only sets the value of scalar
          properties such as "world.current.longName". It cannot be used to set a
          list property such as "world.current.doorPatternList", a hash property
          such as "world.current.currencyHash" or a Perl object such as
          "world.current".
-      POKEUNDEF sets the scalar property to the special Perl value 'undef', 
-         which means undefined. 
+      POKEUNDEF sets the scalar property to the special Perl value 'undef',
+         which means undefined.
       Much of Axmud's internal data is read-only, and cannot be modified with
          POKE or with this statement. If you try to modify a read-only property
          you will get an 'operation failure' error.
 
-   Warning: 
-      Do not try to modify Axmud's internal data unless you know what you are 
+   Warning:
+      Do not try to modify Axmud's internal data unless you know what you are
          doing. Read the Axmud manual before you try to POKE anything. (The
          examples below are safe, but backup your data first.)
 

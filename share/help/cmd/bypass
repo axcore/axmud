@@ -1,30 +1,30 @@
 byp / bypass                  Interprets a bypass string as a world command
- 
+
    Format:
       ;byp <string>           Interprets the <string>
-      
+
    Notes:
-      Bypass commands can be typed in the 'main' window's command entry box. 
+      Bypass commands can be typed in the 'main' window's command entry box.
          These commands start with the bypass sigil, a 'greater than' character:
-      
+
          >drink water
-                  
+
       Everything after the sigil is interpreted as a world command. However,
          unlike normal world commands, a bypass command is sent to the world
          immediately, bypassing any world commands which have been queued
          (because of the current world profile's slowwalking settings or because
          crawl mode is on).
-         
-      Bypass sigils are turned off by default (use ';togglesigil -b' to turn 
-         them on again). However, this client command is always available, and 
+
+      Bypass sigils are turned off by default (use ';togglesigil -b' to turn
+         them on again). However, this client command is always available, and
          you don't need to type the sigil:
-         
+
          ;bypass drink water
-         
+
       If you want to preserve spacing between words, you can enclose the whole
          <string> in diamond brackets <...>:
-         
+
          ;bypass <say Hello...      I'm back!>
-          
+
    User commands:
       byp / bypass

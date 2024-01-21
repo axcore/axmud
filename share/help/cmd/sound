@@ -1,13 +1,13 @@
 snd / sound                   Turns sound on/off
- 
+
    Format:
       ;snd on                 Turns sound on
       ;snd off                Turns sound off
       ;snd                    Shows whether sound is on or off
- 
-   Notes:       
+
+   Notes:
       This command turns sound on and off. ';sound on' will fail if no external
-         audio package has been specified (with the ';setexternalprogramme' 
+         audio package has been specified (with the ';setexternalprogramme'
          command).
 
       Sound typically comes from two sources - Axmud sound effects, and sounds
@@ -23,7 +23,7 @@ snd / sound                   Turns sound on/off
          bell     - Desk bell
          call     - Incoming chat message
          death    - Character dies
-         deposit  - Character deposits money into bank 
+         deposit  - Character deposits money into bank
          error    - System error/warning/debug/improper arguments messages
          greeting - General arrival
          kill     - General kill
@@ -32,13 +32,13 @@ snd / sound                   Turns sound on/off
          ready    - Something is ready
          torch    - Torch has burnt out
          withdraw - Character withdraws money from bank
-      The second group of sound effects are named after the sounds they use 
+      The second group of sound effects are named after the sounds they use
          ('computer', 'gorilla', 'mosquito' etc).
       Axmud's 'sound effects bank' consists of sound effects from both banks,
          and can be customised by the user to add or remove sound effects.
-         
+
       If the world supports the Mud Sound Protocol (MSP), it can request that
-         Axmud downloads and plays sounds directly from the world. See the 
+         Axmud downloads and plays sounds directly from the world. See the
          ';msp' command for more information.
       MSP sounds won't be audible if sound has been turned off using this
          command.

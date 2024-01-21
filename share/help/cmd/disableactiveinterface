@@ -1,20 +1,20 @@
 dai / disableactiveinterface  Disables active interfaces
- 
+
    Format:
       ;dai <name>             Disables active interface called <name>
       ;dai <number>           Disables active interface with <number>
       ;dai                    Disables all active interfaces
- 
+
    Notes:
-      Axmud interfaces are triggers, aliases, macros, timers and hooks. 
+      Axmud interfaces are triggers, aliases, macros, timers and hooks.
       Most interfaces are associated with a particular profile and are called
          'inactive' interfaces. When the profile becomes a current profile its
          interfaces become 'active' (except those whose name is the same as an
-         existing active interface associated with a higher-priority profile). 
+         existing active interface associated with a higher-priority profile).
       This command disables the active interface without making any changes to
-         the corresponding inactive interface (if there is one). Use the 
+         the corresponding inactive interface (if there is one). Use the
          ';listactiveinterface' command to get a list of the <name> and <number>
          of all active interfaces.
- 
+
    User commands:
       dai / disableinterface / disableactiveinterface

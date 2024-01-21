@@ -1,16 +1,16 @@
 brk / break                   Adds a break to the current recording
- 
+
    Format:
       ;brk                    Adds a break
       ;brk -t <pattern>       Adds a trigger break using <pattern>
       ;brk -p <number>        Adds a pause break of <number> seconds
       ;brk -l                 Adds a Locator task break
- 
+
    Notes:
       Adds a break to the current recording. Breaks are useful if the recording
-         is saved as a mission, but will be ignored if the recording is saved as 
+         is saved as a mission, but will be ignored if the recording is saved as
          a route.
-      A mission is typically divided into groups of commands, separated by 
+      A mission is typically divided into groups of commands, separated by
          breaks. During a mission, each group of commands is sent to the world
          all at the same time; the break separates this group from the next
          group of commands and allows the user to move onto the next group only
@@ -18,23 +18,23 @@ brk / break                   Adds a break to the current recording
       There are four special kinds of breaks which allow for more flexible
          missions (see the help for ';startmission' for more information).
       The switches -t, -p and -l create a special break; otherwise an ordinary
-         break is created. 
-      A trigger break creates an (active) trigger using <pattern> as its 
+         break is created.
+      A trigger break creates an (active) trigger using <pattern> as its
          stimulus; when the trigger fires (i.e., when the world sends some text
          matching the <pattern>), the break is complete and the mission resumes.
-         If <pattern> contains spaces, it should be surrounded by diamond 
+         If <pattern> contains spaces, it should be surrounded by diamond
          brackets <...>
       A pause break creates an (active) timer. When the timer fires (after
-         <number> seconds), the break is complete and the mission resumes. 
+         <number> seconds), the break is complete and the mission resumes.
          <number> can be an integer like '10' or a decimal like '10.4'.
       A Locator break waits until the Locator task is not expecting any more
          room descriptions. It's typically used after sending a lot of movement
-         commands to the world, so that the mission can resume only when the 
+         commands to the world, so that the mission can resume only when the
          character arrives.
       An ordinary break is complete when the user types ';mission', which
          resumes the mission.
-      See the help for the ';record' command for more information about 
+      See the help for the ';record' command for more information about
          recordings.
- 
+
    User commands:
       brk / break

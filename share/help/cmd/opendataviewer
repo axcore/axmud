@@ -1,0 +1,7 @@
+odv / opendataviewer          Opens the data viewer window
+
+   Format:
+      ;odv                    Opens the window
+
+   User commands:
+      odv / oov / viewer / openviewer / opendataviewer / openobjectviewer

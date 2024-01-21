@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2022 A S Lewis
+# Copyright (C) 2011-2024 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -19,7 +19,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -113,8 +113,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->setupNotebook', @_);
         }
 
-#       # Tab setup
-#       my $grid = $self->addTab('_Client', $self->notebook);
+        # Tab setup (already created by the calling function)
 
         # Set up the rest of the first tab (all of it, in this case)
         $self->clientTab();
@@ -147,11 +146,17 @@
         }
 
         $self->settingsTab();
-        $self->pluginsTab();
+        if (! $axmud::CLIENT->configWinSimplifyFlag) {
+
+            $self->pluginsTab();
+        }
         $self->commandsTab();
         $self->logsTab();
         $self->coloursTab();
-        $self->workspacesTab();
+        if (! $axmud::CLIENT->configWinSimplifyFlag) {
+
+            $self->workspacesTab();
+        }
         $self->windowsTab();
         $self->soundTab();
         $self->tasksTab();
@@ -186,22 +191,28 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('_Client', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, '_Client');
 
         # Add tabs to the inner notebook
         $self->client1Tab($innerNotebook);
         $self->client2Tab($innerNotebook);
-        $self->client3Tab($innerNotebook);
+        if (! $axmud::CLIENT->configWinSimplifyFlag) {
+
+            $self->client3Tab($innerNotebook);
+        }
         $self->client4Tab($innerNotebook);
         $self->client5Tab($innerNotebook);
-        $self->client6Tab($innerNotebook);
-        $self->client7Tab($innerNotebook);
-        $self->client8Tab($innerNotebook);
+        if (! $axmud::CLIENT->configWinSimplifyFlag) {
+
+            $self->client6Tab($innerNotebook);
+            $self->client7Tab($innerNotebook);
+            $self->client8Tab($innerNotebook);
+        }
 
         return 1;
     }
 
-    sub client1Tab {
+    sub ODDclient1Tab {
 
         # Client1 tab
         #
@@ -214,6 +225,9 @@
 
         my ($self, $innerNotebook, $check) = @_;
 
+        # Local variables
+        my ($offset, $path);
+
         # Check for improper arguments
         if (! defined $innerNotebook || defined $check) {
 
@@ -221,50 +235,73 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Client settings'],
+        );
+
+        # Optional header
+        if ($axmud::CLIENT->configWinSimplifyFlag) {
+
+            $offset = 1;
+            if ($^O eq 'MSWin32') {
+                $path = $axmud::SHARE_DIR . '\\icons\\replace\\dialogue_replace_warning.png';
+            } else {
+                $path = $axmud::SHARE_DIR . '/icons/replace/dialogue_replace_warning.png';
+            }
+
+            my ($image, $frame, $viewPort) = $self->addImage($grid, $path, undef,
+                FALSE,          # Don't use a scrolled window
+                -1, 50,
+                1, 3, 0, 1);
+
+            $self->addLabel($grid,
+                "<b>Some tabs are hidden. You can reveal them in the \'Windows\'"
+                . "\ntab, or type this command:</b>   ;setwindowsize -s",
+                3, 12, 0, 1);
+
+        } else {
+
+            $offset = 0;
+        }
 
         # Left column
         $self->addLabel($grid, '<b>Client settings</b>',
-            0, 12, 0, 1);
+            0, 12, (0 + $offset), (1 + $offset));
 
         $self->addLabel($grid, 'Script name',
-            1, 3, 1, 2);
+            1, 3, (1 + $offset), (2 + $offset));
         my $entry = $self->addEntry($grid, undef, FALSE,
-            3, 6, 1, 2);
+            3, 6, (1 + $offset), (2 + $offset));
         $entry->set_text($axmud::SCRIPT);
 
         $self->addLabel($grid, 'Script version',
-            1, 3, 2, 3);
+            1, 3, (2 + $offset), (3 + $offset));
         my $entry2 = $self->addEntry($grid, undef, FALSE,
-            3, 6, 2, 3);
+            3, 6, (2 + $offset), (3 + $offset));
         $entry2->set_text($axmud::VERSION);
 
-        $self->addLabel($grid, 'Script date',
-            1, 3, 3, 4);
-        my $entry3 = $self->addEntry($grid, undef, FALSE,
-            3, 6, 3, 4);
-        $entry3->set_text($axmud::DATE);
-
         $self->addLabel($grid, 'Authors',
-            1, 3, 4, 5);
+            1, 3, (3 + $offset), (4 + $offset));
         my $entry4 = $self->addEntry($grid, undef, FALSE,
-            3, 12, 4, 5);
+            3, 12, (3 + $offset), (4 + $offset));
         $entry4->set_text($axmud::AUTHORS);
 
         $self->addLabel($grid, 'Copyright',
-            1, 3, 5, 6);
+            1, 3, (4 + $offset), (5 + $offset));
         my $entry5 = $self->addEntry($grid, undef, FALSE,
-            3, 12, 5, 6);
+            3, 12, (4 + $offset), (5 + $offset));
         $entry5->set_text($axmud::COPYRIGHT);
 
         $self->addLabel($grid, 'Website',
-            1, 3, 6, 7);
+            1, 3, (5 + $offset), (6 + $offset));
         my $entry6 = $self->addEntry($grid, undef, FALSE,
-            3, 10, 6, 7);
+            3, 10, (5 + $offset), (6 + $offset));
         $entry6->set_text($axmud::URL);
 
         my $button = $self->addButton($grid, 'Open', 'Open this website in a web browser', undef,
-            10, 12, 6, 7);
+            10, 12, (5 + $offset), (6 + $offset));
         if (! $axmud::URL) {
 
             $button->set_sensitive(FALSE);
@@ -278,13 +315,13 @@
         });
 
         $self->addLabel($grid, 'Description',
-            1, 3, 7, 8);
+            1, 3, (6 + $offset), (7 + $offset));
         my $entry7 = $self->addEntry($grid, undef, FALSE,
-            3, 12, 7, 8);
+            3, 12, (6 + $offset), (7 + $offset));
         $entry7->set_text($axmud::DESCRIP);
 
         my $button2 = $self->addButton($grid, 'About...', 'About ' . $axmud::SCRIPT, undef,
-            1, 4, 8, 9);
+            1, 4, (7 + $offset), (8 + $offset));
         $button2->signal_connect('clicked' => sub {
 
             # Only one About window can be open at a time
@@ -308,7 +345,7 @@
 
         my $button3 = $self->addButton(
             $grid, 'Credits...', 'Show information about credits', undef,
-            4, 6, 8, 9);
+            4, 6, (7 + $offset), (8 + $offset));
         $button3->signal_connect('clicked' => sub {
 
             # Only one About window can be open at a time
@@ -331,7 +368,7 @@
         });
 
         my $button4 = $self->addButton($grid, 'Quick help...', 'Show quick help', undef,
-            6, 9, 8, 9);
+            6, 9, (7 + $offset), (8 + $offset));
         $button4->signal_connect('clicked' => sub {
 
             # Only one About window can be open at a time
@@ -357,7 +394,7 @@
             'Peek/Poke list...',
             'Show strings for Peek/Poke operations',
             undef,
-            9, 12, 8, 9);
+            9, 12, (7 + $offset), (8 + $offset));
         $button5->signal_connect('clicked' => sub {
 
             # Only one About window can be open at a time
@@ -380,7 +417,7 @@
         });
 
         my $button6 = $self->addButton($grid, 'Changes...', 'Show list of changes', undef,
-            1, 4, 9, 10);
+            1, 4, (8 + $offset), (9 + $offset));
         $button6->signal_connect('clicked' => sub {
 
             # Only one About window can be open at a time
@@ -403,7 +440,7 @@
         });
 
         my $button7 = $self->addButton($grid, 'Installation...', 'Show installation guide', undef,
-            4, 6, 9, 10);
+            4, 6, (8 + $offset), (9 + $offset));
         $button7->signal_connect('clicked' => sub {
 
             # Only one About window can be open at a time
@@ -426,7 +463,7 @@
         });
 
         my $button8 = $self->addButton($grid, 'GPL License...', 'Show text of GPL License', undef,
-            6, 9, 9, 10);
+            6, 9, (8 + $offset), (9 + $offset));
         $button8->signal_connect('clicked' => sub {
 
             # Only one About window can be open at a time
@@ -452,7 +489,7 @@
             'LGPL License...',
             'Show text of LGPL License',
             undef,
-            9, 12, 9, 10);
+            9, 12, (8 + $offset), (9 + $offset));
         $button9->signal_connect('clicked' => sub {
 
             # Only one About window can be open at a time
@@ -476,10 +513,347 @@
 
         # Right column
         $self->addLabel($grid, 'Name in data files',
-            7, 9, 1, 2);
+            7, 9, (1 + $offset), (2 + $offset));
         my $entry8 = $self->addEntry($grid, undef, FALSE,
-            9, 12, 1, 2);
+            9, 12, (1 + $offset), (2 + $offset));
         $entry8->set_text($axmud::NAME_FILE);
+
+        $self->addLabel($grid, 'Script date',
+            7, 9, (2 + $offset), (3 + $offset));
+        my $entry3 = $self->addEntry($grid, undef, FALSE,
+            9, 12, (2 + $offset), (3 + $offset));
+        $entry3->set_text($axmud::DATE);
+
+        # Tab complete
+        return 1;
+    }
+
+    sub client1Tab {
+
+        # Client1 tab
+        #
+        # Expected arguments
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $innerNotebook, $check) = @_;
+
+        # Local variables
+        my ($offset, $path);
+
+        # Check for improper arguments
+        if (! defined $innerNotebook || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->client1Tab', @_);
+        }
+
+        # Tab setup
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Client settings'],
+        );
+
+        # Optional header
+        if ($axmud::CLIENT->configWinSimplifyFlag) {
+
+            $offset = 1;
+            if ($^O eq 'MSWin32') {
+                $path = $axmud::SHARE_DIR . '\\icons\\replace\\dialogue_replace_warning.png';
+            } else {
+                $path = $axmud::SHARE_DIR . '/icons/replace/dialogue_replace_warning.png';
+            }
+
+            my ($image, $frame, $viewPort) = $self->addImage($grid, $path, undef,
+                FALSE,          # Don't use a scrolled window
+                -1, 50,
+                1, 2, 0, 1);
+
+            $self->addLabel($grid,
+                "<b>Some tabs are hidden. Click the button to reveal them,"
+                . "\nor type this command:</b>   ;setwindowsize -s",
+                2, 10, 0, 1);
+
+            my $button = $self->addButton($grid, 'Reveal tabs', 'Reveal hidden tabs', undef,
+                10, 12, 0, 1);
+            $button->signal_connect('clicked' => sub {
+
+                # Reveal tabs
+                $self->session->pseudoCmd('setwindowsize -s', $self->pseudoCmdMode);
+
+                $self->showMsgDialogue(
+                    'Reveal tabs',
+                    'info',
+                    'The new setting will be applied when you re-open the window',
+                    'ok',
+                );
+            });
+
+        } else {
+
+            $offset = 0;
+        }
+
+        # Left column
+        $self->addLabel($grid, '<b>Client settings</b>',
+            0, 12, (0 + $offset), (1 + $offset));
+
+        $self->addLabel($grid, 'Script name',
+            1, 3, (1 + $offset), (2 + $offset));
+        my $entry = $self->addEntry($grid, undef, FALSE,
+            3, 6, (1 + $offset), (2 + $offset));
+        $entry->set_text($axmud::SCRIPT);
+
+        $self->addLabel($grid, 'Script version',
+            1, 3, (2 + $offset), (3 + $offset));
+        my $entry2 = $self->addEntry($grid, undef, FALSE,
+            3, 6, (2 + $offset), (3 + $offset));
+        $entry2->set_text($axmud::VERSION);
+
+        $self->addLabel($grid, 'Authors',
+            1, 3, (3 + $offset), (4 + $offset));
+        my $entry4 = $self->addEntry($grid, undef, FALSE,
+            3, 12, (3 + $offset), (4 + $offset));
+        $entry4->set_text($axmud::AUTHORS);
+
+        $self->addLabel($grid, 'Copyright',
+            1, 3, (4 + $offset), (5 + $offset));
+        my $entry5 = $self->addEntry($grid, undef, FALSE,
+            3, 12, (4 + $offset), (5 + $offset));
+        $entry5->set_text($axmud::COPYRIGHT);
+
+        $self->addLabel($grid, 'Website',
+            1, 3, (5 + $offset), (6 + $offset));
+        my $entry6 = $self->addEntry($grid, undef, FALSE,
+            3, 10, (5 + $offset), (6 + $offset));
+        $entry6->set_text($axmud::URL);
+
+        my $button2 = $self->addButton($grid, 'Open', 'Open this website in a web browser', undef,
+            10, 12, (5 + $offset), (6 + $offset));
+        if (! $axmud::URL) {
+
+            $button2->set_sensitive(FALSE);
+        }
+        $button2->signal_connect('clicked' => sub {
+
+            if ($axmud::URL) {
+
+                $axmud::CLIENT->openURL($axmud::URL);
+            }
+        });
+
+        $self->addLabel($grid, 'Description',
+            1, 3, (6 + $offset), (7 + $offset));
+        my $entry7 = $self->addEntry($grid, undef, FALSE,
+            3, 12, (6 + $offset), (7 + $offset));
+        $entry7->set_text($axmud::DESCRIP);
+
+        my $button3 = $self->addButton($grid, 'About...', 'About ' . $axmud::SCRIPT, undef,
+            1, 4, (7 + $offset), (8 + $offset));
+        $button3->signal_connect('clicked' => sub {
+
+            # Only one About window can be open at a time
+            if (! $axmud::CLIENT->aboutWin) {
+
+                $self->quickFreeWin(
+                    'Games::Axmud::OtherWin::About',
+                    $self->session,
+                    # config
+                    'first_tab' => 'about',
+                )
+
+            } else {
+
+                # Only one About window can be open at a time
+                $axmud::CLIENT->aboutWin->restoreFocus();
+                # Open it at the right page
+                $axmud::CLIENT->aboutWin->notebook->set_current_page(0);
+            }
+        });
+
+        my $button4 = $self->addButton(
+            $grid, 'Credits...', 'Show information about credits', undef,
+            4, 6, (7 + $offset), (8 + $offset));
+        $button4->signal_connect('clicked' => sub {
+
+            # Only one About window can be open at a time
+            if (! $axmud::CLIENT->aboutWin) {
+
+                $self->quickFreeWin(
+                    'Games::Axmud::OtherWin::About',
+                    $self->session,
+                    # config
+                    'first_tab' => 'credits',
+                )
+
+            } else {
+
+                # Only one About window can be open at a time
+                $axmud::CLIENT->aboutWin->restoreFocus();
+                # Open it at the right page
+                $axmud::CLIENT->aboutWin->notebook->set_current_page(1);
+            }
+        });
+
+        my $button5 = $self->addButton($grid, 'Quick help...', 'Show quick help', undef,
+            6, 9, (7 + $offset), (8 + $offset));
+        $button5->signal_connect('clicked' => sub {
+
+            # Only one About window can be open at a time
+            if (! $axmud::CLIENT->aboutWin) {
+
+                $self->quickFreeWin(
+                    'Games::Axmud::OtherWin::About',
+                    $self->session,
+                    # config
+                    'first_tab' => 'help',
+                )
+
+            } else {
+
+                # Only one About window can be open at a time
+                $axmud::CLIENT->aboutWin->restoreFocus();
+                # Open it at the right page
+                $axmud::CLIENT->aboutWin->notebook->set_current_page(2);
+            }
+        });
+
+        my $button6 = $self->addButton($grid,
+            'Peek/Poke list...',
+            'Show strings for Peek/Poke operations',
+            undef,
+            9, 12, (7 + $offset), (8 + $offset));
+        $button6->signal_connect('clicked' => sub {
+
+            # Only one About window can be open at a time
+            if (! $axmud::CLIENT->aboutWin) {
+
+                $self->quickFreeWin(
+                    'Games::Axmud::OtherWin::About',
+                    $self->session,
+                    # config
+                    'first_tab' => 'peek',
+                )
+
+            } else {
+
+                # Only one About window can be open at a time
+                $axmud::CLIENT->aboutWin->restoreFocus();
+                # Open it at the right page
+                $axmud::CLIENT->aboutWin->notebook->set_current_page(3);
+            }
+        });
+
+        my $button7 = $self->addButton($grid, 'Changes...', 'Show list of changes', undef,
+            1, 4, (8 + $offset), (9 + $offset));
+        $button7->signal_connect('clicked' => sub {
+
+            # Only one About window can be open at a time
+            if (! $axmud::CLIENT->aboutWin) {
+
+                $self->quickFreeWin(
+                    'Games::Axmud::OtherWin::About',
+                    $self->session,
+                    # config
+                    'first_tab' => 'changes',
+                )
+
+            } else {
+
+                # Only one About window can be open at a time
+                $axmud::CLIENT->aboutWin->restoreFocus();
+                # Open it at the right page
+                $axmud::CLIENT->aboutWin->notebook->set_current_page(3);
+            }
+        });
+
+        my $button8 = $self->addButton($grid, 'Installation...', 'Show installation guide', undef,
+            4, 6, (8 + $offset), (9 + $offset));
+        $button8->signal_connect('clicked' => sub {
+
+            # Only one About window can be open at a time
+            if (! $axmud::CLIENT->aboutWin) {
+
+                $self->quickFreeWin(
+                    'Games::Axmud::OtherWin::About',
+                    $self->session,
+                    # config
+                    'first_tab' => 'install',
+                )
+
+            } else {
+
+                # Only one About window can be open at a time
+                $axmud::CLIENT->aboutWin->restoreFocus();
+                # Open it at the right page
+                $axmud::CLIENT->aboutWin->notebook->set_current_page(3);
+            }
+        });
+
+        my $button9 = $self->addButton($grid, 'GPL License...', 'Show text of GPL License', undef,
+            6, 9, (8 + $offset), (9 + $offset));
+        $button9->signal_connect('clicked' => sub {
+
+            # Only one About window can be open at a time
+            if (! $axmud::CLIENT->aboutWin) {
+
+                $self->quickFreeWin(
+                    'Games::Axmud::OtherWin::About',
+                    $self->session,
+                    # config
+                    'first_tab' => 'license',
+                )
+
+            } else {
+
+                # Only one About window can be open at a time
+                $axmud::CLIENT->aboutWin->restoreFocus();
+                # Open it at the right page
+                $axmud::CLIENT->aboutWin->notebook->set_current_page(3);
+            }
+        });
+
+        my $button10 = $self->addButton($grid,
+            'LGPL License...',
+            'Show text of LGPL License',
+            undef,
+            9, 12, (8 + $offset), (9 + $offset));
+        $button10->signal_connect('clicked' => sub {
+
+            # Only one About window can be open at a time
+            if (! $axmud::CLIENT->aboutWin) {
+
+                $self->quickFreeWin(
+                    'Games::Axmud::OtherWin::About',
+                    $self->session,
+                    # config
+                    'first_tab' => 'license_2',
+                )
+
+            } else {
+
+                # Only one About window can be open at a time
+                $axmud::CLIENT->aboutWin->restoreFocus();
+                # Open it at the right page
+                $axmud::CLIENT->aboutWin->notebook->set_current_page(3);
+            }
+        });
+
+        # Right column
+        $self->addLabel($grid, 'Name in data files',
+            7, 9, (1 + $offset), (2 + $offset));
+        my $entry8 = $self->addEntry($grid, undef, FALSE,
+            9, 12, (1 + $offset), (2 + $offset));
+        $entry8->set_text($axmud::NAME_FILE);
+
+        $self->addLabel($grid, 'Script date',
+            7, 9, (2 + $offset), (3 + $offset));
+        my $entry3 = $self->addEntry($grid, undef, FALSE,
+            9, 12, (2 + $offset), (3 + $offset));
+        $entry3->set_text($axmud::DATE);
 
         # Tab complete
         return 1;
@@ -508,7 +882,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _2', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _2',
+            ['Session list'],
+        );
 
         # Session list
         $self->addLabel($grid, '<b>Session list</b>',
@@ -683,7 +1061,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _3', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _3',
+            ['File permissions'],
+        );
 
         # File permissions
         $self->addLabel($grid, '<b>File permissions</b>',
@@ -738,7 +1120,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _4', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _4',
+            ['Directories (folders)', 'File save preferences'],
+        );
 
         # Directories (folders)
         $self->addLabel($grid, '<b>Directories (folders)</b>',
@@ -786,8 +1172,8 @@
             3, 12, 5, 6);
         $entry4->set_text($axmud::DEFAULT_DATA_DIR);
 
-        # Temporary backup file retention
-        $self->addLabel($grid, '<b>Temporary backup file retention</b>',
+        # File save preferences
+        $self->addLabel($grid, '<b>File save preferences</b>',
             0, 12, 6, 7);
 
         my $checkButton7 = $self->addCheckButton(
@@ -801,7 +1187,7 @@
         $button3->signal_connect('clicked' => sub {
 
             # Retain backups on
-            $self->session->pseudoCmd('retainbackups on', $self->pseudoCmdMode);
+            $self->session->pseudoCmd('retainfilecopy on', $self->pseudoCmdMode);
 
             # Update the checkbutton
             $checkButton7->set_active($axmud::CLIENT->autoRetainFileFlag);
@@ -813,23 +1199,19 @@
         $button4->signal_connect('clicked' => sub {
 
             # Retain backups off
-            $self->session->pseudoCmd('retainbackups off', $self->pseudoCmdMode);
+            $self->session->pseudoCmd('retainfilecopy off', $self->pseudoCmdMode);
 
             # Update the checkbutton
             $checkButton7->set_active($axmud::CLIENT->autoRetainFileFlag);
         });
 
-        # Auto-save
-        $self->addLabel($grid, '<b>Auto-save</b>',
-            0, 12, 8, 9);
-
         my $checkButton8 = $self->addCheckButton($grid, 'Enable auto-saves', undef, FALSE,
-            1, 6, 9, 10);
+            1, 6, 8, 9);
         $checkButton8->set_active($axmud::CLIENT->autoSaveFlag);
 
         my $button5 = $self->addButton($grid,
             'Turn on', 'Turns autosaves on', undef,
-            7, 9, 9, 10);
+            7, 9, 8, 9);
         $button5->signal_connect('clicked' => sub {
 
             # Turn autosave on
@@ -841,7 +1223,7 @@
 
         my $button6 = $self->addButton($grid,
             'Turn off', 'Turns autosaves off', undef,
-            9, 12, 9, 10);
+            9, 12, 8, 9);
         $button6->signal_connect('clicked' => sub {
 
             # Turn autosave off
@@ -852,14 +1234,14 @@
         });
 
         $self->addLabel($grid, 'Time interval (minutes)',
-            1, 3, 10, 11);
+            1, 3, 9, 10);
         my $entry5 = $self->addEntryWithIcon($grid, undef, 'int', 1, undef,
-            3, 6, 10, 11);
+            3, 6, 9, 10);
         $entry5->set_text($axmud::CLIENT->autoSaveWaitTime);
 
         my $button7 = $self->addButton($grid,
             'Set interval', 'Set the time between successive auto-saves', undef,
-            7, 9, 10, 11);
+            7, 9, 9, 10);
         $button7->signal_connect('clicked' => sub {
 
             if ($self->checkEntryIcon($entry5)) {
@@ -869,6 +1251,79 @@
 
                 # Update the checkbutton
                 $checkButton8->set_active($axmud::CLIENT->autoSaveFlag);
+            }
+        });
+
+        my $checkButton9 = $self->addCheckButton($grid,
+            'Split world model file (may prevent memory errors)',
+            undef, FALSE,
+            1, 6, 10, 11);
+        $checkButton9->set_active($axmud::CLIENT->allowModelSplitFlag);
+
+        my $button8 = $self->addButton($grid,
+            'Turn on', 'Turns on splitting world model file', undef,
+            7, 9, 10, 11);
+        $button8->signal_connect('clicked' => sub {
+
+            # Turn splitting on
+            $self->session->pseudoCmd('splitmodel on', $self->pseudoCmdMode);
+
+            # Update the checkbutton
+            $checkButton9->set_active($axmud::CLIENT->allowModelSplitFlag);
+        });
+
+        my $button9 = $self->addButton($grid,
+            'Turn off', 'Turns off splitting world model file', undef,
+            9, 12, 10, 11);
+        $button9->signal_connect('clicked' => sub {
+
+            # Turn splitting off
+            $self->session->pseudoCmd('splitmodel off', $self->pseudoCmdMode);
+
+            # Update the checkbutton
+            $checkButton9->set_active($axmud::CLIENT->allowModelSplitFlag);
+        });
+
+        $self->addLabel($grid, 'Split file size (rooms)',
+            1, 3, 11, 12);
+        my $entry6 = $self->addEntryWithIcon($grid, undef, 'int', 1000, undef,
+            3, 6, 11, 12);
+        $entry6->set_text($axmud::CLIENT->modelSplitSize);
+
+        my $button10 = $self->addButton($grid,
+            'Set size', 'Set the size of split world model files', undef,
+            7, 9, 11, 12);
+        $button10->signal_connect('clicked' => sub {
+
+            if ($self->checkEntryIcon($entry6)) {
+
+                # Set split size
+                $self->session->pseudoCmd(
+                    'splitmodel ' . $entry6->get_text(),
+                    $self->pseudoCmdMode,
+                );
+
+                # Update the checkbutton
+                $checkButton9->set_active($axmud::CLIENT->allowModelSplitFlag);
+            }
+        });
+
+        my $button11 = $self->addButton($grid,
+            'Reset size', 'Resets the size of split world model files', undef,
+            9, 12, 11, 12);
+        $button11->signal_connect('clicked' => sub {
+
+            if ($self->checkEntryIcon($entry6)) {
+
+                # Set split size
+                $self->session->pseudoCmd(
+                    'splitmodel -d',
+                    $self->pseudoCmdMode,
+                );
+
+                # Update the checkbutton/entry
+                $entry6->set_text($axmud::CLIENT->modelSplitSize);
+                $checkButton9->set_active($axmud::CLIENT->allowModelSplitFlag);
             }
         });
 
@@ -902,7 +1357,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _5', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _5',
+            ['Auto-backup operations', 'Manual backup operations'],
+        );
 
         # Auto-backup operations
         $self->addLabel($grid, '<b>Auto-backup operations</b>',
@@ -1133,7 +1592,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _6', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _6',
+            ['Client file objects'],
+        );
 
         # Client file objects
         $self->addLabel($grid, '<b>Client file objects</b>',
@@ -1267,7 +1730,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _7', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _7',
+            ['IP lookup services'],
+        );
 
         # IP lookup services
         $self->addLabel($grid, '<b>IP lookup services</b>',
@@ -1297,7 +1764,7 @@
             9, 12, 10, 11);
         # (->signal_connect appears below)
 
-        $self->addLabel($grid, '<b>Your IP address:</b>',
+        $self->addLabel($grid, '<u>Your IP address:</u>',
             1, 3, 11, 12);
         my $entry = $self->addEntry($grid, undef, FALSE,
             3, 9, 11, 12);
@@ -1430,7 +1897,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _8', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _8',
+            ['Reserved names'],
+        );
 
         # Reserved names
         $self->addLabel($grid, '<b>Reserved names</b>',
@@ -1476,22 +1947,34 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('_Settings', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, '_Settings');
 
         # Add tabs to the inner notebook
         $self->settings1Tab($innerNotebook);
         $self->settings2Tab($innerNotebook);
-        $self->settings3Tab($innerNotebook);
-        $self->settings4Tab($innerNotebook);
+        if (! $axmud::CLIENT->configWinSimplifyFlag) {
+
+            $self->settings3Tab($innerNotebook);
+            $self->settings4Tab($innerNotebook);
+        }
         $self->settings5Tab($innerNotebook);
-        $self->settings6Tab($innerNotebook);
+        if (! $axmud::CLIENT->configWinSimplifyFlag) {
+
+            $self->settings6Tab($innerNotebook);
+        }
         $self->settings7Tab($innerNotebook);
-        $self->settings8Tab($innerNotebook);
-        $self->settings9Tab($innerNotebook);
-        $self->settings10Tab($innerNotebook);
-        $self->settings11Tab($innerNotebook);
+        if (! $axmud::CLIENT->configWinSimplifyFlag) {
+
+            $self->settings8Tab($innerNotebook);
+            $self->settings9Tab($innerNotebook);
+            $self->settings10Tab($innerNotebook);
+            $self->settings11Tab($innerNotebook);
+        }
         $self->settings12Tab($innerNotebook);
-        $self->settings13Tab($innerNotebook);
+        if (! $axmud::CLIENT->configWinSimplifyFlag) {
+
+            $self->settings13Tab($innerNotebook);
+        }
 
         return 1;
     }
@@ -1522,7 +2005,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Session settings'],
+        );
 
         # Left column
         $self->addLabel($grid, '<b>Session settings</b>',
@@ -1777,7 +2264,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _2', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _2',
+            ['Favourite world list', 'Auto-connect world list'],
+        );
 
         # Favourite world list
         $self->addLabel($grid, '<b>Favourite world list</b>',
@@ -1906,7 +2397,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _3', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _3',
+            ['Pre-configured world list'],
+        );
 
         # Pre-configured world list
         $self->addLabel($grid, '<b>Pre-configured world list</b>',
@@ -1956,9 +2451,13 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _4', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _4',
+            ['Other world list'],
+        );
 
-        # Session list
+        # Other world list
         $self->addLabel($grid, '<b>Other world list</b>',
             0, 12, 0, 1);
         $self->addLabel($grid,
@@ -2049,7 +2548,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _5', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _5',
+            ['External applications'],
+        );
 
         # External applications
         $self->addLabel($grid, '<b>External applications</b>',
@@ -2239,9 +2742,13 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _6', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _6',
+            ['Buffer/textview sizes', 'System delays'],
+        );
 
-        # Buffer sizes
+        # Buffer/textview sizes and system delays
         $self->addLabel($grid, '<b>Buffer/textview sizes and system delays</b>',
             0, 12, 0, 1);
 
@@ -2507,9 +3014,13 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _7', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _7',
+            ['Telnet option negotiations', 'MUD protocols'],
+        );
 
-        # Telnet options
+        # Telnet option negotiations
         $self->addLabel($grid, '<b>Telnet option negotiations</b>',
             0, 6, 0, 1);
 
@@ -2576,7 +3087,7 @@
             $axmud::CLIENT->toggle_telnetOption('charset', $checkButton7->get_active());
         });
 
-        # MUD protocols options
+        # MUD protocols
         $self->addLabel($grid, '<b>MUD protocols</b>',
             7, 12, 0, 1);
         my $checkButton8 = $self->addCheckButton(
@@ -2721,7 +3232,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _8', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _8',
+            ['MXP', 'MSP'],
+        );
 
         # MXP
         $self->addLabel($grid, '<b>MXP</b>',
@@ -3107,7 +3622,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _9', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _9',
+            ['Terminal emulation', 'OSC colour palette', 'Terminal type negotiations'],
+        );
 
         # Terminal emulation
         $self->addLabel($grid, '<b>Terminal emulation</b>',
@@ -3351,7 +3870,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page 1_0', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page 1_0',
+            ['Debugging flags (telnet options/negotiations)'],
+        );
 
         # Debugging flags (telnet options/negotiations)
         $self->addLabel($grid, '<b>Debugging flags (telnet options/negotiations)</b>',
@@ -3511,9 +4034,13 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page 11', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page 11',
+            ['Debugging flags (other)'],
+        );
 
-        # Debugging flags
+        # Debugging flags (other)
         $self->addLabel($grid, '<b>Debugging flags (other)</b>',
             0, 12, 0, 1);
 
@@ -3701,7 +4228,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page 12', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page 12',
+            ['Other flags'],
+        );
 
         # Other flags
         $self->addLabel($grid, '<b>Other flags</b>',
@@ -3932,7 +4463,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page 13', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page 13',
+            ['Custom months/days'],
+        );
 
         # Custom months/days
         $self->addLabel($grid, '<b>Custom months/days</b>',
@@ -4081,7 +4616,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('_Plugins', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, '_Plugins');
 
         # Add tabs to the inner notebook
         $self->plugins1Tab($innerNotebook);
@@ -4120,7 +4655,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Loaded plugins'],
+        );
 
         # Loaded plugins
         $self->addLabel($grid, '<b>Loaded plugins</b>',
@@ -4132,59 +4671,30 @@
         # Add a simple list
         @columnList = (
             'Plugin', 'text',
-            'Enabled', 'bool',
+            'Enabled', 'bool_editable',
             'File path', 'text',
             'Version', 'text',
             'Requires', 'text',
+            'Description', 'text',
             'Author', 'text',
             'Copyright', 'text',
-            'Descrip', 'text',
             'Initial status', 'text',
         );
 
         my $slWidget = $self->addSimpleList($grid, undef, \@columnList,
-            1, 12, 2, 10);
+            1, 12, 2, 11,
+            -1, -1,
+            $self->getMethodRef('plugins1Tab_buttonToggled'),
+        );
 
         # Initialise the simple list
         $self->plugins1Tab_refreshList($slWidget, scalar (@columnList / 2));
 
         # Add buttons
         my $button = $self->addButton($grid,
-            'Enable', 'Enable the selected plugin', undef,
-            1, 3, 10, 11);
-        $button->signal_connect('clicked' => sub {
-
-            my ($plugin) = $self->getSimpleListData($slWidget, 0);
-            if (defined $plugin) {
-
-                # Enable this plugin
-                $self->session->pseudoCmd('enableplugin ' . $plugin, $self->pseudoCmdMode);
-
-                # Refresh the simple list
-                $self->plugins1Tab_refreshList($slWidget, scalar (@columnList / 2));
-            }
-        });
-
-        my $button2 = $self->addButton($grid,
-            'Disable', 'Disable the selected plugin', undef,
-            3, 5, 10, 11);
-        $button2->signal_connect('clicked' => sub {
-
-            my ($plugin) = $self->getSimpleListData($slWidget, 0);
-            if (defined $plugin) {
-
-                # Disable this plugin
-                $self->session->pseudoCmd('disableplugin ' . $plugin, $self->pseudoCmdMode);
-
-                # Refresh the simple list
-                $self->plugins1Tab_refreshList($slWidget, scalar (@columnList / 2));
-            }
-        });
-
-        my $button3 = $self->addButton($grid,
             'Test', 'Test a ' . $axmud::SCRIPT . ' plugin that hasn\'t been loaded', undef,
-            5, 7, 10, 11);
-        $button3->signal_connect('clicked' => sub {
+            1, 3, 11, 12);
+        $button->signal_connect('clicked' => sub {
 
             my ($plugin, $pluginObj);
 
@@ -4208,10 +4718,10 @@
             $self->plugins1Tab_refreshList($slWidget, scalar (@columnList / 2));
         });
 
-        my $button4 = $self->addButton($grid,
+        my $button2 = $self->addButton($grid,
             'Load standard plugin', 'Load a new ' . $axmud::SCRIPT . ' standard plugin', undef,
-            8, 10, 10, 11);
-        $button4->signal_connect('clicked' => sub {
+            3, 6, 11, 12);
+        $button2->signal_connect('clicked' => sub {
 
             # Disable this plugin
             $self->session->pseudoCmd('loadplugin -s', $self->pseudoCmdMode);
@@ -4220,10 +4730,10 @@
             $self->plugins1Tab_refreshList($slWidget, scalar (@columnList / 2));
         });
 
-        my $button5 = $self->addButton($grid,
+        my $button3 = $self->addButton($grid,
             'Load custom plugin', 'Load a new ' . $axmud::SCRIPT . ' custom plugin', undef,
-            10, 12, 10, 11);
-        $button5->signal_connect('clicked' => sub {
+            6, 9, 11, 12);
+        $button3->signal_connect('clicked' => sub {
 
             # Disable this plugin
             $self->session->pseudoCmd('loadplugin', $self->pseudoCmdMode);
@@ -4232,10 +4742,10 @@
             $self->plugins1Tab_refreshList($slWidget, scalar (@columnList / 2));
         });
 
-        my $button6 = $self->addButton($grid,
+        my $button4 = $self->addButton($grid,
             'Refresh list', 'Refresh the list of loaded plugins', undef,
-            10, 12, 11, 12);
-        $button6->signal_connect('clicked' => sub {
+            9, 12, 11, 12);
+        $button4->signal_connect('clicked' => sub {
 
             # Refresh the simple list
             $self->plugins1Tab_refreshList($slWidget, scalar (@columnList / 2));
@@ -4326,6 +4836,54 @@
         return 1;
     }
 
+    sub plugins1Tab_buttonToggled {
+
+        # Callback from GA::Generic::EditWin->addSimpleList
+        #
+        # Expected arguments
+        #   $slWidget   - The GA::Obj::SimpleList
+        #   $model      - The Gtk3::ListStore
+        #   $iter       - The Gtk3::TreeIter of the line clicked
+        #   @data       - Data for all the cells on that line
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $slWidget, $model, $iter, @dataList) = @_;
+
+        # Local variables
+        my ($pluginName, $flag, $pluginObj);
+
+        # Check for improper arguments
+        if (! defined $slWidget || ! defined $model || ! defined $iter) {
+
+            return $axmud::CLIENT->writeImproper(
+                $self->_objClass . '->plugins1Tab_buttonToggled',
+                @_,
+            );
+        }
+
+        # Update IVs
+        $pluginName = $dataList[0];
+        $flag = $dataList[1];
+
+        $pluginObj = $axmud::CLIENT->ivShow('pluginHash', $pluginName);
+        if (! $pluginObj) {
+
+            # Failsafe
+            return undef;
+        }
+
+        if (! $pluginObj->enabledFlag && $flag) {
+            $self->session->pseudoCmd('enableplugin ' . $pluginName, $self->pseudoCmdMode);
+        } elsif ($pluginObj->enabledFlag && ! $flag) {
+            $self->session->pseudoCmd('disableplugin ' . $pluginName, $self->pseudoCmdMode);
+        }
+
+        return 1;
+    }
+
     sub plugins2Tab {
 
         # Plugins2 tab
@@ -4349,7 +4907,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _2', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _2',
+            ['Initial plugins'],
+        );
 
         # Initial plugins
         $self->addLabel($grid, '<b>Initial plugins</b>',
@@ -4507,7 +5069,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _3', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _3',
+            ['Plugin client commands'],
+        );
 
         # Plugin client commands
         $self->addLabel($grid, '<b>Plugin client commands</b>',
@@ -4610,7 +5176,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _4', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _4',
+            ['Plugin tasks'],
+        );
 
         # Plugin tasks
         $self->addLabel($grid, '<b>Plugin tasks</b>',
@@ -4713,9 +5283,13 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _5', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _5',
+            ['Plugin cages'],
+        );
 
-        # Plugin tasks
+        # Plugin cages
         $self->addLabel($grid, '<b>Plugin cages</b>',
             0, 12, 0, 1);
         $self->addLabel($grid,
@@ -4825,7 +5399,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _6', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _6',
+            ['Plugin \'grid\' windows'],
+        );
 
         # Plugin 'grid' windows
         $self->addLabel($grid, '<b>Plugin \'grid\' windows</b>',
@@ -4928,7 +5506,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _7', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _7',
+            ['Plugin \'free\' windows'],
+        );
 
         # Plugin 'free' windows
         $self->addLabel($grid, '<b>Plugin \'free\' windows</b>',
@@ -5031,9 +5613,13 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _8', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _8',
+            ['Plugin strip objects'],
+        );
 
-        # Plugin 'free' windows
+        # Plugin strip objects
         $self->addLabel($grid, '<b>Plugin strip objects</b>',
             0, 12, 0, 1);
         $self->addLabel($grid,
@@ -5134,9 +5720,13 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _9', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _9',
+            ['Plugin table objects'],
+        );
 
-        # Plugin 'free' windows
+        # Plugin table objects
         $self->addLabel($grid, '<b>Plugin table objects</b>',
             0, 12, 0, 1);
         $self->addLabel($grid,
@@ -5235,15 +5825,18 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('Co_mmands', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, 'Co_mmands');
 
         # Add tabs to the inner notebook
         $self->commands1Tab($innerNotebook);
         $self->commands2Tab($innerNotebook);
         $self->commands3Tab($innerNotebook);
-        $self->commands4Tab($innerNotebook);
-        $self->commands5Tab($innerNotebook);
-        $self->commands6Tab($innerNotebook);
+        if (! $axmud::CLIENT->configWinSimplifyFlag) {
+
+            $self->commands4Tab($innerNotebook);
+            $self->commands5Tab($innerNotebook);
+            $self->commands6Tab($innerNotebook);
+        }
 
         return 1;
     }
@@ -5268,7 +5861,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Instruction sigils', 'World command separator'],
+        );
 
         # Instruction sigils
         $self->addLabel($grid, '<b>Instruction sigils</b>',
@@ -5559,7 +6156,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _2', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _2',
+            ['Instruction settings'],
+        );
 
         # Left column
         $self->addLabel($grid, '<b>Instruction settings</b>',
@@ -5719,7 +6320,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _3', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _3',
+            ['Redirect mode', 'Auto-complete mode'],
+        );
 
         # Left column
         $self->addLabel($grid, '<b>Redirect mode</b>',
@@ -5944,10 +6549,14 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _4', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _4',
+            ['Custom user commands'],
+        );
 
         # Custom user commands
-        $self->addLabel($grid, '<b>User commands</b>',
+        $self->addLabel($grid, '<b>Custom user commands</b>',
             0, 12, 0, 1);
         $self->addLabel($grid,
             '<i>Customisable list of alternate forms for standard client commands</i>',
@@ -6117,7 +6726,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _5', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _5',
+            ['Default user commands'],
+        );
 
         # Default user commands
         $self->addLabel($grid, '<b>Default user commands</b>',
@@ -6179,7 +6792,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _6', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _6',
+            ['Client buffer settings'],
+        );
 
         # Client buffer settings
         $self->addLabel($grid, '<b>Client buffer settings</b>',
@@ -6471,7 +7088,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('_Logs', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, '_Logs');
 
         # Add tabs to the inner notebook
         $self->logs1Tab($innerNotebook);
@@ -6502,7 +7119,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Log settings'],
+        );
 
         # Log settings
         $self->addLabel($grid, '<b>Log settings</b>',
@@ -6619,7 +7240,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _2', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _2',
+            ['Logfile preamble'],
+        );
 
         # Logfile preamble
         $self->addLabel($grid, '<b>Logfile preamble</b>',
@@ -6684,7 +7309,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _3', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _3',
+            ['Status task events'],
+        );
 
         # Status task events
         $self->addLabel($grid, '<b>Status task events</b>',
@@ -6768,7 +7397,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _4', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _4',
+            ['Client logging settings'],
+        );
 
          # Client logging settings
         $self->addLabel($grid, '<b>Client logging settings</b>',
@@ -6780,35 +7413,18 @@
         # Add a simple list
         @columnList = (
             'Logfile', 'text',
-            'Write?', 'bool',
+            'Write?', 'bool_editable',
             'Description', 'text',
         );
 
         my $slWidget = $self->addSimpleList($grid, undef, \@columnList,
-            1, 12, 2, 10);
+            1, 12, 2, 12,
+            -1, -1,
+            $self->getMethodRef('logs4Tab_buttonToggled'),
+        );
 
         # Initialise the list
         $self->logs4Tab_refreshList($slWidget, (scalar @columnList / 2));
-
-        # Add a two combos and a button
-        @comboList = $axmud::CLIENT->constLogOrderList;
-        my $comboBox = $self->addComboBox($grid, undef, \@comboList, '',
-            TRUE,               # No 'undef' value used
-            1, 4, 10, 11);
-
-        my $button = $self->addButton($grid,
-            'Toggle', 'Change the setting for the selected logfile', undef,
-            4, 6, 10, 11);
-        $button->signal_connect('clicked' => sub {
-
-            my $logfile = $comboBox->get_active_text();
-
-            # Update the IV
-            $self->session->pseudoCmd('log ' . $logfile, $self->pseudoCmdMode);
-
-            # Refresh the simple list
-            $self->logs4Tab_refreshList($slWidget, (scalar @columnList / 2));
-        });
 
         # Tab complete
         return 1;
@@ -6857,6 +7473,51 @@
         return 1;
     }
 
+    sub logs4Tab_buttonToggled {
+
+        # Callback from GA::Generic::EditWin->addSimpleList
+        #
+        # Expected arguments
+        #   $slWidget   - The GA::Obj::SimpleList
+        #   $model      - The Gtk3::ListStore
+        #   $iter       - The Gtk3::TreeIter of the line clicked
+        #   @data       - Data for all the cells on that line
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $slWidget, $model, $iter, @dataList) = @_;
+
+        # Local variables
+        my ($logfile, $flag);
+
+        # Check for improper arguments
+        if (! defined $slWidget || ! defined $model || ! defined $iter) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->logs4Tab_buttonToggled', @_);
+        }
+
+        # Update IVs
+        $logfile = $dataList[0];
+        $flag = $dataList[1];
+
+        if (! $axmud::CLIENT->ivExists('logPrefHash', $logfile)) {
+
+            # Failsafe
+            return undef;
+        }
+
+        if (
+            ($axmud::CLIENT->ivShow('logPrefHash', $logfile) && ! $flag)
+            || (! $axmud::CLIENT->ivShow('logPrefHash', $logfile) && $flag)
+        ) {
+            $self->session->pseudoCmd('log ' . $logfile, $self->pseudoCmdMode);
+        }
+
+        return 1;
+    }
+
     sub coloursTab {
 
         # Colours tab - called by $self->setupNotebook
@@ -6878,14 +7539,20 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('C_olours', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, 'C_olours');
 
         # Add tabs to the inner notebook
         $self->colours1Tab($innerNotebook);
         $self->colours2Tab($innerNotebook);
-        $self->colours3Tab($innerNotebook);
+        if (! $axmud::CLIENT->configWinSimplifyFlag) {
+
+            $self->colours3Tab($innerNotebook);
+        }
         $self->colours4Tab($innerNotebook);
-        $self->colours5Tab($innerNotebook);
+        if (! $axmud::CLIENT->configWinSimplifyFlag) {
+
+            $self->colours5Tab($innerNotebook);
+        }
 
         return 1;
     }
@@ -6913,9 +7580,13 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            [$axmud::SCRIPT . ' standard (normal) colour tags'],
+        );
 
-        # Axmud colour tags settings
+        # Axmud standard (normal) colour tags
         $self->addLabel($grid, '<b>' . $axmud::SCRIPT . ' standard (normal) colour tags</b>',
             0, 8, 0, 1);
 
@@ -7110,9 +7781,13 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _2', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _2',
+            [$axmud::SCRIPT . ' standard (bold) colour tags'],
+        );
 
-        # Axmud bold colour tags settings
+        # Axmud standard (bold) colour tags
         $self->addLabel($grid, '<b>' . $axmud::SCRIPT . ' standard (bold) colour tags</b>',
             0, 8, 0, 1);
 
@@ -7157,7 +7832,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _3', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _3',
+            ['xterm-256 colours'],
+        );
 
         # xterm-256 colours
         $self->addLabel($grid, '<b>xterm-256 colours</b>',
@@ -7277,7 +7956,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _4', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _4',
+            ['System message colours'],
+        );
 
         # Import a list of standard colour tags
         @comboList = ($axmud::CLIENT->constColourTagList, $axmud::CLIENT->constBoldColourTagList);
@@ -7474,7 +8157,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _5', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _5',
+            ['Colour schemes'],
+        );
 
         # Colour schemes
         $self->addLabel($grid, '<b>Colour schemes</b>',
@@ -7778,7 +8465,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('_Workspaces', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, '_Workspaces');
 
         # Add tabs to the inner notebook
         $self->workspaces1Tab($innerNotebook);
@@ -7808,7 +8495,6 @@
 
         # Local variables
         my (
-            $maxWidth, $maxHeight,
             @list, @comboList,
             %comboHash,
         );
@@ -7820,7 +8506,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Workspace (desktop) settings', 'Workspace debug settings'],
+        );
 
         # Left column
         $self->addLabel($grid, '<b>Workspace (desktop) settings</b>',
@@ -7838,6 +8528,20 @@
             3, 6, 2, 3, 8, 8);
         $entry2->set_text($axmud::CLIENT->constWorkspaceMaxHeight);
 
+        # Right column
+        $self->addLabel($grid, 'Minimum workspace width',
+            6, 8, 1, 2);
+        my $entry3 = $self->addEntry($grid, undef, FALSE,
+            8, 12, 1, 2, 8, 8);
+        $entry3->set_text($axmud::CLIENT->constWorkspaceMinWidth);
+
+        $self->addLabel($grid, 'Minimum workspace height',
+            6, 8, 2, 3);
+        my $entry4 = $self->addEntry($grid, undef, FALSE,
+            8, 12, 2, 3, 8, 8);
+        $entry4->set_text($axmud::CLIENT->constWorkspaceMinHeight);
+
+        # Bottom section
         $self->addLabel($grid, 'When adding workspaces,',
             1, 3, 3, 4);
 
@@ -7861,11 +8565,11 @@
 
         my $combo = $self->addComboBox($grid, undef, \@comboList, '',
             TRUE,               # No 'undef' value used
-            3, 8, 3, 4);
+            3, 10, 3, 4);
 
         my $button = $self->addButton($grid,
             'Set', 'Set the default width/height', undef,
-            8, 10, 3, 4);
+            10, 12, 3, 4);
         $button->signal_connect('clicked' => sub {
 
             my ($string, $switch);
@@ -7878,169 +8582,18 @@
             }
         });
 
-        # Right column
-        $self->addLabel($grid, 'Minimum workspace width',
-            6, 8, 1, 2);
-        my $entry3 = $self->addEntry($grid, undef, FALSE,
-            8, 12, 1, 2, 8, 8);
-        $entry3->set_text($axmud::CLIENT->constWorkspaceMinWidth);
-
-        $self->addLabel($grid, 'Minimum workspace height',
-            6, 8, 2, 3);
-        my $entry4 = $self->addEntry($grid, undef, FALSE,
-            8, 12, 2, 3, 8, 8);
-        $entry4->set_text($axmud::CLIENT->constWorkspaceMinHeight);
-
-        # Bottom section
-        $self->addLabel($grid, '<b>Window size settings</b>',
+        $self->addLabel($grid, '<b>Workspace debug settings</b> <i>(MS Windows only)</i>',
             0, 12, 4, 5);
-
-        $maxWidth = $axmud::CLIENT->constWorkspaceMaxWidth;
-        $maxHeight = $axmud::CLIENT->constWorkspaceMaxHeight;
-
-        $self->addLabel($grid, 'Default width for \'main\' windows (range 100-' . $maxWidth . ')',
-            1, 6, 5, 6);
-        my $entry5 = $self->addEntryWithIcon($grid, undef, 'int', 100, $maxWidth,
-            6, 8, 5, 6, 8, 8);
-        $entry5->set_text($axmud::CLIENT->customMainWinWidth);
-
-        $self->addLabel(
+        my $checkButton = $self->addCheckButton(
             $grid,
-            'Default height for \'main\' windows (range 100-' . $maxHeight . ')',
-            1, 6, 6, 7);
-        my $entry6 = $self->addEntryWithIcon($grid, undef, 'int', 100, $maxHeight,
-            6, 8, 6, 7, 8, 8);
-        $entry6->set_text($axmud::CLIENT->customMainWinHeight);
+            'Tweak the size/position of grid windows to compensate for unresolved issues',
+            undef,
+            TRUE,
+            1, 12, 5, 6);
+        $checkButton->set_active($axmud::CLIENT->mswinWinPosnTweakFlag);
+        $checkButton->signal_connect('toggled' => sub {
 
-        my $button2 = $self->addButton($grid,
-            'Set', 'Set the default width/height', undef,
-            8, 10, 6, 7);
-        $button2->signal_connect('clicked' => sub {
-
-            if ($self->checkEntryIcon($entry5, $entry6)) {
-
-                $self->session->pseudoCmd(
-                    'setwindowsize -m ' . $entry5->get_text() . ' ' . $entry6->get_text(),
-                    $self->pseudoCmdMode,
-                );
-
-                $entry5->set_text($axmud::CLIENT->customMainWinWidth);
-                $entry6->set_text($axmud::CLIENT->customMainWinHeight);
-            }
-        });
-
-        my $button3 = $self->addButton($grid,
-            'Reset', 'Reset the default width/height', undef,
-            10, 12, 6, 7);
-        $button3->signal_connect('clicked' => sub {
-
-            $self->session->pseudoCmd(
-                'setwindowsize -m',
-                $self->pseudoCmdMode,
-            );
-
-            $entry5->set_text($axmud::CLIENT->customMainWinWidth);
-            $entry6->set_text($axmud::CLIENT->customMainWinHeight);
-        });
-
-        $self->addLabel(
-            $grid,
-            'Default width for other \'grid\' windows (range 100-' . $maxWidth . ')',
-            1, 6, 7, 8);
-        my $entry7 = $self->addEntryWithIcon($grid, undef, 'int', 100, $maxWidth,
-            6, 8, 7, 8, 8, 8);
-        $entry7->set_text($axmud::CLIENT->customGridWinWidth);
-
-        $self->addLabel(
-            $grid,
-            'Default height for other \'grid\' windows (range 100-' . $maxHeight . ')',
-            1, 6, 8, 9);
-        my $entry8 = $self->addEntryWithIcon($grid, undef, 'int', 100, $maxHeight,
-            6, 8, 8, 9, 8, 8);
-        $entry8->set_text($axmud::CLIENT->customGridWinHeight);
-
-        my $button4 = $self->addButton($grid,
-            'Set', 'Set the default width/height', undef,
-            8, 10, 8, 9);
-        $button4->signal_connect('clicked' => sub {
-
-            if ($self->checkEntryIcon($entry7, $entry8)) {
-
-                $self->session->pseudoCmd(
-                    'setwindowsize -g ' . $entry7->get_text() . ' ' . $entry8->get_text(),
-                    $self->pseudoCmdMode,
-                );
-
-                $entry7->set_text($axmud::CLIENT->customGridWinWidth);
-                $entry8->set_text($axmud::CLIENT->customGridWinHeight);
-            }
-        });
-
-        my $button5 = $self->addButton($grid,
-            'Reset', 'Reset the default width/height', undef,
-            10, 12, 8, 9);
-        $button5->signal_connect('clicked' => sub {
-
-            $self->session->pseudoCmd(
-                'setwindowsize -g',
-                $self->pseudoCmdMode,
-            );
-
-            $entry7->set_text($axmud::CLIENT->customGridWinWidth);
-            $entry8->set_text($axmud::CLIENT->customGridWinHeight);
-        });
-
-        $self->addLabel(
-            $grid,
-            '<i>Tip: Only increase the \'free\' window size if <u>this</u> window is too small for'
-            . ' comfort</i>',
-            1, 12, 9, 10);
-
-        $self->addLabel(
-            $grid,
-            'Default width for \'free\' windows (range 100-' . $maxWidth . ')',
-            1, 6, 10, 11);
-        my $entry9 = $self->addEntryWithIcon($grid, undef, 'int', 100, $maxWidth,
-            6, 8, 10, 11, 8, 8);
-        $entry9->set_text($axmud::CLIENT->customFreeWinWidth);
-
-        $self->addLabel(
-            $grid,
-            'Default height for \'free\' windows (range 100-' . $maxHeight . ')',
-            1, 6, 11, 12);
-        my $entry10 = $self->addEntryWithIcon($grid, undef, 'int', 100, $maxHeight,
-            6, 8, 11, 12, 8, 8);
-        $entry10->set_text($axmud::CLIENT->customFreeWinHeight);
-
-        my $button6 = $self->addButton($grid,
-            'Set', 'Set the default width/height', undef,
-            8, 10, 11, 12);
-        $button6->signal_connect('clicked' => sub {
-
-            if ($self->checkEntryIcon($entry9, $entry10)) {
-
-                $self->session->pseudoCmd(
-                    'setwindowsize -f ' . $entry9->get_text() . ' ' . $entry10->get_text(),
-                    $self->pseudoCmdMode,
-                );
-
-                $entry9->set_text($axmud::CLIENT->customFreeWinWidth);
-                $entry10->set_text($axmud::CLIENT->customFreeWinHeight);
-            }
-        });
-
-        my $button7 = $self->addButton($grid,
-            'Reset', 'Reset the default width/height', undef,
-            10, 12, 11, 12);
-        $button7->signal_connect('clicked' => sub {
-
-            $self->session->pseudoCmd(
-                'setwindowsize -f',
-                $self->pseudoCmdMode,
-            );
-
-            $entry9->set_text($axmud::CLIENT->customFreeWinWidth);
-            $entry10->set_text($axmud::CLIENT->customFreeWinHeight);
+            $axmud::CLIENT->set_mswinWinPosnTweakFlag($checkButton->get_active());
         });
 
         # Tab complete
@@ -8067,9 +8620,13 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _2', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _2',
+            ['Workspace panel/window controls sizes'],
+        );
 
-        # Workspace panel sizes
+        # Workspace panel/window controls sizes
         $self->addLabel($grid, '<b>Workspace panel/window controls sizes</b>',
             0, 12, 0, 1);
         $self->addLabel(
@@ -8291,7 +8848,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _3', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _3',
+            ['Workspaces'],
+        );
 
         # Workspaces
         $self->addLabel($grid, '<b>Workspaces</b>',
@@ -8563,7 +9124,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _4', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _4',
+            ['Initial workspaces'],
+        );
 
         # Initial workspaces
         $self->addLabel($grid, '<b>Initial workspaces</b>',
@@ -8758,7 +9323,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _5', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _5',
+            ['General workspace grid settings'],
+        );
 
         # General workspace grid settings
         $self->addLabel($grid, '<b>General workspace grid settings</b>',
@@ -8982,7 +9551,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _6', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _6',
+            ['Workspace grids'],
+        );
 
         # Workspace grids
         $self->addLabel($grid, '<b>Workspace grids</b>',
@@ -9371,7 +9944,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _7', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _7',
+            ['Zonemaps'],
+        );
 
         # Zonemaps
         $self->addLabel($grid, '<b>Zonemaps</b>',
@@ -9604,7 +10181,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _8', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _8',
+            ['Window size/position storage'],
+        );
 
         # Window size/position storage
         $self->addLabel($grid, '<b>Window size/position storage</b>',
@@ -9773,14 +10354,18 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('W_indows', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, 'W_indows');
 
         # Add tabs to the inner notebook
         $self->windows1Tab($innerNotebook);
-        $self->windows2Tab($innerNotebook);
-        $self->windows3Tab($innerNotebook);
-        $self->windows4Tab($innerNotebook);
-        $self->windows5Tab($innerNotebook);
+        if (! $axmud::CLIENT->configWinSimplifyFlag) {
+
+            $self->windows2Tab($innerNotebook);
+            $self->windows3Tab($innerNotebook);
+            $self->windows4Tab($innerNotebook);
+            $self->windows5Tab($innerNotebook);
+            $self->windows6Tab($innerNotebook);
+        }
 
         return 1;
     }
@@ -9799,7 +10384,7 @@
         my ($self, $innerNotebook, $check) = @_;
 
         # Local variables
-        my @columnList;
+        my ($maxWidth, $maxHeight);
 
         # Check for improper arguments
         if (! defined $innerNotebook || defined $check) {
@@ -9808,7 +10393,275 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Window size settings', 'Edit/preference window settings'],
+        );
+
+        # Window size settings
+        $self->addLabel($grid, '<b>Window size settings</b>',
+            0, 12, 0, 1);
+
+        $maxWidth = $axmud::CLIENT->constWorkspaceMaxWidth;
+        $maxHeight = $axmud::CLIENT->constWorkspaceMaxHeight;
+
+        $self->addLabel($grid, 'Default width for \'main\' windows (range 100-' . $maxWidth . ')',
+            1, 6, 1, 2);
+        my $entry = $self->addEntryWithIcon($grid, undef, 'int', 100, $maxWidth,
+            6, 8, 1, 2, 8, 8);
+        $entry->set_text($axmud::CLIENT->customMainWinWidth);
+
+        $self->addLabel(
+            $grid,
+            'Default height for \'main\' windows (range 100-' . $maxHeight . ')',
+            1, 6, 2, 3);
+        my $entry2 = $self->addEntryWithIcon($grid, undef, 'int', 100, $maxHeight,
+            6, 8, 2, 3, 8, 8);
+        $entry2->set_text($axmud::CLIENT->customMainWinHeight);
+
+        my $button = $self->addButton($grid,
+            'Set', 'Set the default width/height', undef,
+            8, 10, 2, 3);
+        $button->signal_connect('clicked' => sub {
+
+            if ($self->checkEntryIcon($entry, $entry2)) {
+
+                $self->session->pseudoCmd(
+                    'setwindowsize -m ' . $entry->get_text() . ' ' . $entry2->get_text(),
+                    $self->pseudoCmdMode,
+                );
+
+                $entry->set_text($axmud::CLIENT->customMainWinWidth);
+                $entry2->set_text($axmud::CLIENT->customMainWinHeight);
+            }
+        });
+
+        my $button2 = $self->addButton($grid,
+            'Reset', 'Reset the default width/height', undef,
+            10, 12, 2, 3);
+        $button2->signal_connect('clicked' => sub {
+
+            $self->session->pseudoCmd(
+                'setwindowsize -m',
+                $self->pseudoCmdMode,
+            );
+
+            $entry->set_text($axmud::CLIENT->customMainWinWidth);
+            $entry2->set_text($axmud::CLIENT->customMainWinHeight);
+        });
+
+        $self->addLabel(
+            $grid,
+            'Default width for other \'grid\' windows (range 100-' . $maxWidth . ')',
+            1, 6, 3, 4);
+        my $entry3 = $self->addEntryWithIcon($grid, undef, 'int', 100, $maxWidth,
+            6, 8, 3, 4, 8, 8);
+        $entry3->set_text($axmud::CLIENT->customGridWinWidth);
+
+        $self->addLabel(
+            $grid,
+            'Default height for other \'grid\' windows (range 100-' . $maxHeight . ')',
+            1, 6, 4, 5);
+        my $entry4 = $self->addEntryWithIcon($grid, undef, 'int', 100, $maxHeight,
+            6, 8, 4, 5, 8, 8);
+        $entry4->set_text($axmud::CLIENT->customGridWinHeight);
+
+        my $button3 = $self->addButton($grid,
+            'Set', 'Set the default width/height', undef,
+            8, 10, 4, 5);
+        $button3->signal_connect('clicked' => sub {
+
+            if ($self->checkEntryIcon($entry3, $entry4)) {
+
+                $self->session->pseudoCmd(
+                    'setwindowsize -g ' . $entry3->get_text() . ' ' . $entry4->get_text(),
+                    $self->pseudoCmdMode,
+                );
+
+                $entry3->set_text($axmud::CLIENT->customGridWinWidth);
+                $entry4->set_text($axmud::CLIENT->customGridWinHeight);
+            }
+        });
+
+        my $button4 = $self->addButton($grid,
+            'Reset', 'Reset the default width/height', undef,
+            10, 12, 4, 5);
+        $button4->signal_connect('clicked' => sub {
+
+            $self->session->pseudoCmd(
+                'setwindowsize -g',
+                $self->pseudoCmdMode,
+            );
+
+            $entry3->set_text($axmud::CLIENT->customGridWinWidth);
+            $entry4->set_text($axmud::CLIENT->customGridWinHeight);
+        });
+
+        $self->addLabel(
+            $grid,
+            '<i>Tip: Only increase the \'free\' window size if <u>this</u> window is too small for'
+            . ' comfort</i>',
+            1, 12, 5, 6);
+
+        $self->addLabel(
+            $grid,
+            'Default width for \'free\' windows (range 100-' . $maxWidth . ')',
+            1, 6, 6, 7);
+        my $entry5 = $self->addEntryWithIcon($grid, undef, 'int', 100, $maxWidth,
+            6, 8, 6, 7, 8, 8);
+        $entry5->set_text($axmud::CLIENT->customFreeWinWidth);
+
+        $self->addLabel(
+            $grid,
+            'Default height for \'free\' windows (range 100-' . $maxHeight . ')',
+            1, 6, 7, 8);
+        my $entry6 = $self->addEntryWithIcon($grid, undef, 'int', 100, $maxHeight,
+            6, 8, 7, 8, 8, 8);
+        $entry6->set_text($axmud::CLIENT->customFreeWinHeight);
+
+        my $button5 = $self->addButton($grid,
+            'Set', 'Set the default width/height', undef,
+            8, 10, 7, 8);
+        $button5->signal_connect('clicked' => sub {
+
+            if ($self->checkEntryIcon($entry5, $entry6)) {
+
+                $self->session->pseudoCmd(
+                    'setwindowsize -f ' . $entry5->get_text() . ' ' . $entry6->get_text(),
+                    $self->pseudoCmdMode,
+                );
+
+                $entry5->set_text($axmud::CLIENT->customFreeWinWidth);
+                $entry6->set_text($axmud::CLIENT->customFreeWinHeight);
+            }
+        });
+
+        my $button6 = $self->addButton($grid,
+            'Reset', 'Reset the default width/height', undef,
+            10, 12, 7, 8);
+        $button6->signal_connect('clicked' => sub {
+
+            $self->session->pseudoCmd(
+                'setwindowsize -f',
+                $self->pseudoCmdMode,
+            );
+
+            $entry5->set_text($axmud::CLIENT->customFreeWinWidth);
+            $entry6->set_text($axmud::CLIENT->customFreeWinHeight);
+        });
+
+        # Edit/preference window settings
+        $self->addLabel($grid, '<b>Edit/preference window settings</b>',
+            0, 12, 8, 9);
+
+        my $checkButton = $self->addCheckButton(
+            $grid,
+            'Show a topic index on the left-hand side (applied when the next window opens)',
+            undef, TRUE,
+            0, 12, 9, 10);
+        $checkButton->set_active($axmud::CLIENT->configWinIndexFlag);
+        $checkButton->signal_connect('toggled' => sub {
+
+            if (
+                (! $axmud::CLIENT->configWinIndexFlag && $checkButton->get_active())
+                || ($axmud::CLIENT->configWinIndexFlag && ! $checkButton->get_active())
+            ) {
+                $self->session->pseudoCmd(
+                    'setwindowsize -i',
+                    $self->pseudoCmdMode,
+                );
+            }
+        });
+
+        my $checkButton2 = $self->addCheckButton(
+            $grid,
+            'Hide less useful tabs in preference windows (applied when the next window opens)',
+            undef, TRUE,
+            0, 12, 10, 11);
+        $checkButton2->set_active($axmud::CLIENT->configWinSimplifyFlag);
+        $checkButton2->signal_connect('toggled' => sub {
+
+            if (
+                (! $axmud::CLIENT->configWinSimplifyFlag && $checkButton2->get_active())
+                || ($axmud::CLIENT->configWinSimplifyFlag && ! $checkButton2->get_active())
+            ) {
+                $self->session->pseudoCmd(
+                    'setwindowsize -s',
+                    $self->pseudoCmdMode,
+                );
+            }
+        });
+
+        $self->addLabel(
+            $grid,
+            'Default index width in edit/preference windows (range 0-' . $maxWidth . ')',
+            1, 6, 11, 12);
+        my $entry7 = $self->addEntryWithIcon($grid, undef, 'int', 0, $maxWidth,
+            6, 8, 11, 12, 8, 8);
+        $entry7->set_text($axmud::CLIENT->customConfigWinIndexWidth);
+
+        my $button7 = $self->addButton($grid,
+            'Set', 'Set the default width', undef,
+            8, 10, 11, 12);
+        $button7->signal_connect('clicked' => sub {
+
+            if ($self->checkEntryIcon($entry7)) {
+
+                $self->session->pseudoCmd(
+                    'setwindowsize -w ' . $entry7->get_text(),
+                    $self->pseudoCmdMode,
+                );
+
+                $entry7->set_text($axmud::CLIENT->customConfigWinIndexWidth);
+            }
+        });
+
+        my $button8 = $self->addButton($grid,
+            'Reset', 'Reset the default width', undef,
+            10, 12, 11, 12);
+        $button8->signal_connect('clicked' => sub {
+
+            $self->session->pseudoCmd(
+                'setwindowsize -w',
+                $self->pseudoCmdMode,
+            );
+
+            $entry7->set_text($axmud::CLIENT->customConfigWinIndexWidth);
+        });
+
+        # Tab complete
+        return 1;
+    }
+
+    sub windows2Tab {
+
+        # Windows2 tab
+        #
+        # Expected arguments
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $innerNotebook, $check) = @_;
+
+        # Local variables
+        my @columnList;
+
+        # Check for improper arguments
+        if (! defined $innerNotebook || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->windows2Tab', @_);
+        }
+
+        # Tab setup
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _2',
+            ['\'Grid\' windows'],
+        );
 
         # 'Grid' windows
         $self->addLabel($grid, '<b>\'Grid\' windows</b>',
@@ -9839,7 +10692,7 @@
             1, 13, 2, 8);
 
         # Refresh the list
-        $self->windows1Tab_refreshList($slWidget, scalar (@columnList / 2));
+        $self->windows2Tab_refreshList($slWidget, scalar (@columnList / 2));
 
         # Add editing buttons
         my $button = $self->addButton($grid,
@@ -9868,7 +10721,7 @@
             }
 
             # Refresh the simple list
-            $self->windows1Tab_refreshList($slWidget, scalar (@columnList / 2));
+            $self->windows2Tab_refreshList($slWidget, scalar (@columnList / 2));
         });
 
         my $button2 = $self->addButton($grid,
@@ -9890,7 +10743,7 @@
             }
 
             # Refresh the simple list
-            $self->windows1Tab_refreshList($slWidget, scalar (@columnList / 2), $number);
+            $self->windows2Tab_refreshList($slWidget, scalar (@columnList / 2), $number);
         });
 
         my $button3 = $self->addButton($grid,
@@ -9902,7 +10755,7 @@
             $self->session->pseudoCmd('restorewindow', $self->pseudoCmdMode);
 
             # Refresh the simple list and entry boxes
-            $self->windows1Tab_refreshList($slWidget, scalar (@columnList / 2));
+            $self->windows2Tab_refreshList($slWidget, scalar (@columnList / 2));
         });
 
         my $button4 = $self->addButton($grid, 'Close', 'Close the selected window', undef,
@@ -9923,7 +10776,7 @@
             }
 
             # Refresh the simple list
-            $self->windows1Tab_refreshList($slWidget, scalar (@columnList / 2));
+            $self->windows2Tab_refreshList($slWidget, scalar (@columnList / 2));
         });
 
         my $button5 = $self->addButton($grid,
@@ -9945,7 +10798,7 @@
             }
 
             # Refresh the simple list
-            $self->windows1Tab_refreshList($slWidget, scalar (@columnList / 2), $number);
+            $self->windows2Tab_refreshList($slWidget, scalar (@columnList / 2), $number);
         });
 
         my $button6 = $self->addButton(
@@ -9971,7 +10824,7 @@
             }
 
             # Refresh the simple list
-            $self->windows1Tab_refreshList($slWidget, scalar (@columnList / 2), $number);
+            $self->windows2Tab_refreshList($slWidget, scalar (@columnList / 2), $number);
         });
 
         $self->addLabel($grid, 'Workspace',
@@ -10023,7 +10876,7 @@
             }
 
             # Refresh the simple list
-            $self->windows1Tab_refreshList($slWidget, scalar (@columnList / 2), $number);
+            $self->windows2Tab_refreshList($slWidget, scalar (@columnList / 2), $number);
             $self->resetEntryBoxes($entry, $entry2);
         });
 
@@ -10069,7 +10922,7 @@
             }
 
             # Refresh the simple list
-            $self->windows1Tab_refreshList($slWidget, scalar (@columnList / 2), $number);
+            $self->windows2Tab_refreshList($slWidget, scalar (@columnList / 2), $number);
         });
 
         $self->addLabel($grid, 'Pattern',
@@ -10094,7 +10947,7 @@
                 );
 
                 # Refresh the simple list and entry boxes
-                $self->windows1Tab_refreshList($slWidget, scalar (@columnList / 2));
+                $self->windows2Tab_refreshList($slWidget, scalar (@columnList / 2));
                 $self->resetEntryBoxes($entry3);
             }
         });
@@ -10117,7 +10970,7 @@
                 );
 
                 # Refresh the simple list and entry boxes
-                $self->windows1Tab_refreshList($slWidget, scalar (@columnList / 2));
+                $self->windows2Tab_refreshList($slWidget, scalar (@columnList / 2));
                 $self->resetEntryBoxes($entry3);
             }
         });
@@ -10142,7 +10995,7 @@
             }
 
             # Refresh the simple list
-            $self->windows1Tab_refreshList($slWidget, scalar (@columnList / 2), $number);
+            $self->windows2Tab_refreshList($slWidget, scalar (@columnList / 2), $number);
         });
 
         my $button12 = $self->addButton($grid,
@@ -10154,7 +11007,7 @@
             $self->session->pseudoCmd('banishwindow', $self->pseudoCmdMode);
 
             # Refresh the simple list
-            $self->windows1Tab_refreshList($slWidget, scalar (@columnList / 2));
+            $self->windows2Tab_refreshList($slWidget, scalar (@columnList / 2));
         });
 
         $self->addLabel($grid, 'Window',
@@ -10189,7 +11042,7 @@
             }
 
             # Refresh the simple list
-            $self->windows1Tab_refreshList($slWidget, scalar (@columnList / 2), $number);
+            $self->windows2Tab_refreshList($slWidget, scalar (@columnList / 2), $number);
         });
 
         my $button14 = $self->addButton($grid,
@@ -10201,7 +11054,7 @@
             $self->session->pseudoCmd('listwindow', $self->pseudoCmdMode);
 
             # Refresh the simple list
-            $self->windows1Tab_refreshList($slWidget, scalar (@columnList / 2));
+            $self->windows2Tab_refreshList($slWidget, scalar (@columnList / 2));
         });
 
         my $button15 = $self->addButton($grid,
@@ -10210,14 +11063,14 @@
         $button15->signal_connect('clicked' => sub {
 
             # Refresh the simple list and entry boxes
-            $self->windows1Tab_refreshList($slWidget, scalar (@columnList / 2));
+            $self->windows2Tab_refreshList($slWidget, scalar (@columnList / 2));
         });
 
         # Tab complete
         return 1;
     }
 
-    sub windows1Tab_refreshList {
+    sub windows2Tab_refreshList {
 
         # Called by $self->windows1Tab to refresh the GA::Obj::SimpleList
         #
@@ -10244,7 +11097,7 @@
         if (! defined $slWidget || ! defined $columns || defined $check) {
 
             return $axmud::CLIENT->writeImproper(
-                $self->_objClass . '->windows1Tab_refreshList',
+                $self->_objClass . '->windows2Tab_refreshList',
                 @_,
             );
         }
@@ -10321,9 +11174,9 @@
         return 1;
     }
 
-    sub windows2Tab {
+    sub windows3Tab {
 
-        # Windows2 tab
+        # Windows3 tab
         #
         # Expected arguments
         #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
@@ -10340,11 +11193,15 @@
         # Check for improper arguments
         if (! defined $innerNotebook || defined $check) {
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->windows2Tab', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->windows3Tab', @_);
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _2', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _3',
+            ['\'Free\' windows'],
+        );
 
         # 'Free' windows
         $self->addLabel($grid, '<b>\'Free\' windows</b>',
@@ -10371,7 +11228,7 @@
             1, 12, 2, 10);
 
         # Refresh the list
-        $self->windows2Tab_refreshList($slWidget, scalar (@columnList / 2));
+        $self->windows3Tab_refreshList($slWidget, scalar (@columnList / 2));
 
         # Add editing buttons
         my $button = $self->addButton($grid,
@@ -10400,7 +11257,7 @@
             }
 
             # Refresh the simple list
-            $self->windows2Tab_refreshList($slWidget, scalar (@columnList / 2));
+            $self->windows3Tab_refreshList($slWidget, scalar (@columnList / 2));
         });
 
         my $button2 = $self->addButton($grid, 'Close', 'Close the selected window', undef,
@@ -10421,7 +11278,7 @@
                     if ($winObj ne $self) {
 
                         # Refresh the simple list
-                        $self->windows2Tab_refreshList($slWidget, scalar (@columnList / 2));
+                        $self->windows3Tab_refreshList($slWidget, scalar (@columnList / 2));
                     }
                 }
             }
@@ -10436,7 +11293,7 @@
             $self->session->pseudoCmd('listfreewindow', $self->pseudoCmdMode);
 
             # Refresh the simple list
-            $self->windows2Tab_refreshList($slWidget, scalar (@columnList / 2));
+            $self->windows3Tab_refreshList($slWidget, scalar (@columnList / 2));
         });
 
         my $button15 = $self->addButton($grid,
@@ -10445,14 +11302,14 @@
         $button15->signal_connect('clicked' => sub {
 
             # Refresh the simple list and entry boxes
-            $self->windows2Tab_refreshList($slWidget, scalar (@columnList / 2));
+            $self->windows3Tab_refreshList($slWidget, scalar (@columnList / 2));
         });
 
         # Tab complete
         return 1;
     }
 
-    sub windows2Tab_refreshList {
+    sub windows3Tab_refreshList {
 
         # Called by $self->windows2Tab to refresh the GA::Obj::SimpleList
         #
@@ -10473,7 +11330,7 @@
         if (! defined $slWidget || ! defined $columns || defined $check) {
 
             return $axmud::CLIENT->writeImproper(
-                $self->_objClass . '->windows2Tab_refreshList',
+                $self->_objClass . '->windows3Tab_refreshList',
                 @_,
             );
         }
@@ -10512,9 +11369,9 @@
         return 1;
     }
 
-    sub windows3Tab {
+    sub windows4Tab {
 
-        # Windows3 tab
+        # Windows4 tab
         #
         # Expected arguments
         #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
@@ -10531,11 +11388,15 @@
         # Check for improper arguments
         if (! defined $innerNotebook || defined $check) {
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->windows3Tab', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->windows4Tab', @_);
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _3', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _4',
+            ['Winmaps'],
+        );
 
         # Winmaps
         $self->addLabel($grid, '<b>Winmaps</b>',
@@ -10561,7 +11422,7 @@
             1, 12, 2, 8);
 
         # Initialise the list
-        $self->windows3Tab_refreshList($slWidget, scalar (@columnList / 2));
+        $self->windows4Tab_refreshList($slWidget, scalar (@columnList / 2));
 
         # Add entry boxes and editing buttons
         $self->addLabel($grid, 'Name',
@@ -10585,7 +11446,7 @@
                 $self->session->pseudoCmd('addwinmap ' . $name, $self->pseudoCmdMode);
 
                 # Refresh the simple list and entry boxes
-                $self->windows3Tab_refreshList($slWidget, scalar (@columnList / 2));
+                $self->windows4Tab_refreshList($slWidget, scalar (@columnList / 2));
                 $self->resetEntryBoxes($entry, $entry2);
             }
         });
@@ -10609,7 +11470,7 @@
                 );
 
                 # Refresh the simple list and reset entry boxes
-                $self->windows3Tab_refreshList($slWidget, scalar (@columnList / 2));
+                $self->windows4Tab_refreshList($slWidget, scalar (@columnList / 2));
                 $self->resetEntryBoxes($entry, $entry2);
             }
         });
@@ -10641,7 +11502,7 @@
                         # When the 'edit' window closes, update widgets and/or IVs
                         $self->add_childDestroy(
                             $childWinObj,
-                            'windows3Tab_refreshList',
+                            'windows4Tab_refreshList',
                             [$slWidget, (scalar @columnList / 2)],
                         );
                     }
@@ -10660,7 +11521,7 @@
                 $self->session->pseudoCmd('deletewinmap ' . $winmap, $self->pseudoCmdMode);
 
                 # Refresh the simple list and reset entry boxes
-                $self->windows3Tab_refreshList($slWidget, scalar (@columnList / 2));
+                $self->windows4Tab_refreshList($slWidget, scalar (@columnList / 2));
                 $self->resetEntryBoxes($entry, $entry2);
             }
         });
@@ -10677,7 +11538,7 @@
                 $self->session->pseudoCmd('resetwinmap ' . $winmap, $self->pseudoCmdMode);
 
                 # Refresh the simple list and reset entry boxes
-                $self->windows3Tab_refreshList($slWidget, scalar (@columnList / 2));
+                $self->windows4Tab_refreshList($slWidget, scalar (@columnList / 2));
                 $self->resetEntryBoxes($entry, $entry2);
             }
         });
@@ -10688,7 +11549,7 @@
         $button6->signal_connect('clicked' => sub {
 
             # Refresh the simple list and reset entry boxes
-            $self->windows3Tab_refreshList($slWidget, scalar (@columnList / 2));
+            $self->windows4Tab_refreshList($slWidget, scalar (@columnList / 2));
             $self->resetEntryBoxes($entry, $entry2);
         });
 
@@ -10707,7 +11568,7 @@
             }
 
             # Refresh the simple list and reset entry boxes
-            $self->windows3Tab_refreshList($slWidget, scalar (@columnList / 2));
+            $self->windows4Tab_refreshList($slWidget, scalar (@columnList / 2));
             $self->resetEntryBoxes($entry, $entry2);
         });
 
@@ -10726,7 +11587,7 @@
             }
 
             # Refresh the simple list and reset entry boxes
-            $self->windows3Tab_refreshList($slWidget, scalar (@columnList / 2));
+            $self->windows4Tab_refreshList($slWidget, scalar (@columnList / 2));
             $self->resetEntryBoxes($entry, $entry2);
         });
 
@@ -10745,7 +11606,7 @@
             }
 
             # Refresh the simple list and reset entry boxes
-            $self->windows3Tab_refreshList($slWidget, scalar (@columnList / 2));
+            $self->windows4Tab_refreshList($slWidget, scalar (@columnList / 2));
             $self->resetEntryBoxes($entry, $entry2);
         });
 
@@ -10761,7 +11622,7 @@
             $self->session->pseudoCmd('setdefaultwinmap -r', $self->pseudoCmdMode);
 
             # Refresh the simple list and reset entry boxes
-            $self->windows3Tab_refreshList($slWidget, scalar (@columnList / 2));
+            $self->windows4Tab_refreshList($slWidget, scalar (@columnList / 2));
             $self->resetEntryBoxes($entry, $entry2);
         });
 
@@ -10769,7 +11630,7 @@
         return 1;
     }
 
-    sub windows3Tab_refreshList {
+    sub windows4Tab_refreshList {
 
         # Called by $self->windows3Tab to refresh the GA::Obj::SimpleList
         #
@@ -10790,7 +11651,7 @@
         if (! defined $slWidget || ! defined $columns || defined $check) {
 
             return $axmud::CLIENT->writeImproper(
-                $self->_objClass . '->windows3Tab_refreshList',
+                $self->_objClass . '->windows4Tab_refreshList',
                 @_,
             );
         }
@@ -10844,9 +11705,9 @@
         return 1;
     }
 
-    sub windows4Tab {
+    sub windows5Tab {
 
-        # Windows4 tab
+        # Windows5 tab
         #
         # Expected arguments
         #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
@@ -10867,18 +11728,22 @@
         # Check for improper arguments
         if (! defined $innerNotebook || defined $check) {
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->windows4Tab', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->windows5Tab', @_);
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _4', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _5',
+            ['Toolbar buttons for \'internal\' windows'],
+        );
 
         # Import the IVs, so that the user can edit the list freely, without the changes becoming
         #   permanent (until they use the 'Apply changes' button, of course)
         @buttonList = $axmud::CLIENT->toolbarList;
         %buttonHash = $axmud::CLIENT->toolbarHash;
 
-        # Toolbar buttons
+        # Toolbar buttons for 'internal' windows
         $self->addLabel($grid, '<b>Toolbar buttons for \'internal\' windows</b>',
             0, 12, 0, 1);
 
@@ -10896,7 +11761,7 @@
             1, 12, 1, 8);
 
         # Initialise the list
-        $self->windows4Tab_refreshList(
+        $self->windows5Tab_refreshList(
             $slWidget,
             scalar (@columnList / 2),
             \@buttonList,
@@ -11032,7 +11897,7 @@
                         $buttonHash{$name} = $buttonObj;
 
                         # Refresh the simple list
-                        $self->windows4Tab_refreshList(
+                        $self->windows5Tab_refreshList(
                             $slWidget,
                             scalar (@columnList / 2),
                             \@buttonList,
@@ -11058,7 +11923,7 @@
             push (@buttonList, 'separator');
 
             # Refresh the simple list
-            $self->windows4Tab_refreshList(
+            $self->windows5Tab_refreshList(
                 $slWidget,
                 scalar (@columnList / 2),
                 \@buttonList,
@@ -11098,7 +11963,7 @@
                     );
 
                     # Refresh the simple list
-                    $self->windows4Tab_refreshList(
+                    $self->windows5Tab_refreshList(
                         $slWidget,
                         scalar (@columnList / 2),
                         \@buttonList,
@@ -11126,7 +11991,7 @@
                 splice (@buttonList, ($posn - 1), 0, $item);
 
                 # Refresh the simple list
-                $self->windows4Tab_refreshList(
+                $self->windows5Tab_refreshList(
                     $slWidget,
                     scalar (@columnList / 2),
                     \@buttonList,
@@ -11156,7 +12021,7 @@
                 splice (@buttonList, ($posn + 1), 0, $item);
 
                 # Refresh the simple list
-                $self->windows4Tab_refreshList(
+                $self->windows5Tab_refreshList(
                     $slWidget,
                     scalar (@columnList / 2),
                     \@buttonList,
@@ -11183,7 +12048,7 @@
                 splice (@buttonList, $posn, 1);
 
                 # Refresh the simple list
-                $self->windows4Tab_refreshList(
+                $self->windows5Tab_refreshList(
                     $slWidget,
                     scalar (@columnList / 2),
                     \@buttonList,
@@ -11202,7 +12067,7 @@
             %buttonHash = $axmud::CLIENT->toolbarHash;
 
             # Refresh the simple list
-            $self->windows4Tab_refreshList(
+            $self->windows5Tab_refreshList(
                 $slWidget,
                 scalar (@columnList / 2),
                 \@buttonList,
@@ -11216,7 +12081,7 @@
         $button10->signal_connect('clicked' => sub {
 
             # Refresh the simple list
-            $self->windows4Tab_refreshList(
+            $self->windows5Tab_refreshList(
                 $slWidget,
                 scalar (@columnList / 2),
                 \@buttonList,
@@ -11255,7 +12120,7 @@
                 }
 
                 # Refresh the simple list
-                $self->windows4Tab_refreshList(
+                $self->windows5Tab_refreshList(
                     $slWidget,
                     scalar (@columnList / 2),
                     \@buttonList,
@@ -11298,7 +12163,7 @@
                 }
 
                 # Refresh the simple list
-                $self->windows4Tab_refreshList(
+                $self->windows5Tab_refreshList(
                     $slWidget,
                     scalar (@columnList / 2),
                     \@buttonList,
@@ -11311,7 +12176,7 @@
         return 1;
     }
 
-    sub windows4Tab_refreshList {
+    sub windows5Tab_refreshList {
 
         # Called by $self->windows4Tab to refresh the GA::Obj::SimpleList
         #
@@ -11337,7 +12202,7 @@
         if (! defined $slWidget || ! defined $columns || defined $check) {
 
             return $axmud::CLIENT->writeImproper(
-                $self->_objClass . '->windows4Tab_refreshList',
+                $self->_objClass . '->windows5Tab_refreshList',
                 @_,
             );
         }
@@ -11399,9 +12264,9 @@
         return 1;
     }
 
-    sub windows5Tab {
+    sub windows6Tab {
 
-        # Windows5 tab
+        # Windows6 tab
         #
         # Expected arguments
         #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
@@ -11418,11 +12283,15 @@
         # Check for improper arguments
         if (! defined $innerNotebook || defined $check) {
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->windows5Tab', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->windows6Tab', @_);
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _5', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _6',
+            ['Textview objects'],
+        );
 
         # Textview objects
         $self->addLabel($grid, '<b>Textview objects</b>',
@@ -11454,7 +12323,7 @@
             1, 12, 2, 10);
 
         # Initialise the list
-        $self->windows5Tab_refreshList($slWidget, scalar (@columnList / 2));
+        $self->windows6Tab_refreshList($slWidget, scalar (@columnList / 2));
 
         # Add editing widgets
         $self->addLabel($grid, 'Size',
@@ -11505,7 +12374,7 @@
             }
 
             # Refresh the simple list and entry boxes
-            $self->windows5Tab_refreshList($slWidget, scalar (@columnList / 2));
+            $self->windows6Tab_refreshList($slWidget, scalar (@columnList / 2));
         });
 
         my $button4 = $self->addButton(
@@ -11517,7 +12386,7 @@
             $self->session->pseudoCmd('listtextview', $self->pseudoCmdMode);
 
             # Refresh the simple list and entry boxes
-            $self->windows5Tab_refreshList($slWidget, scalar (@columnList / 2));
+            $self->windows6Tab_refreshList($slWidget, scalar (@columnList / 2));
         });
 
         my $button5 = $self->addButton(
@@ -11527,14 +12396,14 @@
         $button5->signal_connect('clicked' => sub {
 
             # Refresh the simple list and entry boxes
-            $self->windows5Tab_refreshList($slWidget, scalar (@columnList / 2));
+            $self->windows6Tab_refreshList($slWidget, scalar (@columnList / 2));
         });
 
         # Tab complete
         return 1;
     }
 
-    sub windows5Tab_refreshList {
+    sub windows6Tab_refreshList {
 
         # Called by $self->windows5Tab to refresh the GA::Obj::SimpleList
         #
@@ -11555,7 +12424,7 @@
         if (! defined $slWidget || ! defined $columns || defined $check) {
 
             return $axmud::CLIENT->writeImproper(
-                $self->_objClass . '->windows5Tab_refreshList',
+                $self->_objClass . '->windows6Tab_refreshList',
                 @_,
             );
         }
@@ -11617,16 +12486,19 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('So_und', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, 'So_und');
 
         # Add tabs to the inner notebook
         $self->sound1Tab($innerNotebook);
         $self->sound2Tab($innerNotebook);
         $self->sound3Tab($innerNotebook);
         $self->sound4Tab($innerNotebook);
-        $self->sound5Tab($innerNotebook);
-        $self->sound6Tab($innerNotebook);
-        $self->sound7Tab($innerNotebook);
+        if (! $axmud::CLIENT->configWinSimplifyFlag) {
+
+            $self->sound5Tab($innerNotebook);
+            $self->sound6Tab($innerNotebook);
+            $self->sound7Tab($innerNotebook);
+        }
 
         return 1;
     }
@@ -11657,7 +12529,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Sound effects'],
+        );
 
         # Sound effects
         $self->addLabel($grid, '<b>Sound effects</b>',
@@ -11992,10 +12868,14 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _2', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _2',
+            ['Text-to-speech (TTS) (1/2)'],
+        );
 
-        # Text-to-speech (TTS)
-        $self->addLabel($grid, '<b>Text-to-speech (TTS)</b>',
+        # Text-to-speech (TTS) (1/2)
+        $self->addLabel($grid, '<b>Text-to-speech (TTS) (1/2)</b>',
             0, 12, 0, 1);
         $self->addLabel(
             $grid,
@@ -12090,114 +12970,130 @@
             1, 12, 6, 7);
 
         my $checkButton5 = $self->addCheckButton(
-            $grid, 'Convert text received from the world', undef, TRUE,
+            $grid,
+            'Verbose output (precede with \'System message\' or \'Received text\', etc)',
+            undef,
+            TRUE,
             1, 12, 7, 8);
-        $checkButton5->set_active($axmud::CLIENT->ttsReceiveFlag);
+        $checkButton5->set_active($axmud::CLIENT->ttsVerboseFlag);
         $checkButton5->signal_connect('toggled' => sub {
 
             if ($checkButton5->get_active()) {
+                $axmud::CLIENT->set_ttsFlag('verbose', TRUE);
+            } else {
+                $axmud::CLIENT->set_ttsFlag('verbose', FALSE);
+            }
+        });
+
+        my $checkButton6 = $self->addCheckButton(
+            $grid, 'Convert text received from the world', undef, TRUE,
+            1, 12, 8, 9);
+        $checkButton6->set_active($axmud::CLIENT->ttsReceiveFlag);
+        $checkButton6->signal_connect('toggled' => sub {
+
+            if ($checkButton6->get_active()) {
                 $axmud::CLIENT->set_ttsFlag('receive', TRUE);
             } else {
                 $axmud::CLIENT->set_ttsFlag('receive', FALSE);
             }
         });
 
-        my $checkButton6 = $self->addCheckButton(
+        my $checkButton7 = $self->addCheckButton(
             $grid,
             'Don\'t convert received text before an automatic login is processed (but do convert'
             . ' prompts)',
             undef,
             TRUE,
-            2, 12, 8, 9);
-        $checkButton6->set_active($axmud::CLIENT->ttsLoginFlag);
-        $checkButton6->signal_connect('toggled' => sub {
+            2, 12, 9, 10);
+        $checkButton7->set_active($axmud::CLIENT->ttsLoginFlag);
+        $checkButton7->signal_connect('toggled' => sub {
 
-            if ($checkButton6->get_active()) {
+            if ($checkButton7->get_active()) {
                 $axmud::CLIENT->set_ttsFlag('login', TRUE);
             } else {
                 $axmud::CLIENT->set_ttsFlag('login', FALSE);
             }
         });
 
-        my $checkButton7 = $self->addCheckButton(
+        my $checkButton8 = $self->addCheckButton(
             $grid,
             'Don\'t convert world profile\'s recognised prompts in received text after a login',
             undef,
             TRUE,
-            2, 12, 9, 10);
-        $checkButton7->set_active($axmud::CLIENT->ttsPromptFlag);
-        $checkButton7->signal_connect('toggled' => sub {
+            2, 12, 10, 11);
+        $checkButton8->set_active($axmud::CLIENT->ttsPromptFlag);
+        $checkButton8->signal_connect('toggled' => sub {
 
-            if ($checkButton7->get_active()) {
+            if ($checkButton8->get_active()) {
                 $axmud::CLIENT->set_ttsFlag('prompt', TRUE);
             } else {
                 $axmud::CLIENT->set_ttsFlag('prompt', FALSE);
             }
         });
 
-        my $checkButton8 = $self->addCheckButton(
+        my $checkButton9 = $self->addCheckButton(
             $grid, 'Convert system messages', undef, TRUE,
-            1, 6, 10, 11);
-        $checkButton8->set_active($axmud::CLIENT->ttsSystemFlag);
-        $checkButton8->signal_connect('toggled' => sub {
+            1, 6, 11, 12);
+        $checkButton9->set_active($axmud::CLIENT->ttsSystemFlag);
+        $checkButton9->signal_connect('toggled' => sub {
 
-            if ($checkButton8->get_active()) {
+            if ($checkButton9->get_active()) {
                 $axmud::CLIENT->set_ttsFlag('system', TRUE);
             } else {
                 $axmud::CLIENT->set_ttsFlag('system', FALSE);
             }
         });
 
-        my $checkButton9 = $self->addCheckButton(
-            $grid,'Convert system error messages',  undef, TRUE,
-            1, 6, 11, 12);
-        $checkButton9->set_active($axmud::CLIENT->ttsSystemErrorFlag);
-        $checkButton9->signal_connect('toggled' => sub {
+        my $checkButton10 = $self->addCheckButton(
+            $grid,'Convert system error/warning messages',  undef, TRUE,
+            1, 6, 12, 13);
+        $checkButton10->set_active($axmud::CLIENT->ttsSystemErrorFlag);
+        $checkButton10->signal_connect('toggled' => sub {
 
-            if ($checkButton9->get_active()) {
+            if ($checkButton10->get_active()) {
                 $axmud::CLIENT->set_ttsFlag('error', TRUE);
             } else {
                 $axmud::CLIENT->set_ttsFlag('error', FALSE);
             }
         });
 
-        my $checkButton10 = $self->addCheckButton(
+        my $checkButton11 = $self->addCheckButton(
             $grid, 'Convert world commands', undef, TRUE,
-            7, 12, 10, 11);
-        $checkButton10->set_active($axmud::CLIENT->ttsWorldCmdFlag);
-        $checkButton10->signal_connect('toggled' => sub {
+            7, 12, 11, 12);
+        $checkButton11->set_active($axmud::CLIENT->ttsWorldCmdFlag);
+        $checkButton11->signal_connect('toggled' => sub {
 
-            if ($checkButton10->get_active()) {
+            if ($checkButton11->get_active()) {
                 $axmud::CLIENT->set_ttsFlag('command', TRUE);
             } else {
                 $axmud::CLIENT->set_ttsFlag('command', FALSE);
             }
         });
 
-        my $checkButton11 = $self->addCheckButton(
+        my $checkButton12 = $self->addCheckButton(
             $grid, 'Convert \'dialogue\' windows', undef, TRUE,
-            7, 12, 11, 12);
-        $checkButton11->set_active($axmud::CLIENT->ttsDialogueFlag);
-        $checkButton11->signal_connect('toggled' => sub {
+            7, 12, 12, 13);
+        $checkButton12->set_active($axmud::CLIENT->ttsDialogueFlag);
+        $checkButton12->signal_connect('toggled' => sub {
 
-            if ($checkButton11->get_active()) {
+            if ($checkButton12->get_active()) {
                 $axmud::CLIENT->set_ttsFlag('dialogue', TRUE);
             } else {
                 $axmud::CLIENT->set_ttsFlag('dialogue', FALSE);
             }
         });
 
-        my $checkButton12 = $self->addCheckButton(
+        my $checkButton13 = $self->addCheckButton(
             $grid,
             'Allow some tasks (e.g. the Status and Locator tasks) to convert certain strings to'
             . ' speech',
             undef,
             TRUE,
-            1, 12, 12, 13);
-        $checkButton12->set_active($axmud::CLIENT->ttsTaskFlag);
-        $checkButton12->signal_connect('toggled' => sub {
+            1, 12, 13, 14);
+        $checkButton13->set_active($axmud::CLIENT->ttsTaskFlag);
+        $checkButton13->signal_connect('toggled' => sub {
 
-            if ($checkButton12->get_active()) {
+            if ($checkButton13->get_active()) {
                 $axmud::CLIENT->set_ttsFlag('task', TRUE);
             } else {
                 $axmud::CLIENT->set_ttsFlag('task', FALSE);
@@ -12231,10 +13127,14 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _3', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _3',
+            ['Text-to-speech (TTS) (2/2)'],
+        );
 
-        # Text-to-speech (cont.)
-        $self->addLabel($grid, '<b>Text-to-speech (cont.)</b>',
+        # Text-to-speech (TTS) (2/2)
+        $self->addLabel($grid, '<b>Text-to-speech (TTS) (2/2)</b>',
             0, 12, 0, 1);
 
         # Top-left
@@ -12450,7 +13350,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _4', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _4',
+            ['Text-to-speech configurations'],
+        );
 
         # Text-to-speech configurations
         $self->addLabel($grid, '<b>Text-to-speech configurations</b>',
@@ -12700,7 +13604,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _5', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _5',
+            ['Text-to-speech attributes'],
+        );
 
         # Text-to-speech attributes
         $self->addLabel($grid, '<b>Text-to-speech attributes</b>',
@@ -12811,7 +13719,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _6', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _6',
+            ['Text-to-speech flag attributes'],
+        );
 
         # Text-to-speech flag attributes
         $self->addLabel($grid, '<b>Text-to-speech flag attributes</b>',
@@ -12876,7 +13788,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _7', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _7',
+            ['Text-to-speech alert attributes'],
+        );
 
         # Text-to-speech alert attributes
         $self->addLabel($grid, '<b>Text-to-speech alert attributes</b>',
@@ -12939,7 +13855,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('_Tasks', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, '_Tasks');
 
         # Add tabs to the inner notebook
         $self->tasks1Tab($innerNotebook, 'first');
@@ -12976,9 +13892,20 @@
         my $grid;
 
         if ($type eq 'first') {
-            $grid = $self->addTab('Page _1', $innerNotebook);
+
+            $grid = $self->addTab(
+                $innerNotebook,
+                'Page _1',
+                ['Task first runlist'],
+            );
+
         } else {
-            $grid = $self->addTab('Page _2', $innerNotebook);
+
+            $grid = $self->addTab(
+                $innerNotebook,
+                'Page _2',
+                ['Task last runlist'],
+            );
         }
 
         # Task runlists
@@ -13356,7 +14283,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _3', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _3',
+            ['Commify mode'],
+        );
 
         # Commify mode
         $self->addLabel($grid, '<b>Commify mode</b>',
@@ -13474,7 +14405,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Sc_ripts', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            'Sc_ripts',
+            ['Initial scripts'],
+        );
 
         # Initial tasks
         $self->addLabel($grid, '<b>Initial scripts</b>',
@@ -13780,7 +14715,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('C_hat', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, 'C_hat');
 
         # Add tabs to the inner notebook
         $self->chat1Tab($innerNotebook);
@@ -13812,10 +14747,14 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Chat task actions (1/2)'],
+        );
 
-        # Chat task actions
-        $self->addLabel($grid, '<b>Chat task actions</b>',
+        # Chat task actions (1/2)
+        $self->addLabel($grid, '<b>Chat task actions (1/2)</b>',
             0, 12, 0, 1);
 
         # Left column
@@ -13988,10 +14927,14 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _2', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _2',
+            ['Chat task actions (2/2)'],
+        );
 
-        # Chat task actions
-        $self->addLabel($grid, '<b>Chat task actions (cont.)</b>',
+        # Chat task actions (2/2)
+        $self->addLabel($grid, '<b>Chat task actions (2/2)</b>',
             0, 12, 0, 1);
 
         # Left column
@@ -14473,7 +15416,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _3', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _3',
+            ['Chat options'],
+        );
 
         # Chat options
         $self->addLabel($grid, '<b>Chat options</b>',
@@ -14802,9 +15749,13 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _4', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _4',
+            ['Chat contact list'],
+        );
 
-        # Chat task actions
+        # Chat contact list
         $self->addLabel($grid, '<b>Chat contact list</b>',
             0, 12, 0, 1);
         $self->addLabel($grid, '<i>List of stored chat contacts available to the Chat task</i>',
@@ -15023,9 +15974,13 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _5', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _5',
+            ['Current chat connections'],
+        );
 
-        # Chat task actions
+        # Current chat connections
         $self->addLabel($grid, '<b>Current chat connections</b>',
             0, 12, 0, 1);
         $self->addLabel(
@@ -15173,7 +16128,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -15234,7 +16189,7 @@
         ) = @_;
 
         # Local variables
-        my ($winType, $winName);
+        my ($winType, $winName, $winWidth, $winHeight);
 
         # Check for improper arguments
         if (! defined $class || ! defined $number || ! defined $workspaceObj || ! defined $owner) {
@@ -15260,6 +16215,22 @@
 
                 $title = 'Preference window';
             }
+        }
+
+        $winWidth = $axmud::CLIENT->customFreeWinWidth;
+        if ($axmud::CLIENT->configWinIndexFlag) {
+
+            $winWidth += $axmud::CLIENT->customConfigWinIndexWidth;
+        }
+
+        # For the benefit of MS Windows and its enormous buttons, increase the height of all
+        #   'config' windows a little (this removes scrollbars in almost all tabs)
+        $winHeight = $axmud::CLIENT->customFreeWinHeight;
+        if (
+            $^O eq 'MSWin32'
+            && $axmud::CLIENT->customFreeWinHeight eq $axmud::CLIENT->constFreeWinHeight
+        ) {
+            $winHeight += 30;
         }
 
         # Setup
@@ -15334,8 +16305,8 @@
             # Standard IVs for 'free' windows
 
             # The window's default size, in pixels
-            widthPixels                 => $axmud::CLIENT->customFreeWinWidth,
-            heightPixels                => $axmud::CLIENT->customFreeWinHeight,
+            widthPixels                 => $winWidth,
+            heightPixels                => $winHeight,
             # Default border/item spacing sizes used in the window, in pixels
             borderPixels                => $axmud::CLIENT->constFreeBorderPixels,
             spacingPixels               => $axmud::CLIENT->constFreeSpacingPixels,
@@ -15350,6 +16321,11 @@
             # Standard IVs for 'config' windows
 
             # Widgets
+            hPaned                      => undef,       # Gtk3::HPaned
+            scroller                    => undef,       # Gtk3::ScrolledWindow
+            treeStore                   => undef,       # Gtk3::TreeStore
+            treeView                    => undef,       # Gtk3::TreeView
+            vBox                        => undef,       # Gtk3::VBox
             notebook                    => undef,       # Gtk3::Notebook
             hBox                        => undef,       # Gtk3::HBox
             okButton                    => undef,       # Gtk3::Button
@@ -15387,6 +16363,14 @@
             #   'edit'/'pref' window; for example, GA::PrefWin::TaskStart uses it to specify a task
             #   name and type. Set to an empty hash if not required
             editConfigHash              => \%configHash,
+
+            # In the index on the left-hand side of the window, the pointer (Gtk3::TreeIter) for
+            #   the $self->notebook tab that's currently being drawn
+            indexPointer                => undef,
+            # A hash of inner Gtk3::Notebooks. Keys are a tab number in the outer notebook (first
+            #   tab is #0); the corresponding values are the inner notebook for that tab, or
+            #   'undef' if the tab has no inner notebook
+            innerNotebookHash           => {},
 
             # IVs for this type of window
 
@@ -15491,7 +16475,11 @@
         }
 
         # Tab setup, using the standard grid size
-        my $grid = $self->addTab('_Summary', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Summary',
+            ['Shortest path summary'],
+        );
 
         # Extract data from $self->editConfigHash, and use it to set initial values for the
         #   non-standard IVs
@@ -15598,8 +16586,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->summaryTab', @_);
         }
 
-#       # Tab setup (already created by the calling function)
-#       my $grid = $self->addTab('_Summary', $self->notebook);
+        # Tab setup (already created by the calling function)
 
         # Shortest path found
         $self->addLabel(
@@ -15776,7 +16763,8 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Path', $self->notebook);
+        # N.B. No sub-headings
+        my $grid = $self->addTab($self->notebook, '_Path');
 
         # Path
         $self->addLabel($grid, '<b>Path</b>',
@@ -15813,9 +16801,10 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Reverse path', $self->notebook);
+        # N.B. No sub-headings
+        my $grid = $self->addTab($self->notebook, '_Reverse path');
 
-        # Path
+        # Reverse path
         $self->addLabel($grid, '<b>Reverse path</b>',
             0, 12, 0, 1);
 
@@ -16130,7 +17119,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -16224,8 +17213,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->setupNotebook', @_);
         }
 
-#       # Tab setup
-#       my $grid = $self->addTab('_Session', $self->notebook);
+        # Tab setup (already created by the calling function)
 
         # Set up the rest of the first tab (all of it, in this case)
         $self->shortcutTab();
@@ -16293,7 +17281,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Shortcuts', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Shortcuts',
+            ['Shortcuts to other windows'],
+        );
 
         # Shortcuts to other windows
         $self->addLabel($grid, '<b>Shortcuts to other windows</b>',
@@ -16427,11 +17419,11 @@
         });
 
         my $button15 = $self->addButton($grid,
-            'Open object viewer', 'Opens the object viewer window', undef,
+            'Open data viewer', 'Opens the data viewer window', undef,
             4, 8, 11, 12);
         $button15->signal_connect('clicked' => sub {
 
-            $self->session->pseudoCmd('openobjectviewer', $self->pseudoCmdMode);
+            $self->session->pseudoCmd('opendataviewer', $self->pseudoCmdMode);
         });
 
         my $button16 = $self->addButton($grid,
@@ -16482,7 +17474,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Auto-save', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Auto-save',
+            ['Auto-save settings'],
+        );
 
         # Auto-save settings
         $self->addLabel($grid, '<b>Auto-save settings</b>',
@@ -16576,7 +17572,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('C_harset', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            'C_harset',
+            ['Character set settings'],
+        );
 
         # Character set settings
         $self->addLabel($grid, '<b>Character set settings</b>',
@@ -16641,7 +17641,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Colours/Fonts', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Colours/Fonts',
+            ['Colour/font settings'],
+        );
 
         # Import colour schemes
         $mainObj = $axmud::CLIENT->ivShow('colourSchemeHash', 'main');
@@ -16673,7 +17677,7 @@
 
         my $checkButton = $self->addCheckButton(
             $grid,
-            'Convert invisble text (i.e. text that\'s the same colour as the background)',
+            'Convert invisible text (i.e. text that\'s the same colour as the background)',
             undef,
             TRUE,
             1, 12, 3, 4);
@@ -16714,7 +17718,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('C_ommands', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            'C_ommands',
+            ['Command sigils', 'World commands', 'System messages'],
+        );
 
         # Command sigils
         $self->addLabel($grid, '<b>Command sigils</b>',
@@ -16982,7 +17990,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Logs', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Logs',
+            ['Log settings'],
+        );
 
         # Log settings
         $self->addLabel($grid, '<b>Log settings</b>',
@@ -17039,7 +18051,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('So_und', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            'So_und',
+            ['Sound settings'],
+        );
 
         # Sound settings
         $self->addLabel($grid, '<b>Sound settings</b>',
@@ -17110,9 +18126,13 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('S_peech', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            'S_peech',
+            ['Text-to-speech (TTS) settings'],
+        );
 
-        # Text-to-speech settings
+        # Text-to-speech (TTS) settings
         $self->addLabel($grid, '<b>Text-to-speech (TTS) settings</b>',
             0, 12, 0, 1);
 
@@ -17130,79 +18150,95 @@
         });
 
         my $checkButton2 = $self->addCheckButton(
-            $grid, 'Convert text received from the world', undef, TRUE,
+            $grid,
+            'Verbose output (precede with \'System message\' or \'Received text\', etc)',
+            undef,
+            TRUE,
             1, 12, 2, 3);
-        $checkButton2->set_active($axmud::CLIENT->ttsReceiveFlag);
+        $checkButton2->set_active($axmud::CLIENT->ttsVerboseFlag);
         $checkButton2->signal_connect('toggled' => sub {
 
             if ($checkButton2->get_active()) {
+                $axmud::CLIENT->set_ttsFlag('verbose', TRUE);
+            } else {
+                $axmud::CLIENT->set_ttsFlag('verbose', FALSE);
+            }
+        });
+
+        my $checkButton3 = $self->addCheckButton(
+            $grid, 'Convert text received from the world', undef, TRUE,
+            1, 12, 3, 4);
+        $checkButton3->set_active($axmud::CLIENT->ttsReceiveFlag);
+        $checkButton3->signal_connect('toggled' => sub {
+
+            if ($checkButton3->get_active()) {
                 $axmud::CLIENT->set_ttsFlag('receive', TRUE);
             } else {
                 $axmud::CLIENT->set_ttsFlag('receive', FALSE);
             }
         });
 
-        my $checkButton3 = $self->addCheckButton($grid, 'Convert system messages', undef, TRUE,
-            1, 12, 3, 4);
-        $checkButton3->set_active($axmud::CLIENT->ttsSystemFlag);
-        $checkButton3->signal_connect('toggled' => sub {
+        my $checkButton4 = $self->addCheckButton($grid, 'Convert system messages', undef, TRUE,
+            1, 12, 4, 5);
+        $checkButton4->set_active($axmud::CLIENT->ttsSystemFlag);
+        $checkButton4->signal_connect('toggled' => sub {
 
-            if ($checkButton3->get_active()) {
+            if ($checkButton4->get_active()) {
                 $axmud::CLIENT->set_ttsFlag('system', TRUE);
             } else {
                 $axmud::CLIENT->set_ttsFlag('system', FALSE);
             }
         });
 
-        my $checkButton4 = $self->addCheckButton(
-            $grid, 'Convert system error messages', undef, TRUE,
-            1, 12, 4, 5);
-        $checkButton4->set_active($axmud::CLIENT->ttsSystemErrorFlag);
-        $checkButton4->signal_connect('toggled' => sub {
+        my $checkButton5 = $self->addCheckButton(
+            $grid, 'Convert system error/warning messages', undef, TRUE,
+            1, 12, 5, 6);
+        $checkButton5->set_active($axmud::CLIENT->ttsSystemErrorFlag);
+        $checkButton5->signal_connect('toggled' => sub {
 
-            if ($checkButton4->get_active()) {
+            if ($checkButton5->get_active()) {
                 $axmud::CLIENT->set_ttsFlag('error', TRUE);
             } else {
                 $axmud::CLIENT->set_ttsFlag('error', FALSE);
             }
         });
 
-        my $checkButton5 = $self->addCheckButton($grid, 'Convert world commands', undef, TRUE,
-            1, 12, 5, 6);
-        $checkButton5->set_active($axmud::CLIENT->ttsWorldCmdFlag);
-        $checkButton5->signal_connect('toggled' => sub {
+        my $checkButton6 = $self->addCheckButton($grid, 'Convert world commands', undef, TRUE,
+            1, 12, 6, 7);
+        $checkButton6->set_active($axmud::CLIENT->ttsWorldCmdFlag);
+        $checkButton6->signal_connect('toggled' => sub {
 
-            if ($checkButton5->get_active()) {
+            if ($checkButton6->get_active()) {
                 $axmud::CLIENT->set_ttsFlag('command', TRUE);
             } else {
                 $axmud::CLIENT->set_ttsFlag('command', FALSE);
             }
         });
 
-        my $checkButton6 = $self->addCheckButton(
+        my $checkButton7 = $self->addCheckButton(
             $grid, 'Convert \'dialogue\' windows', undef, TRUE,
-            1, 12, 6, 7);
-        $checkButton6->set_active($axmud::CLIENT->ttsDialogueFlag);
-        $checkButton6->signal_connect('toggled' => sub {
+            1, 12, 7, 8);
+        $checkButton7->set_active($axmud::CLIENT->ttsDialogueFlag);
+        $checkButton7->signal_connect('toggled' => sub {
 
-            if ($checkButton6->get_active()) {
+            if ($checkButton7->get_active()) {
                 $axmud::CLIENT->set_ttsFlag('dialogue', TRUE);
             } else {
                 $axmud::CLIENT->set_ttsFlag('dialogue', FALSE);
             }
         });
 
-        my $checkButton7 = $self->addCheckButton(
+        my $checkButton8 = $self->addCheckButton(
             $grid,
             'Allow some tasks (e.g. the Status and Locator tasks) to convert certain strings to'
             . ' speech',
             undef,
             TRUE,
-            1, 12, 7, 8);
-        $checkButton7->set_active($axmud::CLIENT->ttsTaskFlag);
-        $checkButton7->signal_connect('toggled' => sub {
+            1, 12, 8, 9);
+        $checkButton8->set_active($axmud::CLIENT->ttsTaskFlag);
+        $checkButton8->signal_connect('toggled' => sub {
 
-            if ($checkButton7->get_active()) {
+            if ($checkButton8->get_active()) {
                 $axmud::CLIENT->set_ttsFlag('task', TRUE);
             } else {
                 $axmud::CLIENT->set_ttsFlag('task', FALSE);
@@ -17236,7 +18272,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Windows', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Windows',
+            ['Window tiling settings'],
+        );
 
         # Window tiling settings
         $self->addLabel($grid, '<b>Window tiling settings</b>',
@@ -17302,7 +18342,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -17359,7 +18399,7 @@
         ) = @_;
 
         # Local variables
-        my ($winType, $winName);
+        my ($winType, $winName, $winWidth, $winHeight);
 
         # Check for improper arguments
         if (! defined $class || ! defined $number || ! defined $workspaceObj || ! defined $owner) {
@@ -17385,6 +18425,22 @@
 
                 $title = 'Preference window';
             }
+        }
+
+        $winWidth = $axmud::CLIENT->customFreeWinWidth;
+        if ($axmud::CLIENT->configWinIndexFlag) {
+
+            $winWidth += $axmud::CLIENT->customConfigWinIndexWidth;
+        }
+
+        # For the benefit of MS Windows and its enormous buttons, increase the height of all
+        #   'config' windows a little (this removes scrollbars in almost all tabs)
+        $winHeight = $axmud::CLIENT->customFreeWinHeight;
+        if (
+            $^O eq 'MSWin32'
+            && $axmud::CLIENT->customFreeWinHeight eq $axmud::CLIENT->constFreeWinHeight
+        ) {
+            $winHeight += 30;
         }
 
         # Setup
@@ -17459,8 +18515,8 @@
             # Standard IVs for 'free' windows
 
             # The window's default size, in pixels
-            widthPixels                 => $axmud::CLIENT->customFreeWinWidth,
-            heightPixels                => $axmud::CLIENT->customFreeWinHeight,
+            widthPixels                 => $winWidth,
+            heightPixels                => $winHeight,
             # Default border/item spacing sizes used in the window, in pixels
             borderPixels                => $axmud::CLIENT->constFreeBorderPixels,
             spacingPixels               => $axmud::CLIENT->constFreeSpacingPixels,
@@ -17475,6 +18531,11 @@
             # Standard IVs for 'config' windows
 
             # Widgets
+            hPaned                      => undef,       # Gtk3::HPaned
+            scroller                    => undef,       # Gtk3::ScrolledWindow
+            treeStore                   => undef,       # Gtk3::TreeStore
+            treeView                    => undef,       # Gtk3::TreeView
+            vBox                        => undef,       # Gtk3::VBox
             notebook                    => undef,       # Gtk3::Notebook
             hBox                        => undef,       # Gtk3::HBox
             okButton                    => undef,       # Gtk3::Button
@@ -17512,6 +18573,14 @@
             #   'edit'/'pref' window; for example, GA::PrefWin::TaskStart uses it to specify a
             #   task name and type. Set to an empty hash if not required
             editConfigHash              => \%configHash,
+
+            # In the index on the left-hand side of the window, the pointer (Gtk3::TreeIter) for
+            #   the $self->notebook tab that's currently being drawn
+            indexPointer                => undef,
+            # A hash of inner Gtk3::Notebooks. Keys are a tab number in the outer notebook (first
+            #   tab is #0); the corresponding values are the inner notebook for that tab, or
+            #   'undef' if the tab has no inner notebook
+            innerNotebookHash           => {},
 
             # IVs for this type of window
 
@@ -17663,7 +18732,8 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Search', $self->notebook);
+        # N.B. No sub-headings
+        my $grid = $self->addTab($self->notebook, '_Search');
 
         # Set up the rest of the tab
         $self->searchTab($grid);
@@ -17730,8 +18800,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->searchTab', @_);
         }
 
-#       # Tab setup (already created by the calling function)
-#       my $grid = $self->addTab('_Search', $self->notebook);
+        # Tab setup (already created by the calling function)
 
         # Top section
         $self->addLabel($grid, '<b>Search options</b>',
@@ -18033,7 +19102,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('S_hared properties', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, 'S_hared properties');
 
         # Add tabs to the inner notebook
         $self->propertiesGroup1Tab($innerNotebook);
@@ -18065,7 +19134,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('_Regions/Rooms', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, '_Regions/Rooms');
 
         # Add tabs to the inner notebook
         $self->propertiesRegionsTab($innerNotebook);
@@ -18096,7 +19165,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('_Beings', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, '_Beings');
 
         # Add tabs to the inner notebook
         $self->propertiesCharactersTab($innerNotebook);
@@ -18132,7 +19201,8 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Portables/Decorations', $self->notebook);
+        # N.B. No sub-headings
+        my $grid = $self->addTab($self->notebook, '_Portables/Decorations');
 
         # Group 5 properties
         $self->addLabel($grid, '<b>Group 5 properties</b>',
@@ -18172,7 +19242,8 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Group _1', $innerNotebook);
+        # N.B. No sub-headings
+        my $grid = $self->addTab($innerNotebook, 'Group _1');
 
         # Group 1 properties
         $self->addLabel($grid, '<b>Group 1 properties</b>',
@@ -18213,7 +19284,8 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Group _2', $innerNotebook);
+        # N.B. No sub-headings
+        my $grid = $self->addTab($innerNotebook, 'Group _2');
 
         # Group 2 properties
         $self->addLabel($grid, '<b>Group 2 properties</b>',
@@ -18265,7 +19337,8 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Group _3', $innerNotebook);
+        # N.B. No sub-headings
+        my $grid = $self->addTab($innerNotebook, 'Group _3');
 
         # Group 3 properties
         $self->addLabel($grid, '<b>Group 3 properties</b>',
@@ -18305,7 +19378,8 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Group _4', $innerNotebook);
+        # N.B. No sub-headings
+        my $grid = $self->addTab($innerNotebook, 'Group _4');
 
         # Group 4 properties
         $self->addLabel($grid, '<b>Group 4 properties</b>',
@@ -18360,7 +19434,8 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Re_gions', $innerNotebook);
+        # N.B. No sub-headings
+        my $grid = $self->addTab($innerNotebook, 'Re_gions');
 
         # Group 5 properties
         $self->addLabel($grid, '<b>Group 5 properties</b>',
@@ -18370,6 +19445,8 @@
 
         $self->propertiesTab_addCheckButton($grid, 'tempRegionFlag', 'flag',
             'Region is temporary?', 2);
+        $self->propertiesTab_addCheckButton($grid, 'finishedFlag', 'flag',
+            'Region is finished?', 3);
 
         # Tab complete
         return 1;
@@ -18395,7 +19472,8 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Rooms 1', $innerNotebook);
+        # N.B. No sub-headings
+        my $grid = $self->addTab($innerNotebook, '_Rooms 1');
 
         # Group 5 properties
         $self->addLabel($grid, '<b>Group 5 properties</b>',
@@ -18444,7 +19522,8 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Rooms 2', $innerNotebook);
+        # N.B. No sub-headings
+        my $grid = $self->addTab($innerNotebook, 'Rooms 2');
 
         # Group 5 properties
         $self->addLabel($grid, '<b>Group 5 properties</b>',
@@ -18497,7 +19576,8 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Characters', $innerNotebook);
+        # N.B. No sub-headings
+        my $grid = $self->addTab($innerNotebook, '_Characters');
 
         # Group 5 properties
         $self->addLabel($grid, '<b>Group 5 properties</b>',
@@ -18550,7 +19630,8 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Minions', $innerNotebook);
+        # N.B. No sub-headings
+        my $grid = $self->addTab($innerNotebook, '_Minions');
 
         # Group 5 properties
         $self->addLabel($grid, '<b>Group 5 properties</b>',
@@ -18599,7 +19680,8 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Sentients 1', $innerNotebook);
+        # N.B. No sub-headings
+        my $grid = $self->addTab($innerNotebook, '_Sentients 1');
 
         # Group 5 properties
         $self->addLabel($grid, '<b>Group 5 properties</b>',
@@ -18652,7 +19734,8 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Sentients 2', $innerNotebook);
+        # N.B. No sub-headings
+        my $grid = $self->addTab($innerNotebook, '_Sentients 2');
 
         # Group 5 properties
         $self->addLabel($grid, '<b>Group 5 properties</b>',
@@ -18707,7 +19790,8 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Creatures 1', $innerNotebook);
+        # N.B. No sub-headings
+        my $grid = $self->addTab($innerNotebook, '_Creatures 1');
 
         # Group 5 properties
         $self->addLabel($grid, '<b>Group 5 properties</b>',
@@ -18756,7 +19840,8 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Creatures 2', $innerNotebook);
+        # N.B. No sub-headings
+        my $grid = $self->addTab($innerNotebook, '_Creatures 2');
 
         # Group 5 properties
         $self->addLabel($grid, '<b>Group 5 properties</b>',
@@ -19122,7 +20207,8 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('R_esults', $self->notebook);
+        # N.B. No sub-headings
+        my $grid = $self->addTab($self->notebook, 'R_esults');
 
         # Import the world model object
         $wmObj = $self->session->worldModelObj;
@@ -19869,7 +20955,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -19963,8 +21049,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->setupNotebook', @_);
         }
 
-#       # Tab setup
-#       my $grid = $self->addTab('_Session', $self->notebook);
+        # Tab setup (already created by the calling function)
 
         # Set up the rest of the first tab (all of it, in this case)
         $self->sessionTab();
@@ -19999,15 +21084,17 @@
         $self->interfacesTab();
         $self->tasksTab();
         $self->recordingTab();
-        $self->protocolsTab();
-        $self->msdpTab();
-        $self->msspTab();
-        $self->mxpTab();
-        $self->zmpTab();
-        $self->aard102Tab();
-        $self->atcpTab();
-        $self->gmcpTab();
-        $self->mcpTab();
+        if (! $axmud::CLIENT->configWinSimplifyFlag) {
+            $self->protocolsTab();
+            $self->msdpTab();
+            $self->msspTab();
+            $self->mxpTab();
+            $self->zmpTab();
+            $self->aard102Tab();
+            $self->atcpTab();
+            $self->gmcpTab();
+            $self->mcpTab();
+        }
 
         return 1;
     }
@@ -20037,13 +21124,16 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('_Session', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, '_Session');
 
         # Add tabs to the inner notebook
         $self->session1Tab($innerNotebook);
-        $self->session2Tab($innerNotebook);
-        $self->session3Tab($innerNotebook);
-        $self->session4Tab($innerNotebook);
+        if (! $axmud::CLIENT->configWinSimplifyFlag) {
+
+            $self->session2Tab($innerNotebook);
+            $self->session3Tab($innerNotebook);
+            $self->session4Tab($innerNotebook);
+        }
 
         return 1;
     }
@@ -20061,6 +21151,9 @@
 
         my ($self, $innerNotebook, $check) = @_;
 
+        # Local variables
+        my ($offset, $path);
+
         # Check for improper arguments
         if (! defined $innerNotebook || defined $check) {
 
@@ -20068,102 +21161,147 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Session settings', 'Current connection'],
+        );
+
+        # Optional header
+        if ($axmud::CLIENT->configWinSimplifyFlag) {
+
+            $offset = 1;
+            if ($^O eq 'MSWin32') {
+                $path = $axmud::SHARE_DIR . '\\icons\\replace\\dialogue_replace_warning.png';
+            } else {
+                $path = $axmud::SHARE_DIR . '/icons/replace/dialogue_replace_warning.png';
+            }
+
+            my ($image, $frame, $viewPort) = $self->addImage($grid, $path, undef,
+                FALSE,          # Don't use a scrolled window
+                -1, 50,
+                1, 2, 0, 1);
+
+            $self->addLabel($grid,
+                "<b>Some tabs are hidden. Click the button to reveal them,"
+                . "\nor type this command:</b>   ;setwindowsize -s",
+                2, 9, 0, 1);
+
+            my $button = $self->addButton($grid, 'Reveal tabs', 'Reveal hidden tabs', undef,
+                9, 12, 0, 1);
+            $button->signal_connect('clicked' => sub {
+
+                # Reveal tabs
+                $self->session->pseudoCmd('setwindowsize -s', $self->pseudoCmdMode);
+
+                $self->showMsgDialogue(
+                    'Reveal tabs',
+                    'info',
+                    'The new setting will be applied when you re-open the window',
+                    'ok',
+                );
+            });
+
+        } else {
+
+            $offset = 0;
+        }
 
         # Left column
         $self->addLabel($grid, '<b>Session settings</b>',
-            0, 6, 0, 1);
+            0, 6, (0 + $offset), (1 + $offset));
 
         $self->addLabel($grid, 'Session number',
-            1, 3, 1, 2);
+            1, 3, (1 + $offset), (2 + $offset));
         my $entry = $self->addEntry($grid, undef, FALSE,
-            3, 6, 1, 2);
+            3, 6, (1 + $offset), (2 + $offset));
 
         my $checkButton = $self->addCheckButton($grid, 'Session start complete', undef, FALSE,
-            1, 6, 2, 3);
+            1, 6, (2 + $offset), (3 + $offset));
         my $checkButton2 = $self->addCheckButton($grid, 'Automatic login complete', undef, FALSE,
-            1, 6, 3, 4);
+            1, 6, (3 + $offset), (4 + $offset));
 
         $self->addLabel($grid, 'Client (system) time (secs)',
-            1, 3, 4, 5);
+            1, 3, (4 + $offset), (5 + $offset));
         my $entry2 = $self->addEntry($grid, undef, FALSE,
-            3, 6, 4, 5);
+            3, 6, (4 + $offset), (5 + $offset));
 
         $self->addLabel($grid, 'Session time (secs)',
-            1, 3, 5, 6);
+            1, 3, (5 + $offset), (6 + $offset));
         my $entry3 = $self->addEntry($grid, undef, FALSE,
-            3, 6, 5, 6);
+            3, 6, (5 + $offset), (6 + $offset));
 
         $self->addLabel($grid, 'Delayed quit',
-            1, 3, 6, 7);
+            1, 3, (6 + $offset), (7 + $offset));
         my $entry4 = $self->addEntry($grid, undef, FALSE,
-            3, 6, 6, 7);
+            3, 6, (6 + $offset), (7 + $offset));
 
         $self->addLabel($grid, 'Current character set',
-            1, 3, 7, 8);
+            1, 3, (7 + $offset), (8 + $offset));
         my $entry5 = $self->addEntry($grid, undef, FALSE,
-            3, 6, 7, 8);
+            3, 6, (7 + $offset), (8 + $offset));
 
+        # Current connection
         $self->addLabel($grid, '<b>Current connection</b>',
-            0, 6, 8, 9);
+            0, 6, (8 + $offset), (9 + $offset));
 
         $self->addLabel($grid, 'Host',
-            1, 3, 9, 10);
+            1, 3, (9 + $offset), (10 + $offset));
         my $entry6 = $self->addEntry($grid, undef, FALSE,
-            3, 6, 9, 10);
+            3, 6, (9 + $offset), (10 + $offset));
 
         $self->addLabel($grid, 'Protocol',
-            1, 3, 10, 11);
+            1, 3, (10 + $offset), (11 + $offset));
         my $entry7 = $self->addEntry($grid, undef, FALSE,
-            3, 6, 10, 11);
+            3, 6, (10 + $offset), (11 + $offset));
 
         # Right column
-        my $button = $self->addButton($grid, 'Update', 'Update the displayed data', undef,
-            10, 12, 0, 1);
+        my $button2 = $self->addButton($grid, 'Update settings', 'Update the displayed data', undef,
+            9, 12, (0 + $offset), (1 + $offset));
         # (->signal_connect appears below)
 
         $self->addLabel($grid, 'Current world',
-            7, 9, 1, 2);
+            7, 9, (1 + $offset), (2 + $offset));
         my $entry8 = $self->addEntry($grid, undef, FALSE,
-            9, 12, 1, 2);
+            9, 12, (1 + $offset), (2 + $offset));
 
         $self->addLabel($grid, 'Current guild',
-            7, 9, 2, 3);
+            7, 9, (2 + $offset), (3 + $offset));
         my $entry9 = $self->addEntry($grid, undef, FALSE,
-            9, 12, 2, 3);
+            9, 12, (2 + $offset), (3 + $offset));
 
         $self->addLabel($grid, 'Current race',
-            7, 9, 3, 4);
+            7, 9, (3 + $offset), (4 + $offset));
         my $entry10 = $self->addEntry($grid, undef, FALSE,
-            9, 12, 3, 4);
+            9, 12, (3 + $offset), (4 + $offset));
 
         $self->addLabel($grid, 'Current character',
-            7, 9, 4, 5);
+            7, 9, (4 + $offset), (5 + $offset));
         my $entry11 = $self->addEntry($grid, undef, FALSE,
-            9, 12, 4, 5);
+            9, 12, (4 + $offset), (5 + $offset));
 
         $self->addLabel($grid, 'Current dictionary',
-            7, 9, 5, 6);
+            7, 9, (5 + $offset), (6 + $offset));
         my $entry12 = $self->addEntry($grid, undef, FALSE,
-            9, 12, 5, 6);
+            9, 12, (5 + $offset), (6 + $offset));
 
         $self->addLabel($grid, 'Current mission',
-            7, 9, 6, 7);
+            7, 9, (6 + $offset), (7 + $offset));
         my $entry13 = $self->addEntry($grid, undef, FALSE,
-            9, 12, 6, 7);
+            9, 12, (6 + $offset), (7 + $offset));
 
         $self->addLabel($grid, 'Port',
-            7, 9, 9, 10);
+            7, 9, (9 + $offset), (10 + $offset));
         my $entry14 = $self->addEntry($grid, undef, FALSE,
-            9, 12, 9, 10);
+            9, 12, (9 + $offset), (10 + $offset));
 
         $self->addLabel($grid, 'Connection status',
-            7, 9, 10, 11);
+            7, 9, (10 + $offset), (11 + $offset));
         my $entry15 = $self->addEntry($grid, undef, FALSE,
-            9, 12, 10, 11);
+            9, 12, (10 + $offset), (11 + $offset));
 
         # ->signal_connects
-        $button->signal_connect('clicked' => sub {
+        $button2->signal_connect('clicked' => sub {
 
             $checkButton->set_active($self->session->startCompleteFlag);
             $checkButton2->set_active($self->session->loginFlag);
@@ -20240,7 +21378,7 @@
         });
 
         # Pseudo-click the button to set all the widgets
-        $button->clicked();
+        $button2->clicked();
 
         # Tab complete
         return 1;
@@ -20269,7 +21407,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _2', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _2',
+            ['Session file objects'],
+        );
 
         # Session file objects
         $self->addLabel($grid, '<b>Session file objects</b>',
@@ -20441,7 +21583,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _3', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _3',
+            ['Session buffer settings (1/2)'],
+        );
 
         # Left column
         $self->addLabel($grid, '<b>Session buffer settings (1/2)</b>',
@@ -20614,7 +21760,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _4', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _4',
+            ['Session buffer settings (2/2)'],
+        );
 
         # Session buffer settings
         $self->addLabel($grid, '<b>Session buffer settings (2/2)</b>',
@@ -20926,7 +22076,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('_Interfaces', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, '_Interfaces');
 
         # Add tabs to the inner notebook
         $self->interfaces1Tab($innerNotebook);
@@ -20966,7 +22116,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Active interfaces'],
+        );
 
         # Left column
         $self->addLabel($grid, '<b>Active interfaces</b>',
@@ -20980,13 +22134,21 @@
             'Name', 'text',
             'Category', 'text',
             'Indep', 'bool',
-            'Enabled', 'bool',
+            'Enabled', 'bool_editable',
             'Associated profile', 'text',
             'Cooldown expires (seconds)', 'text',
         );
 
         my $slWidget = $self->addSimpleList($grid, undef, \@columnList,
-            1, 12, 2, 10);
+            1, 12, 2, 10,
+            -1, -1,
+            $self->getMethodRef('interfaces1Tab_buttonToggled'),
+        );
+
+        # Unusual step - need to save the simple list, because $self->interfaces1Tab_refreshList
+        #   updates multiple simple lists together. Because this is a 'pref' window, the lists are
+        #   stored in $self->editConfigHash
+        $self->ivAdd('editConfigHash', 'interface_list_all', $slWidget);
 
         # Initialise the list
         $listType = 'all';
@@ -20994,39 +22156,9 @@
 
         # Add buttons and combos
         my $button = $self->addButton($grid,
-            'Enable', 'Enable the selected active interface', undef,
+            'Edit...', 'Edit the selected active interface', undef,
             1, 3, 10, 11);
         $button->signal_connect('clicked' => sub {
-
-            my ($name) = $self->getSimpleListData($slWidget, 1);
-            if (defined $name) {
-
-                # Enable the active interface
-                $self->session->pseudoCmd('enableactiveinterface ' . $name, $self->pseudoCmdMode);
-                # Refresh the simple list
-                $self->interfaces1Tab_refreshList($slWidget, scalar (@columnList / 2), $listType);
-            }
-        });
-
-        my $button2 = $self->addButton($grid,
-            'Disable', 'Disable the selected active interface', undef,
-            3, 5, 10, 11);
-        $button2->signal_connect('clicked' => sub {
-
-            my ($name) = $self->getSimpleListData($slWidget, 1);
-            if (defined $name) {
-
-                # Disable the active interface
-                $self->session->pseudoCmd('disableactiveinterface ' . $name, $self->pseudoCmdMode);
-                # Refresh the simple list
-                $self->interfaces1Tab_refreshList($slWidget, scalar (@columnList / 2), $listType);
-            }
-        });
-
-        my $button3 = $self->addButton($grid,
-            'Edit...', 'Edit the selected active interface', undef,
-            5, 7, 10, 11);
-        $button3->signal_connect('clicked' => sub {
 
             my ($number, $interfaceObj);
 
@@ -21048,8 +22180,55 @@
                     );
                 }
 
-                # Refresh the simple list
+                # Refresh this simple list
                 $self->interfaces1Tab_refreshList($slWidget, scalar (@columnList / 2), $listType);
+                # Refresh the simple list for the corresponding tab
+                $self->interfaces1Tab_refreshList(
+                    $self->ivShow('editConfigHash', 'interface_list_' . $interfaceObj->category),
+                    scalar (@columnList / 2),
+                    $interfaceObj->category,
+                );
+            }
+        });
+
+        my $button2 = $self->addButton($grid,
+            'Export', 'Export selected interfaces to the interface clipboard', undef,
+            3, 5, 10, 11);
+        $button2->signal_connect('clicked' => sub {
+
+            my (
+                $interfaceObj,
+                @interfaceList,
+            );
+
+            @interfaceList = $self->getSimpleListData($slWidget, 0);
+            if (@interfaceList) {
+
+                # Empty the clipboard
+                $self->session->pseudoCmd(
+                    'clearclipboard',
+                    $self->pseudoCmdMode,
+                );
+
+                # Export the selected interfaces
+                foreach my $number (@interfaceList) {
+
+                    $interfaceObj = $self->session->ivShow('interfaceNumHash', $number);
+
+                    $self->session->pseudoCmd(
+                        'export' . $interfaceObj->category . ' -i ' . $number,
+                        $self->pseudoCmdMode,
+                    );
+                }
+
+                # Refresh this simple list
+                $self->interfaces1Tab_refreshList($slWidget, scalar (@columnList / 2), $listType);
+                # Refresh the simple list for the corresponding tab
+                $self->interfaces1Tab_refreshList(
+                    $self->ivShow('editConfigHash', 'interface_list_' . $interfaceObj->category),
+                    scalar (@columnList / 2),
+                    $interfaceObj->category,
+                );
             }
         });
 
@@ -21088,40 +22267,61 @@
 
             if ($text ne $title) {
 
-                # Refresh the simple list
+                # Refresh this simple list
                 $listType = $comboHash{$text};
                 $self->interfaces1Tab_refreshList($slWidget, scalar (@columnList / 2), $listType);
             }
         });
 
-        my $button4 = $self->addButton($grid,
+        # Unusual step - also store the combo, so it can be reset by the other tabs
+        $self->ivAdd('editConfigHash', 'interface_combo', $comboBox);
+
+        my $button3 = $self->addButton($grid,
             'Enable all', 'Enable all active interfaces', undef,
-            1, 4, 11, 12);
-        $button4->signal_connect('clicked' => sub {
+            1, 3, 11, 12);
+        $button3->signal_connect('clicked' => sub {
 
             # Enable all active interfaces
             $self->session->pseudoCmd('enableactiveinterface', $self->pseudoCmdMode);
-            # Refresh the simple list
+            # Refresh this simple list
             $self->interfaces1Tab_refreshList($slWidget, scalar (@columnList / 2), $listType);
+            # Refresh the simple list in the other tabs
+            foreach my $category ( ['trigger', 'alias', 'macro', 'timer', 'hook'] ) {
+
+                $self->interfaces1Tab_refreshList(
+                    $self->ivShow('editConfigHash', 'interface_list_' . $category),
+                    scalar (@columnList / 2),
+                    $category,
+                );
+            }
         });
 
-        my $button5 = $self->addButton($grid,
+        my $button4 = $self->addButton($grid,
             'Disable all', 'Disable all active interfaces', undef,
-            4, 7, 11, 12);
-        $button5->signal_connect('clicked' => sub {
+            3, 5, 11, 12);
+        $button4->signal_connect('clicked' => sub {
 
             # Disable all active interfaces
             $self->session->pseudoCmd('disableactiveinterface', $self->pseudoCmdMode);
-            # Refresh the simple list
+            # Refresh this simple list
             $self->interfaces1Tab_refreshList($slWidget, scalar (@columnList / 2), $listType);
+            # Refresh the simple list in the other tabs
+            foreach my $category ( ['trigger', 'alias', 'macro', 'timer', 'hook'] ) {
+
+                $self->interfaces1Tab_refreshList(
+                    $self->ivShow('editConfigHash', 'interface_list_' . $category),
+                    scalar (@columnList / 2),
+                    $category,
+                );
+            }
         });
 
-        my $button6 = $self->addButton($grid,
+        my $button5 = $self->addButton($grid,
             'Update list', 'Update the list of interfaces', undef,
             10, 12, 11, 12);
-        $button6->signal_connect('clicked' => sub {
+        $button5->signal_connect('clicked' => sub {
 
-            # Refresh the simple list
+            # Refresh this simple list
             $self->interfaces1Tab_refreshList($slWidget, scalar (@columnList / 2), $listType);
         });
 
@@ -21131,7 +22331,7 @@
 
     sub interfaces1Tab_refreshList {
 
-        # Resets the simple list displayed by $self->interface1Tab and ->interface2Tab
+        # Resets the simple lists displayed by $self->interface1Tab and ->interface2Tab
         #
         # Expected arguments
         #   $slWidget       - The GA::Obj::SimpleList
@@ -21236,6 +22436,86 @@
         return 1;
     }
 
+    sub interfaces1Tab_buttonToggled {
+
+        # Callback from GA::Generic::EditWin->addSimpleList
+        #
+        # Expected arguments
+        #   $slWidget   - The GA::Obj::SimpleList
+        #   $model      - The Gtk3::ListStore
+        #   $iter       - The Gtk3::TreeIter of the line clicked
+        #   @data       - Data for all the cells on that line
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $slWidget, $model, $iter, @dataList) = @_;
+
+        # Local variables
+        my ($interfaceName, $flag, $interfaceObj);
+
+        # Check for improper arguments
+        if (! defined $slWidget || ! defined $model || ! defined $iter) {
+
+            return $axmud::CLIENT->writeImproper(
+                $self->_objClass . '->interfaces1Tab_buttonToggled',
+                @_,
+            );
+        }
+
+        # Update IVs
+        $interfaceName = $dataList[1];
+        $flag = $dataList[4];
+
+        $interfaceObj = $self->session->ivShow('interfaceHash', $interfaceName);
+        if (! $interfaceObj) {
+
+            # Failsafe
+            return undef;
+        }
+
+        if ($flag) {
+
+            if (! $interfaceObj->enabledFlag) {
+
+                $self->session->pseudoCmd(
+                    'enableactiveinterface ' . $interfaceName,
+                    $self->pseudoCmdMode,
+                );
+
+            } else {
+
+                # Refresh the simple list for this tab
+                $self->interfaces1Tab_refreshList($slWidget, scalar @dataList, 'all');
+            }
+
+        } elsif (! $flag) {
+
+            if ($interfaceObj->enabledFlag) {
+
+                $self->session->pseudoCmd(
+                    'disableactiveinterface ' . $interfaceName,
+                    $self->pseudoCmdMode,
+                );
+
+            } else {
+
+                # Refresh the simple list for this tab
+                $self->interfaces1Tab_refreshList($slWidget, scalar @dataList, 'all');
+            }
+        }
+
+        # Refresh the simple list for the corresponding tab
+        $self->interfaces1Tab_refreshList(
+            $self->ivShow('editConfigHash', 'interface_list_' . $interfaceObj->category),
+            scalar @dataList,
+            $interfaceObj->category,
+        );
+
+        return 1;
+    }
+
     sub interfaces2Tab {
 
         # Interfaces2 tab
@@ -21263,7 +22543,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _' . $number, $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _' . $number,
+            ['Active ' . $category . ' interfaces'],
+        );
 
         # Left column
         $self->addLabel($grid, '<b>Active ' . $category . ' interfaces</b>',
@@ -21279,54 +22563,30 @@
             'Name', 'text',
             'Category', 'text',
             'Indep', 'bool',
-            'Enabled', 'bool',
+            'Enabled', 'bool_editable',
             'Associated profile', 'text',
             'Cooldown expires (seconds)', 'text',
         );
 
         my $slWidget = $self->addSimpleList($grid, undef, \@columnList,
-            1, 12, 2, 10);
+            1, 12, 2, 10,
+            -1, -1,
+            $self->getMethodRef('interfaces2Tab_buttonToggled'),
+        );
+
+        # Unusual step - need to save the simple list, because $self->interfaces1Tab_refreshList
+        #   updates multiple simple lists together. Because this is a 'pref' window, the lists are
+        #   stored in $self->editConfigHash
+        $self->ivAdd('editConfigHash', 'interface_list_' . $category, $slWidget);
 
         # Initialise the list
         $self->interfaces1Tab_refreshList($slWidget, scalar (@columnList / 2), $category);
 
         # Add buttons and combos
         my $button = $self->addButton($grid,
-            'Enable', 'Enable the selected active interface', undef,
+            'Edit...', 'Edit the selected active interface', undef,
             1, 3, 10, 11);
         $button->signal_connect('clicked' => sub {
-
-            my ($name) = $self->getSimpleListData($slWidget, 1);
-            if (defined $name) {
-
-                # Enable the active interface
-                $self->session->pseudoCmd('enableactiveinterface ' . $name, $self->pseudoCmdMode);
-
-                # Refresh the simple list
-                $self->interfaces1Tab_refreshList($slWidget, scalar (@columnList / 2), $category);
-            }
-        });
-
-        my $button2 = $self->addButton($grid,
-            'Disable', 'Disable the selected active interface', undef,
-            3, 5, 10, 11);
-        $button2->signal_connect('clicked' => sub {
-
-            my ($name) = $self->getSimpleListData($slWidget, 1);
-            if (defined $name) {
-
-                # Enable the active interface
-                $self->session->pseudoCmd('disableactiveinterface ' . $name, $self->pseudoCmdMode);
-
-                # Refresh the simple list
-                $self->interfaces1Tab_refreshList($slWidget, scalar (@columnList / 2), $category);
-            }
-        });
-
-        my $button3 = $self->addButton($grid,
-            'Edit...', 'Edit the selected active interface', undef,
-            5, 7, 10, 11);
-        $button3->signal_connect('clicked' => sub {
 
             my ($number, $interfaceObj);
 
@@ -21353,12 +22613,67 @@
             }
         });
 
-        my $button4 = $self->addButton($grid,
+        my $button2 = $self->addButton($grid,
+            'Export', 'Export selected interfaces to the interface clipboard', undef,
+            3, 5, 10, 11);
+        $button2->signal_connect('clicked' => sub {
+
+            my (
+                $interfaceObj, $comboBox,
+                @interfaceList,
+            );
+
+            @interfaceList = $self->getSimpleListData($slWidget, 0);
+            if (@interfaceList) {
+
+                # Empty the clipboard
+                $self->session->pseudoCmd(
+                    'clearclipboard',
+                    $self->pseudoCmdMode,
+                );
+
+                # Export the selected interfaces
+                foreach my $number (@interfaceList) {
+
+                    $interfaceObj = $self->session->ivShow('interfaceNumHash', $number);
+
+                    $self->session->pseudoCmd(
+                        'export' . $interfaceObj->category . ' -i ' . $number,
+                        $self->pseudoCmdMode,
+                    );
+                }
+
+                # Refresh this simple list
+                $self->interfaces1Tab_refreshList(
+                    $slWidget,
+                    scalar (@columnList / 2),
+                    $category,
+                );
+
+                # Refresh the simple list/combo in the first tab
+                $comboBox = $self->ivShow('editConfigHash', 'interface_combo');
+                if ($comboBox->get_active() == 1) {
+
+                    $self->interfaces1Tab_refreshList(
+                        $self->ivShow('editConfigHash', 'interface_list_all'),
+                        scalar (@columnList / 2),
+                        'all',
+                    );
+
+                } else {
+
+                    # Updating the combobox, refreshes the simple list
+                    $comboBox->set_active(1);
+                }
+            }
+        });
+
+        my $button3 = $self->addButton($grid,
             'Move up', 'Move the selected active interface up the list', undef,
             8, 10, 10, 11);
-        $button4->signal_connect('clicked' => sub {
+        $button3->signal_connect('clicked' => sub {
 
-            my ($number, $iv, $posn);
+            my ($number, $iv, $posn, $comboBox);
 
             ($number) = $self->getSimpleListData($slWidget, 0);
             if (defined $number) {
@@ -21377,7 +22692,7 @@
                         $self->pseudoCmdMode,
                     );
 
-                    # Refresh the simple list
+                    # Refresh this simple list
                     $self->interfaces1Tab_refreshList(
                         $slWidget,
                         scalar (@columnList / 2),
@@ -21386,16 +22701,32 @@
 
                     # The interface should still be highlighted, after being moved up
                     $slWidget->select($posn - 1);
+
+                    # Refresh the simple list/combo in the first tab
+                    $comboBox = $self->ivShow('editConfigHash', 'interface_combo');
+                    if ($comboBox->get_active() == 1) {
+
+                        $self->interfaces1Tab_refreshList(
+                            $self->ivShow('editConfigHash', 'interface_list_all'),
+                            scalar (@columnList / 2),
+                           'all',
+                        );
+
+                    } else {
+
+                        # Updating the combobox, refreshes the simple list
+                        $comboBox->set_active(1);
+                    }
                 }
             }
         });
 
-        my $button5 = $self->addButton($grid,
+        my $button4 = $self->addButton($grid,
             'Move down', 'Move the selected active interface down the list', undef,
             10, 12, 10, 11);
-        $button5->signal_connect('clicked' => sub {
+        $button4->signal_connect('clicked' => sub {
 
-            my ($number, $iv, $posn);
+            my ($number, $iv, $posn, $comboBox);
 
             ($number) = $self->getSimpleListData($slWidget, 0);
             if (defined $number) {
@@ -21414,7 +22745,7 @@
                         $self->pseudoCmdMode,
                     );
 
-                    # Refresh the simple list
+                    # Refresh this simple list
                     $self->interfaces1Tab_refreshList(
                         $slWidget,
                         scalar (@columnList / 2),
@@ -21423,19 +22754,35 @@
 
                     # The interface should still be highlighted, after being moved down
                     $slWidget->select($posn + 1);
+
+                    # Refresh the simple list/combo in the first tab
+                    $comboBox = $self->ivShow('editConfigHash', 'interface_combo');
+                    if ($comboBox->get_active() == 1) {
+
+                        $self->interfaces1Tab_refreshList(
+                            $self->ivShow('editConfigHash', 'interface_list_all'),
+                            scalar (@columnList / 2),
+                           'all',
+                        );
+
+                    } else {
+
+                        # Updating the combobox, refreshes the simple list
+                        $comboBox->set_active(1);
+                    }
                 }
             }
         });
 
-        my $button6 = $self->addButton(
+        my $button5 = $self->addButton(
             $grid,
             'Edit ' . $category . ' interface model...',
             'Edit the model for this type of interface',
             undef,
             1, 5, 11, 12);
-        $button6->signal_connect('clicked' => sub {
+        $button5->signal_connect('clicked' => sub {
 
-            my $obj = $axmud::CLIENT->ivShow('interfaceModelHash', 'trigger');
+            my $obj = $axmud::CLIENT->ivShow('interfaceModelHash', $category);
             if ($obj) {
 
                 # Open up an 'edit' window to edit the object
@@ -21450,16 +22797,105 @@
             }
         });
 
-        my $button7 = $self->addButton($grid,
+        my $button6 = $self->addButton($grid,
             'Update list', 'Update the list of interfaces', undef,
             10, 12, 11, 12);
-        $button7->signal_connect('clicked' => sub {
+        $button6->signal_connect('clicked' => sub {
 
             # Refresh the simple list
             $self->interfaces1Tab_refreshList($slWidget, scalar (@columnList / 2), $category);
         });
 
         # Tab complete
+        return 1;
+    }
+
+    sub interfaces2Tab_buttonToggled {
+
+        # Callback from GA::Generic::EditWin->addSimpleList
+        #
+        # Expected arguments
+        #   $slWidget   - The GA::Obj::SimpleList
+        #   $model      - The Gtk3::ListStore
+        #   $iter       - The Gtk3::TreeIter of the line clicked
+        #   @data       - Data for all the cells on that line
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $slWidget, $model, $iter, @dataList) = @_;
+
+        # Local variables
+        my ($interfaceName, $flag, $interfaceObj, $comboBox);
+
+        # Check for improper arguments
+        if (! defined $slWidget || ! defined $model || ! defined $iter) {
+
+            return $axmud::CLIENT->writeImproper(
+                $self->_objClass . '->interfaces2Tab_buttonToggled',
+                @_,
+            );
+        }
+
+        # Update IVs
+        $interfaceName = $dataList[1];
+        $flag = $dataList[4];
+
+        $interfaceObj = $self->session->ivShow('interfaceHash', $interfaceName);
+        if (! $interfaceObj) {
+
+            # Failsafe
+            return undef;
+        }
+
+        if ($flag) {
+
+            if (! $interfaceObj->enabledFlag) {
+
+                $self->session->pseudoCmd(
+                    'enableactiveinterface ' . $interfaceName,
+                    $self->pseudoCmdMode,
+                );
+
+            } else {
+
+                # Refresh the simple list for this tab
+                $self->interfaces1Tab_refreshList($slWidget, scalar @dataList, 'all');
+            }
+
+        } elsif (! $flag) {
+
+            if ($interfaceObj->enabledFlag) {
+
+                $self->session->pseudoCmd(
+                    'disableactiveinterface ' . $interfaceName,
+                    $self->pseudoCmdMode,
+                );
+
+            } else {
+
+                # Refresh the simple list for this tab
+                $self->interfaces1Tab_refreshList($slWidget, scalar @dataList, 'all');
+            }
+        }
+
+        # Refresh the simple list/combo for the first tab
+        $comboBox = $self->ivShow('editConfigHash', 'interface_combo');
+        if ($comboBox->get_active() == 1) {
+
+            $self->interfaces1Tab_refreshList(
+                $self->ivShow('editConfigHash', 'interface_list_all'),
+                scalar @dataList,
+                'all',
+            );
+
+        } else {
+
+            # Updating the combobox, refreshes the simple list
+            $comboBox->set_active(1);
+        }
+
         return 1;
     }
 
@@ -21486,7 +22922,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Tasks', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Tasks',
+            ['Current tasks'],
+        );
 
         # Current tasks
         $self->addLabel($grid, '<b>Current tasks</b>',
@@ -21658,9 +23098,13 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Recording', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Recording',
+            ['Current recording'],
+        );
 
-        # Current tasks
+        # Current recording
         $self->addLabel($grid, '<b>Current recording</b>',
             0, 12, 0, 1);
 
@@ -22136,7 +23580,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('_Protocols', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, '_Protocols');
 
         # Add tabs to the inner notebook
         $self->protocols1Tab($innerNotebook);
@@ -22166,7 +23610,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Telnet option negotiations'],
+        );
 
         # Telnet option negotiations
         $self->addLabel($grid, '<b>Telnet option negotiations</b>',
@@ -22363,9 +23811,13 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _2', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _2',
+            ['MUD protocol negotiations (1/2)'],
+        );
 
-        # MUD Protocol negotiations
+        # MUD Protocol negotiations (1/2)
         $self->addLabel($grid, '<b>MUD protocol negotiations (1/2)</b>',
             0, 12, 0, 1);
         $self->addLabel($grid, '<i>Current status of MUD protocols for this session</i>',
@@ -22582,9 +24034,13 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _3', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _3',
+            ['MUD protocol negotiations (2/2)'],
+        );
 
-        # MUD Protocol negotiations
+        # MUD Protocol negotiations (2/2)
         $self->addLabel($grid, '<b>MUD protocol negotiations (2/2)</b>',
             0, 12, 0, 1);
         $self->addLabel($grid, '<i>Current status of MUD protocols for this session</i>',
@@ -22738,7 +24194,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('MS_DP', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, 'MS_DP');
 
         # Add tabs to the inner notebook
         $self->msdp1Tab($innerNotebook);
@@ -22776,7 +24232,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['MSDP generic commands'],
+        );
 
         # MSDP generic commands
         $self->addLabel($grid, '<b>MSDP generic commands</b>',
@@ -22889,7 +24349,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _2', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _2',
+            ['MSDP custom commands'],
+        );
 
         # MSDP custom commands
         $self->addLabel($grid, '<b>MSDP custom commands</b>',
@@ -22954,7 +24418,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _3', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _3',
+            ['MSDP generic lists'],
+        );
 
         # MSDP generic lists
         $self->addLabel($grid, '<b>MSDP generic lists</b>',
@@ -23019,7 +24487,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _4', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _4',
+            ['MSDP custom lists'],
+        );
 
         # MSDP custom lists
         $self->addLabel($grid, '<b>MSDP custom lists</b>',
@@ -23084,7 +24556,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _5', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _5',
+            ['MSDP generic configurable variables'],
+        );
 
         # MSDP generic configurable variables
         $self->addLabel($grid, '<b>MSDP generic configurable variables</b>',
@@ -23204,9 +24680,13 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _6', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _6',
+            ['MSDP custom configurable variables'],
+        );
 
-        # MSDP generic configurable variables
+        # MSDP custom configurable variables
         $self->addLabel($grid, '<b>MSDP custom configurable variables</b>',
             0, 12, 0, 1);
         $self->addLabel($grid,
@@ -23272,9 +24752,13 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _7', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _7',
+            ['MSDP generic reportable variables'],
+        );
 
-        # MSDP generic configurable variables
+        # MSDP generic reportable variables
         $self->addLabel($grid, '<b>MSDP generic reportable variables</b>',
             0, 12, 0, 1);
         $self->addLabel($grid,
@@ -23552,9 +25036,13 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _8', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _8',
+            ['MSDP custom reportable variables'],
+        );
 
-        # MSDP generic configurable variables
+        # MSDP custom reportable variables
         $self->addLabel($grid, '<b>MSDP custom reportable variables</b>',
             0, 12, 0, 1);
         $self->addLabel($grid,
@@ -23624,7 +25112,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('_MSSP', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, '_MSSP');
 
         # Add tabs to the inner notebook
         $self->mssp1Tab($innerNotebook);
@@ -23656,9 +25144,13 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['MSSP generic data'],
+        );
 
-        # MSSP data
+        # MSSP generic data
         $self->addLabel($grid, '<b>MSSP generic data</b>',
             0, 12, 0, 1);
         $self->addLabel($grid,
@@ -23763,9 +25255,13 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _2', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _2',
+            ['MSSP custom data'],
+        );
 
-        # MSSP data
+        # MSSP custom data
         $self->addLabel($grid, '<b>MSSP custom data</b>',
             0, 12, 0, 1);
         $self->addLabel($grid,
@@ -23821,7 +25317,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('M_XP', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            'M_XP',
+            ['MXP entities'],
+        );
 
         # MXP entities
         $self->addLabel($grid, '<b>MXP entities</b>',
@@ -23849,7 +25349,7 @@
             9, 12, 10, 11);
         $button->signal_connect('clicked' => sub {
 
-            $self->atcpTab_refreshList($slWidget, scalar (@columnList / 2));
+            $self->mxpTab_refreshList($slWidget, scalar (@columnList / 2));
         });
 
         # Tab complete
@@ -23935,10 +25435,14 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_ZMP', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_ZMP',
+            ['Supported ZMP packages'],
+        );
 
         # Supported ZMP packages
-        $self->addLabel($grid, '<b>Supported ZMP pacakges</b>',
+        $self->addLabel($grid, '<b>Supported ZMP packages</b>',
             0, 12, 0, 1);
         $self->addLabel($grid,
             '<i>List of supported ZMP packages/commands (ZMP packages are created by plugins)</i>',
@@ -24050,10 +25554,14 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('AARD_102', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            'AARD_102',
+            ['AARD102 (Aardwolf 102 channel)'],
+        );
 
-        # AARD102 (Aardolf 102 channel)
-        $self->addLabel($grid, '<b>AARD102 (Aardolf 102 channel)</b>',
+        # AARD102 (Aardwolf 102 channel)
+        $self->addLabel($grid, '<b>AARD102 (Aardwolf 102 channel)</b>',
             0, 12, 0, 2);
 
         $self->addLabel($grid,
@@ -24136,7 +25644,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_ATCP', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_ATCP',
+            ['ATCP data'],
+        );
 
         # ATCP data
         $self->addLabel($grid, '<b>ATCP data</b>',
@@ -24236,7 +25748,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_GMCP', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_GMCP',
+            ['GMCP data'],
+        );
 
         # GMCP data
         $self->addLabel($grid, '<b>GMCP data</b>',
@@ -24334,7 +25850,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('M_CP', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, 'M_CP');
 
         # Add tabs to the inner notebook
         $self->mcp1Tab($innerNotebook);
@@ -24366,7 +25882,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['MCP supported packages'],
+        );
 
         # MCP supported packages
         $self->addLabel($grid, '<b>MCP supported packages</b>',
@@ -24482,7 +26002,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _2', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _2',
+            ['MCP packages in use'],
+        );
 
         # MCP packages in use
         $self->addLabel($grid, '<b>MCP packages in use</b>',
@@ -24582,7 +26106,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -24795,19 +26319,31 @@
         if ($type eq 'current') {
 
             # Current tasklist tasks
-            $grid = $self->addTab('_Current task', $self->notebook);
+            $grid = $self->addTab(
+                $self->notebook,
+                '_Current task',
+                ['Start options', 'Stop options', 'Task window options'],
+            );
 
         } elsif (
             $type eq 'global_initial'
             || $type eq 'profile_initial'
         ) {
             # Initial tasklist tasks
-            $grid = $self->addTab('_Initial task', $self->notebook);
+            $grid = $self->addTab(
+                $self->notebook,
+                '_Initial task',
+                ['Start options', 'Stop options', 'Task window options'],
+            );
 
         } else {
 
             # Custom tasklist tasks
-            $grid = $self->addTab('Custo_m task', $self->notebook);
+            $grid = $self->addTab(
+                $self->notebook,
+                'Custo_m task',
+                ['Start options', 'Stop options', 'Task window options'],
+            );
         }
 
         # Set up the rest of the tab
@@ -24851,8 +26387,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->taskTab', @_);
         }
 
-#       # Tab setup (already created by the calling function)
-#       my $grid = $self->addTab('_Task', $self->notebook);
+        # Tab setup (already created by the calling function)
 
         # Get a list of available tasks (actually, the list of task standard names)
         @taskList = sort {lc($a) cmp lc($b)} ($axmud::CLIENT->ivKeys('taskPackageHash'));

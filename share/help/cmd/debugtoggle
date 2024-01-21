@@ -1,9 +1,9 @@
 dbt / debugtoggle             Toggles Axmud debugging flags
- 
+
    Format:
       ;dbt <switch>           Toggles a debugging flag
       ;dbt                    Shows current settings for debugging flags
- 
+
    Notes:
       <switch> can be any of the following:
          -n   'main' window shows explicit line numbers
@@ -19,12 +19,12 @@ dbt / debugtoggle             Toggles Axmud debugging flags
          -r   Show resize errors for table objects
          -t   Show Perl errors/warnings in 'main' window
 
-      NB Setting the 'Locator task shows debug messages' flag to OFF  
+      NB Setting the 'Locator task shows debug messages' flag to OFF
          automatically sets the 'Locator task shows extensive debug messages'
          flag to OFF as well.
 
-      For debug messages relating to the current session's connection to a 
+      For debug messages relating to the current session's connection to a
          world, see the help for ';debugconnection'.
-        
+
    User commands:
       dbt / debugtoggle

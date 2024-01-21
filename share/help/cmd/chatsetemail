@@ -1,21 +1,21 @@
 cse / chatsetemail            Sets your chat email
- 
+
    Format:
       ;cse <email>            Sets your chat email to <email>
       ;cse                    Stops broadcasting your email in chat sessions
- 
+
    Notes:
       The Chat task is used to chat with other players directly via telnet.
          Calls can be placed (or accepted) with any user whose MUD client uses
          the zChat or MudMaster protocols.
       Chat sessions using the zChat protocol are able to broadcast an email
-         address to your chat contacts (a service which is turned off, by 
-         default). 
-      This command sets the address to broadcast. If you don't specify an 
+         address to your chat contacts (a service which is turned off, by
+         default).
+      This command sets the address to broadcast. If you don't specify an
          address, none is broadcast. All existing chat sessions are updated and
-         the address is stored so that it will be available in future sessions. 
+         the address is stored so that it will be available in future sessions.
       <email>, if specified, must be between 3 and 128 characters (and contain
          the @ character).
- 
+
    User commands:
       cse / chatsetemail

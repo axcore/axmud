@@ -1,13 +1,13 @@
 tpt / testpattern             Opens the Pattern Test window
- 
+
    Format:
       ;tpt                    Opens the window
- 
+
    Notes:
       Axmud relies heavily on patterns (also called regular expressions or
          regexes).
       This command opens a window in which you can test patterns before adding
          them to your plugins or scripts.
-         
+
    User commands:
       tpt / testregex / patterntest / testpattern

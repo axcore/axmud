@@ -1,5 +1,5 @@
 cmp / compass                 Modifies the Compass task
- 
+
    Format:
       ;cmp                    Shows current Compass task parameters
       ;cmp <options>          Modifies Compass task parameters
@@ -8,48 +8,48 @@ cmp / compass                 Modifies the Compass task
       The Compass task converts your keyboard's keypad (the area on the right
          with mostly number keys) into a device for quickly moving around the
          world. Typically, it converts every press of the '8' key into 'north',
-         every press of the '5' key into 'inventory', and so on. 
+         every press of the '5' key into 'inventory', and so on.
       The same thing can be achieved with Axmud macros, of course, but usually
          it's quicker to start the Compass task whenever you need it.
       The keypad keys that send a direction (including the plus and minus keys)
          are fixed, but other keypad keys can be customised to send any world
          command you want.
       This command is intended mainly for users with a visual impairment; other
-         users might prefer to use the task's 'edit' window 
+         users might prefer to use the task's 'edit' window
          (';edittask compass').
       See also the help for ';permcompass'.
 
       If specified, <options> should be one of the following:
 
          ;cmp on
-         ;cmp -o      Enables world commands, so that pressing a keypad key  
+         ;cmp -o      Enables world commands, so that pressing a keypad key
                          sends a world command
-                                
+
          ;cmp off
-         ;cmp -f      Disables world commands, so that keypad keys behave 
-                         normally (however, the task keeps running, so world 
+         ;cmp -f      Disables world commands, so that keypad keys behave
+                         normally (however, the task keeps running, so world
                          commands can be re-activated any time you want)
 
          ;cmp <key> <command>
                       Sets the world <command> send when the <key> is pressed
-                                 
-         ;cmp <key>   Resets the <key>, so that nothing happens, when it is 
-                         pressed         
 
-      <key> can be in several formats. You can use Axmud standard keycodes like 
+         ;cmp <key>   Resets the <key>, so that nothing happens, when it is
+                         pressed
+
+      <key> can be in several formats. You can use Axmud standard keycodes like
          'kp_5', the numeral '5' or the word 'five'.
       <command> can be one or more words. If you want to preserve the spacing,
          or if the command begins with one of the instruction sigils (';', ',,',
-         '"', '/', '&', ':') can surround the whole command with diamond 
+         '"', '/', '&', ':') can surround the whole command with diamond
          brackets <...>.
       Note that the task is set up to work at as many muds as possible. Axmud is
-         able to 'interpolate' world commands, meaning to convert a general 
+         able to 'interpolate' world commands, meaning to convert a general
          command into one suitable for the current world. You almost certainly
-         don't need this, so don't worry about the formatting of world commands 
+         don't need this, so don't worry about the formatting of world commands
          like 'loot_room' and 'get,object,all'.
 
       The full list of <key>s recognised by this command is:
-         
+
          0  zero   kp_0
          5  five   kp_5
          *  times  multiply
@@ -57,8 +57,8 @@ cmp / compass                 Modifies the Compass task
          .  dot    fullstop  period
             enter  return
 
-      If you try to customise a keypad <key> like '8', 'eight' or 'kp_8', you'll 
+      If you try to customise a keypad <key> like '8', 'eight' or 'kp_8', you'll
          get a polite refusal.
- 
+
    User commands:
       cmp / compass

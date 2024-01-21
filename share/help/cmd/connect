@@ -1,5 +1,5 @@
 cn / connect                  Connects to a new world
- 
+
    Format:
       ;cn                     Opens the connections window
 
@@ -15,9 +15,9 @@ cn / connect                  Connects to a new world
       In offline mode, Axmud simulates a connection to the world; some client
          commands will be available, but others will not. The -o switch can
          appear anywhere in the command, so the following are interchangeable:
-         
+
             ;connect deathmud gandalf -o
             ;connect -o deathmud gandalf
- 
+
    User commands:
       cn / connect

@@ -1,11 +1,11 @@
 ldr / listdirectory           Lists Axbasic script directories
- 
+
    Format:
       ;ldr                    Lists script directories
- 
+
    Notes:
-      When Axmud wants to load an Axbasic script, it checks a list of 
-         directories (called 'folders' on MS Windows systems), one at a time, 
+      When Axmud wants to load an Axbasic script, it checks a list of
+         directories (called 'folders' on MS Windows systems), one at a time,
          until it finds a script with the right name.
       The first directory in the list is always the standard 'scripts'
          sub-directory, but the rest of the list is customisable. This command

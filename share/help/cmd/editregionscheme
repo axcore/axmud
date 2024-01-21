@@ -1,13 +1,13 @@
 ers / editregionscheme        Opens an 'edit' window for a region colour scheme
- 
+
    Format:
       ;ers <name>             Edits the sceme
- 
+
    Notes:
       A region colour scheme defines a set of colours for one or more regions.
-         The automapper window uses these colours when it draws the region(s).   
+         The automapper window uses these colours when it draws the region(s).
       <name> is the name of the scheme to edit. If it contains spaces, you
          should enclose the name in diamond brackets <...>.
- 
+
    User commands:
       ers / editrs / editregionscheme

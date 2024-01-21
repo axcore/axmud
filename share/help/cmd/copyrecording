@@ -1,17 +1,17 @@
 crc / copyrecording           Shows recording's commands as a single line
- 
+
    Format:
       ;crc                    Shows the recording's commands
- 
+
    Notes:
       ';listrecording' displays the contents of the recording, with one command
          per line. That's convenient for editing the recording, but for
-         copy-and-paste operations (such as creating a new alias), it's more 
+         copy-and-paste operations (such as creating a new alias), it's more
          useful to display all the commands on a single line.
-      ';copyrecording' lists all the world commands in the recording, from 
+      ';copyrecording' lists all the world commands in the recording, from
          beginning to end, but omits client commands, comments and breaks.
-      See the help for the ';record' command for more information about 
+      See the help for the ';record' command for more information about
          recordings.
- 
+
    User commands:
       crc / copyrc / copyrecord / copyrecording

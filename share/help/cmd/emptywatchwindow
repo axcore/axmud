@@ -1,7 +1,7 @@
 eww / emptywatchwindow        Empties the Watch task window
- 
+
    Format:
       ;eww                    Empties the window
- 
+
    User commands:
       eww / emptywatch / emptywatchwindow

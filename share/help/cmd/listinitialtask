@@ -1,5 +1,5 @@
 lit / listinitialtask         Lists initial tasks
- 
+
    Format:
       ;lit
                Lists the global initial tasklist
@@ -11,12 +11,12 @@ lit / listinitialtask         Lists initial tasks
                Lists everything in all profiles' initial tasklists
 
    Notes:
-      Initial tasks are started when Axmud marks the current character as logged 
-         in (you can use the ';login' command to override the automatic process, 
-         if necessary), or when the user changes a current profile with 
+      Initial tasks are started when Axmud marks the current character as logged
+         in (you can use the ';login' command to override the automatic process,
+         if necessary), or when the user changes a current profile with
          commands like ';setworld' and ';setchar'.
-      See the help for ';addinitialtask' for more information about initial 
+      See the help for ';addinitialtask' for more information about initial
          tasks.
- 
+
    User commands:
       lit / listinittask / listinitialtask

@@ -1,0 +1,8 @@
+Isexit (number)
+
+   Synopsis:
+      Tests whether an exit exists
+
+   Notes:
+      'number' is a exit's number in the exit model. Returns 1 if the exit
+         exists, or 0 if it doesn't exist.

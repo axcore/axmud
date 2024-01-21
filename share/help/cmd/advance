@@ -1,23 +1,23 @@
 adv / advance                 Advance the current character's guild skills
- 
+
    Format:
       ;adv                    Advances the next skill
       ;adv <number>           Advances the next <number> of skills
       ;adv -a                 Advances as many skills as possible
- 
+
       ;adv -s <skill>         Advances the specified <skill>
       ;adv -s <skill> <number>
                               Advances the specified <skill>, <number> times
       ;adv -s <skill> -a      Advances the specified <skill> as much as possible
- 
+
    Notes:
       The Advance task can be used to advance (improve) the current character's
          guild skills. The task is automatically started when this command is
-         used. Once the advancement process is complete, the task automatically 
+         used. Once the advancement process is complete, the task automatically
          halts.
       A list of skills to advance, and the order in which to advance them, is
          stored in each guild profile. From there, it is imported into each new
-         character profile (use the ';resetguildskills' command to re-import the 
+         character profile (use the ';resetguildskills' command to re-import the
          current guild's list into the current character).
       If -s is not specified, the first skill (or skills) in the list is
          advanced. If it's not possible to advance a skill (maybe because the
@@ -28,8 +28,8 @@ adv / advance                 Advance the current character's guild skills
          lists are ignored.
       You can specify '-s <skill> <number>' several times in the same command:
          the Advance task will process them all in the specified order.
-         
+
             e.g. ';advance -s fighting -s dodging 5 -s hiding -a
- 
+
    User commands:
       adv / advance

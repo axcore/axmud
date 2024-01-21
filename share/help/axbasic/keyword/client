@@ -6,7 +6,7 @@ CLIENT expression
    Notes:
       You don't need to use the client command sigil, so typing ';help' in the
          'main' window has the same effect as this Axbasic statement:
-         
+
          CLIENT "help"
 
    Examples:

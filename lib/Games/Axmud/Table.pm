@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2022 A S Lewis
+# Copyright (C) 2011-2024 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -22,7 +22,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -262,7 +262,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -1035,7 +1035,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -1510,7 +1510,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -1986,7 +1986,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -2537,7 +2537,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -3078,7 +3078,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -3624,7 +3624,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -3672,6 +3672,8 @@
         #                       corresponding 'id' values
         #                   'text' - The initial contents of the entry. If an empty string or
         #                       'undef', the entry is initially empty
+        #                   'clear_flag' - If TRUE (or not specified), the entry is cleared when the
+        #                       user presses the ENTER ley
         #                   'width_chars' - The width of the entry, in characters. If not
         #                       specified, 0 or 'undef', a width is not applied to the entry
         #                   'max_chars' - The maximum number of characters the entry can contain.
@@ -3751,6 +3753,7 @@
             'func'                      => undef,
             'id'                        => '',
             'text'                      => undef,
+            'clear_flag'                => TRUE,
             'width_chars'               => 0,
             'max_chars'                 => 0,
             'tooltips'                  => undef,
@@ -3858,6 +3861,7 @@
 
             # IVs set by $self->objEnable, using values from $self->initHash after checking they're
             #   valid (and using default values, if not)
+            clearFlag                   => undef,
             checkFlag                   => undef,
             checkYes                    => undef,
             checkNo                     => undef,
@@ -3894,9 +3898,9 @@
 
         # Local variables
         my (
-            $funcRef, $funcID, $text, $widthChars, $maxChars, $tooltips, $normalFlag, $hExpandFlag,
-            $vExpandFlag, $checkFlag, $checkYes, $checkNo, $checkFunc, $checkType, $checkMin,
-            $checkMax,
+            $funcRef, $funcID, $text, $clearFlag, $widthChars, $maxChars, $tooltips, $normalFlag,
+            $hExpandFlag, $vExpandFlag, $checkFlag, $checkYes, $checkNo, $checkFunc, $checkType,
+            $checkMin, $checkMax,
         );
 
         # Check for improper arguments
@@ -3909,6 +3913,7 @@
         $funcRef = $self->ivShow('initHash', 'func');
         $funcID = $self->ivShow('initHash', 'id');
         $text = $self->ivShow('initHash', 'text');
+        $clearFlag = $self->testFlag($self->ivShow('initHash', 'clear_flag'));
         $widthChars = $self->testInt($self->ivShow('initHash', 'width_chars'), 0, 0);
         $maxChars = $self->testInt($self->ivShow('initHash', 'max_chars'), 0, 0);
         $tooltips = $self->ivShow('initHash', 'tooltips');
@@ -4017,6 +4022,7 @@
         $self->ivPoke('packingBox', $packingBox);
         $self->ivPoke('packingBox2', $packingBox2);
         $self->ivPoke('entry', $entry);
+        $self->ivPoke('clearFlag', $clearFlag);
         $self->ivPoke('checkFlag', $checkFlag);
         $self->ivPoke('checkYes', $checkYes);
         $self->ivPoke('checkNo', $checkNo);
@@ -4139,7 +4145,10 @@
                 &$thisFuncRef($self, $self->entry, $self->funcID, $value);
             }
 
-            $self->entry->set_text('');
+            if ($self->clearFlag) {
+
+                $self->entry->set_text('');
+            }
         });
 
         return 1;
@@ -4429,6 +4438,8 @@
     sub entry
         { $_[0]->{entry} }
 
+    sub clearFlag
+        { $_[0]->{clearFlag} }
     sub checkFlag
         { $_[0]->{checkFlag} }
     sub checkYes
@@ -4449,7 +4460,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -4976,7 +4987,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -5448,7 +5459,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -5721,7 +5732,7 @@
 
         } else {
 
-            my $scroll = Gtk3::ScrolledWindow->new(undef, undef);
+            $scroll = Gtk3::ScrolledWindow->new(undef, undef);
             $packingBox2->attach($scroll, 0, 0, 1, 1);
         }
 
@@ -5953,7 +5964,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -8338,7 +8349,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -8712,7 +8723,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 

@@ -1,12 +1,12 @@
 sall / sellall                Sells all unprotected objects in the inventory
- 
+
    Format:
       ;sall                   Attempt to sell objects
- 
+
    Notes:
-      This command can only be used when the Inventory task is active. 
+      This command can only be used when the Inventory task is active.
       For more information about protected objects, see the help for the
          ';protectobject' command.
- 
+
    User commands:
       sall / sellall

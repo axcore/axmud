@@ -1,22 +1,27 @@
 SETSTATUS expression , expression , expression
-    
+
    Synopsis:
       Updates a 'main' window status bar
-    
+
    Notes:
       Updates a status bar that was added to the 'main' window with an ADDSTATUS
          or ADDCONSTATUS statement.
-      The first expression is the status bar's unique number. If the status bar 
-         doesn't exist, the SETSTATUS statement is ignored, but the number isn't 
+      The first expression is the status bar's unique number. If the status bar
+         doesn't exist, the SETSTATUS statement is ignored, but the number isn't
          an integer, 0 or above, you'll see an error message.
       The second and third expressions should evaluate to numbers displayed in
-         the status bar. Any decimal number is acceptable, even negative 
-         numbers. If these expressions don't evaluate to a number, a question 
+         the status bar. Any decimal number is acceptable, even negative
+         numbers. If these expressions don't evaluate to a number, a question
          mark is displayed in its place.
       After an ADDSTATUS statement, the first number is expected (but not
-         required) to be less than or equal to the second one. After an 
+         required) to be less than or equal to the second one. After an
          ADDCONSTATUS statement, the sum of the two numbers is expected (but not
          required) to be constant, at least in the short term.
+
+   Requires:
+      If the script is not being run as a task, the SETSTATUS statement is
+         ignored (and no error message is generated). Execution continues with
+         the next statement.
 
    Examples:
       ! Character's health points are at 50%

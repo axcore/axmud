@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2022 A S Lewis
+# Copyright (C) 2011-2024 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -89,7 +89,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -309,7 +309,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -541,7 +541,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -853,7 +853,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -3788,7 +3788,7 @@
         #
         # Expected arguments
         #   $session        - The calling function's GA::Session
-        #   $inputString    - The command actually typed, e.g. 'atr -p pattern -a action'
+        #   $inputString    - The command actually typed, e.g. 'atr -s pattern -p instruction'
         #   $standardCmd    - Standard version of the client command, e.g. 'addtrigger'
         #   $category       - 'trigger', 'alias', 'macro', 'timer', 'hook'
         #   $categoryPlural - e.g. 'triggers'
@@ -4243,7 +4243,7 @@
         #
         # Expected arguments
         #   $session        - The calling function's GA::Session
-        #   $inputString    - The command actually typed, e.g. 'mtr -p pattern -a action'
+        #   $inputString    - The command actually typed, e.g. 'mtr -s pattern -p instruction'
         #   $standardCmd    - Standard version of the client command, e.g. 'modifytrigger'
         #   $category       - 'trigger', 'alias', 'macro', 'timer', 'hook'
         #   $categoryPlural - e.g. 'triggers'
@@ -4505,17 +4505,6 @@
                 );
             }
 
-            # If the -i switch was specified, and the user also specified a trigger name using the
-            #   -n switch, it's an error (this command mustn't be used to modify the interface name)
-            if (exists $attribHash{'name'}) {
-
-                return $self->error(
-                    $session, $inputString,
-                    'The ' . $category . ' interface\'s name can\'t be modified, once it is'
-                    . ' made active',
-                );
-            }
-
             # Check that the specified interface exists
             if (
                 ! $session->ivExists('interfaceHash', $interface)
@@ -4567,7 +4556,7 @@
                     . ' -w, -g, -r, -c, -x, -d (or a named profile)',
                 );
 
-            # If no associatied profile specified, and the -i switch wasn't used, use the current
+            # If no associated profile specified, and the -i switch wasn't used, use the current
             #   world as the associated profile
             } elsif ($profCount == 0) {
 
@@ -4708,6 +4697,409 @@
         }
     }
 
+    sub exportInterface {
+
+        # Called by GA::Cmd::ExportTrigger->do, ExportAlias->do, ExportMacro->do,
+        #   ExportTimer->do and ExportHook->do
+        # (For the whole of this function, 'trigger' is taken to mean any of 'trigger', 'alias',
+        #   'macro', 'timer' or 'hook')
+        #
+        # This function adds an inactive trigger, stored in a trigger cage, to Axmud's interface
+        #   clipboard, from where it can 'imported' to a different cage (perhaps in a different
+        #   world, in a different session)
+        # This function can also be called to export an active interface directly, without
+        #   exporting the corresponding inactive trigger stored in a trigger cage (if any)
+        #
+        # Expected arguments
+        #   $session        - The calling function's GA::Session
+        #   $inputString    - The command actually typed, e.g. 'etr mytrigger'
+        #   $standardCmd    - Standard version of the client command, e.g. 'exporttrigger'
+        #   $category       - 'trigger', 'alias', 'macro', 'timer', 'hook'
+        #   $categoryPlural - e.g. 'triggers'
+        #   $modelObj       - The interface model object corresponding to $category
+        #   @args           - The arguments specified by the user in the ';exporttrigger' command
+        #
+        # Return values
+        #   'undef' on improper arguments or if there's an error
+        #   1 on success
+
+        my (
+            $self, $session, $inputString, $standardCmd, $category, $categoryPlural, $modelObj,
+            @args,
+        ) = @_;
+
+        # Local variables
+        my (
+            $profCount, $profCategory, $profName, $switch, $interface, $interfaceObj,
+            $currentObjName, $cage, $currentObj,
+        );
+
+        # Check for improper arguments
+        if (
+            ! defined $session || ! defined $inputString || ! defined $standardCmd
+            || ! defined $category || ! defined $categoryPlural || ! defined $modelObj || ! @args
+        ) {
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->exportInterface', @_);
+        }
+
+        # Extract profile (group 1) switch options
+        ($profCount, $profCategory, $profName, @args) = $self->extractProfileSwitches(
+            $session,
+            $inputString,
+            $category,
+            'export',
+            @args,
+        );
+
+        if (! defined $profCount) {
+
+            # Error in ->extractProfileSwitches - error message already displayed
+            return undef;
+        }
+
+        # Extract active interface (group 0) switch options
+        ($switch, $interface, @args) = $self->extract('i', 1, @args);
+        if (defined $switch) {
+
+            if (! defined $interface) {
+
+                return $self->error(
+                    $session, $inputString,
+                    'Missing switch arguments - use \'-i <name>\' or \'-i <number>\'',
+                );
+            }
+        }
+
+        # Now, if the group 0 '-i' switch was specified, export the active interface
+        if (defined $interface) {
+
+            # @args should now be empty. If not, return an error message
+            if (@args) {
+
+                return $self->improper($session, $inputString);
+            }
+
+            # Group 0 and 1 switches can't be combined
+            if ($profCount) {
+
+                return $self->error(
+                    $session, $inputString,
+                    'Can\'t export active ' . $category . ' interface - can\'t combine the -i'
+                    . ' switch with -w, -g, -r, -c, -x or -d',
+                );
+            }
+
+            # Check that the specified interface exists
+            if (
+                ! $session->ivExists('interfaceHash', $interface)
+                && ! $session->ivExists('interfaceNumHash', $interface)
+            ) {
+                return $self->error(
+                    $session, $inputString,
+                    'Unrecognised active ' . $category . ' interface \'' . $interface . '\'',
+                );
+            }
+
+            # If $interface is a number, convert it into an interface name
+            if ($session->ivExists('interfaceNumHash', $interface)) {
+
+                $interface = $session->ivShow('interfaceNumHash', $interface)->name;
+            }
+
+            $interfaceObj = $session->ivShow('interfaceHash', $interface);
+
+            # Export the interface
+            $axmud::CLIENT->add_interfaceClipboardList($interfaceObj);
+
+            return $self->complete(
+                $session, $standardCmd,
+                'Active ' . $category . ' interface \'' . $interface . '\' exported to the'
+                . ' interface clipboard',
+            );
+
+        # Otherwise, if a group 1 switch was specified, export the specified interface stored in the
+        #   cage
+        } else {
+
+            # 0 or 1 associated profiles can be specified, but no more
+            if ($profCount > 1) {
+
+                return $self->error(
+                    $session, $inputString,
+                    'Can\'t export an interface from multiple profiles - choose one from'
+                    . ' -w, -g, -r, -c, -x, -d (or a named profile)',
+                );
+
+            # If no associated profile specified, and the -i switch wasn't used, use the current
+            #   world as the associated profile
+            } elsif ($profCount == 0) {
+
+                $profCount++;
+                $profCategory = 'world';
+                $profName = $session->currentWorld->name;
+            }
+
+            # @args should now contain a single element, <name>. Check it exists
+            if (@args > 1) {
+
+                return $self->improper($session, $inputString);
+
+            } elsif (! @args) {
+
+                return $self->error(
+                    $session, $inputString,
+                    'Please specify the name of the ' . $category . ' interface to export (or'
+                    . ' use \'-i <name>\' or \'-i <number>\'',
+                );
+
+            } else {
+
+                $currentObjName = $args[0];
+            }
+
+            # Find the cage matching the specified profile
+            $cage = $session->findCage($category, $profName);
+            if (! $cage) {
+
+                return $self->error(
+                    $inputString,
+                    'Can\'t export ' . $category . ' interface because the ' . $category
+                    . ' cage for \'' . $profName . '\' is missing',
+                );
+            }
+
+            # Check that the cage has a trigger with this name
+            if (! $cage->ivExists('interfaceHash', $currentObjName)) {
+
+                if ($category eq 'alias') {
+
+                    return $self->error(
+                        $session, $inputString,
+                        'Can\'t export alias interface because the alias cage doesn\'t'
+                        . 'have an alias with the name \'' . $currentObjName
+                        . '\'',
+                    );
+
+                } else {
+
+                    return $self->error(
+                        $session, $inputString,
+                        'Can\'t export ' . $category . ' interface because the ' . $category
+                        . ' cage doesn\'t have a ' . $category . ' with the name \''
+                        . $currentObjName .'\'',
+                    );
+                }
+
+            } else {
+
+                # Get the blessed reference of the trigger object (but don't consult inferior cages)
+                $currentObj = $cage->ivShow('interfaceHash', $currentObjName);
+                if (! $currentObj) {
+
+                    return $self->error(
+                        $session, $inputString,
+                        'General error exporting the ' . $category . ' interface object \''
+                        . $currentObjName . '\'',
+                    );
+                }
+            }
+
+            # Export the interface
+            $axmud::CLIENT->add_interfaceClipboardList($currentObj);
+
+            return $self->complete(
+                $session, $standardCmd,
+                'Inactive ' . $category . ' interface \'' . $currentObjName . '\' exported to the'
+                . ' interface clipboard',
+            );
+        }
+    }
+
+    sub importInterface {
+
+        # Called by GA::Cmd::ImportTrigger->do, ImportAlias->do, ImportMacro->do,
+        #   ImportTimer->do and ImportHook->do
+        # (For the whole of this function, 'trigger' is taken to mean any of 'trigger', 'alias',
+        #   'macro', 'timer' or 'hook')
+        #
+        # This function clones all triggers in Axmud's interface clipboard, moving the copies into
+        #   the specified cage.
+        #
+        # Expected arguments
+        #   $session        - The calling function's GA::Session
+        #   $inputString    - The command actually typed, e.g. 'itr mytrigger'
+        #   $standardCmd    - Standard version of the client command, e.g. 'importtrigger'
+        #   $category       - 'trigger', 'alias', 'macro', 'timer', 'hook'
+        #   $categoryPlural - e.g. 'triggers'
+        #   $modelObj       - The interface model object corresponding to $category
+        #
+        # Optional arguments
+        #   @args           - The arguments specified by the user in the ';importtrigger' command
+        #
+        # Return values
+        #   'undef' on improper arguments or if there's an error
+        #   1 on success
+
+        my (
+            $self, $session, $inputString, $standardCmd, $category, $categoryPlural, $modelObj,
+            @args,
+        ) = @_;
+
+        # Local variables
+        my (
+            $profCount, $profCategory, $profName, $cage, $failCount, $successCount, $newObj,
+            $result,
+            @interfaceList, @superiorList, @inferiorList,
+        );
+
+        # Check for improper arguments
+        if (
+            ! defined $session || ! defined $inputString || ! defined $standardCmd
+            || ! defined $category || ! defined $categoryPlural || ! defined $modelObj
+        ) {
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->importInterface', @_);
+        }
+
+        # Extract profile (group 1) switch options
+        ($profCount, $profCategory, $profName, @args) = $self->extractProfileSwitches(
+            $session,
+            $inputString,
+            $category,
+            'import',
+            @args,
+        );
+
+        if (! defined $profCount) {
+
+            # Error in ->extractProfileSwitches - error message already displayed
+            return undef;
+        }
+
+        # 0 or 1 associated profiles can be specified, but no more
+        if ($profCount > 1) {
+
+            return $self->error(
+                $session, $inputString,
+                'Can\'t import an interface to multiple profiles - choose one from'
+                . ' -w, -g, -r, -c, -x, -d (or a named profile)',
+            );
+
+        # If no associated profile specified, and the -i switch wasn't used, use the current
+        #   world as the associated profile
+        } elsif ($profCount == 0) {
+
+            $profCount++;
+            $profCategory = 'world';
+            $profName = $session->currentWorld->name;
+        }
+
+        # @args should now contain 0 or 1 arguments
+        if (! @args) {
+
+            @interfaceList = $axmud::CLIENT->interfaceClipboardList;
+
+        } elsif (@args > 1) {
+
+            return $self->improper($session, $inputString);
+
+        } else {
+
+            # Find all matching named interfaces
+            foreach my $interfaceObj ($axmud::CLIENT->interfaceClipboardList) {
+
+                if ($interfaceObj->name eq $args[0]) {
+
+                    push (@interfaceList, $interfaceObj);
+                }
+            }
+
+            if (! @interfaceList) {
+
+                return $self->error(
+                    $inputString,
+                    'No interface named \'' . $args[0] . '\' found in the interface clipboard',
+                );
+            }
+        }
+
+        # Find the cage matching the specified profile
+        $cage = $session->findCage($category, $profName);
+        if (! $cage) {
+
+            return $self->error(
+                $inputString,
+                'Can\'t import ' . $category . ' interface because the ' . $category
+                . ' cage for \'' . $profName . '\' is missing',
+            );
+        }
+
+        # Handle each interface in turn
+        $failCount = 0;
+        $successCount = 0;
+        OUTER: foreach my $interfaceObj (@interfaceList) {
+
+            # Ignore any interfaces of the wrong category (e.g. just import triggers, etc)
+            if ($interfaceObj->category ne $category) {
+
+                next OUTER;
+            }
+
+            # Check that the cage doesn't already have a trigger with the same name
+            if ($cage->ivExists('interfaceHash', $interfaceObj->name)) {
+
+                $failCount++;
+                next OUTER;
+            }
+
+            # Clone the interface
+            if ($interfaceObj->isa('Games::Axmud::Interface::Active')) {
+                $newObj = $interfaceObj->cloneToInactiveInterface($category);
+            } else {
+                $newObj = $interfaceObj->clone($profName);
+            }
+
+            if (! $newObj) {
+
+                $failCount++;
+                next OUTER;
+            }
+
+            # Tell the trigger cage that it has received a new trigger
+            $cage->ivAdd('interfaceHash', $newObj->name, $newObj);
+
+            # Get a list of profiles with higher priority than this one
+            @superiorList = $session->findSuperiorList($profCategory);
+            # Get a list of profiles with lower priority than this one
+            @inferiorList = $session->findInferiorList($profCategory);
+
+            # Check whether there are any triggers with the same name, belonging to a cage
+            #   associated with a superior profile to this cage's profile. If none, create an
+            #   interface for the trigger
+            # Also, if there is a trigger, with the same name but belonging to a cage associated
+            #   with an inferior profile to this cage's profile, destroy its interface
+            # As a result, there should be exactly one interface for a trigger with this name, no
+            #   matter how many triggers with that name exist
+            $result = $session->injectInterface(
+                $newObj,
+                $newObj->name,
+                $profName,
+                \@superiorList,
+                \@inferiorList,
+            );
+            if (! defined $result) {
+                $failCount++;
+            } else {
+                $successCount++;
+            }
+        }
+
+        return $self->complete(
+            $session, $standardCmd,
+            'Import complete, ' . $categoryPlural . ' imported: ' . $successCount . ', failures: '
+            . $failCount,
+        );
+    }
+
     sub deleteInterface {
 
         # Called by GA::Cmd::DeleteTrigger->do, DeleteAlias->do, DeleteMacro->do,
@@ -4775,7 +5167,7 @@
                 . ' -w, -g, -r, -c, -x, -d (or a named profile)',
             );
 
-        # If no associatied profile specified, use the current world as the associated profile
+        # If no associated profile specified, use the current world as the associated profile
         } elsif ($profCount == 0) {
 
             $profCount++;
@@ -6382,9 +6774,10 @@
         #
         # Expected arguments
         #   $session        - The calling function's GA::Session
-        #   $inputString    - what the user originally typed
+        #   $inputString    - What the user originally typed
         #   $category       - 'trigger', 'alias', 'macro', 'timer' or 'hook'
-        #   $action         - what is to be done with the interface: 'add', 'modify' or 'delete'
+        #   $action         - What is to be done with the interface: 'add', 'modify', 'export',
+        #                       'import' or 'delete'. Used to set the error message, if any
         #
         # Optional arguments
         #   @args           - List of group 1 switch options arguments extracted from $inputString
@@ -7179,7 +7572,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -7235,7 +7628,7 @@
         ) = @_;
 
         # Local variables
-        my ($winType, $winName, $winHeight);
+        my ($winType, $winName, $winWidth, $winHeight);
 
         # Check for improper arguments
         if (! defined $class || ! defined $number || ! defined $workspaceObj || ! defined $owner) {
@@ -7261,6 +7654,12 @@
 
                 $title = 'Preference window';
             }
+        }
+
+        $winWidth = $axmud::CLIENT->customFreeWinWidth;
+        if ($axmud::CLIENT->configWinIndexFlag) {
+
+            $winWidth += $axmud::CLIENT->customConfigWinIndexWidth;
         }
 
         # For the benefit of MS Windows and its enormous buttons, increase the height of all
@@ -7345,7 +7744,7 @@
             # Standard IVs for 'free' windows
 
             # The window's default size, in pixels
-            widthPixels                 => $axmud::CLIENT->customFreeWinWidth,
+            widthPixels                 => $winWidth,
             heightPixels                => $winHeight,
             # Default border/item spacing sizes used in the window, in pixels
             borderPixels                => $axmud::CLIENT->constFreeBorderPixels,
@@ -7361,6 +7760,11 @@
             # Standard IVs for 'config' windows
 
             # Widgets
+            hPaned                      => undef,       # Gtk3::HPaned
+            scroller                    => undef,       # Gtk3::ScrolledWindow
+            treeStore                   => undef,       # Gtk3::TreeStore
+            treeView                    => undef,       # Gtk3::TreeView
+            vBox                        => undef,       # Gtk3::VBox
             notebook                    => undef,       # Gtk3::Notebook
             hBox                        => undef,       # Gtk3::HBox
             okButton                    => undef,       # Gtk3::Button
@@ -7398,6 +7802,14 @@
             #   'edit'/'pref' window; for example, GA::PrefWin::TaskStart uses it to specify a task
             #   name and type. Set to an empty hash if not required
             editConfigHash              => \%configHash,
+
+            # In the index on the left-hand side of the window, the pointer (Gtk3::TreeIter) for
+            #   the $self->notebook tab that's currently being drawn
+            indexPointer                => undef,
+            # A hash of inner Gtk3::Notebooks. Keys are a tab number in the outer notebook (first
+            #   tab is #0); the corresponding values are the inner notebook for that tab, or
+            #   'undef' if the tab has no inner notebook
+            innerNotebookHash           => {},
         };
 
         # Bless the object into existence
@@ -7473,35 +7885,148 @@
              return $axmud::CLIENT->writeImproper($self->_objClass . '->drawWidgets', @_);
         }
 
-        # Create a packing box
-        my $packingBox = Gtk3::VBox->new(FALSE, 0);
-        $self->winBox->add($packingBox);
-        $packingBox->set_border_width(0);
+        if (! $axmud::CLIENT->configWinIndexFlag) {
 
-        # Add a notebook at the top
-        my $notebook = Gtk3::Notebook->new();
-        $packingBox->pack_start($notebook, TRUE, TRUE, 0);
-        $notebook->set_scrollable(TRUE);
-        $notebook->popup_enable();
+            # Create a packing box
+            my $packingBox = Gtk3::VBox->new(FALSE, 0);
+            $self->winBox->add($packingBox);
+            $packingBox->set_border_width(0);
 
-        # Add a button strip at the bottom, in a horizontal packing box
-        my $hBox = Gtk3::HBox->new(FALSE, 0);
-        $packingBox->pack_end($hBox, FALSE, FALSE, $self->spacingPixels);
+            # Add a notebook at the top
+            my $notebook = Gtk3::Notebook->new();
+            $packingBox->pack_start($notebook, TRUE, TRUE, 0);
+            $notebook->set_scrollable(TRUE);
+            $notebook->popup_enable();
 
-        # Create Reset/Save/Cancel/OK buttons
-        my ($okButton, $cancelButton, $resetButton, $saveButton) = $self->enableButtons($hBox);
+            # Add a button strip at the bottom, in a horizontal packing box
+            my $hBox = Gtk3::HBox->new(FALSE, 0);
+            $packingBox->pack_end($hBox, FALSE, FALSE, $self->spacingPixels);
 
-        # Update IVs
-        $self->ivPoke('packingBox', $packingBox);
-        $self->ivPoke('notebook', $notebook);
-        $self->ivPoke('hBox', $hBox);
-        $self->ivPoke('okButton', $okButton);
-        $self->ivPoke('cancelButton', $cancelButton);
-        $self->ivPoke('resetButton', $resetButton);
-        $self->ivPoke('saveButton', $saveButton);
+            # Create Reset/Save/Cancel/OK buttons
+            my ($okButton, $cancelButton, $resetButton, $saveButton) = $self->enableButtons($hBox);
 
-        # Set up the notebook with its tabs
-        $self->setupNotebook();
+            # Update IVs
+            $self->ivPoke('packingBox', $packingBox);
+            $self->ivPoke('notebook', $notebook);
+            $self->ivPoke('hBox', $hBox);
+            $self->ivPoke('okButton', $okButton);
+            $self->ivPoke('cancelButton', $cancelButton);
+            $self->ivPoke('resetButton', $resetButton);
+            $self->ivPoke('saveButton', $saveButton);
+
+            # Set up the notebook with its tabs
+            $self->setupNotebook();
+
+        } else {
+
+            # Create a packing box
+            my $packingBox = Gtk3::VBox->new(FALSE, 0);
+            $self->winBox->add($packingBox);
+            $packingBox->set_border_width(0);
+
+            # Create a horizontal pane, with a treeview on the left, and a second vbox on the right
+            my $hPaned = Gtk3::HPaned->new();
+            $packingBox->pack_start($hPaned, TRUE, TRUE, 0);
+            $hPaned->set_position($axmud::CLIENT->customConfigWinIndexWidth);
+
+            # Create the treeview on the left
+            my $scroller = Gtk3::ScrolledWindow->new;
+            $hPaned->add1($scroller);
+            $scroller->set_policy('automatic', 'automatic');
+
+            my $treeStore = Gtk3::TreeStore->new( ['Glib::String', 'Glib::Int', 'Glib::Int'] );
+            my $treeView = Gtk3::TreeView->new($treeStore);
+            $scroller->add($treeView);
+            # Enable interactive search
+            $treeView->set_enable_search(TRUE);
+
+            # Append columns to the treeview
+            my $column = Gtk3::TreeViewColumn->new_with_attributes(
+                'Index',
+                Gtk3::CellRendererText->new,
+                markup => 0,
+            );
+            $treeView->append_column(
+                Gtk3::TreeViewColumn->new_with_attributes(
+                    'Index',
+                    Gtk3::CellRendererText->new,
+                    markup => 0,
+                ),
+            );
+
+            for (my $i = 1; $i < 3; $i++) {
+
+                my $column = Gtk3::TreeViewColumn->new_with_attributes(
+                    'invisible',
+                    Gtk3::CellRendererText->new,
+                    markup => $i,
+                );
+
+                $column->set_visible(FALSE);
+                $treeView->append_column($column);
+            }
+
+            # Make the branches of the treeview clickable
+            $treeView->signal_connect('row_activated' => sub {
+
+                my ($treeView, $path, $column) = @_;
+
+                my ($iter, $outer, $inner, $innerNotebook);
+
+                $iter = $self->treeStore->get_iter($path);
+                if ($iter) {
+
+                    $outer = $self->treeStore->get($self->treeStore->get_iter($path), 1);
+                    $inner = $self->treeStore->get($self->treeStore->get_iter($path), 2);
+
+                    $self->notebook->set_current_page($outer);
+                    $innerNotebook = $self->ivShow('innerNotebookHash', $outer);
+                    # (Not all tabs have their own inner notebook)
+                    if ($innerNotebook) {
+
+                        $innerNotebook->set_current_page($inner);
+                    }
+                }
+            });
+
+            # Create the vbox on the right, with a notebook at the top, and a button strip at the
+            #   bottom
+            my $vBox = Gtk3::VBox->new(FALSE, 0);
+            $hPaned->add2($vBox);
+
+            # Add the notebook
+            my $notebook = Gtk3::Notebook->new();
+            $vBox->pack_start($notebook, TRUE, TRUE, 0);
+            $notebook->set_scrollable(TRUE);
+            $notebook->popup_enable();
+
+            # Add a button strip at the bottom, in a horizontal packing box
+            my $hBox = Gtk3::HBox->new(FALSE, 0);
+            $vBox->pack_end($hBox, FALSE, FALSE, $self->spacingPixels);
+
+            # Create Reset/Save/Cancel/OK buttons
+            my ($okButton, $cancelButton, $resetButton, $saveButton) = $self->enableButtons($hBox);
+
+            # Update IVs
+            $self->ivPoke('packingBox', $packingBox);
+            $self->ivPoke('hPaned', $hPaned);
+            $self->ivPoke('scroller', $scroller);
+            $self->ivPoke('treeStore', $treeStore);
+            $self->ivPoke('treeView', $treeView);
+            $self->ivPoke('vBox', $vBox);
+            $self->ivPoke('notebook', $notebook);
+            $self->ivPoke('hBox', $hBox);
+            $self->ivPoke('okButton', $okButton);
+            $self->ivPoke('cancelButton', $cancelButton);
+            $self->ivPoke('resetButton', $resetButton);
+            $self->ivPoke('saveButton', $saveButton);
+
+            # Set up the notebook with its tabs
+            $self->setupNotebook();
+
+            # Fully expand the index
+            $self->treeView->expand_all();
+        }
 
         return 1;
     }
@@ -7717,7 +8242,8 @@
         }
 
         # Tab setup, using the standard grid size
-        my $grid = $self->addTab('_Name', $self->notebook);
+        # N.B. No sub-headings
+        my $grid = $self->addTab($self->notebook, '_Name');
 
         # Set up the rest of the tab
         $self->nameTab($grid);
@@ -7795,7 +8321,7 @@
                 $self->editObj->doModify('saveChanges');
             }
 
-            # Update the current session's object viewer window, if it is open
+            # Update the current session's data viewer window, if it is open
             if ($self->session->viewerWin) {
 
                 $self->session->viewerWin->updateNotebook();
@@ -7812,22 +8338,27 @@
         # Adds a tab to the notebook, creating a scroller and a grid, all with standardised sizes
         #
         # Expected arguments
-        #   $tabName    - A mnemonic string, e.g. 'N_ame'
-        #   $notebook   - The Gtk3::Notebook object to which this tab will be added
+        #   $notebook       - The Gtk3::Notebook object to which this tab will be added
+        #   $mnemonic       - A mnemonic string, e.g. 'N_ame'
         #
         # Optional arguments
+        #   $headingListRef - Reference to an optional list of sub-headings (which usually appear in
+        #                       bold in the tab). If specified, the headings appear in the index
         #   $columnSpaceWidth, $columnSpaceHeight
-        #               - The spacing between columns/rows, in pixels. If either of both is set to
-        #                   'undef', the default size is used ($self->spacingPixels)
+        #                   - The spacing between columns/rows, in pixels. If either of both are set
+        #                       'undef', the default size is used ($self->spacingPixels)
         #
         # Return values
         #   'undef' on improper arguments
         #   Otherwise returns the Gtk3::Grid created
 
-        my ($self, $tabName, $notebook, $columnSpaceWidth, $columnSpaceHeight, $check) = @_;
+        my (
+            $self, $notebook, $mnemonic, $headingListRef, $columnSpaceWidth, $columnSpaceHeight,
+            $check,
+        ) = @_;
 
         # Check for improper arguments
-        if (! defined $tabName || ! defined $notebook || defined $check) {
+        if (! defined $notebook || ! defined $mnemonic ||  defined $check) {
 
             return $amid::MAIN->writeImproper($self->_objClass . '->addTab', @_);
         }
@@ -7847,8 +8378,8 @@
         my $scroller = Gtk3::ScrolledWindow->new();
         $scroller->set_policy('automatic', 'automatic');
 
-        my $tab = Gtk3::Label->new_with_mnemonic($tabName);
-        $notebook->append_page($scroller, $tab);
+        my $tab = Gtk3::Label->new_with_mnemonic($mnemonic);
+        my $page = $notebook->append_page($scroller, $tab);
 
         my $grid = Gtk3::Grid->new();
         $scroller->add_with_viewport($grid);
@@ -7856,28 +8387,41 @@
         $grid->set_column_spacing($columnSpaceWidth);
         $grid->set_row_spacing($columnSpaceHeight);
 
+        # Update the index, if present
+        $self->addRowToIndex($notebook, $tab, $mnemonic, $headingListRef);
+
+        # Update IVs
+        if ($notebook eq $self->notebook) {
+
+            $self->ivAdd('innerNotebookHash', $page, undef);
+        }
+
         return $grid;
     }
 
-    sub addInnerNotebookTab {
+    sub addInnerNotebookTabs {
 
         # Adds a tab to the notebook containing an inner notebook, so that we get a second row of
         #   tabs immediately beneath the first one
         #
         # Expected arguments
-        #   $tabName    - A mnemonic string, e.g. 'N_ame'
-        #   $notebook   - The Gtk3::Notebook object to which this tab will be added
+        #   $notebook       - The Gtk3::Notebook object to which this tab will be added
+        #   $mnemonic       - A mnemonic string, e.g. 'N_ame'
+        #
+        # Optional arguments
+        #   $headingListRef - Reference to an optional list of sub-headings (which usually appear in
+        #                       bold in the tab). If specified, the headings appear in the index
         #
         # Return values
         #   'undef' on improper arguments
         #   Otherwise returns the Gtk3::Notebook created
 
-        my ($self, $tabName, $notebook, $check) = @_;
+        my ($self, $notebook, $mnemonic, $headingListRef, $check) = @_;
 
         # Check for improper arguments
-        if (defined $check) {
+        if (! defined $notebook || ! defined $mnemonic ||  defined $check) {
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->addInnerNotebookTab', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->addInnerNotebookTabs', @_);
         }
 
         # Tab setup
@@ -7885,11 +8429,145 @@
         $innerNotebook->set_scrollable(TRUE);
         $innerNotebook->popup_enable();
 
-        my $tab = Gtk3::Label->new_with_mnemonic($tabName);
-        $notebook->append_page($innerNotebook, $tab);
+        my $tab = Gtk3::Label->new_with_mnemonic($mnemonic);
+        my $page = $notebook->append_page($innerNotebook, $tab);
+
+        # Update the index, if present
+        $self->addRowToIndex($notebook, $tab, $mnemonic, $headingListRef);
+
+        # Update IVs
+        $self->ivAdd('innerNotebookHash', $page, $innerNotebook);
 
         # Tab complete
         return $innerNotebook;
+    }
+
+    sub addRowToIndex {
+
+        # Called by $self->addTab and ->addInnerNotebookTabs
+        # Adds a row to the index (treeview)
+        #
+        # Expected arguments
+        #   $notebook   - The Gtk3::Notebook object to which this tab will be added
+        #   $tab        - The tab itself (a Gtk3::Label)
+        #   $mnemonic   - A mnemonic string, e.g. 'N_ame'
+        #
+        # Optional arguments
+        #   $headingListRef - Reference to an optional list of sub-headings (which usually appear in
+        #                       bold in the tab). If specified, the headings appear in the index
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   Otherwise returns the Gtk3::Notebook created
+
+        my ($self, $notebook, $tab, $mnemonic, $headingListRef, $check) = @_;
+
+        # Local variables
+        my ($tabName, $pointer, $outer, $inner);
+
+        # Check for improper arguments
+        if (! defined $notebook || ! defined $tab || ! defined $mnemonic || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->addRowToIndex', @_);
+        }
+
+        $tabName = $mnemonic;
+        $tabName =~ s/_//g;
+
+        # N.B. The previous version used three layers of nesting. It is preserved here, commented
+        #   out, in case we want to go back to it
+#       if ($self->treeStore) {
+#
+#           if ($notebook eq $self->notebook) {
+#
+#               # Outer tab
+#               $pointer = $self->treeStore->append(undef);
+#
+#               $self->ivPoke('indexPointer', $pointer);
+#               $outer = $notebook->get_n_pages() - 1;
+#               $inner = 0;
+#
+#               $self->treeStore->set(
+#                   $pointer,
+#                   [0, 1, 2], ['<b>' . $tabName . ' tab</b>', $outer, $inner] );
+#
+#           } else {
+#
+#               # Inner tab
+#               $pointer = $self->treeStore->append($self->indexPointer);
+#               $outer = $self->notebook->get_n_pages() - 1;
+#               $inner = $notebook->get_n_pages() - 1;
+#
+#               $self->treeStore->set( $pointer, [0, 1, 2], [$tabName, $outer, $inner] );
+#           }
+#
+#           # Add sub-headings, if specified
+#           if (defined $headingListRef) {
+#
+#               my $childPointer = $pointer;
+#
+#               foreach my $heading (@$headingListRef) {
+#
+#                   my $thisPointer = $self->treeStore->append($childPointer);
+#
+#                   $self->treeStore->set(
+#                       $thisPointer,
+#                       [0, 1, 2],
+#                       ['<i>' . $heading . '</i>', $outer, $inner],
+#                   );
+#               }
+#           }
+#       }
+
+        if ($self->treeStore) {
+
+            if ($notebook eq $self->notebook) {
+
+                # Outer tab
+                $pointer = $self->treeStore->append(undef);
+
+                $self->ivPoke('indexPointer', $pointer);
+                $outer = $notebook->get_n_pages() - 1;
+                $inner = 0;
+
+                $self->treeStore->set(
+                    $pointer,
+                    [0, 1, 2], ['<b>' . $tabName . ' tab</b>', $outer, $inner] );
+
+            } else {
+
+                # Inner tab. Don't show 'Page 1' (etc) in the index, but do show an inner tab called
+                #   'Triggers'
+
+                # ($outer and $inner are re-used below...)
+                $outer = $self->notebook->get_n_pages() - 1;
+                $inner = $notebook->get_n_pages() - 1;
+
+                if (! ($tabName =~ m/^Page\s+\d+$/)) {
+
+                    $pointer = $self->treeStore->append($self->indexPointer);
+
+                    $self->treeStore->set( $pointer, [0, 1, 2], [$tabName, $outer, $inner] );
+                }
+            }
+
+            # Add sub-headings, if specified
+            if (defined $headingListRef) {
+
+                foreach my $heading (@$headingListRef) {
+
+                    my $thisPointer = $self->treeStore->append($self->indexPointer);
+
+                    $self->treeStore->set(
+                        $thisPointer,
+                        [0, 1, 2],
+                        [$heading, $outer, $inner],
+                    );
+                }
+            }
+        }
+
+        return 1;
     }
 
     sub addLabel {
@@ -9321,6 +9999,10 @@
         # Example calls:
         #   my $slWidget = $self->addSimpleList($grid, 'some_IV', \@columnList,
         #       0, 6, 0, 1);
+        #   my $slWidget = $self->addSimpleList($grid, 'some_IV', \@columnList,
+        #       0, 6, 0, 1,
+        #       -1, -1,
+        #       GA::Client->getMethodRef('function_name'));
         #
         # Expected arguments
         #   $grid           - The tab's Gtk3::Grid object
@@ -9331,6 +10013,8 @@
         #                       ('heading', 'column_type', 'heading', 'column_type'...)
         #                   - 'column_type' is one of the column types specified by
         #                       GA::Obj::SimpleList, e.g. 'scalar', 'int'
+        #                   - 'column_type' can also be 'bool' for a non-clickable checkbox, or
+        #                       'bool_editable' for a clickable checkbox
         #   $leftAttach, $rightAttach, $topAttach, $bottomAttach
         #                   - The position of the simple list in the grid
         #
@@ -9338,6 +10022,10 @@
         #   $width, $height - The width and height (in pixels) of the scroller containing the list.
         #                       If specified, values of -1 mean 'don't set this value'. The default
         #                       values are (-1, -1)
+        #   $funcRef        - Reference to the function to call when a (sensitised) checkbutton is
+        #                       clicked. If 'undef', it's up to the calling function to create a
+        #                       ->signal_connect method. Function references can be obtained by a
+        #                       call to GA::Client->getMethodRef
         #
         # Return values
         #   'undef' on improper arguments
@@ -9345,13 +10033,13 @@
 
         my (
             $self, $grid, $iv, $columnListRef, $leftAttach, $rightAttach, $topAttach,
-            $bottomAttach, $width, $height, $check,
+            $bottomAttach, $width, $height, $funcRef, $check,
         ) = @_;
 
         # Local variables
         my (
             $refType, $count,
-            @columnList,
+            @columnList, @spareList,
         );
 
         # Check for improper arguments
@@ -9380,8 +10068,16 @@
             $height = -1;   # Let Gtk3 set the height
         }
 
-        # Dereference the list of columns
-        @columnList = @$columnListRef;
+        # Dereference the list of columns, and convert 'bool_editable' to 'bool' values for Gtk's
+        #   convenience
+        foreach my $item (@$columnListRef) {
+
+            if ($item eq 'bool_editable') {
+                push(@columnList, 'bool');
+            } else {
+                push(@columnList, $item);
+            }
+        }
 
         # Add a simple list
         my $frame = Gtk3::Frame->new(undef);
@@ -9417,13 +10113,14 @@
             }
         }
 
-        # Make all columns of type 'bool' (which are composed of checkbuttons) non-activatable, so
-        #   that the user can't click them on and off
+        # Make all columns of type 'bool' and 'bool_editable' (which are composed of checkbuttons)
+        #   clickable or non-clickable, as required
         $count = -1;
+        @spareList = @$columnListRef;
         do {
 
-            my $title = shift @columnList;
-            my $type = shift @columnList;
+            my $title = shift @spareList;
+            my $type = shift @spareList;
 
             $count++;
 
@@ -9431,9 +10128,35 @@
 
                 my ($cellRenderer) = $slWidget->get_column($count)->get_cells();
                 $cellRenderer->set(activatable => FALSE);
+
+            } elsif ($type eq 'bool_editable') {
+
+                my ($cellRenderer) = $slWidget->get_column($count)->get_cells();
+                $cellRenderer->set(activatable => TRUE);
+
+                if (defined $funcRef) {
+
+                    $cellRenderer->signal_connect('toggled' => sub {
+
+                        my ($widget, $path) = @_;
+
+                        my $model = $slWidget->get_model();
+                        my $iter = $model->get_iter(Gtk3::TreePath->new_from_string($path));
+
+                        # Pass on the contents of each cell in the clicked row; it's up to the
+                        #   called code to check the contents of multiple checkboxes, if they exist
+                        my @dataList = ();
+                        for (my $i = 0; $i < scalar (@columnList / 2); $i++) {
+
+                            push(@dataList, $model->get($iter, $i));
+                        }
+
+                        &$funcRef($slWidget, $model, $iter, @dataList);
+                    });
+                }
             }
 
-        } until (! @columnList);
+        } until (! @spareList);
 
         # Add the simple list to the grid
         $frame->set_hexpand(TRUE);
@@ -11501,7 +12224,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab($tabName, $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            $tabName,
+            [$titleLabel],
+        );
 
         # Private settings hash
         $self->addLabel($grid, '<b>' . $titleLabel . '</b>',
@@ -11873,7 +12600,11 @@
             $page = 'Page _1';
         }
 
-        my $grid = $self->addTab($page, $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            $page,
+            ['Protected objects'],
+        );
 
         # Decide which character profile we're using
         if ($self->_objClass eq 'Games::Axmud::EditWin::Task') {
@@ -12208,7 +12939,11 @@
             $page = 'Page _2';
         }
 
-        my $grid = $self->addTab($page, $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            $page,
+            ['Monitored objects'],
+        );
 
         # Decide which character profile we're using
         if ($self->_objClass eq 'Games::Axmud::EditWin::Task') {
@@ -12585,7 +13320,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('_Attributes', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, '_Attributes');
 
         # Add tabs to the inner notebook
         $self->triggerAttributes1Tab($innerNotebook);
@@ -12614,7 +13349,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Trigger attributes'],
+        );
 
         # Trigger attributes
         $self->addLabel($grid, '<b>Trigger attributes</b>',
@@ -12721,14 +13460,18 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _2', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _2',
+            ['Trigger styles'],
+        );
 
         # (Need just a little extra space to make everything fit)
         $grid->set_column_spacing($self->spacingPixels - 1);
         $grid->set_row_spacing($self->spacingPixels - 1);
 
         # Trigger styles
-        $self->addLabel($grid, '<b>Trigger attributes (cont.)</b>',
+        $self->addLabel($grid, '<b>Trigger styles</b>',
             0, 12, 0, 1);
 
         # Top left
@@ -13115,7 +13858,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Attributes', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Attributes',
+            ['Alias attributes'],
+        );
 
         # Alias attributes
         $self->addLabel($grid, '<b>Alias attributes</b>',
@@ -13160,7 +13907,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Attributes', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Attributes',
+            ['Macro attributes'],
+        );
 
         # Macro attributes
         $self->addLabel($grid, '<b>Macro attributes</b>',
@@ -13201,7 +13952,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Timers', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Timers',
+            ['Timer attributes'],
+        );
 
         # Timer attributes
         $self->addLabel($grid, '<b>Timer attributes</b>',
@@ -13253,7 +14008,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Attributes', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Attributes',
+            ['Hook attributes'],
+        );
 
         # Hook attributes
         $self->addLabel($grid, '<b>Hook attributes</b>',
@@ -13350,7 +14109,7 @@
             $dialogueWin = Gtk3::Dialog->new(
                 $title,
                 $self->winWidget,
-                [qw/modal destroy-with-parent/],
+                Gtk3::DialogFlags->new([qw/modal destroy-with-parent/]),
                 'gtk-cancel' => 'reject',
                 'gtk-ok'     => 'accept',
             );
@@ -13360,7 +14119,7 @@
             $dialogueWin = Gtk3::Dialog->new(
                 $title,
                 $self->winWidget,
-                [qw/modal destroy-with-parent/],
+                Gtk3::DialogFlags->new([qw/modal destroy-with-parent/]),
                 'gtk-ok'     => 'accept',
             );
         }
@@ -13690,7 +14449,7 @@
             $dialogueWin = Gtk3::Dialog->new(
                 $title,
                 $self->winWidget,
-                [qw/modal destroy-with-parent/],
+                Gtk3::DialogFlags->new([qw/modal destroy-with-parent/]),
                 'gtk-cancel' => 'reject',
                 'gtk-ok'     => 'accept',
             );
@@ -13700,7 +14459,7 @@
             $dialogueWin = Gtk3::Dialog->new(
                 $title,
                 $self->winWidget,
-                [qw/modal destroy-with-parent/],
+                Gtk3::DialogFlags->new([qw/modal destroy-with-parent/]),
                 'gtk-ok'     => 'accept',
             );
         }
@@ -13942,7 +14701,7 @@
             $dialogueWin = Gtk3::Dialog->new(
                 $title,
                 $self->winWidget,
-                [qw/modal destroy-with-parent/],
+                Gtk3::DialogFlags->new([qw/modal destroy-with-parent/]),
                 'gtk-cancel' => 'reject',
                 'gtk-ok'     => 'accept',
             );
@@ -13952,7 +14711,7 @@
             $dialogueWin = Gtk3::Dialog->new(
                 $title,
                 $self->winWidget,
-                [qw/modal destroy-with-parent/],
+                Gtk3::DialogFlags->new([qw/modal destroy-with-parent/]),
                 'gtk-ok'     => 'accept',
             );
         }
@@ -14570,6 +15329,16 @@
     ##################
     # Accessors - get
 
+    sub hPaned
+        { $_[0]->{hPaned} }
+    sub scroller
+        { $_[0]->{scroller} }
+    sub treeStore
+        { $_[0]->{treeStore} }
+    sub treeView
+        { $_[0]->{treeView} }
+    sub vBox
+        { $_[0]->{vBox} }
     sub notebook
         { $_[0]->{notebook} }
     sub hBox
@@ -14596,13 +15365,18 @@
         { my $self = shift; return %{$self->{editHash}}; }
     sub editConfigHash
         { my $self = shift; return %{$self->{editConfigHash}}; }
+
+    sub indexPointer
+        { $_[0]->{indexPointer} }
+    sub innerNotebookHash
+        { my $self = shift; return %{$self->{innerNotebookHash}}; }
 }
 
 { package Games::Axmud::Generic::EditWin;
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -14650,7 +15424,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -14848,7 +15622,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -15099,7 +15873,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -15455,7 +16229,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -16000,7 +16774,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -16227,7 +17001,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -16267,7 +17041,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -16320,7 +17094,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -16713,7 +17487,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -17083,7 +17857,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -17267,7 +18041,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -17290,7 +18064,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -17392,7 +18166,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -17860,7 +18634,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -18786,7 +19560,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -18920,7 +19694,7 @@
             #   consult the current Attack task, they'll consult your private task instead
             shortCutIV                  => undef,
 
-            # Whether multiple instances of this bot can run concurrently
+            # Whether multiple instances of this task can run concurrently
             #   FALSE - any number of concurrent instances can run
             #   TRUE  - only one instance can run
             # (Activity tasks are almost always jealous. Process tasks are often jealous.)
@@ -21444,12 +22218,15 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->ttsQuick', @_);
         }
 
-        $axmud::CLIENT->tts(
-            $text,                  # This varies...
-            'task',                 # ...but these are always the same
-            $self->ttsConfig,
-            $self->session,
-        );
+        if ($axmud::CLIENT->ttsTaskFlag) {
+
+            $axmud::CLIENT->tts(
+                $text,                  # This varies...
+                'task',                 # ...but these are always the same
+                $self->ttsConfig,
+                $self->session,
+            );
+        }
 
         return 1;
     }
@@ -22074,7 +22851,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -22960,7 +23737,7 @@
         my $dialogueWin = Gtk3::Dialog->new(
             $title,
             $self->winWidget,
-            [qw/modal destroy-with-parent/],
+            Gtk3::DialogFlags->new([qw/modal destroy-with-parent/]),
             @argList,
         );
 
@@ -23312,7 +24089,7 @@
             $dialogueWin = Gtk3::Dialog->new(
                 $title,
                 $self->winWidget,
-                [qw/modal destroy-with-parent/],
+                Gtk3::DialogFlags->new([qw/modal destroy-with-parent/]),
                 'gtk-ok'     => 'accept',
             );
 
@@ -23321,7 +24098,7 @@
             $dialogueWin = Gtk3::Dialog->new(
                 $title,
                 $self->winWidget,
-                [qw/modal destroy-with-parent/],
+                Gtk3::DialogFlags->new([qw/modal destroy-with-parent/]),
                 'gtk-cancel' => 'reject',
                 'gtk-ok'     => 'accept',
             );
@@ -23633,7 +24410,7 @@
         my $dialogueWin = Gtk3::Dialog->new(
             $title,
             $self->winWidget,
-            [qw/modal destroy-with-parent/],
+            Gtk3::DialogFlags->new([qw/modal destroy-with-parent/]),
             'gtk-cancel' => 'reject',
             'gtk-ok'     => 'accept',
         );
@@ -23836,7 +24613,7 @@
         my $dialogueWin = Gtk3::Dialog->new(
             $title,
             $self->winWidget,
-            [qw/modal destroy-with-parent/],
+            Gtk3::DialogFlags->new([qw/modal destroy-with-parent/]),
             'gtk-cancel' => 'reject',
             'gtk-ok'     => 'accept',
         );
@@ -24077,7 +24854,7 @@
             $dialogueWin = Gtk3::Dialog->new(
                 $title,
                 $self->winWidget,
-                [qw/modal destroy-with-parent/],
+                Gtk3::DialogFlags->new([qw/modal destroy-with-parent/]),
                 'gtk-ok'     => 'accept',
             );
 
@@ -24086,7 +24863,7 @@
             $dialogueWin = Gtk3::Dialog->new(
                 $title,
                 $self->winWidget,
-                [qw/modal destroy-with-parent/],
+                Gtk3::DialogFlags->new([qw/modal destroy-with-parent/]),
                 'gtk-cancel' => 'reject',
                 'gtk-ok'     => 'accept',
             );
@@ -24405,7 +25182,7 @@
         my $dialogueWin = Gtk3::Dialog->new(
             $title,
             $self->winWidget,
-            [qw/modal destroy-with-parent/],
+            Gtk3::DialogFlags->new([qw/modal destroy-with-parent/]),
             'gtk-cancel' => 'reject',
             'gtk-ok'     => 'accept',
         );
@@ -24621,7 +25398,7 @@
         my $dialogueWin = Gtk3::Dialog->new(
             $title,
             $self->winWidget,
-            [qw/modal destroy-with-parent/],
+            Gtk3::DialogFlags->new([qw/modal destroy-with-parent/]),
             'gtk-cancel' => 'reject',
             'gtk-ok'     => 'accept',
         );
@@ -24985,7 +25762,7 @@
         my $dialogueWin = Gtk3::Dialog->new(
             'Add custom room flag',
             $self->winWidget,
-            [qw/modal destroy-with-parent/],
+            Gtk3::DialogFlags->new([qw/modal destroy-with-parent/]),
             'gtk-cancel' => 'reject',
             'gtk-ok'     => 'accept',
         );
@@ -25132,7 +25909,7 @@
         my $dialogueWin = Gtk3::Dialog->new(
             'Irreversible icon test',
             $self->winWidget,
-            [qw/modal destroy-with-parent/],
+            Gtk3::DialogFlags->new([qw/modal destroy-with-parent/]),
             'gtk-ok'     => 'accept',
         );
 
@@ -26023,11 +26800,15 @@
         #   specify its own one
         #
         # Example calls:
-        #   my $slWidget = $self->addSimpleList($grid, \@columnList, $dataRef, TRUE,
+        #   my $slWidget = $self->addSimpleList($grid, \@columnList, $dataRef,
         #       0, 6, 0, 1);
-        #   my $slWidget = $self->addSimpleList($grid, \@columnList, undef, FALSE,
+        #   my $slWidget = $self->addSimpleList($grid, \@columnList, undef,
         #       0, 6, 0, 1,
         #       -1, 120);
+        #   my $slWidget = $self->addSimpleList($grid, \@columnList, $dataRef,
+        #       0, 6, 0, 1,
+        #       -1, -1,
+        #       GA::Client->getMethodRef('function_name'));
         #
         # Expected arguments
         #   $grid           - The Gtk3::Grid itself
@@ -26035,10 +26816,10 @@
         #                       ('heading', 'column_type', 'heading', 'column_type'...)
         #                   - 'column_type' is one of the column types specified by
         #                       GA::Obj::SimpleList, e.g. 'scalar', 'int'
+        #                   - 'column_type' can also be 'bool' for a non-clickable checkbox, or
+        #                       'bool_editable' for a clickable checkbox
         #   $dataRef        - Reference to a list of values, used to fill the simple list. If
         #                       'undef', it's up to the calling function to add data
-        #   $editableFlag   - Flag set to TRUE if columns containing boolean values should be
-        #                       editable, FALSE if not
         #   $leftAttach, $rightAttach, $topAttach, $bottomAttach
         #                   - The position of the simple list in the table
         #
@@ -26046,27 +26827,31 @@
         #   $width, $height - The width and height (in pixels) of the scroller containing the list.
         #                       If specified, values of -1 mean 'don't set this value'. The default
         #                       values are (-1, -1)
+        #   $funcRef        - Reference to the function to call when a (sensitised) checkbutton is
+        #                       clicked. If 'undef', it's up to the calling function to create a
+        #                       ->signal_connect method. Function references can be obtained by a
+        #                       call to GA::Client->getMethodRef
         #
         # Return values
         #   'undef' on improper arguments or if the widget's position in the Gtk3::Grid is invalid
         #   Otherwise the GA::Obj::SimpleList created
 
         my (
-            $self, $grid, $columnListRef, $dataRef, $editableFlag, $leftAttach, $rightAttach,
-            $topAttach, $bottomAttach, $width, $height, $check,
+            $self, $grid, $columnListRef, $dataRef, $leftAttach, $rightAttach, $topAttach,
+            $bottomAttach, $width, $height, $funcRef, $check,
         ) = @_;
 
         # Local variables
         my (
             $refType, $count,
-            @columnList,
+            @columnList, @spareList,
         );
 
         # Check for improper arguments
         if (
-            ! defined $grid || ! defined $columnListRef || ! defined $editableFlag
-            || ! defined $leftAttach || ! defined $rightAttach || ! defined $topAttach
-            || ! defined $bottomAttach || defined $check
+            ! defined $grid || ! defined $columnListRef || ! defined $leftAttach
+            || ! defined $rightAttach || ! defined $topAttach || ! defined $bottomAttach
+            || defined $check
         ) {
             return $axmud::CLIENT->writeImproper($self->_objClass . '->addSimpleList', @_);
         }
@@ -26088,8 +26873,16 @@
             $height = -1;   # Let Gtk3 set the height
         }
 
-        # Dereference the list of columns
-        @columnList = @$columnListRef;
+        # Dereference the list of columns, and convert 'bool_editable' to 'bool' values for Gtk's
+        #   convenience
+        foreach my $item (@$columnListRef) {
+
+            if ($item eq 'bool_editable') {
+                push(@columnList, 'bool');
+            } else {
+                push(@columnList, $item);
+            }
+        }
 
         # Add a simple list
         my $frame = Gtk3::Frame->new(undef);
@@ -26125,24 +26918,48 @@
 
         # Make all columns of type 'bool' (which are composed of checkbuttons) non-activatable, so
         #   that the user can't click them on and off (if specified)
-        if (! $editableFlag) {
+        $count = -1;
+        @spareList = @$columnListRef;
+        do {
 
-            $count = -1;
-            do {
+            my $title = shift @spareList;
+            my $type = shift @spareList;
 
-                my $title = shift @columnList;
-                my $type = shift @columnList;
+            $count++;
 
-                $count++;
+            if ($type eq 'bool') {
 
-                if ($type eq 'bool') {
+                my ($cellRenderer) = $slWidget->get_column($count)->get_cells();
+                $cellRenderer->set(activatable => FALSE);
 
-                    my ($cellRenderer) = $slWidget->get_column($count)->get_cells();
-                    $cellRenderer->set(activatable => FALSE);
+            } elsif ($type eq 'bool_editable') {
+
+                my ($cellRenderer) = $slWidget->get_column($count)->get_cells();
+                $cellRenderer->set(activatable => TRUE);
+
+                if (defined $funcRef) {
+
+                    $cellRenderer->signal_connect('toggled' => sub {
+
+                        my ($widget, $path) = @_;
+
+                        my $model = $slWidget->get_model();
+                        my $iter = $model->get_iter(Gtk3::TreePath->new_from_string($path));
+
+                        # Pass on the contents of each cell in the clicked row; it's up to the
+                        #   called code to check the contents of multiple checkboxes, if they exist
+                        my @dataList = ();
+                        for (my $i = 0; $i < scalar (@columnList / 2); $i++) {
+
+                            push(@dataList, $model->get($iter, $i));
+                        }
+
+                        &$funcRef($slWidget, $model, $iter, @dataList);
+                    });
                 }
+            }
 
-            } until (! @columnList);
-        }
+        } until (! @spareList);
 
         # Add the simple list to the grid
         $frame->set_hexpand(TRUE);
@@ -26522,35 +27339,18 @@
             $height = 30;
         }
 
-#        # Create a frame
-#        my $frame = Gtk3::Frame->new(undef);
-#        $frame->set_border_width(0);
-#        $frame->set_size_request($width, $height);
-#
-#        # Create the canvas
-#        my $canvas = GooCanvas2::Canvas->new();
-#        $frame->add($canvas);
-#        $canvas->set_size_request($width, $height);
-#        $canvas->set_bounds(0, 0, $width, $height);
+        # Create a frame
+        my $frame = Gtk3::Frame->new(undef);
+        $frame->set_border_width(0);
+        $frame->set_size_request($width, $height);
 
         # Create the canvas
         my $canvas = GooCanvas2::Canvas->new();
+        $frame->add($canvas);
         $canvas->set_size_request($width, $height);
         $canvas->set_bounds(0, 0, $width, $height);
-
-        # An ugly hack to make sure the canvas is centred in its frame - put the canvas inside an
-        #   HBox and a VBox
-        my $hBox =Gtk3::HBox->new();
-        $hBox->pack_start($canvas, TRUE, FALSE, 0);
-
-        my $vBox = Gtk3::VBox->new();
-        $vBox->pack_start($hBox, TRUE, FALSE, 0);
-
-        # Create a frame
-        my $frame = Gtk3::Frame->new(undef);
-        $frame->add($vBox);
-        $frame->set_border_width(0);
-        $frame->set_size_request($width, $height);
+        $canvas->set_halign('GTK_ALIGN_CENTER');
+        $canvas->set_valign('GTK_ALIGN_CENTER');
 
         # Add the frame to the table
         $frame->set_hexpand(FALSE);
@@ -27284,7 +28084,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 

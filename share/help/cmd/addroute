@@ -1,19 +1,19 @@
 art / addroute                Adds a new pre-defined route
- 
+
    Format:
       ;art <start> <stop> <route> <switches>
                Adds a road/quick <route> from <start> to <stop>
       ;art <start> <stop> -a <switches>
                Saves current recording as a road/quick route, <start> to <stop>
- 
+
       ;art <start> <name> <route> <switches>
                Adds a circuit <route> called <name> from room <start>
       ;art <start> <name> -a <switches>
                Saves the current recording as a circuit route from <start>
- 
+
    Notes:
       Axmud pre-defined routes are an easy way to move between rooms in the
-         world. 
+         world.
       Each route consists of nothing more than a chain of world commands, for
          example 'n' or 'n;n;n;w;s;s'. The route can also be represented as a
          speedwalk command like '.3nw2s' (even when speedwalk commands are
@@ -27,23 +27,23 @@ art / addroute                Adds a new pre-defined route
          are presumably safer than taking the most direct route). A 'quick'
          route represents the shortest path between two rooms.
       Road and quick routes connect two rooms called <start> and <stop>.
-      The third type of pre-defined route is a 'circuit' route, which starts and 
-         stops in a room called <start>. A circuit route has a <name>, so that 
+      The third type of pre-defined route is a 'circuit' route, which starts and
+         stops in a room called <start>. A circuit route has a <name>, so that
          you can create more than one circuit starting in a particular room.
 
-      <start> and <stop> refer to room tags - short descriptions of a room such 
-         as 'tower', 'hall' or 'crossroads'. Ideally, the <start> and <stop> 
+      <start> and <stop> refer to room tags - short descriptions of a room such
+         as 'tower', 'hall' or 'crossroads'. Ideally, the <start> and <stop>
          room tags should match those you create in your maps, but you can use
          any set of room tags you like - the pre-defined route doesn't know
          anything about equivalent rooms in the world model. (NB Room tags have
          a maximum length of 16 characters and, for technical reasons, can't
          contain the sequence @@@)
 
-      Pre-defined routes are stored in route cages. There is one cage for each 
-         current profile, and the usual priority rules apply - a road route 
-         between two rooms (associated with the current character profile) takes 
-         priority over the route between the same two rooms (associated with the 
-         current world profile). 
+      Pre-defined routes are stored in route cages. There is one cage for each
+         current profile, and the usual priority rules apply - a road route
+         between two rooms (associated with the current character profile) takes
+         priority over the route between the same two rooms (associated with the
+         current world profile).
       As a result, you can create several routes between the same two rooms: one
          default route attached to a world, another route attached to a guild,
          another to a particular character. Axmud auto-magically uses the route
@@ -56,10 +56,10 @@ art / addroute                Adds a new pre-defined route
          -o                   - Creates a road route
          -q                   - Creates a quick route
          -t                   - Creates a circuit route
- 
+
       Group 2 switch options: 0 or 1 of the following options may be used:
          -no option-          - Associates the route with the current world
-         -g                   - Associates the route with the current guild         
+         -g                   - Associates the route with the current guild
          -w                   - Associates the route with the current world
          -r                   - Associates the route with the current race
          -c                   - Associates the route with the current character
@@ -70,16 +70,16 @@ art / addroute                Adds a new pre-defined route
       Group 3 switch options: 0 or 1 of the following options may be used:
          -h                   - Route not hoppable (can't be combined with other
                                    routes using the ';drive' command)
- 
+
      If you specify the '-a' switch instead of <route>, a route will be created
         using the current recording, but only using world commands in that
         recording. (See the help for ';record' for more information about
         recordings.)
      If <route> contains spaces, it should be enclosed in diamond brackets
-        e.g. <n;nw;open door;n> 
+        e.g. <n;nw;open door;n>
      <switches> may be placed anywhere in the command, in any order, but the
          order of <start> <stop> <route> or <start> <name> <route> must be
          preserved.
- 
+
    User commands:
       art / addroute

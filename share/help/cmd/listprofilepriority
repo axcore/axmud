@@ -1,14 +1,14 @@
 lpp / listprofilepriority     Shows the profile priority list
- 
+
    Format:
       ;lpp                    Shows the list for the current world
       ;lpp -d                 Shows the default list
- 
+
    Notes:
       The list is returned in priority order, with the highest priority first.
-      (See the help for ';listprofile' for more information about profiles. See 
-         the help for ';setprofilepriority' for more information about the 
+      (See the help for ';listprofile' for more information about profiles. See
+         the help for ';setprofilepriority' for more information about the
          profile priority list.)
- 
+
    User commands:
       lpp / listpriority / listprofilepriority

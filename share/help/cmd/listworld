@@ -1,13 +1,13 @@
 lwo / listworld               Lists all world profiles
- 
+
    Format:
       ;lwo                    Lists world profiles
 
    Notes:
-      All world profiles are loaded from file and stored in memory, even those 
-         which aren't being used. Guild, race and custom profiles are only 
-         loaded (or created) when a session loads (or creates) their associated 
+      All world profiles are loaded from file and stored in memory, even those
+         which aren't being used. Guild, race and custom profiles are only
+         loaded (or created) when a session loads (or creates) their associated
          world profile.
- 
+
    User commands:
       lwo / listworld

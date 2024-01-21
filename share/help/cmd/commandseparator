@@ -1,15 +1,15 @@
 csp / commandseparator        Sets the command separator
- 
+
    Format:
       ;csp <string>           Sets the command separator to <string>
       ;csp                    Sets the command separator to its default value
- 
+
    Notes:
-      When you type a world command like 'north;open door;east', Axmud splits 
-         the string into three separate commands before sending them to the 
+      When you type a world command like 'north;open door;east', Axmud splits
+         the string into three separate commands before sending them to the
          world, one at a time.
       The default command separator is the ';' character, but you can specify
          any sequence of characters (up to a maximum of four).
- 
+
    User commands:
       csp / cmdsep / commandseparator

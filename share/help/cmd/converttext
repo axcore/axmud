@@ -1,13 +1,13 @@
 cvt / converttext             Toggles conversion of invisible text
- 
+
    Format:
       ;cvt                    Toggles conversion
 
    Notes:
-      Axmud can optionally convert invisible text (for example, black text on a 
-         black background) to something visible. This command turns the 
+      Axmud can optionally convert invisible text (for example, black text on a
+         black background) to something visible. This command turns the
          conversion on or off.
       Conversion, when turned on, only takes place in Axmud window panes.
- 
+
    User commands:
       cvt / cvtext / converttext

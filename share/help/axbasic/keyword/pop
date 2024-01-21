@@ -11,16 +11,16 @@ POP array-name [ , variable-name ]
          values to an array of nine.
       If the optional scalar variable name is specified, the value is assigned
          to it. Otherwise, the value is discarded. Both the array and scalar
-         variables must be of the same type (both strings, or both numeric).         
+         variables must be of the same type (both strings, or both numeric).
       If you try to POP an empty array, the value assigned to the scalar
          variable will be either an empty string, or 0.
 
    Compatibility:
       Since Axbasic v1.4
-      
+
    Examples:
       DATA "foo", "bar", "baz"
-      
+
       DIM stuff$ (3)
       FOR a = 1 TO 3
          READ stuff$ (a)

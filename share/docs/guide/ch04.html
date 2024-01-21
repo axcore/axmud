@@ -7,7 +7,7 @@ td, th { border: 1px solid #c3c3c3; padding: 0 3px 0 3px; }
 table { border-collapse: collapse; }
 img { max-width: 100%; }
 </style>
-<meta name="generator" content="ReText 7.1.0">
+<meta name="generator" content="ReText 7.2.3">
 <title>ch04</title>
 <style type="text/css">
 </style>
@@ -32,7 +32,7 @@ img { max-width: 100%; }
 </ul>
 </li>
 <li><a href="#4.5">4.5 Main window  buttons</a></li>
-<li><a href="#4.6">4.6 The object viewer window</a></li>
+<li><a href="#4.6">4.6 The data viewer window</a></li>
 <li><a href="#4.7">4.7 Edit windows</a></li>
 <li><a href="#4.8">4.8 Preference windows</a></li>
 <li><a href="#4.9">4.9 The client preference window</a><ul>
@@ -243,15 +243,15 @@ img { max-width: 100%; }
 <p><img alt="Search icon" src="img/ch04/icon_search.png"> Opens a search box, which you can use to search text for terms like gold or big hairy orc. If you click the <strong>Use regex</strong> button, you can use a pattern/regular expression like <strong>\d+ gold coin</strong>).</p>
 <p><img alt="Lock icon" src="img/ch04/icon_lock.png"> Stops the window from scrolling when text is received from the world</p>
 <p><img alt="Window icon" src="img/ch04/icon_application.png"> Splits the window into two portions</p>
-<h2><a name="4.6">4.6 The object viewer window</a></h2>
+<h2><a name="4.6">4.6 The data viewer window</a></h2>
 <p>Axmud organises its internal data into collections of data called 'objects'.</p>
 <p>We've already seen two kinds of object - the world profile, which stores data for a particular world, and the character profile, which stores data for a character in that world.</p>
-<p>There are many other kinds of object. Axmud lists many of them in its object viewer window.</p>
-<p><img alt="Object viewer icon" src="img/ch04/icon_watermark_table.png"> To open the object viewer window, either click on the button, or select 'Display &gt; Open object viewer' in the menu, or use the client command:</p>
-<pre><code>    ;openobjectviewer
-    ;oov
+<p>There are many other kinds of object. Axmud lists many of them in its data viewer window.</p>
+<p><img alt="Data viewer icon" src="img/ch04/icon_watermark_table.png"> To open the data viewer window, either click on the button, or select 'Display &gt; Open object viewer' in the menu, or use the client command:</p>
+<pre><code>    ;opendataviewer
+    ;odv
 </code></pre>
-<p><img alt="Object viewer window" src="img/ch04/object_viewer.png"></p>
+<p><img alt="Data viewer window" src="img/ch04/data_viewer.png"></p>
 <p>The different types of object are listed on the left. There are far too many to fit inside the window, so they have been divided into groups.</p>
 <ul>
 <li>Double-click on <strong>Profiles</strong>, and then click on <strong>All profiles</strong></li>
@@ -262,10 +262,10 @@ img { max-width: 100%; }
 <ul>
 <li>For a slightly longer explanation for each button, let your mouse hover above the button</li>
 </ul>
-<p><img alt="Object viewer tooltip" src="img/ch04/viewer_tooltip.png"></p>
+<p><img alt="Data viewer tooltip" src="img/ch04/viewer_tooltip.png"></p>
 <h2><a name="4.7">4.7 Edit windows</a></h2>
 <p>Each collection of data - each object - can be viewed and edited using an <em>edit window</em>.</p>
-<p>Edit windows can be opened from the object viewer window, or from the main window's menu and buttons, or by using a client command. For example, to edit the <strong>dslocal</strong> world profile:</p>
+<p>Edit windows can be opened from the data viewer window, or from the main window's menu and buttons, or by using a client command. For example, to edit the <strong>dslocal</strong> world profile:</p>
 <pre><code>    ;editworld dslocal
     ;ewo dslocal
 </code></pre>
@@ -273,6 +273,7 @@ img { max-width: 100%; }
 <pre><code>    ;editworld
 </code></pre>
 <p>For world profiles, there are more tabs than can be arranged in the single window. Near the top-left and top-right corners of the window you'll see some kind of arrow; click the arrows to scroll through the additional tabs.</p>
+<p>You can also double-click a line in the index on the left.</p>
 <p><img alt="Edit window tabs" src="img/ch04/edit_win_tabs.png"></p>
 <p>Changes you make in this window are not applied until you use one of the buttons at the bottom.</p>
 <p><img alt="Edit window buttons" src="img/ch04/edit_win_buttons.png"></p>

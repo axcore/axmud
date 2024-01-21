@@ -1,8 +1,8 @@
 uall / useall                 Performs action on all unprotected objects
- 
+
    Format:
-      ;ula <command>          Use <command> with all unprotected objects
- 
+      ;uall <command>         Use <command> with all unprotected objects
+
    Notes:
       <command> should be a string like 'put @ in pocket'.
       Every occurence of the '@' character in <command> is replaced by an
@@ -10,12 +10,12 @@ uall / useall                 Performs action on all unprotected objects
             > put gold in pocket
             > put cracked teacup in pocket
             > put rocket in pocket
-      If the '@' character occurs nowhere in <command>, the command is simply 
+      If the '@' character occurs nowhere in <command>, the command is simply
          repeated once for every unprotected object.
 
-      This command can only be used when the Inventory task is active. 
+      This command can only be used when the Inventory task is active.
       For more information about protected objects, see the help for the
          ';protectobject' command.
- 
+
    User commands:
       uall / useall

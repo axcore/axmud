@@ -1,10 +1,10 @@
 snp / chatsnoop               Asks to start/stop snooping on chat contacts
- 
+
    Format:
       ;snp -n <name>          Makes request to chat contacts called <name>
       ;snp -g <group>         Makes request to chat contacts in the <group>
       ;snp                    Makes request to everyone
- 
+
    Notes:
       The Chat task is used to chat with other players directly via telnet.
          Calls can be placed (or accepted) with any user whose MUD client uses
@@ -12,6 +12,6 @@ snp / chatsnoop               Asks to start/stop snooping on chat contacts
       This command is the equivalent of typing ';snoop' in the relevant Chat
          task windows.
       The switches -n and -g can't be combined.
- 
+
    User commands:
       snp / snoop / chatsnoop

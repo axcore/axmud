@@ -1,26 +1,26 @@
 skp / skip                    Reads aloud the next piece of text
- 
+
    Format:
       ;skp                    Reads aloud the next piece of text
       ;skp <num>              Skips <num> pieces of text
       ;skp more               Skips 10 pieces of text
-      
+
    Notes:
       When Axmud is performing text-to-speech, this command replays the next
          piece of text (if any). If some text is already being read aloud, it is
          interrupted.
-      When running the version of Axmud that's optimised for visually-impaired 
-         users, the right cursor key can be used as a shortcut to this command 
-         (but only once Axmud is connected to a world, in online or offline 
+      When running the version of Axmud that's optimised for visually-impaired
+         users, the right cursor key can be used as a shortcut to this command
+         (but only once Axmud is connected to a world, in online or offline
          mode.)
       Axmud remembers the last 1000 pieces of text that have been read aloud, so
-         you can replay them at any time.          
+         you can replay them at any time.
 
       You can also specify the number of pieces of text to skip. If this takes
-         you past the last job, then the last job is read aloud. 
+         you past the last job, then the last job is read aloud.
       When running the optimised version of Axmud, the page down key can be used
          as a shortcut for ';skip more'.
-         
+
       See also the help for ';split', ';unskip', ';first', ';last', ';resume',
          ';shutup' and ';freekeys'.
 

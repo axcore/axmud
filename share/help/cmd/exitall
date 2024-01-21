@@ -1,16 +1,16 @@
 eal / exitall                 Terminates every connection and saves files
- 
+
    Format:
       ;eal                    Terminates every connection
-      ;eal <minutes>          Terminates every connection after a delay 
- 
+      ;eal <minutes>          Terminates every connection after a delay
+
    Notes:
-      Use this command to terminate every connection immediately, without 
+      Use this command to terminate every connection immediately, without
          waiting for every world to respond.
       This command automatically save data files. To exit without saving files
          use the ';panic' command.
       Use the ';exit' or ';xxit' commands to close an individual connection.
       See also the help for ';abortselfdestruct'.
- 
+
    User commands:
       eal / exitall

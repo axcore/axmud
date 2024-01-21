@@ -1,0 +1,8 @@
+Isregion (string)
+
+   Synopsis:
+      Tests whether a region exists
+
+   Notes:
+      'string' is the name of a region in the world model. Returns 1 if the
+         named region exists, or 0 if it doesn't exist.

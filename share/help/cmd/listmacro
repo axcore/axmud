@@ -1,10 +1,10 @@
 lma / listmacro               Lists macros
- 
+
    Format:
       ;lma
                Lists all macros belonging to current profiles
       ;lma -w
-               Lists all macros associated with the current world 
+               Lists all macros associated with the current world
       ;lma -g
                Lists all macros associated with the current guild
       ;lma -r

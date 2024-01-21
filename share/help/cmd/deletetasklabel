@@ -1,16 +1,16 @@
 dtl / deletetasklabel         Deletes a task label
- 
+
    Format:
       ;dtl <label>            Deletes a task label
- 
+
    Notes:
       Axmud tasks have formal names like 'status_task' and 'locator_task'. Task
-         labels are a convenient way of referring to tasks without having to 
+         labels are a convenient way of referring to tasks without having to
          type the whole name. For example, the Status task has the task labels
          'stat' and 'status' by default.
       To reset a task's labels to the default list, use ';resettasklabel'.
-      To delete all the labels corresponding to a particular task, use 
+      To delete all the labels corresponding to a particular task, use
          ';addtasklabklabel <task_name>'.
- 
+
    User commands:
       dtl / deltl / dellabel / deletetasklabel

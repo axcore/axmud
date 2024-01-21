@@ -1,18 +1,18 @@
 tmd / testmodel               Performs an integrity check on the world model
- 
+
    Format:
       ;tmd                    Performs the integrity check
       ;tmd -f                 Performs the integrity check and fixes conflicts
- 
+
    Notes:
-      This is a debug command. It can be used to detect conflicts (errors) in 
-         the world model caused by unresolved Axmud issues. If the check detects 
+      This is a debug command. It can be used to detect conflicts (errors) in
+         the world model caused by unresolved Axmud issues. If the check detects
          any errors of this kind, please report them to the authors.
       Some (but not all) errors will be auto-fixed if you use the -f switch.
-      Very large maps can take several seconds to check, so it is advisable to 
+      Very large maps can take several seconds to check, so it is advisable to
          use this command only in 'offline' mode. If you use the -f switch, you
-         should use this command a second time, because fixing an error may 
+         should use this command a second time, because fixing an error may
          enable a different kind of error to be detected.
- 
+
    User commands:
       tmd / testmodel

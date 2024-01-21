@@ -41,6 +41,7 @@
     * [7.5.7 Redirect mode](#7.5.7)
     * [7.5.8 Custom hook events](#7.5.8)
 * [7.6 Active and inactive interfaces](#7.6)
+* [7.7 Exporting/importing interfaces](#7.7)
 
 ---
 
@@ -48,7 +49,7 @@ The quickest way to create a trigger, alias, macro, timer or hook is from the ma
 
 ##<a name="7.1">7.1 Triggers</a>
 
-We'll start with triggers. Click on **Edit > World triggers** and this window will appear.
+We'll start with triggers. Click on **Interfaces > Triggers > World triggers** and this window will appear.
 
 ![Edit triggers window](img/ch07/edit_triggers.png)
 
@@ -168,7 +169,7 @@ You can also apply italics, strikethrough, blinking text and underlines (undersc
 
 Axmud triggers have a *stimulus* and a *response*. If you just want to apply the style and do nothing else, you can tell Axmud to ignore this trigger's response.
 
-* From the main window menu, click **Edit > World triggers**
+* From the main window menu, click **Interfaces > Triggers > World triggers**
 * In the **Trigger stimulus** box, enter **The orc drops its treasure**
 * In the **Trigger response** box, enter anything you like
     * There must be a response, even though it's ignored
@@ -187,7 +188,7 @@ For rewriter triggers, the text matching the pattern is *substituted* for the te
 
 Rewriter triggers are often used to filter out coarse and injudicious language, so we'll use that as an example.
 
-* From the main window menu, click **Edit > World triggers**
+* From the main window menu, click **Interfaces > Triggers > World triggers**
 * In the **Trigger stimulus** box, enter a rude word as a pattern
 * In the **Trigger response** box, enter the text __\*\*\*\*__
 * In the **Name** box, enter the name **sweartrigger**
@@ -289,7 +290,7 @@ Here, the verbose description and exit list appear on the same line. Because the
 
 All triggers have a *stimulus* and a *response*. For splitter triggers, both of these are patterns. The simplest splitter triggers use the same pattern for both.
 
-* From the main window menu, click **Edit > World triggers**
+* From the main window menu, click **Interfaces > Triggers > World triggers**
 * In the **Trigger stimulus** box, enter **You see a single exit leading**
 * In the **Trigger response** box, enter the same pattern again
 * In the **Name** box, enter the name **exittrigger**
@@ -386,7 +387,7 @@ Like all interfaces, Axmud aliases have a *stimulus* and a *response*.  The stim
 
 The response is some text. When the alias fires, the response is *substituted* for part of the original command (or replaces all of it).
 
-* From the main window menu, click **Edit > World aliases**
+* From the main window menu, click **Interfaces > Aliases > World aliases**
 * In the **Alias stimulus** box, enter the pattern **arc**
 * In the **Alias response** box, enter the text **amazing red crown**
 * In the **Name** box, enter the name **myalias**
@@ -525,7 +526,7 @@ Note that, for technical reasons, Axmud cannot use SHIFT or ALT-GR in macros (al
 
 ###<a name="7.3.2">7.3.2 Adding macros</a>
 
-* From the main window menu, click **Edit > World macros**
+* From the main window menu, click **Interfaces > Macros > World macros**
 * In the **Macro stimulus** box, enter the keycode **f1**
     * Axmud standard keycodes are always in lower-case characters
 * In the **Macro response** box, enter the command **get coins from corpses**
@@ -570,7 +571,7 @@ The response can be any kind of instruction. It's usually a world command like *
 
 Let's create a timer which will *fire* every 60 seconds, and which sends the world command **score** each time it fires.
 
-* From the main window menu, click **Edit > World timers**
+* From the main window menu, click **Interfaces > Timers > World timers**
 * In the **Timer stimulus** box, enter the time interval **60**
 * In the **Timer response** box, enter the command **score**
 * In the **Name** box, enter the name **mytimer**
@@ -698,7 +699,7 @@ Let's create a hook which fires every time a world command is sent, and which pl
 
 Now you can create the hook.
 
-* From the main window menu, click **Edit > World hooks**
+* From the main window menu, click **Interfaces > Hooks > World hooks**
 * In the **Hook stimulus** combo (drop-down) box, select **send_cmd**
     * Don't select **sending_cmd** by mistake!
 * In the **Hook response** box, enter the client command **;playsoundeffect beep**
@@ -747,7 +748,7 @@ The mini-programme's job is to convert the hook data - a string of text - into a
 
 Now you're ready to create the hook.
 
-* From the main window menu, click **Edit > World hooks**
+* From the main window menu, click **Interfaces > Hooks > World hooks**
 * In the **Hook stimulus** combo (drop-down) box, select **sending_cmd**
     * Don't select **send_cmd** by mistake!
 * In the **Hook response** box, copy-and-paste the mini-programme from above (including the initial forward slash character and the final semicolon)
@@ -784,11 +785,11 @@ To create a custom hook event, you can just create a hook responding to that eve
 
 As explained in detail in [Section 5](ch05.html), Axmud interfaces (trigger, aliases, macros, timers and hooks) are either *active* or *inactive*.
 
-You can create several triggers called **mytrigger**, each belonging to a different profile, but only one of them is active (actually in use). The others are inactive.
+You can create several triggers called **mytrigger**, each belonging to a different profile, but only one of them is *active* (actually in use). The others are *inactive*.
 
 Actually, when an interface becomes active, Axmud makes a copy of it. The copy, not the original, is the *active* interface.
 
-You can see a current list of active interfaces from the main window menu (click on **Edit > Active interfaces**). If the Status task is running, the list will look like this:
+You can see a current list of active interfaces from the main window menu (click on **Interfaces > Active interfaces**). If the Status task is running, the list will look like this:
 
 ![Status task interfaces](img/ch07/status_interfaces.png)
 
@@ -796,12 +797,32 @@ There is one more important thing to explain.
 
 If you modify the original (inactive interface), the corresponding copy (active interface) is automatically updated.
 
-* From the main window menu, click on **Edit > World triggers**
+* From the main window menu, click on **Interfaces > Triggers > World triggers**
 * Enable (or disable) one of the triggers you created earlier
-* Now, from the main window menu, click on **Edit > Active interfaces**
+* Now, from the main window menu, click on **Interfaces > Active interfaces**
 * Find the corresponding trigger in the list. It will also be enabled (or disabled)
 
 However, if you modify the copy (the active interface), *no changes are made to the original* (the inactive interface). Any changes are therefore *temporary* and will disappear at the end of the session.
+
+##<a name="7.7">7.7 Exporting/importing interfaces</a>
+
+Everyone reading his guide will be familiar with copying and pasting.
+
+In a text editor, you can highlight some text and press CTRL + C, before pressing CTRL + V to copy it to somewhere else. In between, the text is stored in some secret place in the computer's memory.
+
+Axmud interfaces can also be copied from one profile to another, or even from one world to another. Axmud has a not-so secret *clipboard* which stores the interfaces waiting to be copied. This single clipboard is available to any session that's open at the moment.
+
+Instead of copying and pasting, we talk about *exporting* to the clipboard and *importing* from it.
+
+* Connect to two worlds (in online or offline mode)
+* Click on the first world's tab, to make it visible
+* From the main window menu, click on **Interfaces > Triggers > World triggers**
+* Create a trigger with a memorable name
+* Click on the trigger to select it, then click the **Export** button
+* Now click the second world's tab to make it visible
+* From the main window menu, click on **Interfaces > Triggers > World triggers**
+* Click the **Import button**
+* The second world receives a copy of the first world's trigger
 
 ---
 

@@ -21,7 +21,7 @@ package mcptest;
 #       ;save
 
 use strict;
-use diagnostics;
+#use diagnostics;
 use warnings;
 
 # Modules used by this plugin

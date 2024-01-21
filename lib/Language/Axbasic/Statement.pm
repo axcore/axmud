@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2022 A S Lewis
+# Copyright (C) 2011-2024 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # Lesser Public License as published by the Free Software Foundation, either version 3 of the
@@ -18,7 +18,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -182,6 +182,10 @@
         package Language::Axbasic::Statement::waitxp;
         package Language::Axbasic::Statement::warning;
         package Language::Axbasic::Statement::while;
+        package Language::Axbasic::Statement::winaddgauge;
+        package Language::Axbasic::Statement::winaddcongauge;
+        package Language::Axbasic::Statement::windelgauge;
+        package Language::Axbasic::Statement::winsetgauge;
         package Language::Axbasic::Statement::write;
         package Language::Axbasic::Statement::writewin;
     }
@@ -1266,7 +1270,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -1457,7 +1461,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -1468,6 +1472,8 @@
 
     # ADDGAUGE expression , expression [ , expression ] [ , expression ] [ , expression ]
     # ADDCONGAUGE expression , expression [ , expression ] [ , expression ] [ , expression ]
+    # WINADDGAUGE expression , expression [ , expression ] [ , expression ] [ , expression ]
+    # WINADDCONGAUGE expression , expression [ , expression ] [ , expression ] [ , expression ]
 
     ##################
     # Methods
@@ -1677,177 +1683,50 @@
         }
 
         # Tell the Script task to add the gauge
-        if ($self->keyword eq 'addcongauge') {
-            $addFlag = TRUE;
-        } else {
-            $addFlag = FALSE;
-        }
+        if ($self->keyword eq 'addgauge') {
 
-        $self->scriptObj->parentTask->addGauge(
-            $number,
-            $label,
-            $addFlag,
-            $fullCol,
-            $emptyCol,
-            $labelCol,
-        );
+            $self->scriptObj->parentTask->addMainWinGauge(
+                $number,
+                $label,
+                FALSE,
+                $fullCol,
+                $emptyCol,
+                $labelCol,
+            );
 
-        # Implementation complete
-        return 1;
-    }
-}
+        } elsif ($self->keyword eq 'addcongauge') {
 
-{ package Language::Axbasic::Statement::addstatus;
+            $self->scriptObj->parentTask->addMainWinGauge(
+                $number,
+                $label,
+                TRUE,
+                $fullCol,
+                $emptyCol,
+                $labelCol,
+            );
 
-    use strict;
-    use warnings;
-    use diagnostics;
+        } elsif ($self->keyword eq 'winaddgauge' && $self->scriptObj->parentTask->winObj) {
 
-    use Glib qw(TRUE FALSE);
+            $self->scriptObj->parentTask->addTaskWinGauge(
+                $number,
+                $label,
+                FALSE,
+                $fullCol,
+                $emptyCol,
+                $labelCol,
+            );
 
-    @Language::Axbasic::Statement::addstatus::ISA = qw(
-        Language::Axbasic
-        Language::Axbasic::Statement
-    );
+        } elsif ($self->keyword eq 'winaddcongauge' && $self->scriptObj->parentTask->winObj) {
 
-    # ADDSTATUS expression , expression
-    # ADDCONSTATUS expression , expression
-
-    ##################
-    # Methods
-
-    sub parse {
-
-        # Called by LA::Line->parse directly after a call to LA::Statement->new
-        #
-        # Expected arguments
-        #   (none besides $self)
-        #
-        # Return values
-        #   'undef' on improper arguments or if there is an error
-        #   1 otherwise
-
-        my ($self, $check) = @_;
-
-        # Local variables
-        my ($numberExp, $labelExp, $token);
-
-        # Check for improper arguments
-        if (defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->parse', @_);
-        }
-
-        # Convert the compulsory arguments into expressions
-        $numberExp = Language::Axbasic::Expression::Arithmetic->new(
-            $self->scriptObj,
-            $self->tokenGroupObj,
-        );
-
-        if (! defined $numberExp) {
-
-            return $self->scriptObj->setError(
-                'missing_or_illegal_expression',
-                $self->_objClass . '->parse',
+            $self->scriptObj->parentTask->addTaskWinGauge(
+                $number,
+                $label,
+                TRUE,
+                $fullCol,
+                $emptyCol,
+                $labelCol,
             );
         }
-
-        if (! defined $self->tokenGroupObj->shiftMatchingToken(',')) {
-
-            return $self->scriptObj->setError(
-                'syntax_error',
-                $self->_objClass . '->parse',
-            );
-        }
-
-        $labelExp = Language::Axbasic::Expression::Arithmetic->new(
-            $self->scriptObj,
-            $self->tokenGroupObj,
-        );
-
-        if (! defined $labelExp) {
-
-            return $self->scriptObj->setError(
-                'missing_or_illegal_expression',
-                $self->_objClass . '->parse',
-            );
-        }
-
-        # Check that nothing follows the expressions
-        if (! $self->tokenGroupObj->testStatementEnd()) {
-
-            return $self->scriptObj->setError(
-                'unexpected_keywords,_operators_or_expressions',
-                $self->_objClass . '->parse',
-            );
-        }
-
-        # Store the expressions, so $self->implement can retrieve them
-        $self->ivAdd('parseDataHash', 'number', $numberExp);
-        $self->ivAdd('parseDataHash', 'label', $labelExp);
-
-        # Parsing complete
-        return 1;
-    }
-
-    sub implement {
-
-        # Called by LA::Line->implement directly after a call to $self->parse
-        #
-        # Expected arguments
-        #   (none besides $self)
-        #
-        # Return values
-        #   'undef' on improper arguments or if there is an error
-        #   1 otherwise
-
-        my ($self, $check) = @_;
-
-        # Local variables
-        my ($numberExp, $labelExp, $number, $label, $addFlag);
-
-        # Check for improper arguments
-        if (defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->implement', @_);
-        }
-
-        # If the Axbasic script isn't being run from within an Axmud task, ignore the statement
-        if (! $self->scriptObj->parentTask) {
-
-            # Implementation complete. Execution resumes from the next statement
-            return 1;
-        }
-
-        # Retrieve the arguments stored by $self->parse
-        $numberExp = $self->ivShow('parseDataHash', 'number');
-        $labelExp = $self->ivShow('parseDataHash', 'label');
-
-        # Evaluate each expression
-        $number = $numberExp->evaluate();
-        $label = $labelExp->evaluate();
-
-        # Check that the status bar number and label are valid. $number must be an integer, >= 0
-        if ($number =~ m/\D/ || $number < 0) {
-
-            return $self->scriptObj->setError(
-                'invalid_status_bar_number',
-                $self->_objClass . '->implement',
-            );
-        }
-
-        # Tell the Script task to add the status bar
-        if ($self->keyword eq 'addconstatus') {
-            $addFlag = TRUE;
-        } else {
-            $addFlag = FALSE;
-        }
-
-        $self->scriptObj->parentTask->addStatusBar(
-            $number,
-            $label,
-            $addFlag,
-        );
 
         # Implementation complete
         return 1;
@@ -1858,7 +1737,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -2049,7 +1928,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -2236,11 +2115,168 @@
     }
 }
 
+{ package Language::Axbasic::Statement::addstatus;
+
+    use strict;
+    use warnings;
+#   use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    @Language::Axbasic::Statement::addstatus::ISA = qw(
+        Language::Axbasic
+        Language::Axbasic::Statement
+    );
+
+    # ADDSTATUS expression , expression
+    # ADDCONSTATUS expression , expression
+    # WINADDSTATUS expression , expression
+    # WINADDCONSTATUS expression , expression
+
+    ##################
+    # Methods
+
+    sub parse {
+
+        # Called by LA::Line->parse directly after a call to LA::Statement->new
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if there is an error
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my ($numberExp, $labelExp, $token);
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->parse', @_);
+        }
+
+        # Convert the compulsory arguments into expressions
+        $numberExp = Language::Axbasic::Expression::Arithmetic->new(
+            $self->scriptObj,
+            $self->tokenGroupObj,
+        );
+
+        if (! defined $numberExp) {
+
+            return $self->scriptObj->setError(
+                'missing_or_illegal_expression',
+                $self->_objClass . '->parse',
+            );
+        }
+
+        if (! defined $self->tokenGroupObj->shiftMatchingToken(',')) {
+
+            return $self->scriptObj->setError(
+                'syntax_error',
+                $self->_objClass . '->parse',
+            );
+        }
+
+        $labelExp = Language::Axbasic::Expression::Arithmetic->new(
+            $self->scriptObj,
+            $self->tokenGroupObj,
+        );
+
+        if (! defined $labelExp) {
+
+            return $self->scriptObj->setError(
+                'missing_or_illegal_expression',
+                $self->_objClass . '->parse',
+            );
+        }
+
+        # Check that nothing follows the expressions
+        if (! $self->tokenGroupObj->testStatementEnd()) {
+
+            return $self->scriptObj->setError(
+                'unexpected_keywords,_operators_or_expressions',
+                $self->_objClass . '->parse',
+            );
+        }
+
+        # Store the expressions, so $self->implement can retrieve them
+        $self->ivAdd('parseDataHash', 'number', $numberExp);
+        $self->ivAdd('parseDataHash', 'label', $labelExp);
+
+        # Parsing complete
+        return 1;
+    }
+
+    sub implement {
+
+        # Called by LA::Line->implement directly after a call to $self->parse
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if there is an error
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my ($numberExp, $labelExp, $number, $label, $addFlag);
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->implement', @_);
+        }
+
+        # If the Axbasic script isn't being run from within an Axmud task, ignore the statement
+        if (! $self->scriptObj->parentTask) {
+
+            # Implementation complete. Execution resumes from the next statement
+            return 1;
+        }
+
+        # Retrieve the arguments stored by $self->parse
+        $numberExp = $self->ivShow('parseDataHash', 'number');
+        $labelExp = $self->ivShow('parseDataHash', 'label');
+
+        # Evaluate each expression
+        $number = $numberExp->evaluate();
+        $label = $labelExp->evaluate();
+
+        # Check that the status bar number and label are valid. $number must be an integer, >= 0
+        if ($number =~ m/\D/ || $number < 0) {
+
+            return $self->scriptObj->setError(
+                'invalid_status_bar_number',
+                $self->_objClass . '->implement',
+            );
+        }
+
+        # Tell the Script task to add the status bar
+        if ($self->keyword eq 'addstatus') {
+            $self->scriptObj->parentTask->addMainWinStatusBar($number, $label, FALSE);
+        } elsif ($self->keyword eq 'addconstatus') {
+            $self->scriptObj->parentTask->addMainWinStatusBar($number, $label, TRUE);
+        } elsif ($self->keyword eq 'winaddstatus') {
+            $self->scriptObj->parentTask->addTaskWinStatusBar($number, $label, FALSE);
+        } elsif ($self->keyword eq 'winaddconstatus') {
+            $self->scriptObj->parentTask->addTaskWinStatusBar($number, $label, TRUE);
+        }
+
+        # Implementation complete
+        return 1;
+    }
+}
+
 { package Language::Axbasic::Statement::addtimer;
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -2431,7 +2467,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -2622,7 +2658,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -2712,7 +2748,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -2796,7 +2832,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -2902,7 +2938,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -3167,7 +3203,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -3359,7 +3395,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -3465,7 +3501,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -3552,7 +3588,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -3692,7 +3728,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -3779,7 +3815,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -3853,7 +3889,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -3967,7 +4003,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -4062,7 +4098,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -4216,7 +4252,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -4226,6 +4262,7 @@
     );
 
     # DELGAUGE expression
+    # WINDELGAUGE expression
 
     ##################
     # Methods
@@ -4327,7 +4364,11 @@
         }
 
         # Tell the Script task to delete the gauge
-        $self->scriptObj->parentTask->deleteGauge($number);
+        if ($self->keyword eq 'delgauge') {
+            $self->scriptObj->parentTask->deleteMainWinGauge($number);
+        } elsif ($self->keyword eq 'windelgauge') {
+            $self->scriptObj->parentTask->deleteTaskWinGauge($number);
+        }
 
         # Implementation complete
         return 1;
@@ -4338,7 +4379,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -4492,7 +4533,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -4641,7 +4682,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -4795,7 +4836,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -4805,6 +4846,7 @@
     );
 
     # DELSTATUS expression
+    # WINDELSTATUS expression
 
     ##################
     # Methods
@@ -4906,7 +4948,11 @@
         }
 
         # Tell the Script task to delete the status bar
-        $self->scriptObj->parentTask->deleteStatusBar($number);
+        if ($self->keyword eq 'delstatus') {
+            $self->scriptObj->parentTask->deleteMainWinStatusBar($number);
+        } elsif ($self->keyword eq 'windelstatus') {
+            $self->scriptObj->parentTask->deleteTaskWinStatusBar($number);
+        }
 
         # Implementation complete
         return 1;
@@ -4917,7 +4963,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -5070,7 +5116,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -5223,7 +5269,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -5483,7 +5529,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -5583,7 +5629,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -5822,7 +5868,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -5909,7 +5955,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -6236,7 +6282,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
     # Include module here, as well as in Axbasic.pm, so that .../t/00-compile.t won't fail
@@ -6380,7 +6426,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -6494,7 +6540,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -6702,7 +6748,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -6789,7 +6835,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -7149,7 +7195,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -7240,7 +7286,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -7381,7 +7427,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -7520,7 +7566,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -7647,7 +7693,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -7996,7 +8042,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -8382,7 +8428,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -8685,7 +8731,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -8780,7 +8826,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -8858,7 +8904,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -8993,7 +9039,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -9099,7 +9145,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -9205,7 +9251,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -9482,7 +9528,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -9581,7 +9627,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -9772,7 +9818,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -10240,7 +10286,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -10329,7 +10375,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -10418,7 +10464,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -10749,7 +10795,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -10889,7 +10935,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -11026,7 +11072,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -11209,7 +11255,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -11399,7 +11445,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -11572,7 +11618,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -11754,7 +11800,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -11927,7 +11973,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -12081,7 +12127,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -12268,7 +12314,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -12407,7 +12453,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -12562,7 +12608,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -12743,7 +12789,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -12890,7 +12936,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -13039,7 +13085,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -13222,7 +13268,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -13361,7 +13407,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -13467,7 +13513,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -13587,7 +13633,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -13866,7 +13912,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -13995,7 +14041,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -14120,7 +14166,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -14259,7 +14305,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -14389,7 +14435,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -14530,7 +14576,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -14640,7 +14686,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -14757,7 +14803,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -14882,7 +14928,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -15021,7 +15067,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -15148,7 +15194,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -15287,7 +15333,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -15426,7 +15472,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -15565,7 +15611,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -15717,7 +15763,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -15844,7 +15890,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -15987,7 +16033,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -16114,7 +16160,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -16266,7 +16312,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -16383,7 +16429,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -16500,7 +16546,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -16627,7 +16673,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -16785,7 +16831,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -17250,7 +17296,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -17379,7 +17425,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -17537,7 +17583,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -17593,7 +17639,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -17711,7 +17757,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -17914,7 +17960,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -18058,7 +18104,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -18107,7 +18153,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -18261,7 +18307,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -18338,7 +18384,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -18522,7 +18568,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -18679,7 +18725,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -18879,7 +18925,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -19038,7 +19084,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -19158,7 +19204,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -19168,6 +19214,7 @@
     );
 
     # SETGAUGE expression , expression , expression
+    # WINSETGAUGE expression , expression , expression
 
     ##################
     # Methods
@@ -19330,7 +19377,11 @@
         }
 
         # Tell the Script task to set the gauge's value
-        $self->scriptObj->parentTask->setGauge($number, $val, $maxVal);
+        if ($self->keyword eq 'setgauge') {
+            $self->scriptObj->parentTask->setMainWinGauge($number, $val, $maxVal);
+        } elsif ($self->keyword eq 'winsetgauge') {
+            $self->scriptObj->parentTask->setTaskWinGauge($number, $val, $maxVal);
+        }
 
         # Implementation complete
         return 1;
@@ -19341,7 +19392,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -19461,7 +19512,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -19581,7 +19632,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -19591,6 +19642,7 @@
     );
 
     # SETSTATUS expression , expression , expression
+    # WINSETSTATUS expression , expression , expression
 
     ##################
     # Methods
@@ -19753,7 +19805,11 @@
         }
 
         # Tell the Script task to set the status bar's text
-        $self->scriptObj->parentTask->setStatusBar($number, $val, $maxVal);
+        if ($self->keyword eq 'setstatus') {
+            $self->scriptObj->parentTask->setMainWinStatusBar($number, $val, $maxVal);
+        } else {
+            $self->scriptObj->parentTask->setTaskWinStatusBar($number, $val, $maxVal);
+        }
 
         # Implementation complete
         return 1;
@@ -19764,7 +19820,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -19884,7 +19940,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -20004,7 +20060,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -20162,7 +20218,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -20266,7 +20322,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -20411,7 +20467,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -20556,7 +20612,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -20701,7 +20757,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -20846,7 +20902,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -20981,7 +21037,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -21087,7 +21143,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -21170,7 +21226,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -21366,7 +21422,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -21481,7 +21537,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -21568,7 +21624,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -21726,7 +21782,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -21908,7 +21964,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -22038,7 +22094,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -22118,7 +22174,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -22261,7 +22317,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -22404,7 +22460,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -22550,7 +22606,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -22716,7 +22772,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -22882,7 +22938,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -22962,7 +23018,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -23128,7 +23184,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -23208,7 +23264,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -23374,7 +23430,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -23542,7 +23598,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -23672,7 +23728,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -23815,7 +23871,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -23944,7 +24000,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -24087,7 +24143,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -24253,7 +24309,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -24406,7 +24462,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -24486,7 +24542,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -24654,7 +24710,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -24734,7 +24790,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -24902,7 +24958,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -25016,7 +25072,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -25176,7 +25232,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -25290,7 +25346,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 

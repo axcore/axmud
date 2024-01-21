@@ -10,10 +10,10 @@ DELALIAS expression
          current world (unless an earlier PROFILE statement specified a
          different profile).
       The following Axbasic statements are therefore interchangeable:
-      
+
          DELALIAS "name"
          CLIENT "deletealias name"
-         
+
       If Axmud can't delete the alias, execution of the Axbasic script continues
          as normal. No error message is generated.
 

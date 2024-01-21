@@ -1,0 +1,14 @@
+Getornament$ (string)
+
+   Synopsis:
+      Gets the type of exit ornament
+
+   Notes:
+      Exit ornaments give more information about an exit, and are drawn in a
+         different way by the automapper.
+
+      This function retrieves an exit's ornament, returning one of the values
+         "break", "pick", "lock", "open", "impass", "mystery" or "none",
+         corresponding to the values used in calls to Setornament().
+      The value "none" is returned if the exit has no ornament, or if it
+         doesn't exist.

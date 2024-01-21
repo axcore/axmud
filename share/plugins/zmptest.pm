@@ -22,7 +22,7 @@ package zmptest;
 #   A ZMP package called 'axmud' is created every time Axmud starts (before connecting to any world)
 
 use strict;
-use diagnostics;
+#use diagnostics;
 use warnings;
 
 # Standard BEGIN / END functions

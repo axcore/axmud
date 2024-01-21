@@ -4,11 +4,11 @@ CLS
       Empties the task window
 
    Notes:
-      If the Axbasic script isn't being run from within a task, the CLS 
-         statement is ignored (and no error message is generated). Execution 
+      If the Axbasic script isn't being run from within a task, the CLS
+         statement is ignored (and no error message is generated). Execution
          continues immediately with the next statement.
       CLS has exactly the same functionality as EMPTYWIN.
-      If you want to empty text in the 'main' window, you can use the client 
+      If you want to empty text in the 'main' window, you can use the client
          command ';cls'.
 
    Examples:

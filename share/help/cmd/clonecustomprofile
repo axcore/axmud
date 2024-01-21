@@ -1,20 +1,20 @@
 ccp / clonecustomprofile      Clones a custom profile
- 
+
    Format:
       ;ccp <original> <copy>
                Clones the custom profile <original> into one named <copy>
- 
+
    Notes:
-      Besides having a guild profile and a race profile, characters can have any 
+      Besides having a guild profile and a race profile, characters can have any
          number of custom profiles marked as a current profile.
-      This operation clones the profile and all its associated cages, including 
+      This operation clones the profile and all its associated cages, including
          all the interfaces stored in the cages.
-      Profile names must be no longer than 16 characters, contain only A-Z, a-z, 
-         underlines and 0-9 (not the first character) and not be one of Axmud's 
+      Profile names must be no longer than 16 characters, contain only A-Z, a-z,
+         underlines and 0-9 (not the first character) and not be one of Axmud's
          reserved names (see the ';listreserved' command). Non-Latin alphabets
          are acceptable.
       The operation will fail if a profile called <copy> already exists, or if
          one named <original> doesn't exist.
- 
+
    User commands:
       ccp / clonecustom / clonecustomprof / clonecustomprofile

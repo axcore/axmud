@@ -1,10 +1,10 @@
 ltr / listtrigger             Lists triggers
- 
+
    Format:
       ;ltr
                Lists all triggers belonging to current profiles
       ;ltr -w
-               Lists all triggers associated with the current world 
+               Lists all triggers associated with the current world
       ;ltr -g
                Lists all triggers associated with the current guild
       ;ltr -r
@@ -18,6 +18,6 @@ ltr / listtrigger             Lists triggers
                Lists all triggers belonging to the profile <prof>
       ;ltr -i
                Lists all active trigger interfaces
- 
+
    User commands:
       ltr / listtrig / listtrigger

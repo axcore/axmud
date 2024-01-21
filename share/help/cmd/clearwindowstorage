@@ -1,27 +1,27 @@
 cws / clearwindowstorage      Clears stored 'grid' window sizes/positions
- 
+
    Format:
       ;cws                    Clears all stored sizes/positions
       ;cws <name>             Clears stored size/position for the window <name>
- 
+
    Notes:
       The workspace grid is an invisible grid, spanning the whole available
-         workspace, on which Axmud tries to arrange its windows so that they 
+         workspace, on which Axmud tries to arrange its windows so that they
          don't overlap (as far as possible).
-      Only 'grid' windows (including the 'main' window, task windows and the 
-         automapper window) are arranged on the workspace grid. Temporary 
-         windows, including the object viewer window and all edit, preference,
+      Only 'grid' windows (including the 'main' window, task windows and the
+         automapper window) are arranged on the workspace grid. Temporary
+         windows, including the data viewer window and all edit, preference,
          wizard and dialogue windows, are not affected.
 
       Workspace grids are not available on all systems, and can be turned off on
          all systems (using ';disactivategrid').
       When workspace grids are turned off, new windows are created using a
-         default size and position. 
+         default size and position.
       In that situation, you can use the ';togglewindowstorage' command to store
          the size and position of all 'grid' windows. The next time the same
          window is opened (either in a new session, or when you restart Axmud),
          it's created using the same size and position.
-         
+
       This command clears stored sizes/positions. If you specify a window
          <name>, only that window's stored size/position is cleared; otherwise,
          all stored size/positions are cleared.

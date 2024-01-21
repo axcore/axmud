@@ -1,49 +1,49 @@
 ams / addminionstring         Adds a minion string to the world model
- 
+
    Format:
-      ;ams <string> -a        
+      ;ams <string> -a
       ;ams <string> -a -o
                Adds a new minion <string> corresponding to a new minion object
 
-      ;ams <string> -m <number> 
+      ;ams <string> -m <number>
       ;ams <string> -m <number> -o
                Adds a new minion <string> corresponding to an existing object
 
-      ;ams <string>           
+      ;ams <string>
       ;ams <string> -o
                Adds a new minion <string> (only)
- 
-   Notes:      
+
+   Notes:
       The world model stores information about the regions, rooms, characters
          and objects in the game world. The automapper window uses the model to
          display its maps.
-      The world model can also keep track of minions - non-player characters 
+      The world model can also keep track of minions - non-player characters
          which are controlled directly by players.
 
       Minion objects are treated a little differently to other model objects.
          The world model stores a collection of strings which the world uses to
          describe a minion. The world might use more than one string for the
-         same minion, so you can use this command to add multiple minion 
+         same minion, so you can use this command to add multiple minion
          strings, each of which corresponds to a single minion - for example,
          you might add 'smelly orc', 'hairy orc' and 'big ugly orc'.
       If you want to associate a minion string with a minion object in the world
-         model, you can do so; that minion object can then be edited in the 
+         model, you can do so; that minion object can then be edited in the
          usual way. However, sometimes you'll only need Axmud to remember that
          certain strings refer to one of your minions.
 
-      If you use the '-a' switch, a new string corresponding to a new minion 
+      If you use the '-a' switch, a new string corresponding to a new minion
          object is added to the world model.
-      If you use the '-m' switch, a new string corresponding to an existing 
-         minion object is added to the world model. <number> is the model number 
+      If you use the '-m' switch, a new string corresponding to an existing
+         minion object is added to the world model. <number> is the model number
          of the existing minion object.
-      If you don't specify '-a' or '-m', only the minion string itself is added 
+      If you don't specify '-a' or '-m', only the minion string itself is added
          to the world model.
 
       You can also specify that a minion is owned by another player by using the
-         '-o' switch. Otherwise, the world model will assume that the minion is 
+         '-o' switch. Otherwise, the world model will assume that the minion is
          controlled by you.
       If <string> contains spaces, it must be enclosed within diamond brackets
          <...>. Minion strings are case-insensitive.
- 
+
    User commands:
       ams / addminionstring

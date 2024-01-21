@@ -5,25 +5,25 @@ POKEREPLACE axmud-object-property, expression
       Replaces a value in an Axmud internal list property
 
    Notes:
-      POKE gives Axbasic scripts access to some of Axmud's internal data (see 
-         the help for the POKE statement for a full explanation). 
+      POKE gives Axbasic scripts access to some of Axmud's internal data (see
+         the help for the POKE statement for a full explanation).
       POKEREPLACE is similar to POKE, but it only modifies list properties such
-         as "world.current.doorPatternList". It cannot be used to modify a 
+         as "world.current.doorPatternList". It cannot be used to modify a
          scalar property such as "world.current.longName", a hash property such
-         as "world.current.currencyHash" or a Perl object such as 
+         as "world.current.currencyHash" or a Perl object such as
          "world.current".
       POKEREPLACE replaces a single value in the list property at the index
          matching the value of the first expression. Perl list indices begin at
-         0, so using an index of 9 modifies the tenth value in the list. The 
+         0, so using an index of 9 modifies the tenth value in the list. The
          value of the second expression replaces the old value. If you don't
-         specify a second expression, the Perl special value 'undef' replaces 
+         specify a second expression, the Perl special value 'undef' replaces
          the old value.
       Much of Axmud's internal data is read-only, and cannot be modified with
          POKE or with this statement. If you try to modify a read-only property
          you will get an 'operation failure' error.
 
-   Warning: 
-      Do not try to modify Axmud's internal data unless you know what you are 
+   Warning:
+      Do not try to modify Axmud's internal data unless you know what you are
          doing. Read the Axmud manual before you try to POKE anything. (The
          examples below are safe, but backup your data first.)
 

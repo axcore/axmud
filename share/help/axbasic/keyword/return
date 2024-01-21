@@ -5,7 +5,7 @@ RETURN
       Returns from a subroutine
 
    Notes:
-      In scripts without line numbers, the expression is evaluated and used as 
+      In scripts without line numbers, the expression is evaluated and used as
          the subroutine's return value.
       In scripts with line numbers, RETURN is used without an expression (and
          there is no return value).

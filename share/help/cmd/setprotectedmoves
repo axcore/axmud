@@ -4,16 +4,16 @@ spm / setprotectedmoves       Turns protected moves on/off
       ;spm on                 Turns protected moves on
       ;spm off                Turns protected moves off
       ;spm                    Shows whether protected moves are on or off
- 
+
    Notes:
-      When protected moves are on, Axmud will not send world commands like 
-         'east' or 'out' through exits which are marked as impassable, or which 
-         haven't been added to your maps - as long as the automapper knows the 
-         character's current location. Using protected moves may reduce the 
-         number of times that you have to reset the automapper's current room 
+      When protected moves are on, Axmud will not send world commands like
+         'east' or 'out' through exits which are marked as impassable, or which
+         haven't been added to your maps - as long as the automapper knows the
+         character's current location. Using protected moves may reduce the
+         number of times that you have to reset the automapper's current room
          manually.
-      Protected moves can be turned on and off from the automapper window's menu 
-         or by using this command. 
+      Protected moves can be turned on and off from the automapper window's menu
+         or by using this command.
       Protected moves are not available when 'redirect mode' is turned on (see
          the help for ';redirectmode').
 

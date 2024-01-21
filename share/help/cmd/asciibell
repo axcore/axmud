@@ -1,16 +1,16 @@
 asb / asciibell               Turns ASCII bells on/off
- 
+
    Format:
       ;asb on                 Turns ASCII bells on
       ;asb off                Turns ASCII bells off
       ;asb                    Shows whether ASCII bells are on or off
- 
-   Notes:       
+
+   Notes:
       Some worlds send the ASCII character #7, for which the client should play
-         some kind of beep/bell sound. 
+         some kind of beep/bell sound.
       This command turns ASCII bells on and off. If ASCII bells are turned on
-         but sound is turned off in general, you won't hear anything (see the 
+         but sound is turned off in general, you won't hear anything (see the
          help for ';sound').
-         
+
    User commands:
       asb / bell / asciibell

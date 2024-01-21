@@ -1,8 +1,8 @@
 dcs / deletecolourscheme      Deletes a colour scheme
- 
+
    Format:
       ;dcs <name>             Deletes the colour scheme <name>
- 
+
    Notes:
       A textview is a scrolling area of a window where text is displayed. A
          colour scheme determines the colours and font used in the textview.

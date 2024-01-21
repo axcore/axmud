@@ -1,13 +1,13 @@
 ecm / editroomcomponent       Opens an 'edit' window for the room component
- 
+
    Format:
       ;ecm <name>             Edits the room component <name>
 
    Notes:
       A room statement is a complete description of a room - typically including
-         a room title, a verbose description, a list of exits and/or the 
+         a room title, a verbose description, a list of exits and/or the
          contents of the room.
-      When a room statement is received from the world, the Locator task 
+      When a room statement is received from the world, the Locator task
          attempts to extract those components. If it succeeds, the contents of
          each component are available to any code that needs it.
 

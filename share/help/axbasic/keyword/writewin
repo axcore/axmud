@@ -8,7 +8,7 @@ WRITEWIN expression [ , expression [ , expression ... ] ]
       The remaining optional expressions specify how the text should be
          displayed. The expressions can be any of the following strings, in any
          order:
-         
+
          "empty"     - Empties the window, before writing the text
          "echo"      - Writes the text on the end of the last line
          "nl"        - Writes the text on a new line (default)
@@ -27,7 +27,7 @@ WRITEWIN expression [ , expression [ , expression ... ] ]
 
       Any of the colour expressions can be specified IN CAPITALS to make them
          bolder (e.g. "RED", "GREEN", "UL_BLUE").
-      Only the first text colour and the first underlay colour are used. 
+      Only the first text colour and the first underlay colour are used.
          Multiple text/underlay colours are ignored.
       If the task window has been 'painted' with a PAINTWIN statement, using the
          WRITEWIN statement with any colour strings causes the window to revert
@@ -40,15 +40,15 @@ WRITEWIN expression [ , expression [ , expression ... ] ]
    Examples:
       ! No special effects
       WRITEWIN "Hello world!"
-      
+
       ! Green text
       WRITEWIN "Hello world!", "green"
-      
+
       ! Green text on a yellow underlay
       WRITEWIN "Hello world!", "green", "ul_yellow"
-      
+
       ! Green text on a yellow underlay, in italics and underlined
       WRITEWIN "Hello world!", "underline", "italics, "ul_yellow", "green"
-      
+
       ! Empty the window first
       WRITEWIN "Hello world!", "empty"

@@ -8,12 +8,12 @@ DEF function-name ( variable-name [ , variable-name ... ] ) = expression
          more parameters.
       Before evaluating the function, Axbasic assigns the value of each argument
          to the parameter variable (in the example below, the value 10 is
-         assigned to x). The expression is evaluated and becomes the return 
+         assigned to x). The expression is evaluated and becomes the return
          value of the function.
-      Once defined in a DEF statement, the function can be used in an 
+      Once defined in a DEF statement, the function can be used in an
          expression.
       'variable-name' must be a scalar variable (not an array variable).
-      For multi-line functions, use subroutines (see the help for SUB and 
+      For multi-line functions, use subroutines (see the help for SUB and
          GOSUB).
 
    Examples:

@@ -1,17 +1,17 @@
 ufw / unflashwindow           Resets a 'grid' window's urgency hint
- 
+
    Format:
       ;ufw <number>           Stops window <number> flashing
       ;ufw                    Stops the session's 'main' window flashing
- 
+
    Notes:
       The effect of setting a window's urgency hint varies depending on the
          desktop environment you're using. Often, it causes the window to flash
          in the panel at the bottom (or top) of the screen. This command resets
          the urgency hint, which should stop a window from flashing.
-      This command can be used even if ';flashwindow' wasn't the cause of a 
+      This command can be used even if ';flashwindow' wasn't the cause of a
          flashing window.
-      For a list of 'grid' window <number>s, use the ';listwindow' command.   
- 
+      For a list of 'grid' window <number>s, use the ';listwindow' command.
+
    User commands:
       ufw / unflashwin / unflashwindow

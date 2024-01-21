@@ -1,0 +1,27 @@
+Setrandomexit (number)
+Setrandomexit (number, string)
+
+   Synopsis:
+      Sets a random exit
+
+   Notes:
+      'Random' exits have more than one possible destination. The world may
+         choose a random destination, each time your character goes through the
+         exit, or the destination may depend on the game state.
+
+      This function converts a non-random exit into a random exit, or
+         vice-versa.
+
+      'number' is the number of the exit in the exit model.
+
+      'string', if specified, is the type of random exit. Only three types can
+         be set with this function.
+      "same" creates a random exit, leading to a room in the same region.
+      "any" creates a random exit, leading to a room in any region.
+      "temp" creates a random exit in a temporary region. The temporary region
+         is created, whenever your character goes through the exit.
+
+      If you don't specify 'string' at all, then the random exit is converted
+         back to a non-random exit.
+      Returns 1 on success, 0 on failure (including when you specify an invalid
+         'string').

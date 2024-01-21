@@ -1,15 +1,15 @@
 chi / chatinfo                Shows information about chat sessions
- 
+
    Format:
       ;chi                    Shows the information
- 
+
    Notes:
       The Chat task is used to chat with other players directly via telnet.
          Calls can be placed (or accepted) with any user whose MUD client uses
          the zChat or MudMaster protocols.
-      This command shows a summary of current chat sessions. For more 
+      This command shows a summary of current chat sessions. For more
          information about each chat session, type ';info' in individual Chat
          task windows.
- 
+
    User commands:
       chi / chatinfo

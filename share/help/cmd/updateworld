@@ -1,19 +1,19 @@
 uwo / updateworld             Updates the current world profile
- 
+
    Format:
       ;uwo                    Updates the profile
       ;uwo <file>             Updates the profile using <file>
- 
+
    Notes:
       This command can be used when you want to update the current world profile
-         with properties from a better world profile, without destroying any 
-         changes you've already made. (This is usually better than importing the 
-         other profile directly, because all of the guilds, races, characters, 
-         cages, interfaces and maps stored with your current world profile won't 
+         with properties from a better world profile, without destroying any
+         changes you've already made. (This is usually better than importing the
+         other profile directly, because all of the guilds, races, characters,
+         cages, interfaces and maps stored with your current world profile won't
          be destroyed.)
-      ';updateworld' is useful in two situations. Firstly, every version of 
-         Axmud comes with a number of pre-configured worlds. If you've just 
-         installed a new version of Axmud, you might want to update your world 
+      ';updateworld' is useful in two situations. Firstly, every version of
+         Axmud comes with a number of pre-configured worlds. If you've just
+         installed a new version of Axmud, you might want to update your world
          profile with properties from the new pre-configured world.
       Secondly, if someone else creates a better world profile and offers to
          share it with you, you can use ';updateworld' to import its properties.
@@ -34,8 +34,8 @@ uwo / updateworld             Updates the current world profile
       Occasionally it might be better to use the ';restoreworld' command, which
          completely replaces the current world (and its associated guilds,
          races, characters, cages, interfaces and maps) with a pre-configured
-         world. However, ';restoreworld' can not be used while actually 
-         connected to a world, nor can it be used to import a world profile that 
+         world. However, ';restoreworld' can not be used while actually
+         connected to a world, nor can it be used to import a world profile that
          someone has offered to share.
 
    User commands:

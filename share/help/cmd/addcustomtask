@@ -1,19 +1,19 @@
 act / addcustomtask           Adds a task to the custom tasklist
- 
+
    Format:
       ;act <task> <name>
                Adds the <task> to the custom tasklist
       ;act <task> <name> <switches>
                Adds the <task> to the custom tasklist with the specified
                   settings
- 
+
    Notes:
       Custom tasks are created by the user, given a handy name (like 'mytask' or
          'fast_escape') and then started by the user whenever needed.
       In addition, some of the custom task's default settings can be modified.
          For example, if you create a custom Divert task, you can change the
          colours it uses; these colours will then apply every time you start the
-         custom task using the ';startcustomtask' command (but the default 
+         custom task using the ';startcustomtask' command (but the default
          colours will apply if you use ';starttask divert' instead).
       Custom tasks are not associated with any particular mud; if you like, you
          can give your custom tasks names like 'deathmud_escape' to remind
@@ -24,34 +24,34 @@ act / addcustomtask           Adds a task to the custom tasklist
           formal name (e.g. 'status_task').
       (Use the ';listtasklabel' command to list all task labels.)
 
-      Custom task names must be no longer than 16 characters, contain only A-Z, 
-         a-z, underlines and 0-9 (not the first character) and not be one of 
+      Custom task names must be no longer than 16 characters, contain only A-Z,
+         a-z, underlines and 0-9 (not the first character) and not be one of
          Axmud's reserved names (see the ';listreserved' command). Non-Latin
          alphabets are acceptable.
-      The operation will fail if a custom task called <name> already exists or 
+      The operation will fail if a custom task called <name> already exists or
          if <name> is invalid.
 
-      <switches> specify the settings that will apply to the task, once it 
+      <switches> specify the settings that will apply to the task, once it
          actually starts.
       Group 1 <switches>: 0 or 1 switch from:
          -i               - Start <task> immediately (default setting)
-         -e <other_task>  - Wait for <other_task> to exist, before starting 
+         -e <other_task>  - Wait for <other_task> to exist, before starting
                                <task>
          -n <other_task>  - Wait for <other_task> to not exist, before starting
                                <task>
          -s <other_task>  - Wait for <other_task> to start, then stop, before
                                starting <task>
          -t <minutes>     - Start <task> <minutes> from now
- 
+
       Group 2 <switches>: 0 or 1 switch from:
          -d               - Run <task> for an unlimited amount of time (default)
          -f <minutes>     - Run the task for <minutes>
          -u <timer>       - Run the task until the task loop reaches <timer>
-                               (seconds since the session began) 
- 
-      Group 3 <switches>: 0 or 1 switch from: 
+                               (seconds since the session began)
+
+      Group 3 <switches>: 0 or 1 switch from:
          -w               - Run the task without opening its own window (if it
                                usually opens one when it starts)
- 
+
    User commands:
       act / addcustomtask

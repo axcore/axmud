@@ -1,20 +1,20 @@
 srd / setredirectmode         Fine-tunes redirect mode
- 
+
    Format:
       ;srd -p                 Converts only primary directions
       ;srd -b                 Converts both primary and secondary directions
       ;srd -a                 Converts most directions
 
       ;srd                    Shows redirect mode status
- 
+
    Notes:
-      Redirect mode automatically converts commands like 'north' into 'sail 
+      Redirect mode automatically converts commands like 'north' into 'sail
          north', or 's' into 'sail s'. Use the ';redirectmode' command to turn
          redirect mode on or off.
-      By default, redirect mode works on any world command that looks like a 
-         direction, including all the directions stored in the current 
-         dictionary as well as the names of any exits in the automapper's 
-         current room. This command allows you to be more specific about which 
+      By default, redirect mode works on any world command that looks like a
+         direction, including all the directions stored in the current
+         dictionary as well as the names of any exits in the automapper's
+         current room. This command allows you to be more specific about which
          kinds of directions should be converted.
       Primary directions are the cardinal directions 'north', 'southwest' etc
          (including abbrevitions like 'n' and 'sw'), as well as 'up' and 'down'.

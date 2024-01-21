@@ -1,8 +1,8 @@
 hpt / helptest                Tests Axmud help files
- 
+
    Format:
       ;hpt                    Tests all help files
- 
+
    Notes:
       This is a debugging command which tests whether the format of Axmud's help
          files is correct. In particular, it checks that each file doesn't
@@ -10,6 +10,6 @@ hpt / helptest                Tests Axmud help files
       The help files use the default set of user commands. If you have added or
          removed any of them (using ';addusercommand' or ';deleteusercommand),
          this command will flag up a possible error.
- 
+
    User commands:
       hpt / testhelp / helptest

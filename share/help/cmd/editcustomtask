@@ -1,7 +1,7 @@
 ect / editcustomtask          Opens an 'edit' window for a custom task
- 
+
    Format:
       ;ect <name>             Edits the custom task called <name>
-  
+
    User commands:
       ect / editcustomtask

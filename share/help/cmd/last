@@ -1,5 +1,5 @@
 last / last                   Reads aloud the last piece of text
- 
+
    Format:
       ;last                   Reads aloud the last piece of text
 
@@ -9,14 +9,14 @@ last / last                   Reads aloud the last piece of text
          interrupted. When reading text one sentence at a time, or one word at
          a time, the last sentence or word in the current line is replayed;
          otherwise, a whole line is replayed.
-      When running the version of Axmud that's optimised for visually-impaired 
-         users, the down cursor key can be used as a shortcut to this command 
-         (but only once Axmud is connected to a world, in online or offline 
-         mode.)   
-      Axmud remembers the last 1000 pieces of text that have been read aloud, so 
+      When running the version of Axmud that's optimised for visually-impaired
+         users, the down cursor key can be used as a shortcut to this command
+         (but only once Axmud is connected to a world, in online or offline
+         mode.)
+      Axmud remembers the last 1000 pieces of text that have been read aloud, so
          you can re-read them at any time.
       See also the help for ';split', ';skip', ';unskip', ';first', ';resume',
          ';shutup' and ';freekeys'.
-     
+
    User commands:
       last

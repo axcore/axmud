@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2022 A S Lewis
+# Copyright (C) 2011-2024 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -19,7 +19,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -136,7 +136,11 @@
         }
 
         # Tab setup, using the standard grid size
-        my $grid = $self->addTab('_Line', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Line',
+            ['Display buffer line'],
+        );
 
         # Set up the rest of the tab
         $self->lineTab($grid);
@@ -198,8 +202,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->lineTab', @_);
         }
 
-#       # Tab setup (already created by the calling function)
-#       my $grid = $self->addTab('_Line', $self->notebook);
+        # Tab setup (already created by the calling function)
 
         # Left column
         $self->addLabel($grid, '<b>Display buffer line</b>',
@@ -325,7 +328,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Tags', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Tags',
+            [$axmud::SCRIPT . ' colour/style tags'],
+        );
 
         # Axmud colour/style tags
         $self->addLabel($grid, '<b>' . $axmud::SCRIPT . ' colour/style tags</b>',
@@ -515,7 +522,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Parts', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Parts',
+            ['Line parts'],
+        );
 
         # Line parts
         $self->addLabel($grid, '<b>Line parts</b>',
@@ -575,7 +586,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_MXP', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_MXP',
+            ['MXP tag properties'],
+        );
 
         # MXP tag properties
         $self->addLabel($grid, '<b>MXP tag properties</b>',
@@ -692,7 +707,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -809,7 +824,11 @@
         }
 
         # Tab setup, using the standard grid size
-        my $grid = $self->addTab('_Item', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Item',
+            ['Instruction buffer item'],
+        );
 
         # Set up the rest of the tab
         $self->itemTab($grid);
@@ -846,8 +865,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->itemTab', @_);
         }
 
-#       # Tab setup (already created by the calling function)
-#       my $grid = $self->addTab('_Item', $self->notebook);
+        # Tab setup (already created by the calling function)
 
         # Left column
         $self->addLabel($grid, '<b>Instruction buffer item</b>',
@@ -905,7 +923,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -1022,7 +1040,11 @@
         }
 
         # Tab setup, using the standard grid size
-        my $grid = $self->addTab('_Item', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Item',
+            ['Command buffer item'],
+        );
 
         # Set up the rest of the tab
         $self->itemTab($grid);
@@ -1083,8 +1105,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->itemTab', @_);
         }
 
-#       # Tab setup (already created by the calling function)
-#       my $grid = $self->addTab('_Item', $self->notebook);
+        # Tab setup (already created by the calling function)
 
         # Left column
         $self->addLabel($grid, '<b>Command buffer item</b>',
@@ -1147,7 +1168,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Moves', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Moves',
+            ['Move settings'],
+        );
 
         # Move settings
         $self->addLabel($grid, '<b>Move settings</b>',
@@ -1214,198 +1239,11 @@
     # Accessors - get
 }
 
-{ package Games::Axmud::EditWin::Generic::Cage;
-
-    use strict;
-    use warnings;
-    use diagnostics;
-
-    use Glib qw(TRUE FALSE);
-
-    our @ISA = qw(
-        Games::Axmud::Generic::EditWin Games::Axmud::Generic::ConfigWin
-        Games::Axmud::Generic::FreeWin Games::Axmud::Generic::Win Games::Axmud
-    );
-
-    ##################
-    # Constructors
-
-#   sub new {}                  # Inherited from GA::Generic::ConfigWin
-
-    ##################
-    # Methods
-
-    # Standard window object functions
-
-#   sub winSetup {}             # Inherited from GA::Generic::ConfigWin
-
-#   sub winEnable {}            # Inherited from GA::Generic::ConfigWin
-
-#   sub winDesengage {}         # Inherited from GA::Generic::FreeWin
-
-#   sub winDestroy {}           # Inherited from GA::Generic::FreeWin
-
-#   sub winShowAll {}           # Inherited from GA::Generic::Win
-
-#   sub drawWidgets {}          # Inherited from GA::Generic::ConfigWin
-
-#   sub redrawWidgets {}        # Inherited from GA::Generic::Win
-
-    # ->signal_connects
-
-    # Other functions
-
-#   sub checkEditObj {}         # Inherited from GA::Generic::ConfigWin
-
-#   sub enableButtons {}        # Inherited from GA::Generic::ConfigWin
-
-#   sub enableSingleButton {}   # Inherited from GA::Generic::ConfigWin
-
-#   sub setupNotebook {}        # Inherited from GA::Generic::ConfigWin
-
-#   sub expandNotebook {}       # Inherited from GA::Generic::ConfigWin
-
-#   sub saveChanges {}          # Inherited from GA::Generic::ConfigWin
-
-    sub compileCages {
-
-        # Compiles a list of cages, starting with this one, continuing with its inferior cage, and
-        #   with that cage's inferior cage (and so on)
-        # Returns the list, with this cage in first position, and the least superior cage in last
-        #   position
-        # If this cage has no inferior, the list will contain only this cage
-        #
-        # Expected arguments
-        #   (none besides $self)
-        #
-        # Return values
-        #   An empty list on improper arguments
-        #   Otherwise, the list described above
-
-        my ($self, $check) = @_;
-
-        # Local variables
-        my (
-            $lowerCage, $lowestCage,
-            @cageList,
-        );
-
-        # Check for improper arguments
-        if (defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->compileCages', @_);
-        }
-
-        # Check this cage's inferior, and that cage's inferior, and so on until the least superior
-        #   cage is found
-        $lowerCage = $self->editObj;
-
-        do {
-
-            my $thisCage = $self->session->ivShow('inferiorCageHash', $lowerCage->name);
-
-            if (defined $thisCage) {
-
-                push (@cageList, $lowerCage);
-                $lowerCage = $thisCage;
-
-            } else {
-
-                push (@cageList, $lowerCage);
-                $lowestCage = $lowerCage;
-            }
-
-        } until ($lowestCage);
-
-        return @cageList;
-    }
-
-    # Notebook tabs used by more than one cage 'edit' window
-
-    sub nameTab {
-
-        # Name tab - called by $self->setupNotebook
-        #
-        # Expected arguments
-        #   $grid   - The Gtk3::Grid for this tab
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $grid, $check) = @_;
-
-        # Local variables
-        my $obj;
-
-        # Check for improper arguments
-        if (! defined $grid || defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->nameTab', @_);
-        }
-
-#       # Tab setup (already created by the calling function)
-#       my $grid = $self->addTab('_Name', $self->notebook);
-
-        # Left column
-        $self->addLabel($grid, '<b>Cage settings</b>',
-            0, 12, 0, 1);
-
-        $self->addLabel($grid, '<i>Cage</i>',
-            1, 12, 1, 2);
-        $self->addLabel($grid, 'Cage name',
-            2, 5, 2, 3);
-        $self->addEntry($grid, 'name', FALSE,
-            5, 12, 2, 3, 42, 42);               # Cage's max names are 42 characters
-
-        $self->addLabel($grid, 'Cage type',
-            2, 5, 3, 4);
-        $self->addEntry($grid, 'cageType', FALSE,
-            5, 7, 3, 4, 8, 8);
-
-        $self->addLabel($grid, 'Inferior cage',
-            2, 5, 4, 5);
-        my $entry = $self->addEntry($grid, undef, 0,
-            5, 12, 4, 5);
-        if ($self->session->ivExists('inferiorCageHash', $self->editObj->name)) {
-
-            $obj = $self->session->ivShow('inferiorCageHash', $self->editObj->name);
-            $entry->set_text($obj->name);
-        }
-
-        $self->addLabel($grid, '<i>Associated profile</i>',
-            1, 12, 5, 6);
-
-        $self->addLabel($grid, 'Profile name',
-            2, 5, 6, 7);
-        $self->addEntry($grid, 'profName', FALSE,
-            5, 7, 6, 7, 16, 16);
-
-        # Right column
-        $self->addCheckButton($grid, 'Standard cage', 'standardFlag', FALSE,
-            8, 12, 3, 4);
-
-        $self->addLabel($grid, 'Profile category',
-            8, 10, 6, 7);
-        $self->addEntry($grid, 'profCategory', FALSE,
-            10, 12, 6, 7);
-
-        # Tab complete
-        return 1;
-    }
-
-    ##################
-    # Accessors - set
-
-    ##################
-    # Accessors - get
-}
-
 { package Games::Axmud::EditWin::Cage::Cmd;
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -1529,7 +1367,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Commands', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Commands',
+            ['Interpolated command strings'],
+        );
 
         # Interpolated command strings
         $self->addLabel($grid, '<b>Interpolated command strings</b>',
@@ -1599,7 +1441,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Words', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Words',
+            ['Interpolated word strings'],
+        );
 
         # Interpolated word strings
         $self->addLabel($grid, '<b>Interpolated word strings</b>',
@@ -1819,911 +1665,11 @@
     # Accessors - get
 }
 
-{ package Games::Axmud::EditWin::Generic::InterfaceCage;
-
-    use strict;
-    use warnings;
-    use diagnostics;
-
-    use Glib qw(TRUE FALSE);
-
-    our @ISA = qw(
-        Games::Axmud::EditWin::Generic::Cage Games::Axmud::Generic::EditWin
-        Games::Axmud::Generic::ConfigWin Games::Axmud::Generic::FreeWin Games::Axmud::Generic::Win
-        Games::Axmud
-    );
-
-    ##################
-    # Constructors
-
-#   sub new {}                  # Inherited from GA::Generic::ConfigWin
-
-    ##################
-    # Methods
-
-    # Standard window object functions
-
-#   sub winSetup {}             # Inherited from GA::Generic::ConfigWin
-
-#   sub winEnable {}            # Inherited from GA::Generic::ConfigWin
-
-#   sub winDesengage {}         # Inherited from GA::Generic::FreeWin
-
-#   sub winDestroy {}           # Inherited from GA::Generic::FreeWin
-
-#   sub winShowAll {}           # Inherited from GA::Generic::Win
-
-#   sub drawWidgets {}          # Inherited from GA::Generic::ConfigWin
-
-#   sub redrawWidgets {}        # Inherited from GA::Generic::Win
-
-    # ->signal_connects
-
-    # Other functions
-
-#   sub checkEditObj {}         # Inherited from GA::Generic::ConfigWin
-
-#   sub enableButtons {}        # Inherited from GA::Generic::ConfigWin
-
-#   sub enableSingleButton {}   # Inherited from GA::Generic::ConfigWin
-
-    sub setupNotebook {
-
-        # Called by $self->winEnable
-        # Creates the first tab for the notebook. The remaining tabs are created by
-        #   $self->expandNotebook
-        #
-        # Expected arguments
-        #   (none besides $self)
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $check) = @_;
-
-        # Check for improper arguments
-        if (defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->setupNotebook', @_);
-        }
-
-        # Tab setup, using the standard grid size
-        my $grid = $self->addTab('_Name', $self->notebook);
-
-        # Interface cage 'edit' windows have some non-standard IVs, used to allow one tab to affect
-        #   the contents of others and to allow the same code to be inherited efficiently by
-        #   different types of interface cage 'edit' window
-        # The values for each IV are set in the inheriting object's ->interfacesTab function
-        $self->{slWidget1} = undef;
-        $self->{slWidget2} = undef;
-        $self->{singular} = undef;
-        $self->{plural} = undef;
-        $self->{interfaceModelObj} = undef;
-        $self->{stimulus} = undef;
-        $self->{response} = undef;
-
-        # Set up the rest of the tab
-        $self->nameTab($grid);
-
-        # Set up the remaining tabs
-        $self->expandNotebook();
-
-        # Tab complete
-        return 1;
-    }
-
-    sub expandNotebook {
-
-        # Called by $self->setupNotebook
-        # Set up additional tabs for the notebook, depending on which type of cage is being edited
-        #
-        # Expected arguments
-        #   (none besides $self)
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $check) = @_;
-
-        # Check for improper arguments
-        if (defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->expandNotebook', @_);
-        }
-
-        $self->interfacesTab();
-
-        return 1;
-    }
-
-#   sub saveChanges {}          # Inherited from GA::Generic::ConfigWin
-
-    # Notebook tabs used by more than one cage 'edit' window
-
-    sub interfaces1Tab {
-
-        # Interfaces1 tab
-        #
-        # Expected arguments
-        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $innerNotebook, $check) = @_;
-
-        # Local variables
-        my @columnList;
-
-        # Check for improper arguments
-        if (! defined $innerNotebook || defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->interfaces1Tab', @_);
-        }
-
-        # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
-
-        # Interace list
-        $self->addLabel($grid, '<b>' . ucfirst($self->singular) . ' list</b>',
-            0, 12, 0, 1);
-        $self->addLabel($grid,
-            '<i>List of ' . $self->plural . ' belonging to this cage (showing '
-            . $self->{singular} . ' attributes)</i>',
-            1, 12, 1, 2);
-
-        # Add a simple list
-        @columnList = (
-            ucfirst($self->singular) . ' name', 'text',
-            'Enabled', 'bool',
-            'Stimulus', 'text',
-            'Response', 'text',
-        );
-
-        my $slWidget = $self->addSimpleList($grid, undef, \@columnList,
-            1, 12, 2, 8);
-
-        # Unusual step - save the list reference in an IV
-        $self->ivPoke('slWidget2', $slWidget);
-
-        # Initialise the list
-        $self->interfaces1Tab_refreshList();
-
-        # Add some buttons and entry boxes
-        $self->interfacesTab_addButtons($grid, $slWidget, (scalar @columnList / 2));
-
-        # Tab complete
-        return 1;
-    }
-
-    sub interfaces1Tab_refreshList {
-
-        # Called by $self->interfaces1Tab (etc) to reset the GA::Obj::SimpleList
-        #
-        # Expected arguments
-        #   (none besides $self)
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $check) = @_;
-
-        # Local variables
-        my (@sortedList, @dataList);
-
-        # Check for improper arguments
-        if (defined $check) {
-
-            return $axmud::CLIENT->writeImproper(
-                $self->_objClass . '->interfaces1Tab_refreshList',
-                @_,
-            );
-        }
-
-        # Get a sorted list of interface objects from the cage
-        @sortedList
-            = sort {lc($a->name) cmp lc($b->name)} ($self->editObj->ivValues('interfaceHash'));
-
-        # Compile the simple list data
-        foreach my $interfaceObj (@sortedList) {
-
-            push (@dataList,
-                $interfaceObj->name,
-                $interfaceObj->enabledFlag,
-                $interfaceObj->stimulus,
-                $interfaceObj->response,
-            );
-        }
-
-        # Reset the simple list (page 2 has four columns)
-        $self->resetListData($self->slWidget2, [@dataList], 4);
-
-        return 1;
-    }
-
-    sub interfaces2Tab {
-
-        # Interfaces2 tab
-        #
-        # Expected arguments
-        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $innerNotebook, $check) = @_;
-
-        # Local variables
-        my (@columnList, @cageList);
-
-        # Check for improper arguments
-        if (! defined $innerNotebook || defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->interfaces2Tab', @_);
-        }
-
-        # Tab setup
-        my $grid = $self->addTab('Page _2', $innerNotebook);
-
-        # Interface list
-        $self->addLabel($grid, '<b>' . ucfirst($self->singular) . ' list</b>',
-            0, 12, 0, 1);
-        $self->addLabel($grid,
-            '<i>List of ' . $self->plural . ' belonging to this cage (compared with lower-priority'
-            . ' cages)</i>',
-            1, 12, 1, 2);
-
-        # Add a simple list. The number of columns is equal to the number of cages between this one
-        #   and the least superior cage. (If this cage has no inferior, there's only one column)
-        # Each column (except the first one) has a title containing the cage's associated profile
-        @cageList = $self->compileCages();
-
-        # Use different text in the column for the first item in @cageList
-        @columnList = (ucfirst($self->singular) . ' name', 'text');
-        shift @cageList;
-
-        foreach my $cage (@cageList) {
-
-            push (@columnList,
-                '[' . $cage->profCategory . ': ' . $cage->profName . ']',
-                'text',
-            );
-        }
-
-        my $slWidget = $self->addSimpleList($grid, undef, \@columnList,
-            1, 12, 2, 8);
-
-        # Unusual step - save the list reference in an IV
-        $self->ivPoke('slWidget1', $slWidget);
-
-        # Initialise the list
-        $self->interfaces2Tab_refreshList();
-
-        # Add some buttons and entry boxes
-        $self->interfacesTab_addButtons($grid, $slWidget, (scalar @columnList / 2));
-
-        # Tab complete
-        return 1;
-    }
-
-    sub interfaces2Tab_refreshList {
-
-        # Called by $self->interfaces2Tab (etc) to reset the GA::Obj::SimpleList
-        #
-        # Expected arguments
-        #   (none besides $self)
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $check) = @_;
-
-        # Local variables
-        my (@sortedList, @cageList, @dataList);
-
-        # Check for improper arguments
-        if (defined $check) {
-
-            return $axmud::CLIENT->writeImproper(
-                $self->_objClass . '->interfaces2Tab_refreshList',
-                @_,
-            );
-        }
-
-        # Get a sorted list of interface names from the cage
-        @sortedList = sort {lc($a) cmp lc($b)} ($self->editObj->ivKeys('interfaceHash'));
-        # Get a list of columns in the simple list, which depends on how many cages there are
-        @cageList = $self->compileCages();
-
-        # Compile the simple list data
-        OUTER: foreach my $interfaceName (@sortedList) {
-
-            INNER: foreach my $cage (@cageList) {
-
-                my $interfaceObj;
-
-                if ($cage->ivExists('interfaceHash', $interfaceName)) {
-
-                    # By supplying only two arguments, we instruct ->ivShow to give us the value
-                    #   stored in the cage, and not to consult its inferiors (if no value is stored
-                    #   there)
-                    $interfaceObj = $cage->ivShow('interfaceHash', $interfaceName);
-                    push (@dataList, $interfaceObj->name);
-
-                } else {
-
-                    # An interface called $interfaceName isn't stored in $cage
-                    push (@dataList, undef);
-                }
-            }
-        }
-
-        # Reset the simple list
-        $self->resetListData($self->slWidget1, [@dataList], scalar @cageList);
-
-        return 1;
-    }
-
-    sub interfacesTab_addButtons {
-
-        # Called by $self->interfaces1Tab and $self->interfaces2Tab to create the editing buttons
-        #   beneath the GA::Obj::SimpleList
-        #
-        # Expected arguments
-        #   $grid       - The current Gtk3::Grid displayed in the notebook
-        #   $slWidget   - The GA::Obj::SimpleList
-        #   $columns    - The number of columns
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $grid, $slWidget, $columns, $check) = @_;
-
-        # Local variables
-        my (
-            $interfaceModelObj, $title,
-            @comboList,
-        );
-
-        # Check for improper arguments
-        if (! defined $grid || ! defined $slWidget || ! defined $columns || defined $check) {
-
-            return $axmud::CLIENT->writeImproper(
-                $self->_objClass . '->interfacesTab_addButtons',
-                @_,
-            );
-        }
-
-        # Get the corresponding interface model object
-        $interfaceModelObj = $axmud::CLIENT->ivShow('interfaceModelHash', $self->singular);
-
-        # Add entry boxes and edit buttons
-        $self->addLabel(
-            $grid, ucfirst($self->singular) . ' stimulus <i>(' . $self->stimulus . ')</i>',
-            1, 3, 8, 9);
-        # For aliases, leave room for an extra button beside the entry
-        my ($entry, $combo);
-        if ($self->editObj->cageType eq 'trigger') {
-
-            $entry = $self->addEntryWithIcon($grid, undef, 'regex', 1, undef,
-                3, 12, 8, 9);
-
-        } elsif ($self->editObj->cageType eq 'alias') {
-
-            $entry = $self->addEntryWithIcon($grid, undef, 'regex', 1, undef,
-                3, 10, 8, 9);
-
-        } elsif ($self->editObj->cageType eq 'macro') {
-
-            $entry = $self->addEntryWithIcon($grid, undef, 'string', 1, undef,
-                3, 12, 8, 9);
-
-        } elsif ($self->editObj->cageType eq 'timer') {
-
-            $entry = $self->addEntryWithIcon(
-                $grid, undef, \&interfacesTab_checkInterval, undef, undef,
-                3, 12, 8, 9);
-
-        } elsif ($self->editObj->cageType eq 'hook') {
-
-            $entry =  $self->addEntryWithIcon(
-                $grid, undef, \&interfacesTab_checkHookEvent, undef, undef,
-                3, 6, 8, 9);
-
-            # Hooks get an extra combo, for inserting a standard hook event
-            @comboList = sort {$a cmp $b} ($interfaceModelObj->ivKeys('hookEventHash'));
-            $title = 'Or use standard hook event:';
-
-            $combo = $self->addComboBox($grid, undef, \@comboList, $title,
-                TRUE,               # No 'undef' value used
-                6, 12, 8, 9);
-            $combo->signal_connect('changed' => sub {
-
-                my $text = $combo->get_active_text();
-                if ($text ne $title) {
-
-                    $entry->set_text($text);
-                    # Reset the combo
-                    $combo->set_active(0);
-                }
-            });
-        }
-
-        my $label = $self->addLabel(
-            $grid, ucfirst($self->singular) . ' response <i>(' . $self->response . ')</i>',
-            1, 3, 9, 10);
-        my $entry2 = $self->addEntryWithIcon($grid, undef, 'string', 1, undef,
-            3, 12, 9, 10);
-
-        if ($self->singular eq 'trigger') {
-
-            # (Need a bit of extra room for all those checkbuttons)
-            $self->addLabel($grid, 'Name <i>(optional)</i>',
-                1, 2, 10, 11);
-
-        } else {
-
-            $self->addLabel($grid, 'Name <i>(optional)</i>',
-                1, 3, 10, 11);
-        }
-
-        my ($entry3, $checkButton, $checkButton2, $checkButton3, $checkButton4);
-        if ($self->singular eq 'trigger') {
-
-            $entry3 = $self->addEntryWithIcon($grid, undef, 'string', undef, undef,
-                2, 4, 10, 11);
-
-            $checkButton = $self->addCheckButton($grid, 'Starts enabled', undef, TRUE,
-                4, 6, 10, 11);
-            $checkButton2 = $self->addCheckButton($grid, 'Splitter', undef, TRUE,
-                6, 8, 10, 11);
-            $checkButton3 = $self->addCheckButton($grid, 'Rewriter', undef, TRUE,
-                8, 10, 10, 11);
-            $checkButton4 = $self->addCheckButton($grid, 'Temporary', undef, TRUE,
-                10, 12, 10, 11);
-
-            $checkButton2->signal_connect('toggled' => sub {
-
-                if ($checkButton2->get_active()) {
-                    $self->ivPoke('response', 'pattern');
-                } elsif ($checkButton3->get_active()) {
-                    $self->ivPoke('response', 'substitution');
-                } else {
-                    $self->ivPoke('response', 'instruction');
-                }
-
-                $label->set_markup(
-                    ucfirst($self->singular) . ' response <i>(' . $self->response . ')</i>',
-                );
-            });
-
-            $checkButton3->signal_connect('toggled' => sub {
-
-                if ($checkButton2->get_active()) {
-                    $self->ivPoke('response', 'pattern');
-                } elsif ($checkButton3->get_active()) {
-                    $self->ivPoke('response', 'substitution');
-                } else {
-                    $self->ivPoke('response', 'instruction');
-                }
-
-                $label->set_markup(
-                    ucfirst($self->singular) . ' response <i>(' . $self->response . ')</i>',
-                );
-            });
-
-        } else {
-
-            $entry3 = $self->addEntryWithIcon($grid, undef, 'string', undef, undef,
-                3, 6, 10, 11);
-
-            $checkButton = $self->addCheckButton($grid, 'Starts enabled', undef, TRUE,
-                6, 9, 10, 11);
-
-            $checkButton4 = $self->addCheckButton($grid, 'Temporary', undef, TRUE,
-                9, 12, 10, 11);
-        }
-        # New interfaces should be enabled by default
-        $checkButton->set_active(TRUE);
-
-        my $button = $self->addButton(
-            $grid,
-            'Add',
-            'Add the ' . $self->singular . ' to this cage',
-            undef,
-            1, 2, 11, 12,
-            TRUE,           # Irreversible
-        );
-        $button->signal_connect('clicked' => sub {
-
-            my (
-                $stimulus, $response, $interfaceName, $enabledFlag, $stimulusSwitch,
-                $responseSwitch, $nameSwitch, $enabledSwitch, $splitterFlag, $splitterSwitch,
-                $splitterString, $rewriterFlag, $rewriterSwitch, $rewriterString, $tempSwitch,
-                $tempString, $result,
-            );
-
-            # Get the interface stimulus
-            if ($self->checkEntryIcon($entry, $entry2, $entry3)) {
-
-                $stimulus = $entry->get_text();             # Compulsory
-
-                # Custom hook events must start with an underscore. Add one, if the user did not
-                if (
-                    $self->singular eq 'hook'
-                    && ! $interfaceModelObj->ivExists('hookEventHash', $stimulus)
-                    && ! ($stimulus =~ m/^\_/)
-                ) {
-                    $stimulus = '_' . $stimulus;
-                }
-            }
-
-            if (defined $stimulus && $self->editObj->profName) {
-
-                # Get the interface response and name
-                $response = $entry2->get_text();            # Compulsory
-                $interfaceName = $entry3->get_text();       # Optional
-                if ($checkButton->get_active()) {
-                    $enabledFlag = 1;
-                } else {
-                    $enabledFlag = 0;
-                }
-
-                $stimulusSwitch
-                    = $self->interfaceModelObj->ivShow('compulsorySwitchHash', 'stimulus');
-                $responseSwitch
-                    = $self->interfaceModelObj->ivShow('compulsorySwitchHash', 'response');
-                $nameSwitch
-                    = $self->interfaceModelObj->ivShow('optionalSwitchHash', 'name');
-                $enabledSwitch
-                    = $self->interfaceModelObj->ivShow('optionalSwitchHash', 'enabled');
-
-                if ($self->singular eq 'trigger') {
-
-                    if ($checkButton2->get_active()) {      # Non-standard attribute
-                        $splitterFlag = 1;
-                    } else {
-                        $splitterFlag = 0;
-                    }
-
-                    $splitterSwitch
-                        = $self->interfaceModelObj->ivShow('optionalSwitchHash', 'splitter');
-                    $splitterString = ' -' . $splitterSwitch . ' ' . $splitterFlag;
-
-                    if ($checkButton3->get_active()) {      # Non-standard attribute
-                        $rewriterFlag = 1;
-                    } else {
-                        $rewriterFlag = 0;
-                    }
-
-                    $rewriterSwitch
-                        = $self->interfaceModelObj->ivShow('optionalSwitchHash', 'rewriter');
-                    $rewriterString = ' -' . $rewriterSwitch . ' ' . $rewriterFlag;
-
-                } else {
-
-                    $splitterString = '';
-                    $rewriterString = '';
-                }
-
-                if ($checkButton4->get_active()) {
-
-                    $tempSwitch
-                        = $self->interfaceModelObj->ivShow('optionalSwitchHash', 'temporary');
-                    $tempString = ' -' . $tempSwitch . ' 1';
-
-                } else {
-
-                    $tempString = '';
-                }
-
-                if ($stimulus =~ m/[\<|\>]/ || $response =~ m/[\<|\>]/) {
-
-                    $self->showMsgDialogue(
-                        'Add ' . $self->singular,
-                        'error',
-                        'This version of ' . $axmud::SCRIPT . ' can\'t process diamond bracket'
-                        . ' characters; please use . characters in your regular expressions'
-                        . ' instead',
-                        'ok',
-                    );
-
-                # Try to add a new trigger/alias/macro/timer/hook object belonging to this cage
-                } elsif ($interfaceName) {
-
-                    $result = $self->session->pseudoCmd(
-                        'add' . $self->singular
-                        . ' -' . $stimulusSwitch . ' <' . $stimulus
-                        . '> -' . $responseSwitch . ' <' . $response
-                        . '> -' . $enabledSwitch . ' ' . $enabledFlag
-                        . $splitterString . $rewriterString . $tempString
-                        . ' -' . $nameSwitch . ' <' . $interfaceName
-                        . '> -d ' . $self->editObj->profName,
-                        $self->pseudoCmdMode,
-                    );
-
-                } else {
-
-                    $result = $self->session->pseudoCmd(
-                        'add' . $self->singular
-                        . ' -' . $stimulusSwitch . ' <' . $stimulus
-                        . '> -' . $responseSwitch . ' <' . $response
-                        . '> -' . $enabledSwitch . ' ' . $enabledFlag
-                        . $splitterString . $rewriterString . $tempString
-                        . ' -d ' . $self->editObj->profName,
-                        $self->pseudoCmdMode,
-                    );
-                }
-
-                if ($result) {
-
-                    # Refresh (both) lists
-                    $self->interfaces1Tab_refreshList();
-                    $self->interfaces2Tab_refreshList();
-                }
-            }
-        });
-
-        my $button2 = $self->addButton(
-            $grid,
-            'Edit...',
-            'Edit the selected ' . $self->singular,
-            undef,
-            2, 3, 11, 12,
-        );
-        $button2->signal_connect('clicked' => sub {
-
-            my ($interfaceName, $interfaceObj, $childWinObj);
-
-            ($interfaceName) = $self->getSimpleListData($slWidget, 0);
-            if (defined $interfaceName) {
-
-                # Check that there's an interface with that name stored in this cage
-                if ($self->editObj->ivExists('interfaceHash', $interfaceName)) {
-
-                    # Open up an interface 'edit' window to edit the (inactive) interface
-                    $interfaceObj = $self->editObj->ivShow('interfaceHash', $interfaceName);
-
-                    $childWinObj = $self->createFreeWin(
-                        'Games::Axmud::EditWin::Interface::' . ucfirst($self->singular),
-                        $self,
-                        $self->session,
-                        'Edit ' . $self->singular . ' interface \'' . $interfaceName . '\'',
-                        $interfaceObj,
-                        FALSE,                          # Not temporary
-                    );
-
-                    if ($childWinObj) {
-
-                        # When the 'edit' window closes, update widgets and/or IVs
-                        $self->add_childDestroy(
-                            $childWinObj,
-                            'interfaces1Tab_refreshList',
-                            [],         # No arguments required
-                        );
-
-                        $self->add_childDestroy(
-                            $childWinObj,
-                            'interfaces2Tab_refreshList',
-                            [],         # No arguments required
-                        );
-                    }
-                }
-            }
-        });
-
-        my $button3 = $self->addButton(
-            $grid,
-            'Delete',
-            'Delete the selected ' . $self->singular,
-            undef,
-            3, 4, 11, 12,
-            TRUE,               # Irreversible
-        );
-        $button3->signal_connect('clicked' => sub {
-
-            my ($interfaceName, $profName);
-
-            ($interfaceName) = $self->getSimpleListData($slWidget, 0);
-            $profName = $self->editObj->profName;
-
-            if (defined $interfaceName && defined $profName) {
-
-                # Check that there's an interface with that name stored in this cage
-                if ($self->editObj->ivExists('interfaceHash', $interfaceName)) {
-
-                    # Delete the interface
-                    $self->session->pseudoCmd(
-                        'delete' . $self->singular . ' ' . $interfaceName . ' -d ' . $profName,
-                        $self->pseudoCmdMode,
-                    );
-
-                    # Refresh (both) lists
-                    $self->interfaces1Tab_refreshList();
-                    $self->interfaces2Tab_refreshList();
-                }
-            }
-        });
-
-        my $button4 = $self->addButton(
-            $grid,
-            'Dump',
-            'Display this list of ' . $self->plural . ' in the \'main\' window',
-            undef,
-            6, 9, 11, 12,
-        );
-        $button4->signal_connect('clicked' => sub {
-
-            my $profName = $self->editObj->profName;
-            if ($profName) {
-
-                # Display the data
-                $self->session->pseudoCmd(
-                    'list' . $self->singular . ' -d ' . $profName,
-                    $self->pseudoCmdMode,
-                );
-
-                # Refresh (both) lists
-                $self->interfaces1Tab_refreshList();
-                $self->interfaces2Tab_refreshList();
-            }
-        });
-
-        my $button5 = $self->addButton(
-            $grid,
-            'Refresh list',
-            'Refresh the list of ' . $self->plural,
-            undef,
-            9, 12, 11, 12,
-        );
-        $button5->signal_connect('clicked' => sub {
-
-            # Refresh (both) lists
-            $self->interfaces1Tab_refreshList();
-            $self->interfaces2Tab_refreshList();
-        });
-
-        if ($self->editObj->cageType eq 'alias') {
-
-            my $button6 = $self->addButton(
-                $grid,
-                'Recommended: add ^...$',
-                'Adds symbols to match the pattern against the whole world command',
-                undef,
-                10, 12, 8, 9,
-            );
-
-            $button6->signal_connect('clicked' => sub {
-
-                my $string = $entry->get_text();
-
-                if ($self->checkEntryIcon($entry)) {
-
-                    $string = $entry->get_text();
-                    if (! ($string =~ m/^\^/)) {
-
-                        $string = '^' . $string;
-                    }
-
-                    if (! ($string =~ m/\$$/)) {
-
-                        $string .= '$';
-                    }
-
-                    $entry->set_text($string);
-                }
-            });
-        }
-
-        return 1;
-    }
-
-    sub interfacesTab_checkInterval {
-
-        # Called by $self->interfacesTab_addButtons to check a timer interval is valid
-        #
-        # Expected arguments
-        #   $value      - The value to check, should be a number (minimum value 0.01), or a 24-hour
-        #                   clock time in the form HH::MM
-        #
-        # Return values
-        #   'undef' on improper arguments or if $value is invalid
-        #   1 if $value is valid
-
-        my ($self, $value, $check) = @_;
-
-        # Check for improper arguments
-        if (! defined $value || defined $check) {
-
-            return $axmud::CLIENT->writeImproper(
-                $self->_objClass . '->interfacesTab_checkInterval',
-                @_,
-            );
-        }
-
-        if (
-            ! $axmud::CLIENT->floatCheck($value, 0.1)
-            && ! ($value =~ m/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/)
-            && ! ($value =~ m/^99\:[0-5][0-9]$/)
-        ) {
-            return undef;
-        } else {
-            return 1;
-        }
-    }
-
-    sub interfacesTab_checkHookEvent {
-
-        # Called by $self->interfacesTab_addButtons to check a hook event is valid
-        #
-        # Expected arguments
-        #   $value  - The value to check, should be a standard hook event, or a custom event whose
-        #               name starts with an underline, followed by an alphanumeric character
-        #
-        # Return values
-        #   'undef' on improper arguments or for an invalid hook event
-        #   1 for a valid hook event
-
-        my ($self, $value, $check) = @_;
-
-        # Local variables
-        my $interfaceModelObj;
-
-        # Check for improper arguments
-        if (! defined $value || defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->hookEventCheck', @_);
-        }
-
-        $interfaceModelObj = $axmud::CLIENT->ivShow('interfaceModelHash', 'hook');
-
-        # Custom hook events must begin with an underline, followed by an alphanumeric character
-        # If the user doesn't type an underline, the 'Add' button will add one
-        if (
-            ! $interfaceModelObj->ivExists('hookEventHash', $value)
-            && ! ($value =~ m/^\_[A-Za-z0-9]/)
-            && ! ($value =~ m/^[A-Za-z0-9]/)
-        ) {
-            return undef;
-        } else {
-            return 1;
-        }
-    }
-
-    ##################
-    # Accessors - set
-
-    ##################
-    # Accessors - get
-
-    sub slWidget1
-        { $_[0]->{slWidget1} }
-    sub slWidget2
-        { $_[0]->{slWidget2} }
-    sub singular
-        { $_[0]->{singular} }
-    sub plural
-        { $_[0]->{plural} }
-    sub interfaceModelObj
-        { $_[0]->{interfaceModelObj} }
-    sub stimulus
-        { $_[0]->{stimulus} }
-    sub response
-        { $_[0]->{response} }
-}
-
 { package Games::Axmud::EditWin::Cage::Trigger;
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -2838,7 +1784,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('_Triggers', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, '_Triggers');
 
         # Add tabs to the inner notebook
         $self->interfaces1Tab($innerNotebook);
@@ -2858,7 +1804,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -2973,7 +1919,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('_Aliases', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, '_Aliases');
 
         # Add tabs to the inner notebook
         $self->interfaces1Tab($innerNotebook);
@@ -2993,7 +1939,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -3108,7 +2054,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('_Macros', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, '_Macros');
 
         # Add tabs to the inner notebook
         $self->interfaces1Tab($innerNotebook);
@@ -3128,7 +2074,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -3243,7 +2189,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('T_imers', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, 'T_imers');
 
         # Add tabs to the inner notebook
         $self->interfaces1Tab($innerNotebook);
@@ -3263,7 +2209,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -3378,7 +2324,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('_Hooks', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, '_Hooks');
 
         # Add tabs to the inner notebook
         $self->interfaces1Tab($innerNotebook);
@@ -3398,7 +2344,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -3489,7 +2435,11 @@
         }
 
         # Tab setup, using the standard grid size
-        my $grid = $self->addTab('_Name', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Name',
+            ['Cage settings'],
+        );
 
         # Route cage 'edit' windows have some non-standard IVs, used to allow one tab to affect the
         #   contents of others
@@ -3557,7 +2507,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('_Routes', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, '_Routes');
 
         # Add tabs to the inner notebook
         $self->routes1Tab($innerNotebook);
@@ -3589,7 +2539,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Route list with attributes'],
+        );
 
         # Routes list
         $self->addLabel($grid, '<b>Routes list</b>',
@@ -3703,7 +2657,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _2', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _2',
+            ['Route list with lower-priority cages'],
+        );
 
         # Routes list
         $self->addLabel($grid, '<b>Routes list</b>',
@@ -4141,7 +3099,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -4209,7 +3167,43 @@
 
 #   sub enableSingleButton {}   # Inherited from GA::Generic::ConfigWin
 
-#   sub setupNotebook {}        # Inherited from GA::Generic::ConfigWin
+    sub setupNotebook {
+
+        # Called by $self->winEnable
+        # Creates the first tab for the notebook. The remaining tabs are created by
+        #   $self->expandNotebook
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->setupNotebook', @_);
+        }
+
+        # Tab setup, using the standard grid size
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Name',
+            ['Chat contact settings'],
+        );
+
+        # Set up the rest of the tab
+        $self->nameTab($grid);
+
+        # Set up the remaining tabs
+        $self->expandNotebook();
+
+        # Tab complete
+        return 1;
+    }
 
 #   sub expandNotebook {}       # Inherited from GA::Generic::ConfigWin
 
@@ -4239,8 +3233,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->nameTab', @_);
         }
 
-#       # Tab setup (already created by the calling function)
-#       my $grid = $self->addTab('_Name', $self->notebook);
+        # Tab setup (already created by the calling function)
 
         # Left column
         $self->addLabel($grid, '<b>Chat contact settings</b>',
@@ -4302,7 +3295,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -4370,7 +3363,43 @@
 
 #   sub enableSingleButton {}   # Inherited from GA::Generic::ConfigWin
 
-#   sub setupNotebook {}        # Inherited from GA::Generic::ConfigWin
+    sub setupNotebook {
+
+        # Called by $self->winEnable
+        # Creates the first tab for the notebook. The remaining tabs are created by
+        #   $self->expandNotebook
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->setupNotebook', @_);
+        }
+
+        # Tab setup, using the standard grid size
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Name',
+            ['Colour scheme settings'],
+        );
+
+        # Set up the rest of the tab
+        $self->nameTab($grid);
+
+        # Set up the remaining tabs
+        $self->expandNotebook();
+
+        # Tab complete
+        return 1;
+    }
 
     sub expandNotebook {
 
@@ -4437,7 +3466,7 @@
                 $self->editObj->doModify('saveChanges');
             }
 
-            # Update the current session's object viewer window, if it is open
+            # Update the current session's data viewer window, if it is open
             if ($self->session->viewerWin) {
 
                 $self->session->viewerWin->updateNotebook();
@@ -4474,10 +3503,9 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->nameTab', @_);
         }
 
-#       # Tab setup (already created by the calling function)
-#       my $grid = $self->addTab('_Name', $self->notebook);
+        # Tab setup (already created by the calling function)
 
-        # Colour scheme
+        # Colour scheme settings
         $self->addLabel($grid, '<b>Colour scheme settings</b>',
             0, 12, 0, 1);
         $self->addLabel($grid, 'Name',
@@ -4517,7 +3545,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Colours', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Colours',
+            ['Colour settings'],
+        );
 
         # Colour settings
         $self->addLabel($grid, '<b>Colour settings</b>',
@@ -4769,7 +3801,8 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Colour _overrides', $self->notebook);
+        # N.B. No sub-headings
+        my $grid = $self->addTab($self->notebook, 'Colour _overrides');
 
         # Colour overrides
         $self->addLabel($grid, '<b>Colour overrides</b>',
@@ -4997,7 +4030,8 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Text settings', $self->notebook);
+        # N.B. No sub-headings
+        my $grid = $self->addTab($self->notebook, '_Text settings');
 
         # Text settings
         $self->addLabel($grid, '<b>Text settings</b>',
@@ -5020,6 +4054,7 @@
 
             my $font = $self->showFontSelectionDialogue(
                 'Colour scheme \'' . $self->editObj->name . '\' font',
+                $self->getEditHash_scalarIV('font') . ' ' . $self->getEditHash_scalarIV('fontSize'),
             );
 
             if (defined $font) {
@@ -5110,7 +4145,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -5177,6 +4212,44 @@
 #   sub enableButtons {}        # Inherited from GA::Generic::ConfigWin
 
 #   sub enableSingleButton {}   # Inherited from GA::Generic::ConfigWin
+
+    sub setupNotebook {
+
+        # Called by $self->winEnable
+        # Creates the first tab for the notebook. The remaining tabs are created by
+        #   $self->expandNotebook
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->setupNotebook', @_);
+        }
+
+        # Tab setup, using the standard grid size
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Name',
+            ['Component name', 'Component expected size', 'Component analyse mode'],
+        );
+
+        # Set up the rest of the tab
+        $self->nameTab($grid);
+
+        # Set up the remaining tabs
+        $self->expandNotebook();
+
+        # Tab complete
+        return 1;
+    }
 
     sub expandNotebook {
 
@@ -5299,7 +4372,7 @@
                 $self->editObj->doModify('saveChanges');
             }
 
-            # Update the current session's object viewer window, if it is open
+            # Update the current session's data viewer window, if it is open
             if ($self->session->viewerWin) {
 
                 $self->session->viewerWin->updateNotebook();
@@ -5336,8 +4409,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->nameTab', @_);
         }
 
-#       # Tab setup (already created by the calling function)
-#       my $grid = $self->addTab('_Name', $self->notebook);
+        # Tab setup (already created by the calling function)
 
         # Component name
         $self->addLabel($grid, '<b>Component name</b>',
@@ -5451,7 +4523,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Locator options', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Locator options',
+            ['Locator task options', 'Locator task ignore options'],
+        );
 
         # Locator task options
         $self->addLabel($grid, '<b>Locator task options</b>',
@@ -5490,6 +4566,7 @@
             TRUE,
             1, 13, 5, 6);
 
+        # Locator task ignore options
         $self->addLabel($grid, '<b>Locator task ignore options</b>',
             0, 13, 6, 7);
         $self->addLabel(
@@ -5605,7 +4682,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Other options', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Other options',
+            ['Non-extractable components'],
+        );
 
         # Non-extractable components
         $self->addLabel($grid, '<b>Non-extractable components</b>',
@@ -5646,32 +4727,32 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('_Patterns / tags', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, '_Patterns / tags');
 
         # Add tabs to the inner notebook
 
-        # Start patterns / tags
+        # Start patterns / tags (1/2)
         $self->patternsTags1Tab(
             $innerNotebook,
             'Page _1',
             'startPatternList', 'startTagList', 'startAllFlag', 'startTagMode',
-            '<b>Start patterns / tags</b>',
-            '<i>The start of the component DOES match one of these patterns</i>',
-            '<i>...DOES contain one of these tags</i>',
-            '<i>The start of the component DOES match all of these patterns</i>',
-            '<i>...DOES contain all of these tags</i>',
+            'Start patterns / tags (1/2)',
+            'The start of the component DOES match one of these patterns',
+            '...DOES contain one of these tags',
+            'The start of the component DOES match all of these patterns',
+            '...DOES contain all of these tags',
         );
 
-        # Start patterns / tags (2)
+        # Start patterns / tags (2/2)
         $self->patternsTags1Tab(
             $innerNotebook,
             'Page _2',
             'startNoPatternList', 'startNoTagList', 'startNoAllFlag', 'startNoTagMode',
-            '<b>Start patterns / tags (2)</b>',
-            '<i>The start of the component does NOT match one of these patterns</i>',
-            '<i>...does NOT contain one of these tags</i>',
-            '<i>The start of the component does NOT match all of these patterns</i>',
-            '<i>...does NOT contain all of these tags</i>',
+            'Start patterns / tags (2/2)',
+            'The start of the component does NOT match one of these patterns',
+            '...does NOT contain one of these tags',
+            'The start of the component does NOT match all of these patterns',
+            '...does NOT contain all of these tags',
         );
 
         # Skip patterns / tags
@@ -5679,61 +4760,61 @@
             $innerNotebook,
             'Page _3',
             'skipPatternList', 'skipTagList', 'skipAllFlag', 'skipTagMode',
-            '<b>Skip patterns / tags</b>',
-            '<i>Patterns which mean the line should be ignored</i>',
-            '<i>Tags found on an ignorable line</i>',
-            '<i>Patterns which mean the line should be ignored</i>',
-            '<i>Tags found on an ignorable line</i>',
+            'Skip patterns / tags',
+            'Patterns which mean the line should be ignored',
+            'Tags found on an ignorable line',
+            'Patterns which mean the line should be ignored',
+            'Tags found on an ignorable line',
         );
 
-        # Stop before patterns / tags
+        # Stop before patterns / tags (1/2)
         $self->patternsTags1Tab(
             $innerNotebook,
             'Page _4',
             'stopBeforePatternList', 'stopBeforeTagList', 'stopBeforeAllFlag',
                 'stopBeforeTagMode',
-            '<b>Stop before patterns / tags</b>',
-            '<i>Stop before the first line which DOES match one of these patterns</i>',
-            '<i>...DOES contain one of these tags</i>',
-            '<i>Stop before the first line which DOES match all of these patterns</i>',
-            '<i>...DOES contain all of these tags</i>',
+            'Stop before patterns / tags (1/2)',
+            'Stop before the first line which DOES match one of these patterns',
+            '...DOES contain one of these tags',
+            'Stop before the first line which DOES match all of these patterns',
+            '...DOES contain all of these tags',
         );
 
-        # Stop before patterns / tags (2)
+        # Stop before patterns / tags (2/2)
         $self->patternsTags1Tab(
             $innerNotebook,
             'Page _5',
             'stopBeforeNoPatternList', 'stopBeforeNoTagList', 'stopBeforeNoAllFlag',
                 'stopBeforeNoTagMode',
-            '<b>Stop before patterns / tags (2)</b>',
-            '<i>Stop before the first line which does NOT match one of these patterns</i>',
-            '<i>...does NOT contain one of these tags</i>',
-            '<i>Stop before the first line which does NOT match all of these patterns</i>',
-            '<i>...does NOT contain all of these tags</i>',
+            'Stop before patterns / tags (2/2)',
+            'Stop before the first line which does NOT match one of these patterns',
+            '...does NOT contain one of these tags',
+            'Stop before the first line which does NOT match all of these patterns',
+            '...does NOT contain all of these tags',
         );
 
-        # Stop at patterns / tags
+        # Stop at patterns / tags (1/2)
         $self->patternsTags1Tab(
             $innerNotebook,
             'Page _6',
             'stopAtPatternList', 'stopAtTagList', 'stopAtAllFlag', 'stopAtTagMode',
-            '<b>Stop at patterns / tags</b>',
-            '<i>Stop at the first line which DOES match one of these patterns</i>',
-            '<i>...DOES contain one of these tags</i>',
-            '<i>Stop at the first line which DOES match all of these patterns</i>',
-            '<i>...DOES contain all of these tags</i>',
+            'Stop at patterns / tags (1/2)',
+            'Stop at the first line which DOES match one of these patterns',
+            '...DOES contain one of these tags',
+            'Stop at the first line which DOES match all of these patterns',
+            '...DOES contain all of these tags',
         );
 
-        # Stop at patterns / tags (2)
+        # Stop at patterns / tags (2/2)
         $self->patternsTags1Tab(
             $innerNotebook,
             'Page _7',
             'stopAtNoPatternList', 'stopAtNoTagList', 'stopAtNoAllFlag', 'stopAtNoTagMode',
-            '<b>Stop at patterns / tags (2)</b>',
-            '<i>Stop at the first line which does NOT match one of these patterns</i>',
-            '<i>...does NOT contain one of these tags</i>',
-            '<i>Stop at the first line which does NOT match all of these patterns</i>',
-            '<i>...does NOT contain all of these tags</i>',
+            'Stop at patterns / tags (2/2)',
+            'Stop at the first line which does NOT match one of these patterns',
+            '...does NOT contain one of these tags',
+            'Stop at the first line which does NOT match all of these patterns',
+            '...does NOT contain all of these tags',
         );
 
         # Stop at capitalised lines
@@ -5784,10 +4865,14 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab($tabName, $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            $tabName,
+            [$stringList[0]],
+        );
 
         # Title label, e.g. Start patterns / tags
-        $self->addLabel($grid, $stringList[0],
+        $self->addLabel($grid, '<b>' . $stringList[0] . '</b>',
             0, 4, 0, 1);
 
         # First group of radio buttons (at top; ->signal_connects appear below)
@@ -5860,13 +4945,13 @@
         # (Set text for these two labels)
         if (! $self->getEditHash_scalarIV($flagIV)) {
 
-            $label->set_markup($stringList[1]);
-            $label2->set_markup($stringList[2]);
+            $label->set_markup('<i>' . $stringList[1] . '</i>');
+            $label2->set_markup('<i>' . $stringList[2] . '</i>');
 
         } else {
 
-            $label->set_markup($stringList[3]);
-            $label2->set_markup($stringList[4]);
+            $label->set_markup('<i>' . $stringList[3] . '</i>');
+            $label2->set_markup('<i>' . $stringList[4] . '</i>');
         }
 
         # ->signal_connects for first group of radiobuttons
@@ -5877,8 +4962,8 @@
 
                 $self->ivAdd('editHash', $flagIV, FALSE);
 
-                $label->set_markup($stringList[1]);
-                $label2->set_markup($stringList[2]);
+                $label->set_markup('<i>' . $stringList[1] . '</i>');
+                $label2->set_markup('<i>' . $stringList[2] . '</i>');
             }
         });
 
@@ -5889,8 +4974,8 @@
 
                 $self->ivAdd('editHash', $flagIV, TRUE);
 
-                $label->set_markup($stringList[3]);
-                $label2->set_markup($stringList[4]);
+                $label->set_markup('<i>' . $stringList[3] . '</i>');
+                $label2->set_markup('<i>' . $stringList[4] . '</i>');
             }
         });
 
@@ -6460,10 +5545,14 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _7', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _7',
+            ['Stop at patterns (2/2)'],
+        );
 
-        # Stop at patterns (2)
-        $self->addLabel($grid, '<b>Stop at patterns (2)</b>',
+        # Stop at patterns (2/2)
+        $self->addLabel($grid, '<b>Stop at patterns (2/2)</b>',
             0, 12, 0, 1);
         $self->addLabel($grid,
             '<i>Stop at the first line which DOES match one of these patterns</i>',
@@ -6474,8 +5563,8 @@
             TRUE, TRUE, FALSE, FALSE,  # Treat as list, remove empty lines, don't remove whitespace
         );
 
-        # Stop at tags (2)
-        $self->addLabel($grid, '<b>Stop at tags (2)</b>',
+        # Stop at tags (2/2)
+        $self->addLabel($grid, '<b>Stop at tags (2/2)</b>',
             0, 12, 6, 7);
         $self->addLabel($grid,
             '<i>Stop at the first line which DOES contain one of these ' . $axmud::SCRIPT
@@ -6554,7 +5643,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _8', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _8',
+            ['Stop at capitalised lines'],
+        );
 
         # Stop at capitalised lines
         $self->addLabel($grid, '<b>Stop at capitalised lines</b>',
@@ -6595,7 +5688,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _9', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _9',
+            ['Stop before mode'],
+        );
 
         # Stop before mode
         $self->addLabel($grid, '<b>Stop before mode</b>',
@@ -6698,7 +5795,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page 1_0', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page 1_0',
+            ['Stop at mode'],
+        );
 
         # Stop at mode
         $self->addLabel($grid, '<b>Stop at mode</b>',
@@ -6778,7 +5879,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -6868,7 +5969,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Name', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Name',
+            ['Dictionary name', 'Language', 'Word order'],
+        );
 
         # Dictionary name
         $self->addLabel($grid, '<b>Dictionary name</b>',
@@ -7083,7 +6188,7 @@
                 $self->editObj->doModify('saveChanges');
             }
 
-            # Update the current session's object viewer window, if it is open
+            # Update the current session's data viewer window, if it is open
             if ($self->session->viewerWin) {
 
                 $self->session->viewerWin->updateNotebook();
@@ -7120,8 +6225,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->nameTab', @_);
         }
 
-#       # Tab setup (already created by the calling function)
-#       my $grid = $self->addTab('_Name', $self->notebook);
+        # Tab setup (already created by the calling function)
 
         # Current dictionary
         $self->addLabel($grid, '<b>Current dictionary</b>',
@@ -7235,7 +6339,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Articles', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Articles',
+            ['Definite articles', 'Indefinite articles'],
+        );
 
         # Definite articles
         $self->addLabel($grid, '<b>Definite articles</b>',
@@ -7284,7 +6392,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Con_junctions', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            'Con_junctions',
+            ['Conjunctions'],
+        );
 
         # Conjunctions
         $self->addLabel($grid, '<b>Conjunctions</b>',
@@ -7330,7 +6442,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('N_umbers', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            'N_umbers',
+            ['Number terms'],
+        );
 
         # Number terms
         $self->addLabel($grid, '<b>Number terms</b>',
@@ -7513,7 +6629,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('_Time', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, '_Time');
 
         # Add tabs to the inner notebook
         $self->time1Tab($innerNotebook);
@@ -7547,7 +6663,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Time units'],
+        );
 
         # Make a local copy of the dictionary's time hashes
         %timeHash = $self->getEditHash_hashIV('timeHash');
@@ -7746,7 +6866,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _2', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _2',
+            ['Clock patterns - time of day'],
+        );
 
         # Clock patterns - time of day
         $self->addLabel($grid, '<b>Clock patterns - time of day</b>',
@@ -7880,7 +7004,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _3', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _3',
+            ['Clock patterns - hours'],
+        );
 
         # Clock patterns - hours
         $self->addLabel($grid, '<b>Clock patterns - hours</b>',
@@ -8012,7 +7140,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _4', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _4',
+            ['Clock patterns - minutes'],
+        );
 
         # Clock patterns - minutes
         $self->addLabel($grid, '<b>Clock patterns - minutes</b>',
@@ -8144,7 +7276,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('N_ouns', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, 'N_ouns');
 
         # Add tabs to the inner notebook
         $self->nouns1Tab($innerNotebook);
@@ -8184,7 +7316,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Sentients'],
+        );
 
         # Sentients
         $self->addLabel($grid, '<b>Sentients</b>',
@@ -8269,7 +7405,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _2', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _2',
+            ['Creatures'],
+        );
 
         # Creatures
         $self->addLabel($grid, '<b>Creatures</b>',
@@ -8351,7 +7491,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _3', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _3',
+            ['Portable types', 'Decoration types'],
+        );
 
         # Portable types
         $self->addLabel($grid, '<b>Portable types</b>',
@@ -8424,7 +7568,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page 4', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page 4',
+            ['Portables'],
+        );
 
         # Portables
         $self->addLabel($grid, '<b>Portables</b>',
@@ -8519,7 +7667,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _5', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _5',
+            ['Decorations'],
+        );
 
         # Decorations
         $self->addLabel($grid, '<b>Decorations</b>',
@@ -8614,7 +7766,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _6', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _6',
+            ['Guilds'],
+        );
 
         # Guilds
         $self->addLabel($grid, '<b>Guilds</b>',
@@ -8699,7 +7855,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _7', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _7',
+            ['Races'],
+        );
 
         # Races
         $self->addLabel($grid, '<b>Races</b>',
@@ -8784,7 +7944,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _8', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _8',
+            ['Weapons'],
+        );
 
         # Weapons
         $self->addLabel($grid, '<b>Weapons</b>',
@@ -8869,7 +8033,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _9', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _9',
+            ['Armour'],
+        );
 
         # Armour
         $self->addLabel($grid, '<b>Armour</b>',
@@ -8954,7 +8122,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page 1_0', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page 1_0',
+            ['Garments'],
+        );
 
         # Garments
         $self->addLabel($grid, '<b>Garments</b>',
@@ -9037,7 +8209,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('_Plurals', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, '_Plurals');
 
         # Add tabs to the inner notebook
         $self->plurals1Tab($innerNotebook);
@@ -9070,7 +8242,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Plural ending patterns'],
+        );
 
         # Plural ending patterns
         $self->addLabel($grid, '<b>Plural ending patterns</b>',
@@ -9154,7 +8330,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _2', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _2',
+            ['Singular ending patterns'],
+        );
 
         # Singular ending patterns
         $self->addLabel($grid, '<b>Singular ending patterns</b>',
@@ -9243,7 +8423,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _3', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _3',
+            ['Plural nouns'],
+        );
 
         # Plural nouns
         $self->addLabel($grid, '<b>Plural nouns</b>',
@@ -9327,7 +8511,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('Adj_ectives', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, 'Adj_ectives');
 
         # Add tabs to the inner notebook
         $self->adjectives1Tab($innerNotebook);
@@ -9361,7 +8545,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Adjectives'],
+        );
 
         # Adjectives
         $self->addLabel($grid, '<b>Adjectives</b>',
@@ -9446,7 +8634,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _2', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _2',
+            ['Declined adjective patterns'],
+        );
 
         # Declined adjective patterns
         $self->addLabel($grid, '<b>Declined adjective patterns</b>',
@@ -9531,7 +8723,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _3', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _3',
+            ['Undeclined adjective patterns'],
+        );
 
         # Undeclined adjective patterns
         $self->addLabel($grid, '<b>Undeclined adjective patterns</b>',
@@ -9621,7 +8817,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _4', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _4',
+            ['Declined adjectives'],
+        );
 
         # Declined adjectives
         $self->addLabel($grid, '<b>Declined adjectives</b>',
@@ -9710,7 +8910,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('P_seudo', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, 'P_seudo');
 
         # Add tabs to the inner notebook
         $self->pseudo1Tab($innerNotebook);
@@ -9743,7 +8943,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Pseudo nouns'],
+        );
 
         # Pseudo nouns
         $self->addLabel($grid, '<b>Pseudo nouns</b>',
@@ -9827,7 +9031,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _2', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _2',
+            ['Pseudo objects'],
+        );
 
         # Pseudo objects
         $self->addLabel($grid, '<b>Pseudo objects</b>',
@@ -9911,7 +9119,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _3', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _3',
+            ['Pseudo adjectives'],
+        );
 
         # Pseudo adjectives
         $self->addLabel($grid, '<b>Pseudo adjectives</b>',
@@ -9993,7 +9205,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('_Contents', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, '_Contents');
 
         # Add tabs to the inner notebook
         $self->contents1Tab($innerNotebook);
@@ -10026,7 +9238,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Death words', 'Ignore words'],
+        );
 
         # Death words
         $self->addLabel($grid, '<b>Death words</b>',
@@ -10156,7 +9372,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _2', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _2',
+            ['Unknown words'],
+        );
 
         # Unknown words
         $self->addLabel($grid, '<b>Unknown words</b>',
@@ -10390,7 +9610,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _3', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _3',
+            ['Contents lines'],
+        );
 
         # Contents lines
         $self->addLabel($grid, '<b>Contents lines</b>',
@@ -10643,7 +9867,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('_Directions', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, '_Directions');
 
         # Add tabs to the inner notebook
         $self->directions1Tab($innerNotebook);
@@ -10681,7 +9905,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Primary directions'],
+        );
 
         # Primary directions
         $self->addLabel($grid, '<b>Primary directions</b>',
@@ -11074,7 +10302,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _2', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _2',
+            ['Secondary directions'],
+        );
 
         # Primary directions
         $self->addLabel($grid, '<b>Secondary directions</b>',
@@ -11805,7 +11037,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _3', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _3',
+            ['Relative directions'],
+        );
 
         # Relative directions
         $self->addLabel($grid, '<b>Relative directions</b>',
@@ -12135,7 +11371,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _4', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _4',
+            ['Speedwalking characters'],
+        );
 
         # Speedwalking characters
         $self->addLabel($grid, '<b>Speedwalking characters</b>',
@@ -12257,7 +11497,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _5', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _5',
+            ['Speedwalking modifier characters'],
+        );
 
         # Get the current highest-priority command cage
         $cageObj = $self->session->findHighestCage('cmd');
@@ -12375,7 +11619,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -12443,7 +11687,44 @@
 
 #   sub enableSingleButton {}   # Inherited from GA::Generic::ConfigWin
 
-#   sub setupNotebook {}        # Inherited from GA::Generic::ConfigWin
+    sub setupNotebook {
+
+        # Called by $self->winEnable
+        # Creates the first tab for the notebook. The remaining tabs are created by
+        #   $self->expandNotebook
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->setupNotebook', @_);
+        }
+
+        # Tab setup, using the standard grid size
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Name',
+            ['General properties'],
+        );
+
+        # Set up the rest of the tab
+        $self->nameTab($grid);
+
+        # Set up the remaining tabs
+        $self->expandNotebook();
+
+        # Tab complete
+        return 1;
+    }
+
 
     sub expandNotebook {
 
@@ -12649,7 +11930,7 @@
                 $self->editObj->doModify('saveChanges');
             }
 
-            # Update the current session's object viewer window, if it is open
+            # Update the current session's data viewer window, if it is open
             if ($self->session->viewerWin) {
 
                 $self->session->viewerWin->updateNotebook();
@@ -12691,8 +11972,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->nameTab', @_);
         }
 
-#       # Tab setup (already created by the calling function)
-#       my $grid = $self->addTab('_Name', $self->notebook);
+        # Tab setup (already created by the calling function)
 
         # Left column
         $self->addLabel($grid, '<b>General properties</b>',
@@ -12810,7 +12090,8 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Assisted moves', $self->notebook);
+        # N.B. No sub-headings
+        my $grid = $self->addTab($self->notebook, '_Assisted moves');
 
         # Assisted moves
         $self->addLabel($grid, '<b>Assisted moves</b>',
@@ -12910,7 +12191,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Doors', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Doors',
+            ['Door commands'],
+        );
 
         # Door commands
         $self->addLabel($grid, '<b>Door commands</b>',
@@ -12994,7 +12279,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Random', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Random',
+            ['Random exit type'],
+        );
 
         # Left column
         $self->addLabel($grid, '<b>Random exit type</b>',
@@ -13062,7 +12351,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Ornaments', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Ornaments',
+            ['Exit ornaments', 'Exit information', 'Exit current state'],
+        );
 
         # Left column
         $self->addLabel($grid, '<b>Exit ornaments</b>',
@@ -13095,6 +12388,7 @@
             $button6->set_active(TRUE);
         }
 
+        # Exit information
         $self->addLabel(
             $grid,
             '<b>Exit information</b>',
@@ -13201,11 +12495,11 @@
     # Accessors - get
 }
 
-{ package Games::Axmud::EditWin::Generic::Interface;
+{ package Games::Axmud::EditWin::Generic::Cage;
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -13270,20 +12564,11 @@
         }
 
         # Tab setup, using the standard grid size
-        my $grid = $self->addTab('_Name', $self->notebook);
-
-        # Unusual step - create a hash IV for all 'edit' windows inheriting this one. Each key-value
-        #   pair corresponds to a key-value pair in GA::Interface::Trigger->attribHash (etc)
-        $self->{attribHash} = {};
-        # Also create two list IVs which store the list of keys which will be saved in
-        #   GA::Interface::Trigger->beforeHash or ->afterHash
-        $self->{beforeList} = [];
-        $self->{afterList} = [];
-        # $self-saveChanges needs to know when those list IVs have been modified, so we need two
-        #   flags, as well. (If the lists are emptied, that counts as a change, so we can't simply
-        #   test whether ->beforeList and ->afterList are not empty)
-        $self->{beforeFlag} = FALSE;
-        $self->{afterFlag} = FALSE;
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Name',
+            ['Cage settings'],
+        );
 
         # Set up the rest of the tab
         $self->nameTab($grid);
@@ -13297,1714 +12582,66 @@
 
 #   sub expandNotebook {}       # Inherited from GA::Generic::ConfigWin
 
-    sub saveChanges {
-
-        # Called by $self->buttonOK and $self->buttonSave
-        # Saves any changes made to data stored by the edit object (which can be three of the four
-        #   standard attributes, 'stimulus', 'response' and 'enabled'). Also saves any modified
-        #   attributes stored in $self->attribHash
-        #
-        # Expected arguments
-        #   (none besides $self)
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $check) = @_;
-
-        # Local variables
-        my (
-            $stimulus, $interfaceModelObj,
-            %attribHash, %beforeHash, %afterHash,
-        );
-
-        # Check for improper arguments
-        if (defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->saveChanges', @_);
-        }
-
-        if ($self->editHash || $self->attribHash || $self->beforeFlag || $self->afterFlag) {
-
-            # Special arrangements for hooks, for which custom hook events must begin with an
-            #   underlin
-            # If the value of the 'stimulus' attribute does not start with an underline (and is not
-            #   a standard hook event), then add one
-            if ($self->editObj->category eq 'hook' && $self->ivExists('editHash', 'stimulus')) {
-
-                $stimulus = $self->ivShow('editHash', 'stimulus');
-                $interfaceModelObj = $axmud::CLIENT->ivShow(
-                    'interfaceModelHash',
-                    $self->editObj->category,
-                );
-
-                if (
-                    defined $stimulus
-                    && ! $interfaceModelObj->ivExists('hookEventHash', $stimulus)
-                    && ! ($stimulus =~ m/^\_/)
-                ) {
-                    $self->ivAdd('editHash', 'stimulus', '_' . $stimulus);
-                }
-            }
-
-            # Transfer the modified non-standard attributes $self->attribHash to the local variable
-            #   %attribHash. At the same time, deal with any 'dummy' attributes stored in
-            #   $self->attribHash
-            foreach my $attrib ($self->ivKeys('attribHash')) {
-
-                my $value = $self->ivShow('attribHash', $attrib);
-
-                # Attributes beginning with an underline are 'dummy' attributes, used to help set
-                #   the values of other attributes (e.g. '_substr_num', used to set 'style_mode')
-                if (substr($attrib, 0, 1) ne '_') {
-
-                    if ($attrib eq 'style_mode' && $value == -3) {
-
-                        # The attribute's true value is stored in the dummy attribute, '_substr_num'
-                        $attribHash{$attrib} = $self->ivShow('attribHash', '_substr_num');
-
-                    } else {
-
-                        # Normal attribute
-                        $attribHash{$attrib} = $value;
-                    }
-                }
-            }
-
-            # Add any modified standard attributes to %attribHash. $self->editHash can contain the
-            #   keys 'stimulus', 'response' and 'enabled'
-            foreach my $attrib ($self->ivKeys('editHash')) {
-
-                if ($attrib eq 'stimulus' || $attrib eq 'response') {
-                    $attribHash{$attrib} = $self->ivShow('editHash', $attrib);
-                } elsif ($attrib eq 'enabledFlag') {
-                    $attribHash{'enabled'} = $self->ivShow('editHash', 'enabledFlag');
-                }
-            }
-
-            if (%attribHash) {
-
-                # Store the modified standard and non-standard attributes
-                $self->editObj->modifyAttribs($self->session, %attribHash);
-
-                # Update every active interface based on the inactive interface, $self->editObj. Do
-                #   the update in every affected session, except this one
-                foreach my $otherSession ($axmud::CLIENT->listSessions()) {
-
-                    if (
-                        $otherSession->currentWorld eq $self->session->currentWorld
-                        && $otherSession ne $self->session
-                    ) {
-                        $otherSession->updateInterfaces($self->editObj, %attribHash);
-                    }
-                }
-
-                # Now do the update for active interfaces in this session
-                $self->session->updateInterfaces($self->editObj, %attribHash);
-            }
-
-            # If $self->beforeList or $self->afterList have been modified, store those changes, too
-            if ($self->beforeFlag) {
-
-                foreach my $item ($self->beforeList) {
-
-                    $beforeHash{$item} = undef;
-                }
-
-                $self->editObj->ivPoke('beforeHash', %beforeHash);
-            }
-
-            if ($self->afterFlag) {
-
-                foreach my $item ($self->afterList) {
-
-                    $afterHash{$item} = undef;
-                }
-
-                $self->editObj->ivPoke('afterHash', %afterHash);
-            }
-
-            # The local IVs can now be reset
-            $self->ivEmpty('editHash');
-            $self->ivEmpty('attribHash');
-            $self->ivEmpty('beforeList');
-            $self->ivEmpty('afterList');
-            $self->ivPoke('beforeFlag', FALSE);
-            $self->ivPoke('afterFlag', FALSE);
-
-            # Mark the object's corresponding file object as needing to be saved, if it exists
-            if ($self->editObj->_parentFile) {
-
-                $self->editObj->doModify('saveChanges');
-            }
-
-            # Update the current session's object viewer window, if it is open
-            if ($self->session->viewerWin) {
-
-                $self->session->viewerWin->updateNotebook();
-            }
-        }
-
-        return 1;
-    }
-
-    # Notebook tabs used by more than one interface 'edit' window
-
-    sub nameTab {
-
-        # Name tab - called by $self->setupNotebook
-        #
-        # Expected arguments
-        #   $grid   -   The Gtk3::Grid for this tab
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $grid, $check) = @_;
-
-        # Local variables
-        my (
-            $interfaceModelObj, $title,
-            @comboList,
-        );
-
-        # Check for improper arguments
-        if (! defined $grid || defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->nameTab', @_);
-        }
-
-#       # Tab setup (already created by the calling function)
-#       my $grid = $self->addTab('_Name', $self->notebook);
-
-        # Get the corresponding interface model object
-        $interfaceModelObj = $axmud::CLIENT->ivShow('interfaceModelHash', $self->editObj->category);
-
-        # Standard interface attributes
-        $self->addLabel($grid, '<b>Standard interface attributes</b>',
-            0, 12, 0, 1);
-        $self->addLabel($grid, 'Name',
-            1, 3, 1, 2);
-        $self->addEntry($grid, 'name', FALSE,
-            3, 6, 1, 2);
-        $self->addCheckButton($grid, 'Enabled', 'enabledFlag', TRUE,
-            7, 12, 1, 2);
-
-        $self->addLabel($grid, 'Category',
-            1, 3, 2, 3);
-        $self->addEntry($grid, 'category', FALSE,
-            3, 6, 2, 3);
-
-        $self->addLabel($grid, 'Stimulus <i>(' . $interfaceModelObj->stimulusName . ')</i>',
-            1, 3, 3, 4);
-
-        if ($self->editObj->category eq 'trigger' || $self->editObj->category eq 'alias') {
-
-            $self->addEntryWithIcon($grid, 'stimulus', 'regex', 1, undef,
-                3, 12, 3, 4);
-
-        } elsif ($self->editObj->category eq 'macro') {
-
-            $self->addEntryWithIcon($grid, 'stimulus', 'string', 1, undef,
-                3, 12, 3, 4);
-
-        } elsif ($self->editObj->category eq 'timer') {
-
-            $self->addEntryWithIcon($grid, 'stimulus', \&nameTab_checkInterval, undef, undef,
-                3, 12, 3, 4);
-
-        } elsif ($self->editObj->category eq 'hook') {
-
-            my $entry = $self->addEntryWithIcon(
-                $grid, 'stimulus', \&nameTab_checkHookEvent, undef, undef,
-                3, 6, 3, 4);
-
-            # Hooks get an extra combo, for inserting a standard hook event
-            @comboList = sort {$a cmp $b} ($interfaceModelObj->ivKeys('hookEventHash'));
-            $title = 'Or use standard hook event:';
-
-            my $combo = $self->addComboBox($grid, undef, \@comboList, $title,
-                TRUE,               # No 'undef' value used
-                6, 12, 3, 4);
-            $combo->signal_connect('changed' => sub {
-
-                my $text = $combo->get_active_text();
-                if ($text ne $title) {
-
-                    $entry->set_text($text);
-                    # Reset the combo
-                    $combo->set_active(0);
-                }
-            });
-        }
-
-        # For triggers, the response can be any of 'instruction', 'pattern', 'substitution'
-        $self->addLabel($grid, 'Response <i>(' . $interfaceModelObj->responseName . ')</i>',
-            1, 3, 4, 5);
-        $self->addEntryWithIcon($grid, 'response', 'string', 1, undef,
-            3, 12, 4, 5);
-        if ($interfaceModelObj->category eq 'trigger') {
-
-            $self->addLabel(
-                $grid,
-                '<i>NB Splitter triggers: the response is a pattern.</i>',
-                3, 12, 5, 6);
-            $self->addLabel(
-                $grid,
-                '<i>NB Rewriter triggers: the response is a substitution</i>',
-                3, 12, 6, 7);
-        }
-
-        # Tab complete
-        return 1;
-    }
-
-    sub nameTab_checkInterval {
-
-        # Called by $self->nameTab to check a timer interval is valid
-        #
-        # Expected arguments
-        #   $value      - The value to check, should be a number (minimum value 0.01), or a 24-hour
-        #                   clock time in the form HH::MM
-        #
-        # Return values
-        #   'undef' on improper arguments or if $value is invalid
-        #   1 if $value is valid
-
-        my ($self, $value, $check) = @_;
-
-        # Check for improper arguments
-        if (! defined $value || defined $check) {
-
-            return $axmud::CLIENT->writeImproper(
-                $self->_objClass . '->nameTab_checkInterval',
-                @_,
-            );
-        }
-
-        if (
-            ! $axmud::CLIENT->floatCheck($value, 0.1)
-            && ! ($value =~ m/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/)
-            && ! ($value =~ m/^99\:[0-5][0-9]$/)
-        ) {
-            return undef;
-        } else {
-            return 1;
-        }
-    }
-
-    sub nameTab_checkHookEvent {
-
-        # Called by $self->nameTab to check a hook event is valid
-        #
-        # Expected arguments
-        #   $value  - The value to check, should be a standard hook event, or a custom event whose
-        #               name starts with an underline, followed by an alphanumeric character
-        #
-        # Return values
-        #   'undef' on improper arguments or for an invalid hook event
-        #   1 for a valid hook event
-
-        my ($self, $value, $check) = @_;
-
-        # Local variables
-        my $interfaceModelObj;
-
-        # Check for improper arguments
-        if (! defined $value || defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->hookEventCheck', @_);
-        }
-
-        $interfaceModelObj = $axmud::CLIENT->ivShow('interfaceModelHash', 'hook');
-
-        # Custom hook events must begin with an underline, followed by an alphanumeric character
-        # If the user doesn't type an underline, the 'Add' button will add one
-        if (
-            ! $interfaceModelObj->ivExists('hookEventHash', $value)
-            && ! ($value =~ m/^\_[A-Za-z0-9]/)
-            && ! ($value =~ m/^[A-Za-z0-9]/)
-        ) {
-            return undef;
-        } else {
-            return 1;
-        }
-    }
-
-    sub beforeAfterTab {
-
-        # BeforeAfter tab
-        #
-        # Expected arguments
-        #   (none besides $self)
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $check) = @_;
-
-        # Local variables
-        my ($single, $plural);
-
-        # Check for improper arguments
-        if (defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->beforeAfterTab', @_);
-        }
-
-        # Tab setup
-        my $grid = $self->addTab('_Before / after', $self->notebook);
-
-        $single = $self->editObj->category;
-        if ($single eq 'alias') {
-            $plural = 'aliases';
-        } else {
-            $plural = $single . 's';
-        }
-
-        # Door patterns
-        $self->addLabel($grid, '<b>Before ' . $plural . '</b>',
-            0, 12, 0, 2);
-        $self->addLabel(
-            $grid,
-            '<i>When this ' . $single . ' becomes active, it is tested before the following '
-            . $plural . '</i>',
-            1, 12, 2, 4);
-        $self->beforeAfterTab_addTextView($grid, 'before', 4);
-
-        # Locked door patterns
-        $self->addLabel($grid, '<b>After ' . $plural . '</b>',
-            0, 12, 6, 8);
-        $self->addLabel(
-            $grid,
-            '<i>When this ' . $single . ' becomes active, it is tested after the following '
-            . $plural . '</i>',
-            1, 12, 8, 10);
-        $self->beforeAfterTab_addTextView($grid, 'after', 10);
-
-        # (Explanatory message for triggers only)
-        if ($single eq 'trigger') {
-
-            $self->addLabel(
-                $grid,
-                '<i>(NB All splitter triggers are tested before any other kind of trigger is'
-                . ' tested)</i>',
-                1, 12, 12, 14);
-        }
-
-        # Tab complete
-        return 1;
-    }
-
-    sub beforeAfterTab_addTextView {
-
-        # Called by $self->beforeAfterTab to create a Gtk3::TextView whose contents are treated as
-        #   lists, and saved in $self->beforeList or $self->afterList
-        # (We don't use the standard GA::Generic::EditWin->addTextView because we need these
-        #   textviews to create lists, which are saved as hashes in $self->editObj)
-        #
-        # Expected arguments
-        #   $grid       - The Gtk3::Grid for this tab
-        #   $type       - 'before' or 'after'
-        #   $row        - The Gtk3::Grid row where the textview is drawn
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $grid, $type, $row, $check) = @_;
-
-        # Local variables
-        my @sortedList;
-
-        # Check for improper arguments
-        if (! defined $grid || ! defined $type || ! defined $row || defined $check) {
-
-            return $axmud::CLIENT->writeImproper(
-                $self->_objClass . '->beforeAfterTab_addTextView',
-                @_,
-            );
-        }
-
-        # Create the textview
-        my $textView = $self->addTextView($grid, undef, TRUE,
-            1, 12, $row, ($row + 2),
-            TRUE, TRUE, TRUE, FALSE,    # Treat as list, remove empty lines, do remove whitespace
-        );
-        my $buffer = $textView->get_buffer();
-
-        # Display a list of the keys in $self->editObj->beforeHash / ->afterHash (sort them
-        #   alphabetically, for good measure)
-        @sortedList = sort {lc($a) cmp lc($b)} ($self->editObj->ivKeys($type . 'Hash'));
-        $buffer->set_text(join("\n", @sortedList));
-
-        # Store any changes the user makes in $self->$localIV
-        $buffer->signal_connect('changed' => sub {
-
-            my (
-                $text,
-                @list, @finalList,
-            );
-
-            $text = $axmud::CLIENT->desktopObj->bufferGetText($buffer);
-
-            # Split the contents of the textview into a list of lines, separated by newline
-            #   characters
-            @list = split("\n", $text);
-            # Remove any empty lines and leading/trailing whitespace, if allowed
-            foreach my $line (@list) {
-
-                $line =~ s/^\s+//;  # Remove leading whitespace
-                $line =~ s/\s+$//;  # Remove trailing whitespace
-
-                if ($line) {
-
-                    push (@finalList, $line);
-                }
-            }
-
-            # Store the contents, temporarily, so that they're available to $self->saveChanges
-            $self->ivPoke($type . 'List', @finalList);
-            # Set a flag, to mark that changes have been made
-            $self->ivPoke($type . 'Flag', TRUE);
-        });
-
-        return $textView;
-    }
-
-    ##################
-    # Accessors - set
-
-    ##################
-    # Accessors - get
-
-    sub attribHash
-        { my $self = shift; return %{$self->{attribHash}}; }
-    sub beforeList
-        { my $self = shift; return @{$self->{beforeList}}; }
-    sub afterList
-        { my $self = shift; return @{$self->{afterList}}; }
-    sub beforeFlag
-        { $_[0]->{beforeFlag} }
-    sub afterFlag
-        { $_[0]->{afterFlag} }
-}
-
-{ package Games::Axmud::EditWin::Interface::Active;
-
-    use strict;
-    use warnings;
-    use diagnostics;
-
-    use Glib qw(TRUE FALSE);
-
-    our @ISA = qw(
-        Games::Axmud::Generic::EditWin Games::Axmud::Generic::ConfigWin
-        Games::Axmud::Generic::FreeWin Games::Axmud::Generic::Win Games::Axmud
-    );
-
-    ##################
-    # Constructors
-
-#   sub new {}                  # Inherited from GA::Generic::ConfigWin
-
-    ##################
-    # Methods
-
-    # Standard window object functions
-
-#   sub winSetup {}             # Inherited from GA::Generic::ConfigWin
-
-#   sub winEnable {}            # Inherited from GA::Generic::ConfigWin
-
-#   sub winDesengage {}         # Inherited from GA::Generic::FreeWin
-
-#   sub winDestroy {}           # Inherited from GA::Generic::FreeWin
-
-#   sub winShowAll {}           # Inherited from GA::Generic::Win
-
-#   sub drawWidgets {}          # Inherited from GA::Generic::ConfigWin
-
-#   sub redrawWidgets {}        # Inherited from GA::Generic::Win
-
-    # ->signal_connects
-
-    # Other functions
-
-    sub checkEditObj {
-
-        # Called by $self->winEnable
-        # Checks that the object stored in $self->editObj is the correct class of object
-        #
-        # Expected arguments
-        #   (none besides $self)
-        #
-        # Return values
-        #   'undef' on improper arguments or if the check fails
-        #   1 if the check succeeds
-
-        my ($self, $check) = @_;
-
-        # Check for improper arguments
-        if (defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->checkEditObj', @_);
-        }
-
-        if ($self->editObj && ! $self->editObj->isa('Games::Axmud::Interface::Active')) {
-            return undef;
-        } else {
-            return 1;
-        }
-    }
-
-#   sub enableButtons {}        # Inherited from GA::Generic::ConfigWin
-
-#   sub enableSingleButton {}   # Inherited from GA::Generic::ConfigWin
-
-    sub setupNotebook {
-
-        # Called by $self->winEnable
-        # Creates the first tab for the notebook. The remaining tabs are created by
-        #   $self->expandNotebook
-        #
-        # Expected arguments
-        #   (none besides $self)
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $check) = @_;
-
-        # Check for improper arguments
-        if (defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->setupNotebook', @_);
-        }
-
-        # Tab setup, using the standard grid size
-        my $grid = $self->addTab('_Name', $self->notebook);
-
-        # Unusual step - create a hash IV for all 'edit' windows inheriting this one. Each key-value
-        #   pair corresponds to a key-value pair in GA::Interface::Trigger->attribHash (etc)
-        $self->{attribHash} = {};
-
-        # Set up the rest of the tab
-        $self->nameTab($grid);
-
-        # Set up the remaining tabs
-        $self->expandNotebook();
-
-        # Tab complete
-        return 1;
-    }
-
-    sub expandNotebook {
-
-        # Called by $self->setupNotebook
-        # Set up additional tabs for the notebook
-        #
-        # Expected arguments
-        #   (none besides $self)
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $check) = @_;
-
-        # Local variables
-        my $func;
-
-        # Check for improper arguments
-        if (defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->expandNotebook', @_);
-        }
-
-        $func = $self->editObj->category . 'AttributesTab';     # e.g. ->triggerAttributesTab
-        $self->$func();
-
-        $self->propertiesTab();
-
-        return 1;
-    }
-
-    sub saveChanges {
-
-        # Called by $self->buttonOK and $self->buttonSave. Function based on
-        #   GA::EditWin::Generic::Interface->saveChanges
-        # Saves any changes made to data stored by the edit object (which can be three of the four
-        #   standard attributes, 'stimulus', 'response' and 'enabled'). Also saves any modified
-        #   attributes stored in $self->attribHash
-        #
-        # Expected arguments
-        #   (none besides $self)
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $check) = @_;
-
-        # Local variables
-        my %attribHash;
-
-        # Check for improper arguments
-        if (defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->saveChanges', @_);
-        }
-
-        if ($self->editHash || $self->attribHash) {
-
-            # Transfer the modified non-standard attributes $self->attribHash to the local variable
-            #   %attribHash. At the same time, deal with any 'dummy' attributes stored in
-            #   $self->attribHash
-            foreach my $attrib ($self->ivKeys('attribHash')) {
-
-                my $value = $self->ivShow('attribHash', $attrib);
-
-                # Attributes beginning with an underline are 'dummy' attributes, used to help set
-                #   the values of other attributes (e.g. '_substr_num', used to set 'style_mode')
-                if (substr($attrib, 0, 1) ne '_') {
-
-                    if ($attrib eq 'style_mode' && $value == -3) {
-
-                        # The attribute's true value is stored in the dummy attribute, '_substr_num'
-                        $attribHash{$attrib} = $self->ivShow('attribHash', '_substr_num');
-
-                    } else {
-
-                        # Normal attribute
-                        $attribHash{$attrib} = $value;
-                    }
-                }
-            }
-
-            # Add any modified standard attributes to %attribHash. $self->editHash can contain the
-            #   keys 'stimulus', 'response' and 'enabled'
-            foreach my $attrib ($self->ivKeys('editHash')) {
-
-                if ($attrib eq 'stimulus' || $attrib eq 'response') {
-                    $attribHash{$attrib} = $self->ivShow('editHash', $attrib);
-                } elsif ($attrib eq 'enabledFlag') {
-                    $attribHash{'enabled'} = $self->ivShow('editHash', 'enabledFlag');
-                }
-            }
-
-            # Store the modified standard and non-standard attributes
-            $self->editObj->modifyAttribs($self->session, %attribHash);
-
-            # The local hashes can now be emptied
-            $self->ivEmpty('editHash');
-            $self->ivEmpty('attribHash');
-
-            # Mark the object's corresponding file object as needing to be saved, if it exists
-            if ($self->editObj->_parentFile) {
-
-                $self->editObj->doModify('saveChanges');
-            }
-
-            # Update the current session's object viewer window, if it is open
-            if ($self->session->viewerWin) {
-
-                $self->session->viewerWin->updateNotebook();
-            }
-        }
-
-        return 1;
-    }
-
-    # Notebook tabs
-
-    sub nameTab {
-
-        # Name tab - called by $self->setupNotebook
-        #
-        # Expected arguments
-        #   $grid   - The Gtk3::Grid for this tab
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $grid, $check) = @_;
-
-        # Local variables
-        my (
-            $interfaceModelObj,
-            @comboList,
-        );
-
-        # Check for improper arguments
-        if (! defined $grid || defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->nameTab', @_);
-        }
-
-#       # Tab setup (already created by the calling function)
-#       my $grid = $self->addTab('_Name', $self->notebook);
-
-        # Settings (left column)
-        $self->addLabel($grid, '<b>Settings</b>',
-            0, 12, 0, 1);
-        $self->addLabel($grid, 'Name',
-            1, 3, 1, 2);
-        $self->addEntry($grid, 'name', FALSE,
-            3, 12, 1, 2);
-        $self->addLabel($grid, 'Number',
-            1, 3, 2, 3);
-        $self->addEntry($grid, 'number', FALSE,
-            3, 6, 2, 3);
-        $self->addLabel($grid, 'Category',
-            1, 3, 3, 4);
-        $self->addEntry($grid, 'category', FALSE,
-            3, 6, 3, 4);
-
-        # (Right column)
-        $self->addLabel($grid, '(Inactive) parent',
-            7, 9, 2, 3);
-        my $entry = $self->addEntry($grid, undef, FALSE,
-            9, 12, 2, 3);
-        if ($self->editObj->parent) {
-            $entry->set_text($self->editObj->parent->name);
-        } else {
-            $entry->set_text('n/a');
-        }
-
-        $self->addLabel($grid, 'Type',
-            7, 9, 3, 4);
-        my $entry2 = $self->addEntry($grid, undef, FALSE,
-            9, 12, 3, 4);
-        if ($self->editObj->indepFlag) {
-            $entry2->set_text('independent');
-        } else {
-            $entry2->set_text('dependent');
-        }
-
-        # Standard attributes
-        $self->addLabel($grid, '<b>Standard attributes</b>',
-            0, 12, 4, 5);
-        $interfaceModelObj = $axmud::CLIENT->ivShow('interfaceModelHash', $self->editObj->category);
-
-        $self->addLabel($grid, 'Stimulus <i>(' . $interfaceModelObj->stimulusName . ')</i>',
-            1, 3, 5, 6);
-        # For hooks, use a combo; for everything else, use an entry
-        if ($self->editObj->category eq 'trigger' || $self->editObj->category eq 'alias') {
-
-            $self->addEntryWithIcon($grid, 'stimulus', 'regex', 1, undef,
-                3, 12, 5, 6);
-
-        } elsif ($self->editObj->category eq 'macro') {
-
-            $self->addEntryWithIcon($grid, 'stimulus', 'string', 1, undef,
-                3, 12, 5, 6);
-
-        } elsif ($self->editObj->category eq 'timer') {
-
-            $self->addEntryWithIcon($grid, 'stimulus', 'float', 0.01, undef,
-                3, 12, 5, 6);
-
-        } elsif ($self->editObj->category eq 'hook') {
-
-            @comboList = sort {$a cmp $b} ($interfaceModelObj->ivKeys('hookEventHash'));
-            $self->addComboBox($grid, 'stimulus', \@comboList, '',
-                TRUE,               # No 'undef' value used
-                3, 6, 5, 6);
-        }
-
-        $self->addLabel($grid, 'Response <i>(' . $interfaceModelObj->responseName . ')</i>',
-            1, 3, 6, 7);
-        $self->addEntryWithIcon($grid, 'response', 'string', 1, undef,
-            3, 12, 6, 7);
-        $self->addCheckButton($grid, 'Enabled', 'enabledFlag', TRUE,
-            1, 12, 7, 8);
-
-        # Independent interface IVs
-        $self->addLabel($grid, '<b>Independent interface IVs</b>',
-            0, 6, 8, 9);
-        $self->addLabel($grid, 'Associated profile',
-            1, 3, 9, 10);
-        $self->addEntry($grid, 'assocProf', FALSE,
-            3, 6, 9, 10);
-        $self->addLabel($grid, 'Profile category',
-            1, 3, 10, 11);
-        $self->addEntry($grid, 'assocProfCategory', FALSE,
-            3, 6, 10, 11);
-
-        # Dependent interface IVs
-        $self->addLabel($grid, '<b>Dependent interface IVs</b>',
-            7, 12, 8, 9);
-        $self->addLabel($grid, 'Call class',
-            7, 9, 9, 10);
-        $self->addEntry($grid, 'callClass', 0,
-            9, 12, 9, 10);
-        $self->addLabel($grid, '(...named)',
-            7, 9, 10, 11);
-        my $entry3 = $self->addEntry($grid, undef, 0,
-            9, 12, 10, 11);
-        if (defined $self->editObj->callClass) {
-
-            $entry3->set_text($self->editObj->callClass->_objName);
-        }
-        $self->addLabel($grid, 'Call method',
-            7, 9, 11, 12);
-        $self->addEntry($grid, 'callMethod', 0,
-            9, 12, 11, 12);
-
-        # Tab complete
-        return 1;
-    }
-
-    sub attributesTab {
-
-        # Attributes tab
-        #
-        # Expected arguments
-        #   (none besides $self)
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $check) = @_;
-
-        # Local variables
-        my @columnList;
-
-        # Check for improper arguments
-        if (defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->attributesTab', @_);
-        }
-
-        # Tab setup
-        my $grid = $self->addTab('_Attributes', $self->notebook);
-
-        # Attributes
-        $self->addLabel($grid, '<b>Attributes</b>',
-            0, 12, 0, 1);
-        $self->addLabel($grid, '<i>List of attributes for this active interface</i>',
-            1, 12, 1, 2);
-
-        # Add a simple list
-        @columnList = (
-            'Attribute', 'text',
-            'Current value', 'text',
-        );
-
-        my $slWidget = $self->addSimpleList($grid, undef, \@columnList,
-            1, 12, 2, 10);
-
-        # Initialise the list
-        $self->refreshList_hashIV($slWidget, (scalar @columnList / 2), 'attribHash');
-
-        # Add a single button
-        my $button = $self->addButton(
-            $grid,
-            'Refresh list',
-            'Refresh the list of attributes',
-            undef,
-            9, 12, 10, 11,
-        );
-        $button->signal_connect('clicked' => sub {
-
-            # Refresh the simple list
-            $self->refreshList_hashIV($slWidget, (scalar @columnList / 2), 'attribHash');
-        });
-
-        # Tab complete
-        return 1;
-    }
-
-    sub propertiesTab {
-
-        # Properties tab
-        #
-        # Expected arguments
-        #   (none besides $self)
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $check) = @_;
-
-        # Local variables
-        my @columnList;
-
-        # Check for improper arguments
-        if (defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->propertiesTab', @_);
-        }
-
-        # Tab setup
-        my $grid = $self->addTab('_Properties', $self->notebook);
-
-        # Quest solution
-        $self->addLabel($grid, '<b>Properties</b>',
-            0, 12, 0, 1);
-        $self->addLabel($grid, '<i>List of custom properties for this active interface</i>',
-            1, 12, 1, 2);
-
-        # Add a simple list
-        @columnList = (
-            'Key', 'text',
-            'Value', 'text',
-        );
-
-        my $slWidget = $self->addSimpleList($grid, undef, \@columnList,
-            1, 12, 2, 10);
-
-        # Initialise the list
-        $self->refreshList_hashIV($slWidget, (scalar @columnList / 2), 'propertyHash');
-
-        # Add a single button
-        my $button = $self->addButton(
-            $grid,
-            'Refresh list',
-            'Refresh the list of properties',
-            undef,
-            9, 12, 10, 11,
-        );
-        $button->signal_connect('clicked' => sub {
-
-            # Refresh the simple list
-            $self->refreshList_hashIV($slWidget, (scalar @columnList / 2), 'propertyHash');
-        });
-
-        # Tab complete
-        return 1;
-    }
-
-    ##################
-    # Accessors - set
-
-    ##################
-    # Accessors - get
-
-    sub attribHash
-        { my $self = shift; return %{$self->{attribHash}}; }
-}
-
-{ package Games::Axmud::EditWin::Interface::Trigger;
-
-    use strict;
-    use warnings;
-    use diagnostics;
-
-    use Glib qw(TRUE FALSE);
-
-    our @ISA = qw(
-        Games::Axmud::EditWin::Generic::Interface Games::Axmud::Generic::EditWin
-        Games::Axmud::Generic::ConfigWin Games::Axmud::Generic::FreeWin Games::Axmud::Generic::Win
-        Games::Axmud
-    );
-
-    ##################
-    # Constructors
-
-#   sub new {}                  # Inherited from GA::Generic::ConfigWin
-
-    ##################
-    # Methods
-
-    # Standard window object functions
-
-#   sub winSetup {}             # Inherited from GA::Generic::ConfigWin
-
-#   sub winEnable {}            # Inherited from GA::Generic::ConfigWin
-
-#   sub winDesengage {}         # Inherited from GA::Generic::FreeWin
-
-#   sub winDestroy {}           # Inherited from GA::Generic::FreeWin
-
-#   sub winShowAll {}           # Inherited from GA::Generic::Win
-
-#   sub drawWidgets {}          # Inherited from GA::Generic::ConfigWin
-
-#   sub redrawWidgets {}        # Inherited from GA::Generic::Win
-
-    # ->signal_connects
-
-    # Other functions
-
-    sub checkEditObj {
-
-        # Called by $self->winEnable
-        # Checks that the object stored in $self->editObj is the correct class of object
-        #
-        # Expected arguments
-        #   (none besides $self)
-        #
-        # Return values
-        #   'undef' on improper arguments or if the check fails
-        #   1 if the check succeeds
-
-        my ($self, $check) = @_;
-
-        # Check for improper arguments
-        if (defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->checkEditObj', @_);
-        }
-
-        if ($self->editObj && ! $self->editObj->isa('Games::Axmud::Interface::Trigger')) {
-            return undef;
-        } else {
-            return 1;
-        }
-    }
-
-#   sub enableButtons {}        # Inherited from GA::Generic::ConfigWin
-
-#   sub enableSingleButton {}   # Inherited from GA::Generic::ConfigWin
-
-#   sub setupNotebook {}        # Inherited from GA::Generic::ConfigWin
-
-    sub expandNotebook {
-
-        # Called by $self->setupNotebook
-        # Set up additional tabs for the notebook
-        #
-        # Expected arguments
-        #   (none besides $self)
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $check) = @_;
-
-        # Check for improper arguments
-        if (defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->expandNotebook', @_);
-        }
-
-        $self->triggerAttributesTab();
-        $self->beforeAfterTab();
-
-        return 1;
-    }
-
 #   sub saveChanges {}          # Inherited from GA::Generic::ConfigWin
 
-    ##################
-    # Accessors - set
+    sub compileCages {
 
-    ##################
-    # Accessors - get
-}
-
-{ package Games::Axmud::EditWin::Interface::Alias;
-    use strict;
-    use warnings;
-    use diagnostics;
-
-    use Glib qw(TRUE FALSE);
-
-    our @ISA = qw(
-        Games::Axmud::EditWin::Generic::Interface Games::Axmud::Generic::EditWin
-        Games::Axmud::Generic::ConfigWin Games::Axmud::Generic::FreeWin Games::Axmud::Generic::Win
-        Games::Axmud
-    );
-
-    ##################
-    # Constructors
-
-#   sub new {}                  # Inherited from GA::Generic::ConfigWin
-
-    ##################
-    # Methods
-
-    # Standard window object functions
-
-#   sub winSetup {}             # Inherited from GA::Generic::ConfigWin
-
-#   sub winEnable {}            # Inherited from GA::Generic::ConfigWin
-
-#   sub winDesengage {}         # Inherited from GA::Generic::FreeWin
-
-#   sub winDestroy {}           # Inherited from GA::Generic::FreeWin
-
-#   sub winShowAll {}           # Inherited from GA::Generic::Win
-
-#   sub drawWidgets {}          # Inherited from GA::Generic::ConfigWin
-
-#   sub redrawWidgets {}        # Inherited from GA::Generic::Win
-
-    # ->signal_connects
-
-    # Other functions
-
-    sub checkEditObj {
-
-        # Called by $self->winEnable
-        # Checks that the object stored in $self->editObj is the correct class of object
+        # Compiles a list of cages, starting with this one, continuing with its inferior cage, and
+        #   with that cage's inferior cage (and so on)
+        # Returns the list, with this cage in first position, and the least superior cage in last
+        #   position
+        # If this cage has no inferior, the list will contain only this cage
         #
         # Expected arguments
         #   (none besides $self)
-        #
-        # Return values
-        #   'undef' on improper arguments or if the check fails
-        #   1 if the check succeeds
-
-        my ($self, $check) = @_;
-
-        # Check for improper arguments
-        if (defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->checkEditObj', @_);
-        }
-
-        if ($self->editObj && ! $self->editObj->isa('Games::Axmud::Interface::Alias')) {
-            return undef;
-        } else {
-            return 1;
-        }
-    }
-
-#   sub enableButtons {}        # Inherited from GA::Generic::ConfigWin
-
-#   sub enableSingleButton {}   # Inherited from GA::Generic::ConfigWin
-
-#   sub setupNotebook {}        # Inherited from GA::Generic::ConfigWin
-
-    sub expandNotebook {
-
-        # Called by $self->setupNotebook
-        # Set up additional tabs for the notebook
-        #
-        # Expected arguments
-        #   (none besides $self)
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $check) = @_;
-
-        # Check for improper arguments
-        if (defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->expandNotebook', @_);
-        }
-
-        $self->aliasAttributesTab();
-        $self->beforeAfterTab();
-
-        return 1;
-    }
-
-#   sub saveChanges {}          # Inherited from GA::Generic::ConfigWin
-
-    ##################
-    # Accessors - set
-
-    ##################
-    # Accessors - get
-}
-
-{ package Games::Axmud::EditWin::Interface::Macro;
-
-    use strict;
-    use warnings;
-    use diagnostics;
-
-    use Glib qw(TRUE FALSE);
-
-    our @ISA = qw(
-        Games::Axmud::EditWin::Generic::Interface Games::Axmud::Generic::EditWin
-        Games::Axmud::Generic::ConfigWin Games::Axmud::Generic::FreeWin Games::Axmud::Generic::Win
-        Games::Axmud
-    );
-
-    ##################
-    # Constructors
-
-#   sub new {}                  # Inherited from GA::Generic::ConfigWin
-
-    ##################
-    # Methods
-
-    # Standard window object functions
-
-#   sub winSetup {}             # Inherited from GA::Generic::ConfigWin
-
-#   sub winEnable {}            # Inherited from GA::Generic::ConfigWin
-
-#   sub winDesengage {}         # Inherited from GA::Generic::FreeWin
-
-#   sub winDestroy {}           # Inherited from GA::Generic::FreeWin
-
-#   sub winShowAll {}           # Inherited from GA::Generic::Win
-
-#   sub drawWidgets {}          # Inherited from GA::Generic::ConfigWin
-
-#   sub redrawWidgets {}        # Inherited from GA::Generic::Win
-
-    # ->signal_connects
-
-    # Other functions
-
-    sub checkEditObj {
-
-        # Called by $self->winEnable
-        # Checks that the object stored in $self->editObj is the correct class of object
-        #
-        # Expected arguments
-        #   (none besides $self)
-        #
-        # Return values
-        #   'undef' on improper arguments or if the check fails
-        #   1 if the check succeeds
-
-        my ($self, $check) = @_;
-
-        # Check for improper arguments
-        if (defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->checkEditObj', @_);
-        }
-
-        if ($self->editObj && ! $self->editObj->isa('Games::Axmud::Interface::Macro')) {
-            return undef;
-        } else {
-            return 1;
-        }
-    }
-
-#   sub enableButtons {}        # Inherited from GA::Generic::ConfigWin
-
-#   sub enableSingleButton {}   # Inherited from GA::Generic::ConfigWin
-
-#   sub setupNotebook {}        # Inherited from GA::Generic::ConfigWin
-
-    sub expandNotebook {
-
-        # Called by $self->setupNotebook
-        # Set up additional tabs for the notebook
-        #
-        # Expected arguments
-        #   (none besides $self)
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $check) = @_;
-
-        # Check for improper arguments
-        if (defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->expandNotebook', @_);
-        }
-
-        $self->macroAttributesTab();
-        $self->beforeAfterTab();
-
-        return 1;
-    }
-
-#   sub saveChanges {}          # Inherited from GA::Generic::ConfigWin
-
-    ##################
-    # Accessors - set
-
-    ##################
-    # Accessors - get
-}
-
-{ package Games::Axmud::EditWin::Interface::Timer;
-
-    use strict;
-    use warnings;
-    use diagnostics;
-
-    use Glib qw(TRUE FALSE);
-
-    our @ISA = qw(
-        Games::Axmud::EditWin::Generic::Interface Games::Axmud::Generic::EditWin
-        Games::Axmud::Generic::ConfigWin Games::Axmud::Generic::FreeWin Games::Axmud::Generic::Win
-        Games::Axmud
-    );
-
-    ##################
-    # Constructors
-
-#   sub new {}                  # Inherited from GA::Generic::ConfigWin
-
-    ##################
-    # Methods
-
-    # Standard window object functions
-
-#   sub winSetup {}             # Inherited from GA::Generic::ConfigWin
-
-#   sub winEnable {}            # Inherited from GA::Generic::ConfigWin
-
-#   sub winDesengage {}         # Inherited from GA::Generic::FreeWin
-
-#   sub winDestroy {}           # Inherited from GA::Generic::FreeWin
-
-#   sub winShowAll {}           # Inherited from GA::Generic::Win
-
-#   sub drawWidgets {}          # Inherited from GA::Generic::ConfigWin
-
-#   sub redrawWidgets {}        # Inherited from GA::Generic::Win
-
-    # ->signal_connects
-
-    # Other functions
-
-    sub checkEditObj {
-
-        # Called by $self->winEnable
-        # Checks that the object stored in $self->editObj is the correct class of object
-        #
-        # Expected arguments
-        #   (none besides $self)
-        #
-        # Return values
-        #   'undef' on improper arguments or if the check fails
-        #   1 if the check succeeds
-
-        my ($self, $check) = @_;
-
-        # Check for improper arguments
-        if (defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->checkEditObj', @_);
-        }
-
-        if ($self->editObj && ! $self->editObj->isa('Games::Axmud::Interface::Timer')) {
-            return undef;
-        } else {
-            return 1;
-        }
-    }
-
-#   sub enableButtons {}        # Inherited from GA::Generic::ConfigWin
-
-#   sub enableSingleButton {}   # Inherited from GA::Generic::ConfigWin
-
-#   sub setupNotebook {}        # Inherited from GA::Generic::ConfigWin
-
-    sub expandNotebook {
-
-        # Called by $self->setupNotebook
-        # Set up additional tabs for the notebook
-        #
-        # Expected arguments
-        #   (none besides $self)
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $check) = @_;
-
-        # Check for improper arguments
-        if (defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->expandNotebook', @_);
-        }
-
-        $self->timerAttributesTab();
-        $self->beforeAfterTab();
-
-        return 1;
-    }
-
-#   sub saveChanges {}          # Inherited from GA::Generic::ConfigWin
-
-    ##################
-    # Accessors - set
-
-    ##################
-    # Accessors - get
-}
-
-{ package Games::Axmud::EditWin::Interface::Hook;
-
-    use strict;
-    use warnings;
-    use diagnostics;
-
-    use Glib qw(TRUE FALSE);
-
-    our @ISA = qw(
-        Games::Axmud::EditWin::Generic::Interface Games::Axmud::Generic::EditWin
-        Games::Axmud::Generic::ConfigWin Games::Axmud::Generic::FreeWin Games::Axmud::Generic::Win
-        Games::Axmud
-    );
-
-    ##################
-    # Constructors
-
-#   sub new {}                  # Inherited from GA::Generic::ConfigWin
-
-    ##################
-    # Methods
-
-    # Standard window object functions
-
-#   sub winSetup {}             # Inherited from GA::Generic::ConfigWin
-
-#   sub winEnable {}            # Inherited from GA::Generic::ConfigWin
-
-#   sub winDesengage {}         # Inherited from GA::Generic::FreeWin
-
-#   sub winDestroy {}           # Inherited from GA::Generic::FreeWin
-
-#   sub winShowAll {}           # Inherited from GA::Generic::Win
-
-#   sub drawWidgets {}          # Inherited from GA::Generic::ConfigWin
-
-#   sub redrawWidgets {}        # Inherited from GA::Generic::Win
-
-    # ->signal_connects
-
-    # Other functions
-
-    sub checkEditObj {
-
-        # Called by $self->winEnable
-        # Checks that the object stored in $self->editObj is the correct class of object
-        #
-        # Expected arguments
-        #   (none besides $self)
-        #
-        # Return values
-        #   'undef' on improper arguments or if the check fails
-        #   1 if the check succeeds
-
-        my ($self, $check) = @_;
-
-        # Check for improper arguments
-        if (defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->checkEditObj', @_);
-        }
-
-        if ($self->editObj && ! $self->editObj->isa('Games::Axmud::Interface::Hook')) {
-            return undef;
-        } else {
-            return 1;
-        }
-    }
-
-#   sub enableSingleButton {}   # Inherited from GA::Generic::ConfigWin
-
-#   sub setupNotebook {}        # Inherited from GA::Generic::ConfigWin
-
-    sub expandNotebook {
-
-        # Called by $self->setupNotebook
-        # Set up additional tabs for the notebook
-        #
-        # Expected arguments
-        #   (none besides $self)
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $check) = @_;
-
-        # Check for improper arguments
-        if (defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->expandNotebook', @_);
-        }
-
-        $self->hookAttributesTab();
-        $self->beforeAfterTab();
-
-        return 1;
-    }
-
-#   sub saveChanges {}          # Inherited from GA::Generic::ConfigWin
-
-    ##################
-    # Accessors - set
-
-    ##################
-    # Accessors - get
-}
-
-{ package Games::Axmud::EditWin::InterfaceModel;
-
-    use strict;
-    use warnings;
-    use diagnostics;
-
-    use Glib qw(TRUE FALSE);
-
-    our @ISA = qw(
-        Games::Axmud::Generic::EditWin Games::Axmud::Generic::ConfigWin
-        Games::Axmud::Generic::FreeWin Games::Axmud::Generic::Win Games::Axmud
-    );
-
-    ##################
-    # Constructors
-
-#   sub new {}                  # Inherited from GA::Generic::ConfigWin
-
-    ##################
-    # Methods
-
-    # Standard window object functions
-
-#   sub winSetup {}             # Inherited from GA::Generic::ConfigWin
-
-#   sub winEnable {}            # Inherited from GA::Generic::ConfigWin
-
-#   sub winDesengage {}         # Inherited from GA::Generic::FreeWin
-
-#   sub winDestroy {}           # Inherited from GA::Generic::FreeWin
-
-#   sub winShowAll {}           # Inherited from GA::Generic::Win
-
-#   sub drawWidgets {}          # Inherited from GA::Generic::ConfigWin
-
-#   sub redrawWidgets {}        # Inherited from GA::Generic::Win
-
-    # ->signal_connects
-
-    # Other functions
-
-    sub checkEditObj {
-
-        # Called by $self->winEnable
-        # Checks that the object stored in $self->editObj is the correct class of object
-        #
-        # Expected arguments
-        #   (none besides $self)
-        #
-        # Return values
-        #   'undef' on improper arguments or if the check fails
-        #   1 if the check succeeds
-
-        my ($self, $check) = @_;
-
-        # Check for improper arguments
-        if (defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->checkEditObj', @_);
-        }
-
-        if ($self->editObj && ! $self->editObj->isa('Games::Axmud::Generic::InterfaceModel')) {
-            return undef;
-        } else {
-            return 1;
-        }
-    }
-
-    sub enableButtons {
-
-        # Called by $self->drawWidgets
-        # We only need a single button so, instead of calling the generic ->enableButtons, call a
-        #   method that creates just one button
-        #
-        # Expected arguments
-        #   $hBox       - The horizontal packing box in which the buttons live (not yet stored as
-        #                   an IV)
         #
         # Return values
         #   An empty list on improper arguments
-        #   Otherwise, a list containing the Gtk::Button object created
+        #   Otherwise, the list described above
 
-        my ($self, $hBox, $check) = @_;
+        my ($self, $check) = @_;
 
         # Local variables
-        my @emptyList;
-
-        # Check for improper arguments
-        if (! defined $hBox || defined $check) {
-
-            $axmud::CLIENT->writeImproper($self->_objClass . '->enableButtons', @_);
-            return @emptyList;
-        }
-
-        return $self->enableSingleButton($hBox);
-    }
-
-#   sub enableSingleButton {}   # Inherited from GA::Generic::ConfigWin
-
-    sub setupNotebook {
-
-        # Called by $self->winEnable
-        # Creates the first tab for the notebook. The remaining tabs are created by
-        #   $self->expandNotebook
-        #
-        # Expected arguments
-        #   (none besides $self)
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $check) = @_;
+        my (
+            $lowerCage, $lowestCage,
+            @cageList,
+        );
 
         # Check for improper arguments
         if (defined $check) {
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->setupNotebook', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->compileCages', @_);
         }
 
-        # Tab setup, using the standard grid size
-        my $grid = $self->addTab('_Category', $self->notebook);
+        # Check this cage's inferior, and that cage's inferior, and so on until the least superior
+        #   cage is found
+        $lowerCage = $self->editObj;
 
-        # Set up the rest of the tab
-        $self->categoryTab($grid);
+        do {
 
-        # Set up the remaining tabs
-        $self->expandNotebook();
+            my $thisCage = $self->session->ivShow('inferiorCageHash', $lowerCage->name);
 
-        # Tab complete
-        return 1;
+            if (defined $thisCage) {
+
+                push (@cageList, $lowerCage);
+                $lowerCage = $thisCage;
+
+            } else {
+
+                push (@cageList, $lowerCage);
+                $lowestCage = $lowerCage;
+            }
+
+        } until ($lowestCage);
+
+        return @cageList;
     }
 
-    sub expandNotebook {
+    # Notebook tabs used by more than one cage 'edit' window
 
-        # Called by $self->setupNotebook
-        # Set up additional tabs for the notebook
-        #
-        # Expected arguments
-        #   (none besides $self)
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
+    sub nameTab {
 
-        my ($self, $check) = @_;
-
-        # Check for improper arguments
-        if (defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->expandNotebook', @_);
-        }
-
-        $self->attributesTab();
-
-        return 1;
-    }
-
-#   sub saveChanges {}          # Inherited from GA::Generic::ConfigWin
-
-    # Notebook tabs
-
-    sub categoryTab {
-
-        # Category tab - called by $self->setupNotebook
+        # Name tab - called by $self->setupNotebook
         #
         # Expected arguments
         #   $grid   - The Gtk3::Grid for this tab
@@ -15016,275 +12653,58 @@
         my ($self, $grid, $check) = @_;
 
         # Local variables
-        my @eventList;
+        my $obj;
 
         # Check for improper arguments
         if (! defined $grid || defined $check) {
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->categoryTab', @_);
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->nameTab', @_);
         }
 
-#       # Tab setup (already created by the calling function)
-#       my $grid = $self->addTab('_Name', $self->notebook);
+        # Tab setup (already created by the calling function)
 
         # Left column
-        $self->addLabel($grid, '<b>Interface category</b>',
-            0, 6, 0, 1);
-        $self->addLabel($grid, 'Category',
-            1, 3, 1, 2);
-        $self->addEntry($grid, 'category', FALSE,
-            3, 6, 1, 2);
+        $self->addLabel($grid, '<b>Cage settings</b>',
+            0, 12, 0, 1);
+
+        $self->addLabel($grid, '<i>Cage</i>',
+            1, 12, 1, 2);
+        $self->addLabel($grid, 'Cage name',
+            2, 5, 2, 3);
+        $self->addEntry($grid, 'name', FALSE,
+            5, 12, 2, 3, 42, 42);               # Cage's max names are 42 characters
+
+        $self->addLabel($grid, 'Cage type',
+            2, 5, 3, 4);
+        $self->addEntry($grid, 'cageType', FALSE,
+            5, 7, 3, 4, 8, 8);
+
+        $self->addLabel($grid, 'Inferior cage',
+            2, 5, 4, 5);
+        my $entry = $self->addEntry($grid, undef, 0,
+            5, 12, 4, 5);
+        if ($self->session->ivExists('inferiorCageHash', $self->editObj->name)) {
+
+            $obj = $self->session->ivShow('inferiorCageHash', $self->editObj->name);
+            $entry->set_text($obj->name);
+        }
+
+        $self->addLabel($grid, '<i>Associated profile</i>',
+            1, 12, 5, 6);
+
+        $self->addLabel($grid, 'Profile name',
+            2, 5, 6, 7);
+        $self->addEntry($grid, 'profName', FALSE,
+            5, 7, 6, 7, 16, 16);
 
         # Right column
-        $self->addLabel($grid, '<b>' . ucfirst($self->editObj->category) . ' attributes</b>',
-            7, 12, 0, 1);
-        $self->addLabel($grid, 'Stimulus name',
-            7, 9, 1, 2);
-        $self->addEntry($grid, 'stimulusName', FALSE,
-            9, 12, 1, 2);
-        $self->addLabel($grid, 'Response name',
-            7, 9, 2, 3);
-        $self->addEntry($grid, 'responseName', FALSE,
-            9, 12, 2, 3);
+        $self->addCheckButton($grid, 'Standard cage', 'standardFlag', FALSE,
+            8, 12, 3, 4);
 
-        # Hook events (for the hook interface model object only)
-        if ($self->editObj->category eq 'hook') {
-
-            # Hook events
-            $self->addLabel($grid, '<b>List of hook events</b>',
-                0, 12, 3, 4);
-            my $textView = $self->addTextView($grid, undef, FALSE,
-               1, 12, 4, 12);
-
-            @eventList = sort {$a cmp $b} ($self->editObj->ivKeys('hookEventHash'));
-
-            my $buffer = $textView->get_buffer();
-            $buffer->set_text(join("\n", @eventList));
-        }
-
-        # Tab complete
-        return 1;
-    }
-
-    sub attributesTab {
-
-        # Attributes tab
-        #
-        # Expected arguments
-        #   (none besides $self)
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $check) = @_;
-
-        # Check for improper arguments
-        if (defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->attributesTab', @_);
-        }
-
-        # Tab setup
-        # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('_Attributes', $self->notebook);
-
-        # Add tabs to the inner notebook
-        $self->attributes1Tab($innerNotebook);
-        $self->attributes2Tab($innerNotebook);
-        $self->attributes3Tab($innerNotebook);
-        $self->attributes4Tab($innerNotebook);
-
-        return 1;
-    }
-
-    sub attributes1Tab {
-
-        # Attributes1 tab
-        #
-        # Expected arguments
-        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $innerNotebook, $check) = @_;
-
-        # Local variables
-        my @columnList;
-
-        # Check for improper arguments
-        if (! defined $innerNotebook || defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->attributes1Tab', @_);
-        }
-
-        # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
-
-        # Quest solution
-        $self->addLabel($grid, '<b>Attribute types</b>',
-            0, 12, 0, 1);
-        $self->addLabel($grid, '<i>Acceptable values for all attributes (standard and '
-            . $self->editObj->category . ' attributes)</i>',
-            1, 12, 1, 2);
-
-        # Add a simple list
-        @columnList = (
-            'Attribute', 'text',
-            'Type', 'text',
-        );
-
-        my $slWidget = $self->addSimpleList($grid, undef, \@columnList,
-            1, 12, 2, 10);
-
-        # Initialise the list
-        $self->refreshList_hashIV($slWidget, (scalar @columnList / 2), 'attribTypeHash');
-
-        # Tab complete
-        return 1;
-    }
-
-    sub attributes2Tab {
-
-        # Attributes2 tab
-        #
-        # Expected arguments
-        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $innerNotebook, $check) = @_;
-
-        # Local variables
-        my @columnList;
-
-        # Check for improper arguments
-        if (! defined $innerNotebook || defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->attributes2Tab', @_);
-        }
-
-        # Tab setup
-        my $grid = $self->addTab('Page _2', $innerNotebook);
-
-        # Quest solution
-        $self->addLabel($grid, '<b>Default values</b>',
-            0, 12, 0, 1);
-        $self->addLabel($grid, '<i>Default values for ' . $self->editObj->category
-            . ' attributes</i>',
-            1, 12, 1, 2);
-
-        # Add a simple list
-        @columnList = (
-            'Attribute', 'text',
-            'Default value', 'text',
-        );
-
-        my $slWidget = $self->addSimpleList($grid, undef, \@columnList,
-            1, 12, 2, 10);
-
-        # Initialise the list
-        $self->refreshList_hashIV($slWidget, (scalar @columnList / 2), 'optionalAttribHash');
-
-        # Tab complete
-        return 1;
-    }
-
-    sub attributes3Tab {
-
-        # Attributes3 tab
-        #
-        # Expected arguments
-        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $innerNotebook, $check) = @_;
-
-        # Local variables
-        my @columnList;
-
-        # Check for improper arguments
-        if (! defined $innerNotebook || defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->attributes3Tab', @_);
-        }
-
-        # Tab setup
-        my $grid = $self->addTab('Page _3', $innerNotebook);
-
-        # Quest solution
-        $self->addLabel($grid, '<b>Compulsory switches</b>',
-            0, 12, 0, 1);
-        $self->addLabel($grid, '<i>List of compulsory switches for the \'' . $axmud::CLIENT->cmdSep
-            . 'add' . $self->editObj->category . '\' command</i>',
-            1, 12, 1, 2);
-
-        # Add a simple list
-        @columnList = (
-            'Attribute', 'text',
-            'Switch', 'text',
-        );
-
-        my $slWidget = $self->addSimpleList($grid, undef, \@columnList,
-            1, 12, 2, 10);
-
-        # Initialise the list
-        $self->refreshList_hashIV($slWidget, (scalar @columnList / 2), 'compulsorySwitchHash');
-
-        # Tab complete
-        return 1;
-    }
-
-    sub attributes4Tab {
-
-        # Attributes4 tab
-        #
-        # Expected arguments
-        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
-        #
-        # Return values
-        #   'undef' on improper arguments
-        #   1 otherwise
-
-        my ($self, $innerNotebook, $check) = @_;
-
-        # Local variables
-        my @columnList;
-
-        # Check for improper arguments
-        if (! defined $innerNotebook || defined $check) {
-
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->attributes4Tab', @_);
-        }
-
-        # Tab setup
-        my $grid = $self->addTab('Page _4', $innerNotebook);
-
-        # Quest solution
-        $self->addLabel($grid, '<b>Default values</b>',
-            0, 12, 0, 1);
-        $self->addLabel($grid, '<i>List of optional switches for the \'' . $axmud::CLIENT->cmdSep
-            . 'add' . $self->editObj->category . '\' command</i>',
-            1, 12, 1, 2);
-
-        # Add a simple list
-        @columnList = (
-            'Attribute', 'text',
-            'Switch', 'text',
-        );
-
-        my $slWidget = $self->addSimpleList($grid, undef, \@columnList,
-            1, 12, 2, 10);
-
-        # Initialise the list
-        $self->refreshList_hashIV($slWidget, (scalar @columnList / 2), 'optionalSwitchHash');
+        $self->addLabel($grid, 'Profile category',
+            8, 10, 6, 7);
+        $self->addEntry($grid, 'profCategory', FALSE,
+            10, 12, 6, 7);
 
         # Tab complete
         return 1;
@@ -15301,7 +12721,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -15399,7 +12819,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Mask', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Mask',
+            ['Cage mask'],
+        );
 
         # Cage mask
         $self->addLabel($grid, '<b>Cage mask</b>',
@@ -15721,11 +13145,3122 @@
     # Accessors - get
 }
 
+{ package Games::Axmud::EditWin::Generic::Interface;
+
+    use strict;
+    use warnings;
+#   use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(
+        Games::Axmud::Generic::EditWin Games::Axmud::Generic::ConfigWin
+        Games::Axmud::Generic::FreeWin Games::Axmud::Generic::Win Games::Axmud
+    );
+
+    ##################
+    # Constructors
+
+#   sub new {}                  # Inherited from GA::Generic::ConfigWin
+
+    ##################
+    # Methods
+
+    # Standard window object functions
+
+#   sub winSetup {}             # Inherited from GA::Generic::ConfigWin
+
+#   sub winEnable {}            # Inherited from GA::Generic::ConfigWin
+
+#   sub winDesengage {}         # Inherited from GA::Generic::FreeWin
+
+#   sub winDestroy {}           # Inherited from GA::Generic::FreeWin
+
+#   sub winShowAll {}           # Inherited from GA::Generic::Win
+
+#   sub drawWidgets {}          # Inherited from GA::Generic::ConfigWin
+
+#   sub redrawWidgets {}        # Inherited from GA::Generic::Win
+
+    # ->signal_connects
+
+    # Other functions
+
+#   sub checkEditObj {}         # Inherited from GA::Generic::ConfigWin
+
+#   sub enableButtons {}        # Inherited from GA::Generic::ConfigWin
+
+#   sub enableSingleButton {}   # Inherited from GA::Generic::ConfigWin
+
+    sub setupNotebook {
+
+        # Called by $self->winEnable
+        # Creates the first tab for the notebook. The remaining tabs are created by
+        #   $self->expandNotebook
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->setupNotebook', @_);
+        }
+
+        # Tab setup, using the standard grid size
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Name',
+            ['Standard interface attributes'],
+        );
+
+        # Unusual step - create a hash IV for all 'edit' windows inheriting this one. Each key-value
+        #   pair corresponds to a key-value pair in GA::Interface::Trigger->attribHash (etc)
+        $self->{attribHash} = {};
+        # Also create two list IVs which store the list of keys which will be saved in
+        #   GA::Interface::Trigger->beforeHash or ->afterHash
+        $self->{beforeList} = [];
+        $self->{afterList} = [];
+        # $self-saveChanges needs to know when those list IVs have been modified, so we need two
+        #   flags, as well. (If the lists are emptied, that counts as a change, so we can't simply
+        #   test whether ->beforeList and ->afterList are not empty)
+        $self->{beforeFlag} = FALSE;
+        $self->{afterFlag} = FALSE;
+
+        # Set up the rest of the tab
+        $self->nameTab($grid);
+
+        # Set up the remaining tabs
+        $self->expandNotebook();
+
+        # Tab complete
+        return 1;
+    }
+
+#   sub expandNotebook {}       # Inherited from GA::Generic::ConfigWin
+
+    sub saveChanges {
+
+        # Called by $self->buttonOK and $self->buttonSave
+        # Saves any changes made to data stored by the edit object (which can be three of the four
+        #   standard attributes, 'stimulus', 'response' and 'enabled'). Also saves any modified
+        #   attributes stored in $self->attribHash
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my (
+            $stimulus, $interfaceModelObj,
+            %attribHash, %beforeHash, %afterHash,
+        );
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->saveChanges', @_);
+        }
+
+        if ($self->editHash || $self->attribHash || $self->beforeFlag || $self->afterFlag) {
+
+            # Special arrangements for hooks, for which custom hook events must begin with an
+            #   underlin
+            # If the value of the 'stimulus' attribute does not start with an underline (and is not
+            #   a standard hook event), then add one
+            if ($self->editObj->category eq 'hook' && $self->ivExists('editHash', 'stimulus')) {
+
+                $stimulus = $self->ivShow('editHash', 'stimulus');
+                $interfaceModelObj = $axmud::CLIENT->ivShow(
+                    'interfaceModelHash',
+                    $self->editObj->category,
+                );
+
+                if (
+                    defined $stimulus
+                    && ! $interfaceModelObj->ivExists('hookEventHash', $stimulus)
+                    && ! ($stimulus =~ m/^\_/)
+                ) {
+                    $self->ivAdd('editHash', 'stimulus', '_' . $stimulus);
+                }
+            }
+
+            # Transfer the modified non-standard attributes $self->attribHash to the local variable
+            #   %attribHash. At the same time, deal with any 'dummy' attributes stored in
+            #   $self->attribHash
+            foreach my $attrib ($self->ivKeys('attribHash')) {
+
+                my $value = $self->ivShow('attribHash', $attrib);
+
+                # Attributes beginning with an underline are 'dummy' attributes, used to help set
+                #   the values of other attributes (e.g. '_substr_num', used to set 'style_mode')
+                if (substr($attrib, 0, 1) ne '_') {
+
+                    if ($attrib eq 'style_mode' && $value == -3) {
+
+                        # The attribute's true value is stored in the dummy attribute, '_substr_num'
+                        $attribHash{$attrib} = $self->ivShow('attribHash', '_substr_num');
+
+                    } else {
+
+                        # Normal attribute
+                        $attribHash{$attrib} = $value;
+                    }
+                }
+            }
+
+            # Add any modified standard attributes to %attribHash. $self->editHash can contain the
+            #   keys 'stimulus', 'response' and 'enabled'
+            foreach my $attrib ($self->ivKeys('editHash')) {
+
+                if ($attrib eq 'stimulus' || $attrib eq 'response') {
+                    $attribHash{$attrib} = $self->ivShow('editHash', $attrib);
+                } elsif ($attrib eq 'enabledFlag') {
+                    $attribHash{'enabled'} = $self->ivShow('editHash', 'enabledFlag');
+                }
+            }
+
+            if (%attribHash) {
+
+                # Store the modified standard and non-standard attributes
+                $self->editObj->modifyAttribs($self->session, %attribHash);
+
+                # Update every active interface based on the inactive interface, $self->editObj. Do
+                #   the update in every affected session, except this one
+                foreach my $otherSession ($axmud::CLIENT->listSessions()) {
+
+                    if (
+                        $otherSession->currentWorld eq $self->session->currentWorld
+                        && $otherSession ne $self->session
+                    ) {
+                        $otherSession->updateInterfaces($self->editObj, %attribHash);
+                    }
+                }
+
+                # Now do the update for active interfaces in this session
+                $self->session->updateInterfaces($self->editObj, %attribHash);
+            }
+
+            # If $self->beforeList or $self->afterList have been modified, store those changes, too
+            if ($self->beforeFlag) {
+
+                foreach my $item ($self->beforeList) {
+
+                    $beforeHash{$item} = undef;
+                }
+
+                $self->editObj->ivPoke('beforeHash', %beforeHash);
+            }
+
+            if ($self->afterFlag) {
+
+                foreach my $item ($self->afterList) {
+
+                    $afterHash{$item} = undef;
+                }
+
+                $self->editObj->ivPoke('afterHash', %afterHash);
+            }
+
+            # The local IVs can now be reset
+            $self->ivEmpty('editHash');
+            $self->ivEmpty('attribHash');
+            $self->ivEmpty('beforeList');
+            $self->ivEmpty('afterList');
+            $self->ivPoke('beforeFlag', FALSE);
+            $self->ivPoke('afterFlag', FALSE);
+
+            # Mark the object's corresponding file object as needing to be saved, if it exists
+            if ($self->editObj->_parentFile) {
+
+                $self->editObj->doModify('saveChanges');
+            }
+
+            # Update the current session's data viewer window, if it is open
+            if ($self->session->viewerWin) {
+
+                $self->session->viewerWin->updateNotebook();
+            }
+        }
+
+        return 1;
+    }
+
+    # Notebook tabs used by more than one interface 'edit' window
+
+    sub nameTab {
+
+        # Name tab - called by $self->setupNotebook
+        #
+        # Expected arguments
+        #   $grid   -   The Gtk3::Grid for this tab
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $grid, $check) = @_;
+
+        # Local variables
+        my (
+            $interfaceModelObj, $title,
+            @comboList,
+        );
+
+        # Check for improper arguments
+        if (! defined $grid || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->nameTab', @_);
+        }
+
+        # Tab setup (already created by the calling function)
+
+        # Get the corresponding interface model object
+        $interfaceModelObj = $axmud::CLIENT->ivShow('interfaceModelHash', $self->editObj->category);
+
+        # Standard interface attributes
+        $self->addLabel($grid, '<b>Standard interface attributes</b>',
+            0, 12, 0, 1);
+        $self->addLabel($grid, 'Name',
+            1, 3, 1, 2);
+        $self->addEntry($grid, 'name', FALSE,
+            3, 6, 1, 2);
+        $self->addCheckButton($grid, 'Enabled', 'enabledFlag', TRUE,
+            7, 12, 1, 2);
+
+        $self->addLabel($grid, 'Category',
+            1, 3, 2, 3);
+        $self->addEntry($grid, 'category', FALSE,
+            3, 6, 2, 3);
+
+        $self->addLabel($grid, 'Stimulus <i>(' . $interfaceModelObj->stimulusName . ')</i>',
+            1, 3, 3, 4);
+
+        if ($self->editObj->category eq 'trigger' || $self->editObj->category eq 'alias') {
+
+            $self->addEntryWithIcon($grid, 'stimulus', 'regex', 1, undef,
+                3, 12, 3, 4);
+
+        } elsif ($self->editObj->category eq 'macro') {
+
+            $self->addEntryWithIcon($grid, 'stimulus', 'string', 1, undef,
+                3, 12, 3, 4);
+
+        } elsif ($self->editObj->category eq 'timer') {
+
+            $self->addEntryWithIcon($grid, 'stimulus', \&nameTab_checkInterval, undef, undef,
+                3, 12, 3, 4);
+
+        } elsif ($self->editObj->category eq 'hook') {
+
+            my $entry = $self->addEntryWithIcon(
+                $grid, 'stimulus', \&nameTab_checkHookEvent, undef, undef,
+                3, 6, 3, 4);
+
+            # Hooks get an extra combo, for inserting a standard hook event
+            @comboList = sort {$a cmp $b} ($interfaceModelObj->ivKeys('hookEventHash'));
+            $title = 'Or use standard hook event:';
+
+            my $combo = $self->addComboBox($grid, undef, \@comboList, $title,
+                TRUE,               # No 'undef' value used
+                6, 12, 3, 4);
+            $combo->signal_connect('changed' => sub {
+
+                my $text = $combo->get_active_text();
+                if ($text ne $title) {
+
+                    $entry->set_text($text);
+                    # Reset the combo
+                    $combo->set_active(0);
+                }
+            });
+        }
+
+        # For triggers, the response can be any of 'instruction', 'pattern', 'substitution'
+        $self->addLabel($grid, 'Response <i>(' . $interfaceModelObj->responseName . ')</i>',
+            1, 3, 4, 5);
+        $self->addEntryWithIcon($grid, 'response', 'string', 1, undef,
+            3, 12, 4, 5);
+        if ($interfaceModelObj->category eq 'trigger') {
+
+            $self->addLabel(
+                $grid,
+                '<i>NB Splitter triggers: the response is a pattern.</i>',
+                3, 12, 5, 6);
+            $self->addLabel(
+                $grid,
+                '<i>NB Rewriter triggers: the response is a substitution</i>',
+                3, 12, 6, 7);
+        }
+
+        # Tab complete
+        return 1;
+    }
+
+    sub nameTab_checkInterval {
+
+        # Called by $self->nameTab to check a timer interval is valid
+        #
+        # Expected arguments
+        #   $value      - The value to check, should be a number (minimum value 0.01), or a 24-hour
+        #                   clock time in the form HH::MM
+        #
+        # Return values
+        #   'undef' on improper arguments or if $value is invalid
+        #   1 if $value is valid
+
+        my ($self, $value, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $value || defined $check) {
+
+            return $axmud::CLIENT->writeImproper(
+                $self->_objClass . '->nameTab_checkInterval',
+                @_,
+            );
+        }
+
+        if (
+            ! $axmud::CLIENT->floatCheck($value, 0.1)
+            && ! ($value =~ m/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/)
+            && ! ($value =~ m/^99\:[0-5][0-9]$/)
+        ) {
+            return undef;
+        } else {
+            return 1;
+        }
+    }
+
+    sub nameTab_checkHookEvent {
+
+        # Called by $self->nameTab to check a hook event is valid
+        #
+        # Expected arguments
+        #   $value  - The value to check, should be a standard hook event, or a custom event whose
+        #               name starts with an underline, followed by an alphanumeric character
+        #
+        # Return values
+        #   'undef' on improper arguments or for an invalid hook event
+        #   1 for a valid hook event
+
+        my ($self, $value, $check) = @_;
+
+        # Local variables
+        my $interfaceModelObj;
+
+        # Check for improper arguments
+        if (! defined $value || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->hookEventCheck', @_);
+        }
+
+        $interfaceModelObj = $axmud::CLIENT->ivShow('interfaceModelHash', 'hook');
+
+        # Custom hook events must begin with an underline, followed by an alphanumeric character
+        # If the user doesn't type an underline, the 'Add' button will add one
+        if (
+            ! $interfaceModelObj->ivExists('hookEventHash', $value)
+            && ! ($value =~ m/^\_[A-Za-z0-9]/)
+            && ! ($value =~ m/^[A-Za-z0-9]/)
+        ) {
+            return undef;
+        } else {
+            return 1;
+        }
+    }
+
+    sub beforeAfterTab {
+
+        # BeforeAfter tab
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my ($single, $plural);
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->beforeAfterTab', @_);
+        }
+
+        $single = $self->editObj->category;
+        if ($single eq 'alias') {
+            $plural = 'aliases';
+        } else {
+            $plural = $single . 's';
+        }
+
+        # Tab setup
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Before / after',
+            ['Before ' . $plural, 'After ' . $plural],
+        );
+
+        # Before
+        $self->addLabel($grid, '<b>Before ' . $plural . '</b>',
+            0, 12, 0, 2);
+        $self->addLabel(
+            $grid,
+            '<i>When this ' . $single . ' becomes active, it is tested before the following '
+            . $plural . '</i>',
+            1, 12, 2, 4);
+        $self->beforeAfterTab_addTextView($grid, 'before', 4);
+
+        # After
+        $self->addLabel($grid, '<b>After ' . $plural . '</b>',
+            0, 12, 6, 8);
+        $self->addLabel(
+            $grid,
+            '<i>When this ' . $single . ' becomes active, it is tested after the following '
+            . $plural . '</i>',
+            1, 12, 8, 10);
+        $self->beforeAfterTab_addTextView($grid, 'after', 10);
+
+        # (Explanatory message for triggers only)
+        if ($single eq 'trigger') {
+
+            $self->addLabel(
+                $grid,
+                '<i>(NB All splitter triggers are tested before any other kind of trigger is'
+                . ' tested)</i>',
+                1, 12, 12, 14);
+        }
+
+        # Tab complete
+        return 1;
+    }
+
+    sub beforeAfterTab_addTextView {
+
+        # Called by $self->beforeAfterTab to create a Gtk3::TextView whose contents are treated as
+        #   lists, and saved in $self->beforeList or $self->afterList
+        # (We don't use the standard GA::Generic::EditWin->addTextView because we need these
+        #   textviews to create lists, which are saved as hashes in $self->editObj)
+        #
+        # Expected arguments
+        #   $grid       - The Gtk3::Grid for this tab
+        #   $type       - 'before' or 'after'
+        #   $row        - The Gtk3::Grid row where the textview is drawn
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $grid, $type, $row, $check) = @_;
+
+        # Local variables
+        my @sortedList;
+
+        # Check for improper arguments
+        if (! defined $grid || ! defined $type || ! defined $row || defined $check) {
+
+            return $axmud::CLIENT->writeImproper(
+                $self->_objClass . '->beforeAfterTab_addTextView',
+                @_,
+            );
+        }
+
+        # Create the textview
+        my $textView = $self->addTextView($grid, undef, TRUE,
+            1, 12, $row, ($row + 2),
+            TRUE, TRUE, TRUE, FALSE,    # Treat as list, remove empty lines, do remove whitespace
+        );
+        my $buffer = $textView->get_buffer();
+
+        # Display a list of the keys in $self->editObj->beforeHash / ->afterHash (sort them
+        #   alphabetically, for good measure)
+        @sortedList = sort {lc($a) cmp lc($b)} ($self->editObj->ivKeys($type . 'Hash'));
+        $buffer->set_text(join("\n", @sortedList));
+
+        # Store any changes the user makes in $self->$localIV
+        $buffer->signal_connect('changed' => sub {
+
+            my (
+                $text,
+                @list, @finalList,
+            );
+
+            $text = $axmud::CLIENT->desktopObj->bufferGetText($buffer);
+
+            # Split the contents of the textview into a list of lines, separated by newline
+            #   characters
+            @list = split("\n", $text);
+            # Remove any empty lines and leading/trailing whitespace, if allowed
+            foreach my $line (@list) {
+
+                $line =~ s/^\s+//;  # Remove leading whitespace
+                $line =~ s/\s+$//;  # Remove trailing whitespace
+
+                if ($line) {
+
+                    push (@finalList, $line);
+                }
+            }
+
+            # Store the contents, temporarily, so that they're available to $self->saveChanges
+            $self->ivPoke($type . 'List', @finalList);
+            # Set a flag, to mark that changes have been made
+            $self->ivPoke($type . 'Flag', TRUE);
+        });
+
+        return $textView;
+    }
+
+    ##################
+    # Accessors - set
+
+    ##################
+    # Accessors - get
+
+    sub attribHash
+        { my $self = shift; return %{$self->{attribHash}}; }
+    sub beforeList
+        { my $self = shift; return @{$self->{beforeList}}; }
+    sub afterList
+        { my $self = shift; return @{$self->{afterList}}; }
+    sub beforeFlag
+        { $_[0]->{beforeFlag} }
+    sub afterFlag
+        { $_[0]->{afterFlag} }
+}
+
+{ package Games::Axmud::EditWin::Generic::InterfaceCage;
+
+    use strict;
+    use warnings;
+#   use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(
+        Games::Axmud::EditWin::Generic::Cage Games::Axmud::Generic::EditWin
+        Games::Axmud::Generic::ConfigWin Games::Axmud::Generic::FreeWin Games::Axmud::Generic::Win
+        Games::Axmud
+    );
+
+    ##################
+    # Constructors
+
+#   sub new {}                  # Inherited from GA::Generic::ConfigWin
+
+    ##################
+    # Methods
+
+    # Standard window object functions
+
+#   sub winSetup {}             # Inherited from GA::Generic::ConfigWin
+
+#   sub winEnable {}            # Inherited from GA::Generic::ConfigWin
+
+#   sub winDesengage {}         # Inherited from GA::Generic::FreeWin
+
+#   sub winDestroy {}           # Inherited from GA::Generic::FreeWin
+
+#   sub winShowAll {}           # Inherited from GA::Generic::Win
+
+#   sub drawWidgets {}          # Inherited from GA::Generic::ConfigWin
+
+#   sub redrawWidgets {}        # Inherited from GA::Generic::Win
+
+    # ->signal_connects
+
+    # Other functions
+
+#   sub checkEditObj {}         # Inherited from GA::Generic::ConfigWin
+
+#   sub enableButtons {}        # Inherited from GA::Generic::ConfigWin
+
+#   sub enableSingleButton {}   # Inherited from GA::Generic::ConfigWin
+
+    sub setupNotebook {
+
+        # Called by $self->winEnable
+        # Creates the first tab for the notebook. The remaining tabs are created by
+        #   $self->expandNotebook
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->setupNotebook', @_);
+        }
+
+        # Tab setup, using the standard grid size
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Name',
+            ['Cage settings'],
+        );
+
+        # Interface cage 'edit' windows have some non-standard IVs, used to allow one tab to affect
+        #   the contents of others and to allow the same code to be inherited efficiently by
+        #   different types of interface cage 'edit' window
+        # The values for each IV are set in the inheriting object's ->interfacesTab function
+        $self->{slWidget1} = undef;
+        $self->{slWidget2} = undef;
+        $self->{singular} = undef;
+        $self->{plural} = undef;
+        $self->{interfaceModelObj} = undef;
+        $self->{stimulus} = undef;
+        $self->{response} = undef;
+
+        # Set up the rest of the tab
+        $self->nameTab($grid);
+
+        # Set up the remaining tabs
+        $self->expandNotebook();
+
+        # Tab complete
+        return 1;
+    }
+
+    sub expandNotebook {
+
+        # Called by $self->setupNotebook
+        # Set up additional tabs for the notebook, depending on which type of cage is being edited
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->expandNotebook', @_);
+        }
+
+        $self->interfacesTab();
+
+        return 1;
+    }
+
+#   sub saveChanges {}          # Inherited from GA::Generic::ConfigWin
+
+    # Notebook tabs used by more than one cage 'edit' window
+
+    sub interfaces1Tab {
+
+        # Interfaces1 tab
+        #
+        # Expected arguments
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $innerNotebook, $check) = @_;
+
+        # Local variables
+        my @columnList;
+
+        # Check for improper arguments
+        if (! defined $innerNotebook || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->interfaces1Tab', @_);
+        }
+
+        # Tab setup
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            [ucfirst($self->singular) . ' list with attributes'],
+        );
+
+        # Interface list
+        $self->addLabel($grid, '<b>' . ucfirst($self->singular) . ' list</b>',
+            0, 12, 0, 1);
+        $self->addLabel($grid,
+            '<i>List of ' . $self->plural . ' belonging to this cage (showing '
+            . $self->{singular} . ' attributes)</i>',
+            1, 12, 1, 2);
+
+        # Add a simple list
+        @columnList = (
+            ucfirst($self->singular) . ' name', 'text',
+            'Enabled', 'bool',
+            'Stimulus', 'text',
+            'Response', 'text',
+        );
+
+        my $slWidget = $self->addSimpleList($grid, undef, \@columnList,
+            1, 12, 2, 8);
+
+        # Unusual step - save the list reference in an IV
+        $self->ivPoke('slWidget2', $slWidget);
+
+        # Initialise the list
+        $self->interfaces1Tab_refreshList();
+
+        # Add some buttons and entry boxes
+        $self->interfacesTab_addButtons($grid, $slWidget, (scalar @columnList / 2));
+
+        # Tab complete
+        return 1;
+    }
+
+    sub interfaces1Tab_refreshList {
+
+        # Called by $self->interfaces1Tab (etc) to reset the GA::Obj::SimpleList
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my (@sortedList, @dataList);
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper(
+                $self->_objClass . '->interfaces1Tab_refreshList',
+                @_,
+            );
+        }
+
+        # Get a sorted list of interface objects from the cage
+        @sortedList
+            = sort {lc($a->name) cmp lc($b->name)} ($self->editObj->ivValues('interfaceHash'));
+
+        # Compile the simple list data
+        foreach my $interfaceObj (@sortedList) {
+
+            push (@dataList,
+                $interfaceObj->name,
+                $interfaceObj->enabledFlag,
+                $interfaceObj->stimulus,
+                $interfaceObj->response,
+            );
+        }
+
+        # Reset the simple list (page 2 has four columns)
+        $self->resetListData($self->slWidget2, [@dataList], 4);
+
+        return 1;
+    }
+
+    sub interfaces2Tab {
+
+        # Interfaces2 tab
+        #
+        # Expected arguments
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $innerNotebook, $check) = @_;
+
+        # Local variables
+        my (@columnList, @cageList);
+
+        # Check for improper arguments
+        if (! defined $innerNotebook || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->interfaces2Tab', @_);
+        }
+
+        # Tab setup
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _2',
+            [ucfirst($self->singular) . ' list with lower-priority cages'],
+        );
+
+        # Interface list
+        $self->addLabel($grid, '<b>' . ucfirst($self->singular) . ' list</b>',
+            0, 12, 0, 1);
+        $self->addLabel($grid,
+            '<i>List of ' . $self->plural . ' belonging to this cage (compared with lower-priority'
+            . ' cages)</i>',
+            1, 12, 1, 2);
+
+        # Add a simple list. The number of columns is equal to the number of cages between this one
+        #   and the least superior cage. (If this cage has no inferior, there's only one column)
+        # Each column (except the first one) has a title containing the cage's associated profile
+        @cageList = $self->compileCages();
+
+        # Use different text in the column for the first item in @cageList
+        @columnList = (ucfirst($self->singular) . ' name', 'text');
+        shift @cageList;
+
+        foreach my $cage (@cageList) {
+
+            push (@columnList,
+                '[' . $cage->profCategory . ': ' . $cage->profName . ']',
+                'text',
+            );
+        }
+
+        my $slWidget = $self->addSimpleList($grid, undef, \@columnList,
+            1, 12, 2, 8);
+
+        # Unusual step - save the list reference in an IV
+        $self->ivPoke('slWidget1', $slWidget);
+
+        # Initialise the list
+        $self->interfaces2Tab_refreshList();
+
+        # Add some buttons and entry boxes
+        $self->interfacesTab_addButtons($grid, $slWidget, (scalar @columnList / 2));
+
+        # Tab complete
+        return 1;
+    }
+
+    sub interfaces2Tab_refreshList {
+
+        # Called by $self->interfaces2Tab (etc) to reset the GA::Obj::SimpleList
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my (@sortedList, @cageList, @dataList);
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper(
+                $self->_objClass . '->interfaces2Tab_refreshList',
+                @_,
+            );
+        }
+
+        # Get a sorted list of interface names from the cage
+        @sortedList = sort {lc($a) cmp lc($b)} ($self->editObj->ivKeys('interfaceHash'));
+        # Get a list of columns in the simple list, which depends on how many cages there are
+        @cageList = $self->compileCages();
+
+        # Compile the simple list data
+        OUTER: foreach my $interfaceName (@sortedList) {
+
+            INNER: foreach my $cage (@cageList) {
+
+                my $interfaceObj;
+
+                if ($cage->ivExists('interfaceHash', $interfaceName)) {
+
+                    # By supplying only two arguments, we instruct ->ivShow to give us the value
+                    #   stored in the cage, and not to consult its inferiors (if no value is stored
+                    #   there)
+                    $interfaceObj = $cage->ivShow('interfaceHash', $interfaceName);
+                    push (@dataList, $interfaceObj->name);
+
+                } else {
+
+                    # An interface called $interfaceName isn't stored in $cage
+                    push (@dataList, undef);
+                }
+            }
+        }
+
+        # Reset the simple list
+        $self->resetListData($self->slWidget1, [@dataList], scalar @cageList);
+
+        return 1;
+    }
+
+    sub interfacesTab_addButtons {
+
+        # Called by $self->interfaces1Tab and $self->interfaces2Tab to create the editing buttons
+        #   beneath the GA::Obj::SimpleList
+        #
+        # Expected arguments
+        #   $grid       - The current Gtk3::Grid displayed in the notebook
+        #   $slWidget   - The GA::Obj::SimpleList
+        #   $columns    - The number of columns
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $grid, $slWidget, $columns, $check) = @_;
+
+        # Local variables
+        my (
+            $interfaceModelObj, $title,
+            @comboList,
+        );
+
+        # Check for improper arguments
+        if (! defined $grid || ! defined $slWidget || ! defined $columns || defined $check) {
+
+            return $axmud::CLIENT->writeImproper(
+                $self->_objClass . '->interfacesTab_addButtons',
+                @_,
+            );
+        }
+
+        # Get the corresponding interface model object
+        $interfaceModelObj = $axmud::CLIENT->ivShow('interfaceModelHash', $self->singular);
+
+        # Add entry boxes and edit buttons
+        $self->addLabel(
+            $grid, ucfirst($self->singular) . ' stimulus <i>(' . $self->stimulus . ')</i>',
+            1, 3, 8, 9);
+        # For aliases, leave room for an extra button beside the entry
+        my ($entry, $combo);
+        if ($self->editObj->cageType eq 'trigger') {
+
+            $entry = $self->addEntryWithIcon($grid, undef, 'regex', 1, undef,
+                3, 12, 8, 9);
+
+        } elsif ($self->editObj->cageType eq 'alias') {
+
+            $entry = $self->addEntryWithIcon($grid, undef, 'regex', 1, undef,
+                3, 9, 8, 9);
+
+        } elsif ($self->editObj->cageType eq 'macro') {
+
+            $entry = $self->addEntryWithIcon($grid, undef, 'string', 1, undef,
+                3, 12, 8, 9);
+
+        } elsif ($self->editObj->cageType eq 'timer') {
+
+            $entry = $self->addEntryWithIcon(
+                $grid, undef, \&interfacesTab_checkInterval, undef, undef,
+                3, 12, 8, 9);
+
+        } elsif ($self->editObj->cageType eq 'hook') {
+
+            $entry =  $self->addEntryWithIcon(
+                $grid, undef, \&interfacesTab_checkHookEvent, undef, undef,
+                3, 6, 8, 9);
+
+            # Hooks get an extra combo, for inserting a standard hook event
+            @comboList = sort {$a cmp $b} ($interfaceModelObj->ivKeys('hookEventHash'));
+            $title = 'Or use standard hook event:';
+
+            $combo = $self->addComboBox($grid, undef, \@comboList, $title,
+                TRUE,               # No 'undef' value used
+                6, 12, 8, 9);
+            $combo->signal_connect('changed' => sub {
+
+                my $text = $combo->get_active_text();
+                if ($text ne $title) {
+
+                    $entry->set_text($text);
+                    # Reset the combo
+                    $combo->set_active(0);
+                }
+            });
+        }
+
+        my $label = $self->addLabel(
+            $grid, ucfirst($self->singular) . ' response <i>(' . $self->response . ')</i>',
+            1, 3, 9, 10);
+        my $entry2 = $self->addEntryWithIcon($grid, undef, 'string', 1, undef,
+            3, 12, 9, 10);
+
+        if ($self->singular eq 'trigger') {
+
+            # (Need a bit of extra room for all those checkbuttons)
+            $self->addLabel($grid, 'Name <i>(optional)</i>',
+                1, 2, 10, 11);
+
+        } else {
+
+            $self->addLabel($grid, 'Name <i>(optional)</i>',
+                1, 3, 10, 11);
+        }
+
+        my ($entry3, $checkButton, $checkButton2, $checkButton3, $checkButton4);
+        if ($self->singular eq 'trigger') {
+
+            $entry3 = $self->addEntryWithIcon($grid, undef, 'string', undef, undef,
+                2, 4, 10, 11);
+
+            $checkButton = $self->addCheckButton($grid, 'Starts enabled', undef, TRUE,
+                4, 6, 10, 11);
+            $checkButton2 = $self->addCheckButton($grid, 'Splitter', undef, TRUE,
+                6, 8, 10, 11);
+            $checkButton3 = $self->addCheckButton($grid, 'Rewriter', undef, TRUE,
+                8, 10, 10, 11);
+            $checkButton4 = $self->addCheckButton($grid, 'Temporary', undef, TRUE,
+                10, 12, 10, 11);
+
+            $checkButton2->signal_connect('toggled' => sub {
+
+                if ($checkButton2->get_active()) {
+                    $self->ivPoke('response', 'pattern');
+                } elsif ($checkButton3->get_active()) {
+                    $self->ivPoke('response', 'substitution');
+                } else {
+                    $self->ivPoke('response', 'instruction');
+                }
+
+                $label->set_markup(
+                    ucfirst($self->singular) . ' response <i>(' . $self->response . ')</i>',
+                );
+            });
+
+            $checkButton3->signal_connect('toggled' => sub {
+
+                if ($checkButton2->get_active()) {
+                    $self->ivPoke('response', 'pattern');
+                } elsif ($checkButton3->get_active()) {
+                    $self->ivPoke('response', 'substitution');
+                } else {
+                    $self->ivPoke('response', 'instruction');
+                }
+
+                $label->set_markup(
+                    ucfirst($self->singular) . ' response <i>(' . $self->response . ')</i>',
+                );
+            });
+
+        } else {
+
+            $entry3 = $self->addEntryWithIcon($grid, undef, 'string', undef, undef,
+                3, 6, 10, 11);
+
+            $checkButton = $self->addCheckButton($grid, 'Starts enabled', undef, TRUE,
+                6, 9, 10, 11);
+
+            $checkButton4 = $self->addCheckButton($grid, 'Temporary', undef, TRUE,
+                9, 12, 10, 11);
+        }
+        # New interfaces should be enabled by default
+        $checkButton->set_active(TRUE);
+
+        my $button = $self->addButton(
+            $grid,
+            'Add',
+            'Add the ' . $self->singular . ' to this cage',
+            undef,
+            1, 2, 11, 12,
+            TRUE,           # Irreversible
+        );
+        $button->signal_connect('clicked' => sub {
+
+            my (
+                $stimulus, $response, $interfaceName, $enabledFlag, $stimulusSwitch,
+                $responseSwitch, $nameSwitch, $enabledSwitch, $splitterFlag, $splitterSwitch,
+                $splitterString, $rewriterFlag, $rewriterSwitch, $rewriterString, $tempSwitch,
+                $tempString, $result,
+            );
+
+            # Get the interface stimulus
+            if ($self->checkEntryIcon($entry, $entry2, $entry3)) {
+
+                $stimulus = $entry->get_text();             # Compulsory
+
+                # Custom hook events must start with an underscore. Add one, if the user did not
+                if (
+                    $self->singular eq 'hook'
+                    && ! $interfaceModelObj->ivExists('hookEventHash', $stimulus)
+                    && ! ($stimulus =~ m/^\_/)
+                ) {
+                    $stimulus = '_' . $stimulus;
+                }
+            }
+
+            if (defined $stimulus && $self->editObj->profName) {
+
+                # Get the interface response and name
+                $response = $entry2->get_text();            # Compulsory
+                $interfaceName = $entry3->get_text();       # Optional
+                if ($checkButton->get_active()) {
+                    $enabledFlag = 1;
+                } else {
+                    $enabledFlag = 0;
+                }
+
+                $stimulusSwitch
+                    = $self->interfaceModelObj->ivShow('compulsorySwitchHash', 'stimulus');
+                $responseSwitch
+                    = $self->interfaceModelObj->ivShow('compulsorySwitchHash', 'response');
+                $nameSwitch
+                    = $self->interfaceModelObj->ivShow('optionalSwitchHash', 'name');
+                $enabledSwitch
+                    = $self->interfaceModelObj->ivShow('optionalSwitchHash', 'enabled');
+
+                if ($self->singular eq 'trigger') {
+
+                    if ($checkButton2->get_active()) {      # Non-standard attribute
+                        $splitterFlag = 1;
+                    } else {
+                        $splitterFlag = 0;
+                    }
+
+                    $splitterSwitch
+                        = $self->interfaceModelObj->ivShow('optionalSwitchHash', 'splitter');
+                    $splitterString = ' -' . $splitterSwitch . ' ' . $splitterFlag;
+
+                    if ($checkButton3->get_active()) {      # Non-standard attribute
+                        $rewriterFlag = 1;
+                    } else {
+                        $rewriterFlag = 0;
+                    }
+
+                    $rewriterSwitch
+                        = $self->interfaceModelObj->ivShow('optionalSwitchHash', 'rewriter');
+                    $rewriterString = ' -' . $rewriterSwitch . ' ' . $rewriterFlag;
+
+                } else {
+
+                    $splitterString = '';
+                    $rewriterString = '';
+                }
+
+                if ($checkButton4->get_active()) {
+
+                    $tempSwitch
+                        = $self->interfaceModelObj->ivShow('optionalSwitchHash', 'temporary');
+                    $tempString = ' -' . $tempSwitch . ' 1';
+
+                } else {
+
+                    $tempString = '';
+                }
+
+                if ($stimulus =~ m/[\<|\>]/ || $response =~ m/[\<|\>]/) {
+
+                    $self->showMsgDialogue(
+                        'Add ' . $self->singular,
+                        'error',
+                        'This version of ' . $axmud::SCRIPT . ' can\'t process diamond bracket'
+                        . ' characters; please use . characters in your regular expressions'
+                        . ' instead',
+                        'ok',
+                    );
+
+                # Try to add a new trigger/alias/macro/timer/hook object belonging to this cage
+                } elsif ($interfaceName) {
+
+                    $result = $self->session->pseudoCmd(
+                        'add' . $self->singular
+                        . ' -' . $stimulusSwitch . ' <' . $stimulus
+                        . '> -' . $responseSwitch . ' <' . $response
+                        . '> -' . $enabledSwitch . ' ' . $enabledFlag
+                        . $splitterString . $rewriterString . $tempString
+                        . ' -' . $nameSwitch . ' <' . $interfaceName
+                        . '> -d ' . $self->editObj->profName,
+                        $self->pseudoCmdMode,
+                    );
+
+                } else {
+
+                    $result = $self->session->pseudoCmd(
+                        'add' . $self->singular
+                        . ' -' . $stimulusSwitch . ' <' . $stimulus
+                        . '> -' . $responseSwitch . ' <' . $response
+                        . '> -' . $enabledSwitch . ' ' . $enabledFlag
+                        . $splitterString . $rewriterString . $tempString
+                        . ' -d ' . $self->editObj->profName,
+                        $self->pseudoCmdMode,
+                    );
+                }
+
+                if ($result) {
+
+                    # Refresh (both) lists
+                    $self->interfaces1Tab_refreshList();
+                    $self->interfaces2Tab_refreshList();
+                }
+            }
+        });
+
+        my $button2 = $self->addButton(
+            $grid,
+            'Edit...',
+            'Edit the selected ' . $self->singular,
+            undef,
+            2, 3, 11, 12,
+        );
+        $button2->signal_connect('clicked' => sub {
+
+            my ($interfaceName, $interfaceObj, $childWinObj);
+
+            ($interfaceName) = $self->getSimpleListData($slWidget, 0);
+            if (defined $interfaceName) {
+
+                # Check that there's an interface with that name stored in this cage
+                if ($self->editObj->ivExists('interfaceHash', $interfaceName)) {
+
+                    # Open up an interface 'edit' window to edit the (inactive) interface
+                    $interfaceObj = $self->editObj->ivShow('interfaceHash', $interfaceName);
+
+                    $childWinObj = $self->createFreeWin(
+                        'Games::Axmud::EditWin::Interface::' . ucfirst($self->singular),
+                        $self,
+                        $self->session,
+                        'Edit ' . $self->singular . ' interface \'' . $interfaceName . '\'',
+                        $interfaceObj,
+                        FALSE,                          # Not temporary
+                    );
+
+                    if ($childWinObj) {
+
+                        # When the 'edit' window closes, update widgets and/or IVs
+                        $self->add_childDestroy(
+                            $childWinObj,
+                            'interfaces1Tab_refreshList',
+                            [],         # No arguments required
+                        );
+
+                        $self->add_childDestroy(
+                            $childWinObj,
+                            'interfaces2Tab_refreshList',
+                            [],         # No arguments required
+                        );
+                    }
+                }
+            }
+        });
+
+        my $button3 = $self->addButton(
+            $grid,
+            'Delete',
+            'Delete the selected ' . $self->singular,
+            undef,
+            3, 4, 11, 12,
+            TRUE,               # Irreversible
+        );
+        $button3->signal_connect('clicked' => sub {
+
+            my ($interfaceName, $profName);
+
+            ($interfaceName) = $self->getSimpleListData($slWidget, 0);
+            $profName = $self->editObj->profName;
+
+            if (defined $interfaceName && defined $profName) {
+
+                # Check that there's an interface with that name stored in this cage
+                if ($self->editObj->ivExists('interfaceHash', $interfaceName)) {
+
+                    # Delete the interface
+                    $self->session->pseudoCmd(
+                        'delete' . $self->singular . ' ' . $interfaceName . ' -d ' . $profName,
+                        $self->pseudoCmdMode,
+                    );
+
+                    # Refresh (both) lists
+                    $self->interfaces1Tab_refreshList();
+                    $self->interfaces2Tab_refreshList();
+                }
+            }
+        });
+
+        my $button4 = $self->addButton(
+            $grid,
+            'Export',
+            'Export selected ' . $self->plural . ' to the interface clipboard',
+            undef,
+            4, 6, 11, 12,
+            TRUE,               # Irreversible
+        );
+        $button4->signal_connect('clicked' => sub {
+
+            my (
+                $profName,
+                @interfaceList,
+            );
+
+            @interfaceList = $self->getSimpleListData($slWidget, 0);
+            $profName = $self->editObj->profName;
+
+            if (@interfaceList && defined $profName) {
+
+                # Empty the clipboard
+                $self->session->pseudoCmd(
+                    'clearclipboard',
+                    $self->pseudoCmdMode,
+                );
+
+                # Export the selected interfaces
+                foreach my $interfaceName (@interfaceList) {
+
+                    $self->session->pseudoCmd(
+                        'export' . $self->singular . ' ' . $interfaceName . ' -d ' . $profName,
+                        $self->pseudoCmdMode,
+                    );
+                }
+
+                # Refresh (both) lists
+                $self->interfaces1Tab_refreshList();
+                $self->interfaces2Tab_refreshList();
+            }
+        });
+
+        my $button5 = $self->addButton(
+            $grid,
+            'Import',
+            'Import all ' . $self->plural . ' from the interface clipboard',
+            undef,
+            6, 8, 11, 12,
+            TRUE,               # Irreversible
+        );
+        $button5->signal_connect('clicked' => sub {
+
+            my $profName = $self->editObj->profName;
+
+            if (defined $profName) {
+
+                # Import all interfaces of the correct category (triggers, etc)
+                $self->session->pseudoCmd(
+                    'import' . $self->singular . ' -d ' . $profName,
+                    $self->pseudoCmdMode,
+                );
+
+                # Refresh (both) lists
+                $self->interfaces1Tab_refreshList();
+                $self->interfaces2Tab_refreshList();
+            }
+        });
+
+        my $button6 = $self->addButton(
+            $grid,
+            'Dump',
+            'Display this list of ' . $self->plural . ' in the \'main\' window',
+            undef,
+            8, 10, 11, 12,
+        );
+        $button6->signal_connect('clicked' => sub {
+
+            my $profName = $self->editObj->profName;
+            if ($profName) {
+
+                # Display the data
+                $self->session->pseudoCmd(
+                    'list' . $self->singular . ' -d ' . $profName,
+                    $self->pseudoCmdMode,
+                );
+
+                # Refresh (both) lists
+                $self->interfaces1Tab_refreshList();
+                $self->interfaces2Tab_refreshList();
+            }
+        });
+
+        my $button7 = $self->addButton(
+            $grid,
+            'Refresh list',
+            'Refresh the list of ' . $self->plural,
+            undef,
+            10, 12, 11, 12,
+        );
+        $button7->signal_connect('clicked' => sub {
+
+            # Refresh (both) lists
+            $self->interfaces1Tab_refreshList();
+            $self->interfaces2Tab_refreshList();
+        });
+
+        if ($self->editObj->cageType eq 'alias') {
+
+            my $button6 = $self->addButton(
+                $grid,
+                'Recommended: add ^...$',
+                'Adds symbols to match the pattern against the whole world command',
+                undef,
+                9, 12, 8, 9,
+            );
+
+            $button6->signal_connect('clicked' => sub {
+
+                my $string = $entry->get_text();
+
+                if ($self->checkEntryIcon($entry)) {
+
+                    $string = $entry->get_text();
+                    if (! ($string =~ m/^\^/)) {
+
+                        $string = '^' . $string;
+                    }
+
+                    if (! ($string =~ m/\$$/)) {
+
+                        $string .= '$';
+                    }
+
+                    $entry->set_text($string);
+                }
+            });
+        }
+
+        return 1;
+    }
+
+    sub interfacesTab_checkInterval {
+
+        # Called by $self->interfacesTab_addButtons to check a timer interval is valid
+        #
+        # Expected arguments
+        #   $value      - The value to check, should be a number (minimum value 0.01), or a 24-hour
+        #                   clock time in the form HH::MM
+        #
+        # Return values
+        #   'undef' on improper arguments or if $value is invalid
+        #   1 if $value is valid
+
+        my ($self, $value, $check) = @_;
+
+        # Check for improper arguments
+        if (! defined $value || defined $check) {
+
+            return $axmud::CLIENT->writeImproper(
+                $self->_objClass . '->interfacesTab_checkInterval',
+                @_,
+            );
+        }
+
+        if (
+            ! $axmud::CLIENT->floatCheck($value, 0.1)
+            && ! ($value =~ m/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/)
+            && ! ($value =~ m/^99\:[0-5][0-9]$/)
+        ) {
+            return undef;
+        } else {
+            return 1;
+        }
+    }
+
+    sub interfacesTab_checkHookEvent {
+
+        # Called by $self->interfacesTab_addButtons to check a hook event is valid
+        #
+        # Expected arguments
+        #   $value  - The value to check, should be a standard hook event, or a custom event whose
+        #               name starts with an underline, followed by an alphanumeric character
+        #
+        # Return values
+        #   'undef' on improper arguments or for an invalid hook event
+        #   1 for a valid hook event
+
+        my ($self, $value, $check) = @_;
+
+        # Local variables
+        my $interfaceModelObj;
+
+        # Check for improper arguments
+        if (! defined $value || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->hookEventCheck', @_);
+        }
+
+        $interfaceModelObj = $axmud::CLIENT->ivShow('interfaceModelHash', 'hook');
+
+        # Custom hook events must begin with an underline, followed by an alphanumeric character
+        # If the user doesn't type an underline, the 'Add' button will add one
+        if (
+            ! $interfaceModelObj->ivExists('hookEventHash', $value)
+            && ! ($value =~ m/^\_[A-Za-z0-9]/)
+            && ! ($value =~ m/^[A-Za-z0-9]/)
+        ) {
+            return undef;
+        } else {
+            return 1;
+        }
+    }
+
+    ##################
+    # Accessors - set
+
+    ##################
+    # Accessors - get
+
+    sub slWidget1
+        { $_[0]->{slWidget1} }
+    sub slWidget2
+        { $_[0]->{slWidget2} }
+    sub singular
+        { $_[0]->{singular} }
+    sub plural
+        { $_[0]->{plural} }
+    sub interfaceModelObj
+        { $_[0]->{interfaceModelObj} }
+    sub stimulus
+        { $_[0]->{stimulus} }
+    sub response
+        { $_[0]->{response} }
+}
+
+{ package Games::Axmud::EditWin::Interface::Active;
+
+    use strict;
+    use warnings;
+#   use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(
+        Games::Axmud::Generic::EditWin Games::Axmud::Generic::ConfigWin
+        Games::Axmud::Generic::FreeWin Games::Axmud::Generic::Win Games::Axmud
+    );
+
+    ##################
+    # Constructors
+
+#   sub new {}                  # Inherited from GA::Generic::ConfigWin
+
+    ##################
+    # Methods
+
+    # Standard window object functions
+
+#   sub winSetup {}             # Inherited from GA::Generic::ConfigWin
+
+#   sub winEnable {}            # Inherited from GA::Generic::ConfigWin
+
+#   sub winDesengage {}         # Inherited from GA::Generic::FreeWin
+
+#   sub winDestroy {}           # Inherited from GA::Generic::FreeWin
+
+#   sub winShowAll {}           # Inherited from GA::Generic::Win
+
+#   sub drawWidgets {}          # Inherited from GA::Generic::ConfigWin
+
+#   sub redrawWidgets {}        # Inherited from GA::Generic::Win
+
+    # ->signal_connects
+
+    # Other functions
+
+    sub checkEditObj {
+
+        # Called by $self->winEnable
+        # Checks that the object stored in $self->editObj is the correct class of object
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if the check fails
+        #   1 if the check succeeds
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->checkEditObj', @_);
+        }
+
+        if ($self->editObj && ! $self->editObj->isa('Games::Axmud::Interface::Active')) {
+            return undef;
+        } else {
+            return 1;
+        }
+    }
+
+#   sub enableButtons {}        # Inherited from GA::Generic::ConfigWin
+
+#   sub enableSingleButton {}   # Inherited from GA::Generic::ConfigWin
+
+    sub setupNotebook {
+
+        # Called by $self->winEnable
+        # Creates the first tab for the notebook. The remaining tabs are created by
+        #   $self->expandNotebook
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->setupNotebook', @_);
+        }
+
+        # Tab setup, using the standard grid size
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Name',
+            [
+                'Settings',
+                'Standard attributes',
+                'Independent interface IVs',
+                'Dependent interface IVs',
+            ],
+        );
+
+        # Unusual step - create a hash IV for all 'edit' windows inheriting this one. Each key-value
+        #   pair corresponds to a key-value pair in GA::Interface::Trigger->attribHash (etc)
+        $self->{attribHash} = {};
+
+        # Set up the rest of the tab
+        $self->nameTab($grid);
+
+        # Set up the remaining tabs
+        $self->expandNotebook();
+
+        # Tab complete
+        return 1;
+    }
+
+    sub expandNotebook {
+
+        # Called by $self->setupNotebook
+        # Set up additional tabs for the notebook
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my $func;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->expandNotebook', @_);
+        }
+
+        $func = $self->editObj->category . 'AttributesTab';     # e.g. ->triggerAttributesTab
+        $self->$func();
+
+        $self->propertiesTab();
+
+        return 1;
+    }
+
+    sub saveChanges {
+
+        # Called by $self->buttonOK and $self->buttonSave. Function based on
+        #   GA::EditWin::Generic::Interface->saveChanges
+        # Saves any changes made to data stored by the edit object (which can be three of the four
+        #   standard attributes, 'stimulus', 'response' and 'enabled'). Also saves any modified
+        #   attributes stored in $self->attribHash
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my %attribHash;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->saveChanges', @_);
+        }
+
+        if ($self->editHash || $self->attribHash) {
+
+            # Transfer the modified non-standard attributes $self->attribHash to the local variable
+            #   %attribHash. At the same time, deal with any 'dummy' attributes stored in
+            #   $self->attribHash
+            foreach my $attrib ($self->ivKeys('attribHash')) {
+
+                my $value = $self->ivShow('attribHash', $attrib);
+
+                # Attributes beginning with an underline are 'dummy' attributes, used to help set
+                #   the values of other attributes (e.g. '_substr_num', used to set 'style_mode')
+                if (substr($attrib, 0, 1) ne '_') {
+
+                    if ($attrib eq 'style_mode' && $value == -3) {
+
+                        # The attribute's true value is stored in the dummy attribute, '_substr_num'
+                        $attribHash{$attrib} = $self->ivShow('attribHash', '_substr_num');
+
+                    } else {
+
+                        # Normal attribute
+                        $attribHash{$attrib} = $value;
+                    }
+                }
+            }
+
+            # Add any modified standard attributes to %attribHash. $self->editHash can contain the
+            #   keys 'stimulus', 'response' and 'enabled'
+            foreach my $attrib ($self->ivKeys('editHash')) {
+
+                if ($attrib eq 'stimulus' || $attrib eq 'response') {
+                    $attribHash{$attrib} = $self->ivShow('editHash', $attrib);
+                } elsif ($attrib eq 'enabledFlag') {
+                    $attribHash{'enabled'} = $self->ivShow('editHash', 'enabledFlag');
+                }
+            }
+
+            # Store the modified standard and non-standard attributes
+            $self->editObj->modifyAttribs($self->session, %attribHash);
+
+            # The local hashes can now be emptied
+            $self->ivEmpty('editHash');
+            $self->ivEmpty('attribHash');
+
+            # Mark the object's corresponding file object as needing to be saved, if it exists
+            if ($self->editObj->_parentFile) {
+
+                $self->editObj->doModify('saveChanges');
+            }
+
+            # Update the current session's data viewer window, if it is open
+            if ($self->session->viewerWin) {
+
+                $self->session->viewerWin->updateNotebook();
+            }
+        }
+
+        return 1;
+    }
+
+    # Notebook tabs
+
+    sub nameTab {
+
+        # Name tab - called by $self->setupNotebook
+        #
+        # Expected arguments
+        #   $grid   - The Gtk3::Grid for this tab
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $grid, $check) = @_;
+
+        # Local variables
+        my (
+            $interfaceModelObj,
+            @comboList,
+        );
+
+        # Check for improper arguments
+        if (! defined $grid || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->nameTab', @_);
+        }
+
+        # Tab setup (already created by the calling function)
+
+        # Settings (left column)
+        $self->addLabel($grid, '<b>Settings</b>',
+            0, 12, 0, 1);
+        $self->addLabel($grid, 'Name',
+            1, 3, 1, 2);
+        $self->addEntry($grid, 'name', FALSE,
+            3, 12, 1, 2);
+        $self->addLabel($grid, 'Number',
+            1, 3, 2, 3);
+        $self->addEntry($grid, 'number', FALSE,
+            3, 6, 2, 3);
+        $self->addLabel($grid, 'Category',
+            1, 3, 3, 4);
+        $self->addEntry($grid, 'category', FALSE,
+            3, 6, 3, 4);
+
+        # (Right column)
+        $self->addLabel($grid, '(Inactive) parent',
+            7, 9, 2, 3);
+        my $entry = $self->addEntry($grid, undef, FALSE,
+            9, 12, 2, 3);
+        if ($self->editObj->parent) {
+            $entry->set_text($self->editObj->parent->name);
+        } else {
+            $entry->set_text('n/a');
+        }
+
+        $self->addLabel($grid, 'Type',
+            7, 9, 3, 4);
+        my $entry2 = $self->addEntry($grid, undef, FALSE,
+            9, 12, 3, 4);
+        if ($self->editObj->indepFlag) {
+            $entry2->set_text('independent');
+        } else {
+            $entry2->set_text('dependent');
+        }
+
+        # Standard attributes
+        $self->addLabel($grid, '<b>Standard attributes</b>',
+            0, 12, 4, 5);
+        $interfaceModelObj = $axmud::CLIENT->ivShow('interfaceModelHash', $self->editObj->category);
+
+        $self->addLabel($grid, 'Stimulus <i>(' . $interfaceModelObj->stimulusName . ')</i>',
+            1, 3, 5, 6);
+        # For hooks, use a combo; for everything else, use an entry
+        if ($self->editObj->category eq 'trigger' || $self->editObj->category eq 'alias') {
+
+            $self->addEntryWithIcon($grid, 'stimulus', 'regex', 1, undef,
+                3, 12, 5, 6);
+
+        } elsif ($self->editObj->category eq 'macro') {
+
+            $self->addEntryWithIcon($grid, 'stimulus', 'string', 1, undef,
+                3, 12, 5, 6);
+
+        } elsif ($self->editObj->category eq 'timer') {
+
+            $self->addEntryWithIcon($grid, 'stimulus', 'float', 0.01, undef,
+                3, 12, 5, 6);
+
+        } elsif ($self->editObj->category eq 'hook') {
+
+            @comboList = sort {$a cmp $b} ($interfaceModelObj->ivKeys('hookEventHash'));
+            $self->addComboBox($grid, 'stimulus', \@comboList, '',
+                TRUE,               # No 'undef' value used
+                3, 6, 5, 6);
+        }
+
+        $self->addLabel($grid, 'Response <i>(' . $interfaceModelObj->responseName . ')</i>',
+            1, 3, 6, 7);
+        $self->addEntryWithIcon($grid, 'response', 'string', 1, undef,
+            3, 12, 6, 7);
+        $self->addCheckButton($grid, 'Enabled', 'enabledFlag', TRUE,
+            1, 12, 7, 8);
+
+        # Independent interface IVs
+        $self->addLabel($grid, '<b>Independent interface IVs</b>',
+            0, 6, 8, 9);
+        $self->addLabel($grid, 'Associated profile',
+            1, 3, 9, 10);
+        $self->addEntry($grid, 'assocProf', FALSE,
+            3, 6, 9, 10);
+        $self->addLabel($grid, 'Profile category',
+            1, 3, 10, 11);
+        $self->addEntry($grid, 'assocProfCategory', FALSE,
+            3, 6, 10, 11);
+
+        # Dependent interface IVs
+        $self->addLabel($grid, '<b>Dependent interface IVs</b>',
+            7, 12, 8, 9);
+        $self->addLabel($grid, 'Call class',
+            7, 9, 9, 10);
+        $self->addEntry($grid, 'callClass', 0,
+            9, 12, 9, 10);
+        $self->addLabel($grid, '(...named)',
+            7, 9, 10, 11);
+        my $entry3 = $self->addEntry($grid, undef, 0,
+            9, 12, 10, 11);
+        if (defined $self->editObj->callClass) {
+
+            $entry3->set_text($self->editObj->callClass->_objName);
+        }
+        $self->addLabel($grid, 'Call method',
+            7, 9, 11, 12);
+        $self->addEntry($grid, 'callMethod', 0,
+            9, 12, 11, 12);
+
+        # Tab complete
+        return 1;
+    }
+
+    sub attributesTab {
+
+        # Attributes tab
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my @columnList;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->attributesTab', @_);
+        }
+
+        # Tab setup
+        # N.B. No sub-headings
+        my $grid = $self->addTab($self->notebook, '_Attributes');
+
+        # Attributes
+        $self->addLabel($grid, '<b>Attributes</b>',
+            0, 12, 0, 1);
+        $self->addLabel($grid, '<i>List of attributes for this active interface</i>',
+            1, 12, 1, 2);
+
+        # Add a simple list
+        @columnList = (
+            'Attribute', 'text',
+            'Current value', 'text',
+        );
+
+        my $slWidget = $self->addSimpleList($grid, undef, \@columnList,
+            1, 12, 2, 10);
+
+        # Initialise the list
+        $self->refreshList_hashIV($slWidget, (scalar @columnList / 2), 'attribHash');
+
+        # Add a single button
+        my $button = $self->addButton(
+            $grid,
+            'Refresh list',
+            'Refresh the list of attributes',
+            undef,
+            9, 12, 10, 11,
+        );
+        $button->signal_connect('clicked' => sub {
+
+            # Refresh the simple list
+            $self->refreshList_hashIV($slWidget, (scalar @columnList / 2), 'attribHash');
+        });
+
+        # Tab complete
+        return 1;
+    }
+
+    sub propertiesTab {
+
+        # Properties tab
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Local variables
+        my @columnList;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->propertiesTab', @_);
+        }
+
+        # Tab setup
+        # N.B. No sub-headings
+        my $grid = $self->addTab($self->notebook, '_Properties');
+
+        # Properties
+        $self->addLabel($grid, '<b>Properties</b>',
+            0, 12, 0, 1);
+        $self->addLabel($grid, '<i>List of custom properties for this active interface</i>',
+            1, 12, 1, 2);
+
+        # Add a simple list
+        @columnList = (
+            'Key', 'text',
+            'Value', 'text',
+        );
+
+        my $slWidget = $self->addSimpleList($grid, undef, \@columnList,
+            1, 12, 2, 10);
+
+        # Initialise the list
+        $self->refreshList_hashIV($slWidget, (scalar @columnList / 2), 'propertyHash');
+
+        # Add a single button
+        my $button = $self->addButton(
+            $grid,
+            'Refresh list',
+            'Refresh the list of properties',
+            undef,
+            9, 12, 10, 11,
+        );
+        $button->signal_connect('clicked' => sub {
+
+            # Refresh the simple list
+            $self->refreshList_hashIV($slWidget, (scalar @columnList / 2), 'propertyHash');
+        });
+
+        # Tab complete
+        return 1;
+    }
+
+    ##################
+    # Accessors - set
+
+    ##################
+    # Accessors - get
+
+    sub attribHash
+        { my $self = shift; return %{$self->{attribHash}}; }
+}
+
+{ package Games::Axmud::EditWin::Interface::Trigger;
+
+    use strict;
+    use warnings;
+#   use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(
+        Games::Axmud::EditWin::Generic::Interface Games::Axmud::Generic::EditWin
+        Games::Axmud::Generic::ConfigWin Games::Axmud::Generic::FreeWin Games::Axmud::Generic::Win
+        Games::Axmud
+    );
+
+    ##################
+    # Constructors
+
+#   sub new {}                  # Inherited from GA::Generic::ConfigWin
+
+    ##################
+    # Methods
+
+    # Standard window object functions
+
+#   sub winSetup {}             # Inherited from GA::Generic::ConfigWin
+
+#   sub winEnable {}            # Inherited from GA::Generic::ConfigWin
+
+#   sub winDesengage {}         # Inherited from GA::Generic::FreeWin
+
+#   sub winDestroy {}           # Inherited from GA::Generic::FreeWin
+
+#   sub winShowAll {}           # Inherited from GA::Generic::Win
+
+#   sub drawWidgets {}          # Inherited from GA::Generic::ConfigWin
+
+#   sub redrawWidgets {}        # Inherited from GA::Generic::Win
+
+    # ->signal_connects
+
+    # Other functions
+
+    sub checkEditObj {
+
+        # Called by $self->winEnable
+        # Checks that the object stored in $self->editObj is the correct class of object
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if the check fails
+        #   1 if the check succeeds
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->checkEditObj', @_);
+        }
+
+        if ($self->editObj && ! $self->editObj->isa('Games::Axmud::Interface::Trigger')) {
+            return undef;
+        } else {
+            return 1;
+        }
+    }
+
+#   sub enableButtons {}        # Inherited from GA::Generic::ConfigWin
+
+#   sub enableSingleButton {}   # Inherited from GA::Generic::ConfigWin
+
+#   sub setupNotebook {}        # Inherited from GA::Generic::ConfigWin
+
+    sub expandNotebook {
+
+        # Called by $self->setupNotebook
+        # Set up additional tabs for the notebook
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->expandNotebook', @_);
+        }
+
+        $self->triggerAttributesTab();
+        $self->beforeAfterTab();
+
+        return 1;
+    }
+
+#   sub saveChanges {}          # Inherited from GA::Generic::ConfigWin
+
+    ##################
+    # Accessors - set
+
+    ##################
+    # Accessors - get
+}
+
+{ package Games::Axmud::EditWin::Interface::Alias;
+    use strict;
+    use warnings;
+#   use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(
+        Games::Axmud::EditWin::Generic::Interface Games::Axmud::Generic::EditWin
+        Games::Axmud::Generic::ConfigWin Games::Axmud::Generic::FreeWin Games::Axmud::Generic::Win
+        Games::Axmud
+    );
+
+    ##################
+    # Constructors
+
+#   sub new {}                  # Inherited from GA::Generic::ConfigWin
+
+    ##################
+    # Methods
+
+    # Standard window object functions
+
+#   sub winSetup {}             # Inherited from GA::Generic::ConfigWin
+
+#   sub winEnable {}            # Inherited from GA::Generic::ConfigWin
+
+#   sub winDesengage {}         # Inherited from GA::Generic::FreeWin
+
+#   sub winDestroy {}           # Inherited from GA::Generic::FreeWin
+
+#   sub winShowAll {}           # Inherited from GA::Generic::Win
+
+#   sub drawWidgets {}          # Inherited from GA::Generic::ConfigWin
+
+#   sub redrawWidgets {}        # Inherited from GA::Generic::Win
+
+    # ->signal_connects
+
+    # Other functions
+
+    sub checkEditObj {
+
+        # Called by $self->winEnable
+        # Checks that the object stored in $self->editObj is the correct class of object
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if the check fails
+        #   1 if the check succeeds
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->checkEditObj', @_);
+        }
+
+        if ($self->editObj && ! $self->editObj->isa('Games::Axmud::Interface::Alias')) {
+            return undef;
+        } else {
+            return 1;
+        }
+    }
+
+#   sub enableButtons {}        # Inherited from GA::Generic::ConfigWin
+
+#   sub enableSingleButton {}   # Inherited from GA::Generic::ConfigWin
+
+#   sub setupNotebook {}        # Inherited from GA::Generic::ConfigWin
+
+    sub expandNotebook {
+
+        # Called by $self->setupNotebook
+        # Set up additional tabs for the notebook
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->expandNotebook', @_);
+        }
+
+        $self->aliasAttributesTab();
+        $self->beforeAfterTab();
+
+        return 1;
+    }
+
+#   sub saveChanges {}          # Inherited from GA::Generic::ConfigWin
+
+    ##################
+    # Accessors - set
+
+    ##################
+    # Accessors - get
+}
+
+{ package Games::Axmud::EditWin::Interface::Macro;
+
+    use strict;
+    use warnings;
+#   use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(
+        Games::Axmud::EditWin::Generic::Interface Games::Axmud::Generic::EditWin
+        Games::Axmud::Generic::ConfigWin Games::Axmud::Generic::FreeWin Games::Axmud::Generic::Win
+        Games::Axmud
+    );
+
+    ##################
+    # Constructors
+
+#   sub new {}                  # Inherited from GA::Generic::ConfigWin
+
+    ##################
+    # Methods
+
+    # Standard window object functions
+
+#   sub winSetup {}             # Inherited from GA::Generic::ConfigWin
+
+#   sub winEnable {}            # Inherited from GA::Generic::ConfigWin
+
+#   sub winDesengage {}         # Inherited from GA::Generic::FreeWin
+
+#   sub winDestroy {}           # Inherited from GA::Generic::FreeWin
+
+#   sub winShowAll {}           # Inherited from GA::Generic::Win
+
+#   sub drawWidgets {}          # Inherited from GA::Generic::ConfigWin
+
+#   sub redrawWidgets {}        # Inherited from GA::Generic::Win
+
+    # ->signal_connects
+
+    # Other functions
+
+    sub checkEditObj {
+
+        # Called by $self->winEnable
+        # Checks that the object stored in $self->editObj is the correct class of object
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if the check fails
+        #   1 if the check succeeds
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->checkEditObj', @_);
+        }
+
+        if ($self->editObj && ! $self->editObj->isa('Games::Axmud::Interface::Macro')) {
+            return undef;
+        } else {
+            return 1;
+        }
+    }
+
+#   sub enableButtons {}        # Inherited from GA::Generic::ConfigWin
+
+#   sub enableSingleButton {}   # Inherited from GA::Generic::ConfigWin
+
+#   sub setupNotebook {}        # Inherited from GA::Generic::ConfigWin
+
+    sub expandNotebook {
+
+        # Called by $self->setupNotebook
+        # Set up additional tabs for the notebook
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->expandNotebook', @_);
+        }
+
+        $self->macroAttributesTab();
+        $self->beforeAfterTab();
+
+        return 1;
+    }
+
+#   sub saveChanges {}          # Inherited from GA::Generic::ConfigWin
+
+    ##################
+    # Accessors - set
+
+    ##################
+    # Accessors - get
+}
+
+{ package Games::Axmud::EditWin::Interface::Timer;
+
+    use strict;
+    use warnings;
+#   use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(
+        Games::Axmud::EditWin::Generic::Interface Games::Axmud::Generic::EditWin
+        Games::Axmud::Generic::ConfigWin Games::Axmud::Generic::FreeWin Games::Axmud::Generic::Win
+        Games::Axmud
+    );
+
+    ##################
+    # Constructors
+
+#   sub new {}                  # Inherited from GA::Generic::ConfigWin
+
+    ##################
+    # Methods
+
+    # Standard window object functions
+
+#   sub winSetup {}             # Inherited from GA::Generic::ConfigWin
+
+#   sub winEnable {}            # Inherited from GA::Generic::ConfigWin
+
+#   sub winDesengage {}         # Inherited from GA::Generic::FreeWin
+
+#   sub winDestroy {}           # Inherited from GA::Generic::FreeWin
+
+#   sub winShowAll {}           # Inherited from GA::Generic::Win
+
+#   sub drawWidgets {}          # Inherited from GA::Generic::ConfigWin
+
+#   sub redrawWidgets {}        # Inherited from GA::Generic::Win
+
+    # ->signal_connects
+
+    # Other functions
+
+    sub checkEditObj {
+
+        # Called by $self->winEnable
+        # Checks that the object stored in $self->editObj is the correct class of object
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if the check fails
+        #   1 if the check succeeds
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->checkEditObj', @_);
+        }
+
+        if ($self->editObj && ! $self->editObj->isa('Games::Axmud::Interface::Timer')) {
+            return undef;
+        } else {
+            return 1;
+        }
+    }
+
+#   sub enableButtons {}        # Inherited from GA::Generic::ConfigWin
+
+#   sub enableSingleButton {}   # Inherited from GA::Generic::ConfigWin
+
+#   sub setupNotebook {}        # Inherited from GA::Generic::ConfigWin
+
+    sub expandNotebook {
+
+        # Called by $self->setupNotebook
+        # Set up additional tabs for the notebook
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->expandNotebook', @_);
+        }
+
+        $self->timerAttributesTab();
+        $self->beforeAfterTab();
+
+        return 1;
+    }
+
+#   sub saveChanges {}          # Inherited from GA::Generic::ConfigWin
+
+    ##################
+    # Accessors - set
+
+    ##################
+    # Accessors - get
+}
+
+{ package Games::Axmud::EditWin::Interface::Hook;
+
+    use strict;
+    use warnings;
+#   use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(
+        Games::Axmud::EditWin::Generic::Interface Games::Axmud::Generic::EditWin
+        Games::Axmud::Generic::ConfigWin Games::Axmud::Generic::FreeWin Games::Axmud::Generic::Win
+        Games::Axmud
+    );
+
+    ##################
+    # Constructors
+
+#   sub new {}                  # Inherited from GA::Generic::ConfigWin
+
+    ##################
+    # Methods
+
+    # Standard window object functions
+
+#   sub winSetup {}             # Inherited from GA::Generic::ConfigWin
+
+#   sub winEnable {}            # Inherited from GA::Generic::ConfigWin
+
+#   sub winDesengage {}         # Inherited from GA::Generic::FreeWin
+
+#   sub winDestroy {}           # Inherited from GA::Generic::FreeWin
+
+#   sub winShowAll {}           # Inherited from GA::Generic::Win
+
+#   sub drawWidgets {}          # Inherited from GA::Generic::ConfigWin
+
+#   sub redrawWidgets {}        # Inherited from GA::Generic::Win
+
+    # ->signal_connects
+
+    # Other functions
+
+    sub checkEditObj {
+
+        # Called by $self->winEnable
+        # Checks that the object stored in $self->editObj is the correct class of object
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if the check fails
+        #   1 if the check succeeds
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->checkEditObj', @_);
+        }
+
+        if ($self->editObj && ! $self->editObj->isa('Games::Axmud::Interface::Hook')) {
+            return undef;
+        } else {
+            return 1;
+        }
+    }
+
+#   sub enableSingleButton {}   # Inherited from GA::Generic::ConfigWin
+
+#   sub setupNotebook {}        # Inherited from GA::Generic::ConfigWin
+
+    sub expandNotebook {
+
+        # Called by $self->setupNotebook
+        # Set up additional tabs for the notebook
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->expandNotebook', @_);
+        }
+
+        $self->hookAttributesTab();
+        $self->beforeAfterTab();
+
+        return 1;
+    }
+
+#   sub saveChanges {}          # Inherited from GA::Generic::ConfigWin
+
+    ##################
+    # Accessors - set
+
+    ##################
+    # Accessors - get
+}
+
+{ package Games::Axmud::EditWin::InterfaceModel;
+
+    use strict;
+    use warnings;
+#   use diagnostics;
+
+    use Glib qw(TRUE FALSE);
+
+    our @ISA = qw(
+        Games::Axmud::Generic::EditWin Games::Axmud::Generic::ConfigWin
+        Games::Axmud::Generic::FreeWin Games::Axmud::Generic::Win Games::Axmud
+    );
+
+    ##################
+    # Constructors
+
+#   sub new {}                  # Inherited from GA::Generic::ConfigWin
+
+    ##################
+    # Methods
+
+    # Standard window object functions
+
+#   sub winSetup {}             # Inherited from GA::Generic::ConfigWin
+
+#   sub winEnable {}            # Inherited from GA::Generic::ConfigWin
+
+#   sub winDesengage {}         # Inherited from GA::Generic::FreeWin
+
+#   sub winDestroy {}           # Inherited from GA::Generic::FreeWin
+
+#   sub winShowAll {}           # Inherited from GA::Generic::Win
+
+#   sub drawWidgets {}          # Inherited from GA::Generic::ConfigWin
+
+#   sub redrawWidgets {}        # Inherited from GA::Generic::Win
+
+    # ->signal_connects
+
+    # Other functions
+
+    sub checkEditObj {
+
+        # Called by $self->winEnable
+        # Checks that the object stored in $self->editObj is the correct class of object
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments or if the check fails
+        #   1 if the check succeeds
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->checkEditObj', @_);
+        }
+
+        if ($self->editObj && ! $self->editObj->isa('Games::Axmud::Generic::InterfaceModel')) {
+            return undef;
+        } else {
+            return 1;
+        }
+    }
+
+    sub enableButtons {
+
+        # Called by $self->drawWidgets
+        # We only need a single button so, instead of calling the generic ->enableButtons, call a
+        #   method that creates just one button
+        #
+        # Expected arguments
+        #   $hBox       - The horizontal packing box in which the buttons live (not yet stored as
+        #                   an IV)
+        #
+        # Return values
+        #   An empty list on improper arguments
+        #   Otherwise, a list containing the Gtk::Button object created
+
+        my ($self, $hBox, $check) = @_;
+
+        # Local variables
+        my @emptyList;
+
+        # Check for improper arguments
+        if (! defined $hBox || defined $check) {
+
+            $axmud::CLIENT->writeImproper($self->_objClass . '->enableButtons', @_);
+            return @emptyList;
+        }
+
+        return $self->enableSingleButton($hBox);
+    }
+
+#   sub enableSingleButton {}   # Inherited from GA::Generic::ConfigWin
+
+    sub setupNotebook {
+
+        # Called by $self->winEnable
+        # Creates the first tab for the notebook. The remaining tabs are created by
+        #   $self->expandNotebook
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->setupNotebook', @_);
+        }
+
+        # Tab setup, using the standard grid size
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Category',
+            ['Interface category', ucfirst($self->editObj->category) . ' attributes'],
+        );
+
+        # Set up the rest of the tab
+        $self->categoryTab($grid);
+
+        # Set up the remaining tabs
+        $self->expandNotebook();
+
+        # Tab complete
+        return 1;
+    }
+
+    sub expandNotebook {
+
+        # Called by $self->setupNotebook
+        # Set up additional tabs for the notebook
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->expandNotebook', @_);
+        }
+
+        $self->attributesTab();
+
+        return 1;
+    }
+
+#   sub saveChanges {}          # Inherited from GA::Generic::ConfigWin
+
+    # Notebook tabs
+
+    sub categoryTab {
+
+        # Category tab - called by $self->setupNotebook
+        #
+        # Expected arguments
+        #   $grid   - The Gtk3::Grid for this tab
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $grid, $check) = @_;
+
+        # Local variables
+        my @eventList;
+
+        # Check for improper arguments
+        if (! defined $grid || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->categoryTab', @_);
+        }
+
+        # Tab setup (already created by the calling function)
+
+        # Left column
+        $self->addLabel($grid, '<b>Interface category</b>',
+            0, 6, 0, 1);
+        $self->addLabel($grid, 'Category',
+            1, 3, 1, 2);
+        $self->addEntry($grid, 'category', FALSE,
+            3, 6, 1, 2);
+
+        # Right column
+        $self->addLabel($grid, '<b>' . ucfirst($self->editObj->category) . ' attributes</b>',
+            7, 12, 0, 1);
+        $self->addLabel($grid, 'Stimulus name',
+            7, 9, 1, 2);
+        $self->addEntry($grid, 'stimulusName', FALSE,
+            9, 12, 1, 2);
+        $self->addLabel($grid, 'Response name',
+            7, 9, 2, 3);
+        $self->addEntry($grid, 'responseName', FALSE,
+            9, 12, 2, 3);
+
+        # Hook events (for the hook interface model object only)
+        if ($self->editObj->category eq 'hook') {
+
+            # List of hook events
+            $self->addLabel($grid, '<b>List of hook events</b>',
+                0, 12, 3, 4);
+            my $textView = $self->addTextView($grid, undef, FALSE,
+               1, 12, 4, 12);
+
+            @eventList = sort {$a cmp $b} ($self->editObj->ivKeys('hookEventHash'));
+
+            my $buffer = $textView->get_buffer();
+            $buffer->set_text(join("\n", @eventList));
+        }
+
+        # Tab complete
+        return 1;
+    }
+
+    sub attributesTab {
+
+        # Attributes tab
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->attributesTab', @_);
+        }
+
+        # Tab setup
+        # Create a notebook within the main one, so that we have two rows of tabs
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, '_Attributes');
+
+        # Add tabs to the inner notebook
+        $self->attributes1Tab($innerNotebook);
+        $self->attributes2Tab($innerNotebook);
+        $self->attributes3Tab($innerNotebook);
+        $self->attributes4Tab($innerNotebook);
+
+        return 1;
+    }
+
+    sub attributes1Tab {
+
+        # Attributes1 tab
+        #
+        # Expected arguments
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $innerNotebook, $check) = @_;
+
+        # Local variables
+        my @columnList;
+
+        # Check for improper arguments
+        if (! defined $innerNotebook || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->attributes1Tab', @_);
+        }
+
+        # Tab setup
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Attribute types'],
+        );
+
+        # Attribute types
+        $self->addLabel($grid, '<b>Attribute types</b>',
+            0, 12, 0, 1);
+        $self->addLabel($grid, '<i>Acceptable values for all attributes (standard and '
+            . $self->editObj->category . ' attributes)</i>',
+            1, 12, 1, 2);
+
+        # Add a simple list
+        @columnList = (
+            'Attribute', 'text',
+            'Type', 'text',
+        );
+
+        my $slWidget = $self->addSimpleList($grid, undef, \@columnList,
+            1, 12, 2, 10);
+
+        # Initialise the list
+        $self->refreshList_hashIV($slWidget, (scalar @columnList / 2), 'attribTypeHash');
+
+        # Tab complete
+        return 1;
+    }
+
+    sub attributes2Tab {
+
+        # Attributes2 tab
+        #
+        # Expected arguments
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $innerNotebook, $check) = @_;
+
+        # Local variables
+        my @columnList;
+
+        # Check for improper arguments
+        if (! defined $innerNotebook || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->attributes2Tab', @_);
+        }
+
+        # Tab setup
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _2',
+            ['Default values'],
+        );
+
+        # Default values
+        $self->addLabel($grid, '<b>Default values</b>',
+            0, 12, 0, 1);
+        $self->addLabel($grid, '<i>Default values for ' . $self->editObj->category
+            . ' attributes</i>',
+            1, 12, 1, 2);
+
+        # Add a simple list
+        @columnList = (
+            'Attribute', 'text',
+            'Default value', 'text',
+        );
+
+        my $slWidget = $self->addSimpleList($grid, undef, \@columnList,
+            1, 12, 2, 10);
+
+        # Initialise the list
+        $self->refreshList_hashIV($slWidget, (scalar @columnList / 2), 'optionalAttribHash');
+
+        # Tab complete
+        return 1;
+    }
+
+    sub attributes3Tab {
+
+        # Attributes3 tab
+        #
+        # Expected arguments
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $innerNotebook, $check) = @_;
+
+        # Local variables
+        my @columnList;
+
+        # Check for improper arguments
+        if (! defined $innerNotebook || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->attributes3Tab', @_);
+        }
+
+        # Tab setup
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _3',
+            ['Compulsory switches'],
+        );
+
+        # Compulsory switches
+        $self->addLabel($grid, '<b>Compulsory switches</b>',
+            0, 12, 0, 1);
+        $self->addLabel($grid, '<i>List of compulsory switches for the \'' . $axmud::CLIENT->cmdSep
+            . 'add' . $self->editObj->category . '\' command</i>',
+            1, 12, 1, 2);
+
+        # Add a simple list
+        @columnList = (
+            'Attribute', 'text',
+            'Switch', 'text',
+        );
+
+        my $slWidget = $self->addSimpleList($grid, undef, \@columnList,
+            1, 12, 2, 10);
+
+        # Initialise the list
+        $self->refreshList_hashIV($slWidget, (scalar @columnList / 2), 'compulsorySwitchHash');
+
+        # Tab complete
+        return 1;
+    }
+
+    sub attributes4Tab {
+
+        # Attributes4 tab
+        #
+        # Expected arguments
+        #   $innerNotebook  - The Gtk3::Notebook object inside $self->notebook
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $innerNotebook, $check) = @_;
+
+        # Local variables
+        my @columnList;
+
+        # Check for improper arguments
+        if (! defined $innerNotebook || defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->attributes4Tab', @_);
+        }
+
+        # Tab setup
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _4',
+            ['Optional switches'],
+        );
+
+        # Optional switches
+        $self->addLabel($grid, '<b>Optional switches</b>',
+            0, 12, 0, 1);
+        $self->addLabel($grid, '<i>List of optional switches for the \'' . $axmud::CLIENT->cmdSep
+            . 'add' . $self->editObj->category . '\' command</i>',
+            1, 12, 1, 2);
+
+        # Add a simple list
+        @columnList = (
+            'Attribute', 'text',
+            'Switch', 'text',
+        );
+
+        my $slWidget = $self->addSimpleList($grid, undef, \@columnList,
+            1, 12, 2, 10);
+
+        # Initialise the list
+        $self->refreshList_hashIV($slWidget, (scalar @columnList / 2), 'optionalSwitchHash');
+
+        # Tab complete
+        return 1;
+    }
+
+    ##################
+    # Accessors - set
+
+    ##################
+    # Accessors - get
+}
+
 { package Games::Axmud::EditWin::MapLabelStyle;
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -15793,7 +16328,43 @@
 
 #   sub enableSingleButton {}   # Inherited from GA::Generic::ConfigWin
 
-#   sub setupNotebook {}        # Inherited from GA::Generic::ConfigWin
+    sub setupNotebook {
+
+        # Called by $self->winEnable
+        # Creates the first tab for the notebook. The remaining tabs are created by
+        #   $self->expandNotebook
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->setupNotebook', @_);
+        }
+
+        # Tab setup, using the standard grid size
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Name',
+            ['Map label style'],
+        );
+
+        # Set up the rest of the tab
+        $self->nameTab($grid);
+
+        # Set up the remaining tabs
+        $self->expandNotebook();
+
+        # Tab complete
+        return 1;
+    }
 
 #   sub expandNotebook {}       # Inherited from GA::Generic::ConfigWin
 
@@ -15861,7 +16432,7 @@
                 $self->editObj->doModify('saveChanges');
             }
 
-            # Update the current session's object viewer window, if it is open
+            # Update the current session's data viewer window, if it is open
             if ($self->session->viewerWin) {
 
                 $self->session->viewerWin->updateNotebook();
@@ -15902,8 +16473,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->nameTab', @_);
         }
 
-#       # Tab setup (already created by the calling function)
-#       my $grid = $self->addTab('_Name', $self->notebook);
+        # Tab setup (already created by the calling function)
 
         # Map label style
         $self->addLabel($grid, '<b>Map label style</b>',
@@ -16098,7 +16668,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -16216,8 +16786,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->nameTab', @_);
         }
 
-#       # Tab setup (already created by the calling function)
-#       my $grid = $self->addTab('_Name', $self->notebook);
+        # Tab setup (already created by the calling function)
 
         # Name
         $self->addLabel($grid, '<b>Name</b>',
@@ -16255,7 +16824,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Contents', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Contents',
+            ['Contents list'],
+        );
 
         # Contents list
         $self->addLabel($grid, '<b>Contents list</b>',
@@ -16316,7 +16889,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -16359,7 +16932,43 @@
 
 #   sub enableSingleButton {}   # Inherited from GA::Generic::ConfigWin
 
-#   sub setupNotebook {}        # Inherited from GA::Generic::ConfigWin
+    sub setupNotebook {
+
+        # Called by $self->winEnable
+        # Creates the first tab for the notebook. The remaining tabs are created by
+        #   $self->expandNotebook
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->setupNotebook', @_);
+        }
+
+        # Tab setup, using the standard grid size
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Name',
+            ['General properties', 'Source code path'],
+        );
+
+        # Set up the rest of the tab
+        $self->nameTab($grid);
+
+        # Set up the remaining tabs
+        $self->expandNotebook();
+
+        # Tab complete
+        return 1;
+    }
 
     sub expandNotebook {
 
@@ -16439,7 +17048,7 @@
                 $self->editObj->doModify('saveChanges');
             }
 
-            # Update the current session's object viewer window, if it is open
+            # Update the current session's data viewer window, if it is open
             if ($self->session->viewerWin) {
 
                 $self->session->viewerWin->updateNotebook();
@@ -16492,8 +17101,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->nameTab', @_);
         }
 
-#       # Tab setup (already created by the calling function)
-#       my $grid = $self->addTab('_Name', $self->notebook);
+        # Tab setup (already created by the calling function)
 
         # Left column
         $self->addLabel($grid, '<b>General properties</b>',
@@ -16513,7 +17121,8 @@
         $self->addEntry($grid, 'number', FALSE,
             3, 6, 4, 5);
 
-        $self->addLabel($grid, '<b>Source code</b>',
+        # Source code path
+        $self->addLabel($grid, '<b>Source code path</b>',
             0, 12, 6, 7);
         if ($self->session->worldModelObj->mudlibPath) {
 
@@ -16703,7 +17312,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('_Family', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, '_Family');
 
         # Add tabs to the inner notebook
         $self->family1Tab($innerNotebook);
@@ -16735,7 +17344,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Parent object'],
+        );
 
         # Parent object
         $self->addLabel($grid, '<b>Parent object</b>',
@@ -16908,7 +17521,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _2', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _2',
+            ['Child objects'],
+        );
 
         # Child objects
         $self->addLabel($grid, '<b>Child objects</b>',
@@ -17243,9 +17860,10 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('N_otes', $self->notebook);
+        # N.B. No sub-headings
+        my $grid = $self->addTab($self->notebook, 'N_otes');
 
-        # Definite articles
+        # Notes
         $self->addLabel($grid, '<b>Notes</b>',
             0, 12, 0, 1);
         $self->addLabel($grid,
@@ -17298,7 +17916,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('_Words', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, '_Words');
 
         # Add tabs to the inner notebook
         $self->words1Tab($innerNotebook);
@@ -17329,7 +17947,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Words', 'Inventory task properties'],
+        );
 
         # Left column
         $self->addLabel($grid, '<b>Words</b>',
@@ -17352,6 +17974,7 @@
         $self->addEntryWithButton($grid, 'descrip', TRUE,
             3, 12, 4, 5);
 
+        # Inventory task properties
         $self->addLabel($grid, '<b>Inventory task properties</b>',
             0, 12, 5, 6);
         $self->addLabel($grid, 'Container model number',
@@ -17393,7 +18016,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _2', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _2',
+            ['Other nouns', 'Adjectives'],
+        );
 
         # Other nouns
         $self->addLabel($grid, '<b>Other nouns</b>',
@@ -17440,10 +18067,14 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _3', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _3',
+            ['Pseudo adjectives', 'Root adjectives'],
+        );
 
         # Pseudo adjectives
-        $self->addLabel($grid, '<b>Pseudo-adjectives</b>',
+        $self->addLabel($grid, '<b>Pseudo adjectives</b>',
             0, 12, 0, 2);
         $self->addLabel($grid,
             '<i>Adjectives for this object which are linked to longer terms (e.g. \'big\' for'
@@ -17488,7 +18119,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _4', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _4',
+            ['Unknown words'],
+        );
 
         # Unknown words
         $self->addLabel($grid, '<b>Unknown words</b>',
@@ -17527,7 +18162,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Attacks', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Attacks',
+            ['Properties for use by your code during attacks'],
+        );
 
         # Left column
         $self->addLabel($grid, '<b>Properties for use by your code during attacks</b>',
@@ -17585,7 +18224,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('P_hysical', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, 'P_hysical');
 
         # Add tabs to the inner notebook
         $self->physical1Tab($innerNotebook);
@@ -17614,7 +18253,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Physical properties'],
+        );
 
         # Left column
         $self->addLabel($grid, '<b>Physical properties</b>',
@@ -17673,7 +18316,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _2', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _2',
+            ['Bonus stats'],
+        );
 
         # Bonus stats
         $self->addLabel($grid, '<b>Bonus stats</b>',
@@ -17757,7 +18404,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Exclusive', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Exclusive',
+            ['Exclusive profiles'],
+        );
 
         # Exclusive profiles
         $self->addLabel($grid, '<b>Exclusive profiles</b>',
@@ -17909,11 +18560,15 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Properties of ' . $self->editObj->category . ' model objects (1/2)'],
+        );
 
         # Left column
         $self->addLabel($grid,
-            '<b>Properties of ' . $self->editObj->category . ' model objects</b>',
+            '<b>Properties of ' . $self->editObj->category . ' model objects (1/2)</b>',
             0, 12, 0, 1);
 
         $self->addLabel($grid, 'Guild',
@@ -17968,7 +18623,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _2', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _2',
+            ['Inventory list'],
+        );
 
         # Inventory list
         $self->addLabel($grid, '<b>Inventory list</b>',
@@ -18010,7 +18669,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _3', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _3',
+            ['Cash list'],
+        );
 
         # Cash list
         $self->addLabel($grid, '<b>Cash list</b>',
@@ -18067,11 +18730,15 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _4', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _4',
+            ['Properties of ' . $self->editObj->category . ' model objects (2/2)'],
+        );
 
         # Left column
         $self->addLabel($grid,
-            '<b>Properties of ' . $self->editObj->category . ' model objects (continued)</b>',
+            '<b>Properties of ' . $self->editObj->category . ' model objects (2/2)</b>',
             0, 12, 0, 1);
 
         $self->addCheckButton($grid, 'Ever initiated combat (unfriendly)', 'unfriendlyFlag', TRUE,
@@ -18127,7 +18794,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _5', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _5',
+            ['Action properties'],
+        );
 
         # Action properties
         $self->addLabel($grid, '<b>Action properties</b>',
@@ -18172,7 +18843,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _6', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _6',
+            ['Conversation properties'],
+        );
 
         # Conversation properties
         $self->addLabel($grid, '<b>Conversation properties</b>',
@@ -18220,7 +18895,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Properties of ' . $self->editObj->category . ' model objects'],
+        );
 
         # Left column
         $self->addLabel($grid, '<b>Properties of ' . $self->editObj->category
@@ -18323,7 +19002,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -18455,14 +19134,21 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Region', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Region',
+            ['General properties'],
+        );
 
+        # General properties
         $self->addLabel($grid, '<b>General properties</b>',
             0, 6, 0, 1);
 
-        # Temporary region
+        # Temporary/finished region
         $self->addCheckButton($grid, 'Temporary region', 'tempRegionFlag', FALSE,
             1, 12, 1, 2);
+        $self->addCheckButton($grid, 'Finished region', 'finishedFlag', FALSE,
+            1, 12, 2, 3);
 
         # Tab complete
         return 1;
@@ -18479,7 +19165,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -18673,7 +19359,7 @@
                 $self->editObj->doModify('saveChanges');
             }
 
-            # Update the current session's object viewer window, if it is open
+            # Update the current session's data viewer window, if it is open
             if ($self->session->viewerWin) {
 
                 $self->session->viewerWin->updateNotebook();
@@ -18709,7 +19395,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('_Room', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, '_Room');
 
         # Add tabs to the inner notebook
         $self->room1Tab($innerNotebook);
@@ -18743,7 +19429,16 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            [
+                'Properties of ' . $self->editObj->category . ' model objects',
+                'Wilderness mode',
+                'Regionmap grid position',
+                $axmud::BASIC_NAME . ' list',
+            ],
+        );
 
         # Left column
         $self->addLabel($grid,
@@ -18785,6 +19480,7 @@
         $self->addCheckButton($grid, 'Currently dark', 'currentlyDarkFlag', FALSE,
             1, 6, 6, 7);
 
+        # Wilderness mode
         $self->addLabel($grid, '<b>Wilderness mode</b>',
             0, 6, 7, 8);
         my $entry = $self->addEntry($grid, undef, FALSE,
@@ -18884,7 +19580,11 @@
             $tabTitle = 'Page _2';      # This function wasn't called by GA::EditWin::Painter
         }
 
-        my $grid = $self->addTab($tabTitle, $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            $tabTitle,
+            ['Room flags'],
+        );
 
         # Room flags
         $self->addLabel($grid, '<b>Room flags</b>',
@@ -19146,7 +19846,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _3', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _3',
+            ['Room titles', 'Room commands', 'Unspecified room patterns'],
+        );
 
         # Room titles
         $self->addLabel($grid, '<b>Room titles</b>',
@@ -19215,7 +19919,11 @@
             $tabTitle = 'Page _4';  # This function wasn't called by GA::EditWin::Painter
         }
 
-        my $grid = $self->addTab($tabTitle, $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            $tabTitle ,
+            ['Verbose descriptions'],
+        );
 
         # Verbose descriptions
         $self->addLabel($grid, '<b>Verbose descriptions</b>',
@@ -19307,7 +20015,11 @@
             $tabTitle = 'Page _5';  # This function wasn't called by the painter object
         }
 
-        my $grid = $self->addTab($tabTitle, $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            $tabTitle,
+            ['Noun list', 'Adjective list'],
+        );
 
         # Noun list
         $self->addLabel($grid, '<b>Noun list</b>',
@@ -19358,7 +20070,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _6', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _6',
+            ['Character visits'],
+        );
 
         # Character visits
         $self->addLabel($grid, '<b>Character visits</b>',
@@ -19475,7 +20191,11 @@
             $tabTitle = '_Page _7';     # This function wasn't called by GA::EditWin::Painter
         }
 
-        my $grid = $self->addTab($tabTitle, $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            $tabTitle,
+            ['Exclusive profiles'],
+        );
 
         # Exclusive profiles
         $self->addLabel($grid, '<b>Exclusive profiles</b>',
@@ -19591,7 +20311,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('_Exits', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, '_Exits');
 
         # Add tabs to the inner notebook
         $self->exits1Tab($innerNotebook);
@@ -19627,7 +20347,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Failed exit patterns', 'Special departure patterns'],
+        );
 
         # Failed exit patterns
         $self->addLabel($grid, '<b>Failed exit patterns</b>',
@@ -19689,7 +20413,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _2', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _2',
+            ['Involuntary exit patterns'],
+        );
 
         # Involuntary exit patterns
         $self->addLabel($grid, '<b>Involuntary exit patterns</b>',
@@ -19789,7 +20517,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _3', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _3',
+            ['Repulse exit patterns'],
+        );
 
         # Repulse exit patterns
         $self->addLabel($grid, '<b>Repulse exit patterns</b>',
@@ -19890,7 +20622,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _4', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _4',
+            ['Exit objects'],
+        );
 
         # Exit objects
         $self->addLabel($grid, '<b>Exit objects</b>',
@@ -20165,7 +20901,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _5', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _5',
+            ['Incoming uncertain exits'],
+        );
 
         # Incoming uncertain exits
         $self->addLabel($grid, '<b>Incoming uncertain exits</b>',
@@ -20286,7 +21026,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _6', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _6',
+            ['Incoming one-way exits'],
+        );
 
         # Incoming one-way exits
         $self->addLabel($grid, '<b>Incoming one-way exits</b>',
@@ -20351,7 +21095,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _7', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _7',
+            ['Incoming involuntary exits'],
+        );
 
         # Incoming involuntary exits
         $self->addLabel($grid, '<b>Incoming involuntary exits</b>',
@@ -20445,7 +21193,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _8', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _8',
+            ['Incoming random exits'],
+        );
 
         # Incoming random exits
         $self->addLabel($grid, '<b>Incoming random exits</b>',
@@ -20514,7 +21266,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _9', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _9',
+            ['Checked directions'],
+        );
 
         # Checked directions
         $self->addLabel($grid, '<b>Checked directions</b>',
@@ -20575,7 +21331,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('_Contents', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, '_Contents');
 
         # Add tabs to the inner notebook
         $self->contents1Tab($innerNotebook);
@@ -20608,7 +21364,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Temporary contents'],
+        );
 
         # Temporary contents
         $self->addLabel($grid, '<b>Temporary contents</b>',
@@ -20779,7 +21539,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _2', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _2',
+            ['Hidden objects'],
+        );
 
         # Hidden objects
         $self->addLabel($grid, '<b>Hidden objects</b>',
@@ -20887,7 +21651,11 @@
             $tabTitle = 'Page _3';  # This function wasn't called by GA::EditWin::Painter
         }
 
-        my $grid = $self->addTab($tabTitle, $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            $tabTitle,
+            ['Search responses'],
+        );
 
         # Search responses
         $self->addLabel($grid, '<b>Search responses</b>',
@@ -20971,7 +21739,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('Pr_otocols', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, 'Pr_otocols');
 
         # Add tabs to the inner notebook
         $self->protocols1Tab($innerNotebook);
@@ -21012,7 +21780,11 @@
             $tabTitle = 'Page _1';  # This function wasn't called by GA::EditWin::Painter
         }
 
-        my $grid = $self->addTab($tabTitle, $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            $tabTitle,
+            ['Room data'],
+        );
 
         # Room data
         $self->addLabel($grid, '<b>Room data</b>',
@@ -21068,7 +21840,11 @@
             $tabTitle = 'Page _2';  # This function wasn't called by GA::EditWin::Painter
         }
 
-        my $grid = $self->addTab($tabTitle, $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            $tabTitle ,
+            ['Exit data'],
+        );
 
         # Exit data
         $self->addLabel($grid, '<b>Exit data</b>',
@@ -21105,7 +21881,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -21233,7 +22009,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -21361,7 +22137,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -21489,7 +22265,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -21626,7 +22402,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('C_haracter', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, 'C_haracter');
 
         # Add tabs to the inner notebook (uses some of the same tabs as sentients)
         $self->character1Tab($innerNotebook);
@@ -21646,7 +22422,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -21783,7 +22559,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('_Minion', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, '_Minion');
 
         # Add tabs to the inner notebook (uses some of the same tabs as sentients and characters)
         $self->character1Tab($innerNotebook);
@@ -21803,7 +22579,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -21940,7 +22716,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('_Sentient', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, '_Sentient');
 
         # Add tabs to the inner notebook
         $self->sentient1Tab($innerNotebook);
@@ -21964,7 +22740,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -22101,7 +22877,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('C_reature', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, 'C_reature');
 
         # Add tabs to the inner notebook
         $self->sentient1Tab($innerNotebook);
@@ -22124,7 +22900,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -22264,7 +23040,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Po_rtable', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            'Po_rtable',
+            ['Properties belonging only to portable model objects'],
+        );
 
         # Properties belonging only to portable world model objects
         $self->addLabel($grid, '<b>Properties belonging only to portable model objects</b>',
@@ -22291,7 +23071,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -22430,7 +23210,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Decoration', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Decoration',
+            ['Properties belonging only to decoration model objects'],
+        );
 
         # Properties belonging only to decoration world model objects
         $self->addLabel($grid, '<b>Properties belonging only to decoration model objects</b>',
@@ -22457,7 +23241,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -22584,7 +23368,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -22674,8 +23458,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->setupNotebook', @_);
         }
 
-#       # Tab setup
-#       my $grid = $self->addTab('_Room', $self->notebook);
+        # Tab setup (already created by the calling function)
 
         # Set up the rest of the first tab (all of it, in this case)
         $self->roomTab();
@@ -22750,7 +23533,7 @@
                 $self->editObj->doModify('saveChanges');
             }
 
-            # Update the current session's object viewer window, if it is open
+            # Update the current session's data viewer window, if it is open
             if ($self->session->viewerWin) {
 
                 $self->session->viewerWin->updateNotebook();
@@ -22786,7 +23569,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('_Room', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, '_Room');
 
         # Add tabs to the inner notebook (mostly inherited from GA::EditWin::ModelObj::Room, so we
         #   pass an extra argument to show the tab which page number to display)
@@ -22822,7 +23605,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Wilderness mode'],
+        );
 
         # Wilderness mode
         $self->addLabel($grid, '<b>Wilderness mode</b>',
@@ -22900,7 +23687,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _4', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _4',
+            ['Room titles', 'Room guild'],
+        );
 
         # Room titles
         $self->addLabel($grid, '<b>Room titles</b>',
@@ -22954,7 +23745,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('_Contents', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, '_Contents');
 
         # Add tabs to the inner notebook (inherited from GA::EditWin::ModelObj::Room, so we pass an
         #   extra argument to show the tab which page number to display)
@@ -22974,7 +23765,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -23039,7 +23830,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Name', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Name',
+            ['Profile name'],
+        );
 
         # Profile name
         $self->addLabel($grid, '<b>Profile name</b>',
@@ -23264,7 +24059,7 @@
                 $self->editObj->doModify('saveChanges');
             }
 
-            # Update the current session's object viewer window, if it is open
+            # Update the current session's data viewer window, if it is open
             if ($self->session->viewerWin) {
 
                 $self->session->viewerWin->updateNotebook();
@@ -23295,8 +24090,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->nameTab', @_);
         }
 
-#       # Tab setup (already created by the calling function)
-#       my $grid = $self->addTab('_Name', $self->notebook);
+        # Tab setup (already created by the calling function)
 
         # Profile category
         $self->addLabel($grid, '<b>Profile category</b>',
@@ -23351,7 +24145,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Commands', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Commands',
+            ['List of profile-specific commands'],
+        );
 
         # List of profile-specific commands
         $self->addLabel($grid, '<b>List of profile-specific commands</b>',
@@ -23388,7 +24186,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Fight', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Fight',
+            ['List of profile-specific fight patterns'],
+        );
 
         # List of profile-specific fight patterns
         $self->addLabel($grid, '<b>List of profile-specific fight patterns</b>',
@@ -23473,7 +24275,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Int_eraction', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            'Int_eraction',
+            ['List of profile-specific interaction patterns'],
+        );
 
         # List of profile-specific interaction patterns
         $self->addLabel($grid, '<b>List of profile-specific interaction patterns</b>',
@@ -23566,7 +24372,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('_Initial', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, '_Initial');
 
         # Add tabs to the inner notebook
         $self->initial1Tab($innerNotebook);
@@ -23599,7 +24405,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Initial tasks'],
+        );
 
         # Initial tasks
         $self->addLabel($grid, '<b>Initial tasks</b>',
@@ -24033,9 +24843,13 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _2', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _2',
+            ['Initial scripts'],
+        );
 
-        # Initial tasks
+        # Initial scripts
         $self->addLabel($grid, '<b>Initial scripts</b>',
             0, 13, 0, 1);
         $self->addLabel($grid,
@@ -24370,7 +25184,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _3', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _3',
+            ['Initial mission', 'Initial command list'],
+        );
 
         # Initial mission
         # (NB Labels stop at column 11; otherwise the 'undef' button takes up most of the row,
@@ -24430,7 +25248,8 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('N_otes', $self->notebook);
+        # N.B. No sub-headings
+        my $grid = $self->addTab($self->notebook, 'N_otes');
 
         # Notes
         $self->addLabel($grid, '<b>Notes</b>',
@@ -24467,7 +25286,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -24687,7 +25506,7 @@
                 $self->editObj->doModify('saveChanges');
             }
 
-            # Update the current session's object viewer window, if it is open
+            # Update the current session's data viewer window, if it is open
             if ($self->session->viewerWin) {
 
                 $self->session->viewerWin->updateNotebook();
@@ -24745,8 +25564,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->nameTab', @_);
         }
 
-#       # Tab setup (already created by the calling function)
-#       my $grid = $self->addTab('_Name', $self->notebook);
+        # Tab setup (already created by the calling function)
 
         # Profile category
         $self->addLabel($grid, '<b>Profile category</b>',
@@ -24802,7 +25620,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('Settin_gs', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, 'Settin_gs');
 
         # Add tabs to the inner notebook
         $self->settings1Tab($innerNotebook);
@@ -24847,7 +25665,16 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            [
+                'Connection details',
+                'SSH Connection details',
+                'Previous connections',
+                'General settings',
+            ],
+        );
 
         # Connection details
         $self->addLabel($grid, '<b>Connection details</b>',
@@ -24960,7 +25787,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _2', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _2',
+            ['Connection history'],
+        );
 
         # Connection history
         $self->addLabel($grid, '<b>Connection history</b>',
@@ -25246,7 +26077,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _3', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _3',
+            ['Websites', 'World description'],
+        );
 
         # Websites. ->signal_connects appear further below
         $self->addLabel($grid, '<b>Websites</b>',
@@ -25287,6 +26122,7 @@
             }
         });
 
+        # World description
         $self->addLabel($grid, '<b>World description</b>',
             0, 3, 3, 4);
         $self->addLabel($grid, 'General description',
@@ -25335,10 +26171,14 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _4', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _4',
+            ['Automatic login mode (1/3)'],
+        );
 
-        # Automatic login mode
-        $self->addLabel($grid, '<b>Automatic login mode</b>',
+        # Automatic login mode (1/3)
+        $self->addLabel($grid, '<b>Automatic login mode (1/3)</b>',
             0, 12, 0, 1);
 
         my ($group, $radioButton) = $self->addRadioButton(
@@ -25437,10 +26277,14 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _5', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _5',
+            ['Automatic login mode (2/3)'],
+        );
 
-        # Automatic login mode (2)
-        $self->addLabel($grid, '<b>Automatic login mode (2)</b>',
+        # Automatic login mode (2/3)
+        $self->addLabel($grid, '<b>Automatic login mode (2/3)</b>',
             0, 10, 0, 1);
         $self->addRegexButton($grid,
             [
@@ -25555,10 +26399,14 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _6', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _6',
+            ['Automatic login mode (3/3)'],
+        );
 
-        # Automatic login mode (3)
-        $self->addLabel($grid, '<b>Automatic login mode (3)</b>',
+        # Automatic login mode (3/3)
+        $self->addLabel($grid, '<b>Automatic login mode (3/3)</b>',
             0, 12, 0, 1);
 
         $self->addLabel($grid,
@@ -25660,9 +26508,13 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _7', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _7',
+            ['Automatic quit mode'],
+        );
 
-        # Automatic login mode
+        # Automatic quit mode
         $self->addLabel($grid, '<b>Automatic quit mode</b>',
             0, 12, 0, 1);
         $self->addLabel(
@@ -25796,7 +26648,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _8', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _8',
+            ['Character/password list'],
+        );
 
         # Character/password list
         $self->addLabel($grid, '<b>Character/password list</b>',
@@ -25808,7 +26664,7 @@
             1, 12, 1, 2);
 
         my $checkButton = $self->addCheckButton($grid, 'Obscure passwords', undef, TRUE,
-            1, 6, 2, 3);
+            1, 4, 2, 3);
         # Passwords are initially obscured
         $obscureFlag = TRUE;
         $checkButton->set_active($obscureFlag);
@@ -25818,21 +26674,21 @@
             $grid, undef, '\'unknown\'', 'loginAccountMode',
             'unknown',  # IV set to this value when toggled
             TRUE,       # Sensitive widget
-            6, 7, 2, 3);
+            4, 5, 2, 3);
         $self->addLabel($grid, 'Unknown if account name is also required to log in',
-            7, 12, 2, 3);
+            5, 12, 2, 3);
 
         ($group, $radioButton) = $self->addRadioButton(
             $grid, $group, '\'not_required\'', 'loginAccountMode', 'not_required', TRUE,
-            6, 7, 3, 4);
+            4, 5, 3, 4);
         $self->addLabel($grid, 'Account name not required',
-            7, 12, 3, 4);
+            5, 12, 3, 4);
 
          ($group, $radioButton) = $self->addRadioButton(
             $grid, $group, '\'required\'', 'loginAccountMode', 'required', TRUE,
-            6, 7, 4, 5);
+            4, 5, 4, 5);
         $self->addLabel($grid, 'Account name required',
-            7, 12, 4, 5);
+            5, 12, 4, 5);
 
         # Add a simple list
         @columnList = (
@@ -26062,9 +26918,13 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _9', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _9',
+            ['Associated profiles'],
+        );
 
-        # Missions list
+        # Associated profiles
         $self->addLabel($grid, '<b>Associated profiles</b>',
             0, 12, 0, 1);
         $self->addLabel($grid,
@@ -26122,7 +26982,17 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page 1_0', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page 1_0',
+            [
+                'Dictionary settings',
+                'Multiples',
+                'Consecutive empty line suppression',
+                'Command separator \';\'',
+                'Slowwalking',
+            ],
+        );
 
         # Dictionary settings
         $self->addLabel($grid, '<b>Dictionary settings</b>',
@@ -26352,7 +27222,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page 11', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page 11',
+            ['Units', 'Command prompt patterns'],
+        );
 
         # Units
         $self->addLabel($grid, '<b>Units</b>',
@@ -26420,7 +27294,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page 12', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page 12',
+            ['Session logging settings'],
+        );
 
         # Session logging settings
         $self->addLabel($grid, '<b>Session logging settings</b>',
@@ -26429,47 +27307,32 @@
             '<i>List of logfiles written by each session using this world profile</i>',
             1, 12, 1, 2);
 
-        # Add a simple list
-        @columnList = (
-            'Logfile', 'text',
-            'Write?', 'bool',
-            'Description', 'text',
-        );
+        # Add a simple list. Widgets can't be manipulated when this isn't a current profile
+        if (! $self->currentFlag) {
+
+            @columnList = (
+                'Logfile', 'text',
+                'Write?', 'bool',
+                'Description', 'text',
+            );
+
+        } else {
+
+            @columnList = (
+                'Logfile', 'text',
+                'Write?', 'bool_editable',
+                'Description', 'text',
+            );
+        }
 
         my $slWidget = $self->addSimpleList($grid, undef, \@columnList,
-            1, 12, 2, 10);
+            1, 12, 2, 12,
+            -1, -1,
+            $self->getMethodRef('settings12Tab_buttonToggled'),
+        );
 
         # Initialise the list
         $self->settings12Tab_refreshList($slWidget, (scalar @columnList / 2));
-
-        # Add a two combos and a button
-        @comboList = $axmud::CLIENT->constSessionLogOrderList;
-        my $comboBox = $self->addComboBox($grid, undef, \@comboList, '',
-            TRUE,                       # No 'undef' value used
-            1, 4, 10, 11);
-
-        my $button = $self->addButton($grid,
-            'Toggle', 'Change the setting for the selected logfile', undef,
-            4, 6, 10, 11,
-            TRUE,           # Irreversible
-        );
-        $button->signal_connect('clicked' => sub {
-
-            my $logfile = $comboBox->get_active_text();
-
-            # Update the IV
-            $self->session->pseudoCmd('log ' . $logfile, $self->pseudoCmdMode);
-
-            # Refresh the simple list
-            $self->settings12Tab_refreshList($slWidget, (scalar @columnList / 2));
-        });
-
-        # Widgets can't be manipulated when this isn't a current profile
-        if (! $self->currentFlag) {
-
-            $comboBox->set_sensitive(FALSE);
-            $button->set_sensitive(FALSE);
-        }
 
         # Tab complete
         return 1;
@@ -26523,6 +27386,54 @@
         return 1;
     }
 
+    sub settings12Tab_buttonToggled {
+
+        # Callback from GA::Generic::EditWin->addSimpleList
+        #
+        # Expected arguments
+        #   $slWidget   - The GA::Obj::SimpleList
+        #   $model      - The Gtk3::ListStore
+        #   $iter       - The Gtk3::TreeIter of the line clicked
+        #   @data       - Data for all the cells on that line
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $slWidget, $model, $iter, @dataList) = @_;
+
+        # Local variables
+        my ($logfile, $flag);
+
+        # Check for improper arguments
+        if (! defined $slWidget || ! defined $model || ! defined $iter) {
+
+            return $axmud::CLIENT->writeImproper(
+                $self->_objClass . '->settings12Tab_buttonToggled',
+                @_,
+            );
+        }
+
+        # Update IVs
+        $logfile = $dataList[0];
+        $flag = $dataList[1];
+
+        if (! $self->editObj->ivExists('logPrefHash', $logfile)) {
+
+            # Failsafe
+            return undef;
+        }
+
+        if (
+            ($self->editObj->ivShow('logPrefHash', $logfile) && ! $flag)
+            || (! $self->editObj->ivShow('logPrefHash', $logfile) && $flag)
+        ) {
+            $self->session->pseudoCmd('log ' . $logfile, $self->pseudoCmdMode);
+        }
+
+        return 1;
+    }
+
     sub overrideTab {
 
         # Override tab
@@ -26544,7 +27455,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('Overri_de', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, 'Overri_de');
 
         # Add tabs to the inner notebook
         $self->override1Tab($innerNotebook);
@@ -26582,7 +27493,15 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            [
+                'Override ' . $axmud::SCRIPT . ' terminal type',
+                'Override ' . $axmud::SCRIPT . ' character set',
+                'Override real terminal size (disables NAWS)'
+            ],
+        );
 
         # Left column
         $self->addLabel($grid, '<b>Override ' . $axmud::SCRIPT . ' terminal type</b>',
@@ -26706,7 +27625,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _2', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _2',
+            ['Telnet override settings'],
+        );
 
         # Telnet override settings
         $self->addLabel($grid, '<b>Telnet override settings</b>',
@@ -26722,14 +27645,14 @@
         );
 
         my $slWidget = $self->addSimpleList($grid, undef, \@columnList,
-            1, 12, 3, 10);
+            1, 12, 3, 9);
 
         # Initialise the list
         $self->override2Tab_refreshList($slWidget, (scalar @columnList / 2));
 
         # Add editing widgets
         $self->addLabel($grid, 'Option/protocol:',
-            1, 3, 10, 11);
+            1, 3, 9, 10);
 
         @comboList = qw(
             echo sga ttype eor naws new_environ charset
@@ -26738,14 +27661,14 @@
 
         my $comboBox = $self->addComboBox($grid, undef, \@comboList, '',
             TRUE,                       # No 'undef' value used
-            3, 5, 10, 11);
+            3, 5, 9, 10);
 
         my $button = $self->addButton(
             $grid,
             'Disable for this world',
             'Stop this option/protocol from being enabled in this world\'s session',
             undef,
-            5, 8, 10, 11);
+            5, 12, 9, 10);
         $button->signal_connect('clicked' => sub {
 
             my (
@@ -26767,7 +27690,7 @@
             'Enable/disable according to global settings',
             'Enable/disable this option/protocol according to global settings',
             undef,
-            8, 12, 10, 11);
+            5, 12, 10, 11);
         $button2->signal_connect('clicked' => sub {
 
             my (
@@ -26885,7 +27808,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _3', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _3',
+            ['MXP override settings'],
+        );
 
         # MXP override settings
         $self->addLabel($grid, '<b>MXP override settings</b>',
@@ -27108,7 +28035,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _4', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _4',
+            ['Terminal type override settings'],
+        );
 
         # Terminal type override settings
         $self->addLabel($grid, '<b>Terminal type override settings</b>',
@@ -27448,9 +28379,13 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _5', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _5',
+            ['Instruction sigil override settings'],
+        );
 
-        # Instruction override settings
+        # Instruction sigil override settings
         $self->addLabel($grid, '<b>Instruction sigil override settings</b>',
             0, 12, 0, 1);
         $self->addLabel($grid,
@@ -27666,7 +28601,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('_Rooms', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, '_Rooms');
 
         # Add tabs to the inner notebook
         $self->rooms1Tab($innerNotebook);
@@ -27717,7 +28652,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Room statement components'],
+        );
 
         # Room statement components
         $self->addLabel($grid, '<b>Room statement components</b>',
@@ -28176,7 +29115,11 @@
 
         if ($iv eq 'verboseComponentList') {
 
-            $grid = $self->addTab('Page _2', $innerNotebook);
+            $grid = $self->addTab(
+                $innerNotebook,
+                'Page _2',
+                ['Verbose components'],
+            );
 
             # Verbose components
             $self->addLabel($grid, '<b>Verbose components</b>',
@@ -28187,7 +29130,11 @@
 
         } elsif ($iv eq 'shortComponentList') {
 
-            $grid = $self->addTab('Page _5', $innerNotebook);
+            $grid = $self->addTab(
+                $innerNotebook,
+                'Page _5',
+                ['Short verbose components'],
+            );
 
             # Short verbose components
             $self->addLabel($grid, '<b>Short verbose components</b>',
@@ -28198,9 +29145,13 @@
 
         } else {
 
-            $grid = $self->addTab('Page _8', $innerNotebook);
+            $grid = $self->addTab(
+                $innerNotebook,
+                'Page _8',
+                ['Brief components'],
+            );
 
-            # Short verbose components
+            # Brief components
             $self->addLabel($grid, '<b>Brief components</b>',
                 0, 12, 0, 1);
             $self->addLabel($grid,
@@ -28546,9 +29497,13 @@
 
         if ($listIV eq 'verboseAnchorPatternList') {
 
-            $grid = $self->addTab('Page _3', $innerNotebook);
+            $grid = $self->addTab(
+                $innerNotebook,
+                'Page _3',
+                ['Verbose anchor patterns'],
+            );
 
-            # Verbose components
+            # Verbose anchor patterns
             $self->addLabel($grid, '<b>Verbose anchor patterns</b>',
                 0, 10, 0, 1);
             $self->addLabel($grid,
@@ -28557,9 +29512,13 @@
 
         } elsif ($listIV eq 'shortAnchorPatternList') {
 
-            $grid = $self->addTab('Page _6', $innerNotebook);
+            $grid = $self->addTab(
+                $innerNotebook,
+                'Page _6',
+                ['Short verbose anchor patterns'],
+            );
 
-            # Short verbose components
+            # Short verbose anchor patterns
             $self->addLabel($grid, '<b>Short verbose anchor patterns</b>',
                 0, 10, 0, 1);
             $self->addLabel($grid,
@@ -28568,9 +29527,13 @@
 
         } elsif ($listIV eq 'briefAnchorPatternList') {
 
-            $grid = $self->addTab('Page _9', $innerNotebook);
+            $grid = $self->addTab(
+                $innerNotebook,
+                'Page _9',
+                ['Brief anchor patterns'],
+            );
 
-            # Short verbose components
+            # Brief anchor patterns
             $self->addLabel($grid, '<b>Brief anchor patterns</b>',
                 0, 10, 0, 1);
             $self->addLabel($grid,
@@ -28646,9 +29609,13 @@
 
         if ($iv eq 'verboseAnchorCheckList') {
 
-            $grid = $self->addTab('Page _4', $innerNotebook);
+            $grid = $self->addTab(
+                $innerNotebook,
+                'Page _4',
+                ['Verbose check patterns'],
+            );
 
-            # Verbose components
+            # Verbose check patterns
             $self->addLabel($grid, '<b>Verbose check patterns</b>',
                 0, 12, 0, 1);
             $self->addLabel($grid,
@@ -28657,9 +29624,13 @@
 
         } elsif ($iv eq 'shortAnchorCheckList') {
 
-            $grid = $self->addTab('Page _7', $innerNotebook);
+            $grid = $self->addTab(
+                $innerNotebook,
+                'Page _7',
+                ['Short check patterns'],
+            );
 
-            # Short verbose components
+            # Short check patterns
             $self->addLabel($grid, '<b>Short check patterns</b>',
                 0, 12, 0, 1);
             $self->addLabel($grid,
@@ -28668,9 +29639,13 @@
 
         } else {
 
-            $grid = $self->addTab('Page 1_0', $innerNotebook);
+            $grid = $self->addTab(
+                $innerNotebook,
+                'Page 1_0',
+                ['Brief check patterns'],
+            );
 
-            # Short verbose components
+            # Brief check patterns
             $self->addLabel($grid, '<b>Brief check patterns</b>',
                 0, 12, 0, 1);
             $self->addLabel($grid,
@@ -28753,7 +29728,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page 11', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page 11',
+            ['Other room statement markers'],
+        );
 
         # Other room statement markers
         $self->addLabel($grid, '<b>Other room statement markers</b>',
@@ -28857,9 +29836,13 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page 12', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page 12',
+            ['Verbose exit delimiter strings/marker patterns'],
+        );
 
-        # Verbose exit delimiter/marker strings
+        # Verbose exit delimiter/marker patterns
         $self->addLabel($grid,
             '<b>Verbose exit delimiter strings/marker patterns</b>',
             0, 10, 0, 1);
@@ -28927,9 +29910,13 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page 13', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page 13',
+            ['Brief exit delimiter strings/marker patterns'],
+        );
 
-        # Brief exit delimiter/marker strings
+        # Brief exit delimiter/marker patterns
         $self->addLabel($grid,
             '<b>Brief exit delimiter strings/marker patterns</b>',
             0, 12, 0, 1);
@@ -29000,7 +29987,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page 14', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page 14',
+            ['Exit state strings'],
+        );
 
         # Exit state strings
         $self->addLabel($grid, '<b>Exit state strings</b>',
@@ -29213,7 +30204,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page 15', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page 15',
+            ['Exit state colour tags'],
+        );
 
         # Exit state colour tags
         $self->addLabel($grid, '<b>Exit state colour tags</b>',
@@ -29368,7 +30363,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page 16', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page 16',
+            ['Exit aliases'],
+        );
 
         # Exit aliases
         $self->addLabel($grid, '<b>Exit aliases</b>',
@@ -29454,7 +30453,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page 17', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page 17',
+            ['Exit state patterns', 'Duplicate exit replacement string'],
+        );
 
         # Exit state patterns
         $self->addLabel($grid, '<b>Exit state patterns</b>',
@@ -29511,7 +30514,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page 18', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page 18',
+            ['Exit remove/info patterns'],
+        );
 
         # Exit remove/info patterns
         $self->addLabel($grid, '<b>Exit remove/info patterns</b>',
@@ -29567,7 +30574,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page 19', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page 19',
+            ['Contents list patterns'],
+        );
 
         # Contents list patterns
         $self->addLabel($grid, '<b>Contents list patterns</b>',
@@ -29613,9 +30624,13 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page 20', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page 20',
+            ['Special contents patterns'],
+        );
 
-        # Status commands
+        # Special contents patterns
         $self->addLabel($grid, '<b>Special contents patterns</b>',
             0, 12, 0, 1);
         $self->addLabel($grid,
@@ -29700,9 +30715,13 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page 21', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page 21',
+            ['Room command delimiter strings/marker patterns'],
+        );
 
-        # Room command delimiter/marker strings
+        # Room command delimiter strings/marker patterns
         $self->addLabel($grid,
             '<b>Room command delimiter strings/marker patterns</b>',
             0, 12, 0, 1);
@@ -29777,7 +30796,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('Mo_ves', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, 'Mo_ves');
 
         # Add tabs to the inner notebook
         $self->moves1Tab($innerNotebook);
@@ -29810,7 +30829,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Failed exit patterns', 'Dark room patterns'],
+        );
 
         # Failed exit patterns
         $self->addLabel($grid, '<b>Failed exit patterns</b>',
@@ -29864,7 +30887,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _2', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _2',
+            ['Door patterns', 'Locked door patterns'],
+        );
 
         # Door patterns
         $self->addLabel($grid, '<b>Door patterns</b>',
@@ -29916,7 +30943,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _3', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _3',
+            ['Involuntary exit patterns', 'Unspecified room patterns'],
+        );
 
         # Involuntary exit patterns
         $self->addLabel($grid, '<b>Involuntary exit patterns</b>',
@@ -29973,7 +31004,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _4', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _4',
+            ['Transient exit patterns'],
+        );
 
         # Transient exit patterns
         $self->addLabel($grid, '<b>Transient exit patterns</b>',
@@ -30072,7 +31107,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _5', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _5',
+            ['Follow patterns'],
+        );
 
         # Follow patterns
         $self->addLabel($grid, '<b>Follow patterns</b>',
@@ -30167,9 +31206,13 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _6', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _6',
+            ['Follow anchor patterns'],
+        );
 
-        # Follow patterns
+        # Follow anchor patterns
         $self->addLabel($grid, '<b>Follow anchor patterns</b>',
             0, 12, 0, 1);
         $self->addLabel(
@@ -30263,7 +31306,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('S_tatus', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, 'S_tatus');
 
         # Create a temporary status task, so we can access its IVs
         $taskObj = Games::Axmud::Task::Status->new($self->session);
@@ -30310,7 +31353,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Status task commands'],
+        );
 
         # Status task commands
         $self->addLabel($grid, '<b>Status task commands</b>',
@@ -30401,9 +31448,13 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _2', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _2',
+            ['Status task window format'],
+        );
 
-        # Status task - display
+        # Status task window format
         $self->addLabel($grid, '<b>Status task window format</b>',
             0, 6, 0, 1);
         $self->addLabel(
@@ -30503,9 +31554,13 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _3', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _3',
+            ['Status task - gauges'],
+        );
 
-        # Status task - display
+        # Status task - gauges
         $self->addLabel(
             $grid,
             '<b>Status task - gauges</b>'
@@ -30738,7 +31793,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _4', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _4',
+            ['Status task MSDP variables'],
+        );
 
         # Status task MSDP variables
         $self->addLabel($grid, '<b>Status task MSDP variables</b>',
@@ -30828,7 +31887,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _5', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _5',
+            ['Status task MXP variables'],
+        );
 
         # Status task MXP variables
         $self->addLabel($grid, '<b>Status task MXP variables</b>',
@@ -30873,8 +31936,8 @@
 
             my ($mxpEnt, $var);
 
-            $mxpEnt = $entry->get_text();
-            $var = $entry2->get_text();
+            $mxpEnt = $axmud::CLIENT->trimWhitespace($entry->get_text());
+            $var = $axmud::CLIENT->trimWhitespace($entry2->get_text());
 
             if ($self->checkEntryIcon($entry, $entry2)) {
 
@@ -30889,6 +31952,15 @@
                 );
 
                 $self->resetEntryBoxes($entry, $entry2);
+
+                # Update the Status task with the current value (if any) of the MXP entity
+                if (
+                    $self->session->statusTask
+                    && $self->session->ivExists('mxpEntityHash', $mxpEnt)
+                ) {
+                    my $mxpObj = $self->session->ivShow('mxpEntityHash', $mxpEnt);
+                    $self->session->statusTask->setValue($var, $mxpObj->value);
+                }
             }
         });
 
@@ -30923,7 +31995,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _6', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _6',
+            ['Status task - general patterns'],
+        );
 
         # Status task - general patterns
         $self->addLabel($grid, '<b>Status task - general patterns</b>',
@@ -31066,7 +32142,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _7', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _7',
+            ['Status task - bar patterns'],
+        );
 
         # Status task - bar patterns
         $self->addLabel($grid, '<b>Status task - bar patterns</b>',
@@ -31190,7 +32270,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _8', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _8',
+            ['Status task - character affect patterns'],
+        );
 
         # Status task - character affect patterns
         $self->addLabel($grid, '<b>Status task - character affect patterns</b>',
@@ -31292,7 +32376,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _9', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _9',
+            ['Status task - character stat patterns'],
+        );
 
         # Status task - character stat patterns
         $self->addLabel($grid, '<b>Status task - character stat patterns</b>',
@@ -31404,7 +32492,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page 1_0', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page 1_0',
+            ['Status task ignore patterns', 'Quest complete patterns'],
+        );
 
         # Status task ignore patterns
         $self->addLabel($grid, '<b>Status task ignore patterns</b>',
@@ -31457,7 +32549,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page 11', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page 11',
+            ['Status task age patterns', 'Status task time patterns'],
+        );
 
         # Status task age patterns
         $self->addLabel($grid, '<b>Status task age patterns</b>',
@@ -31510,7 +32606,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page 12', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page 12',
+            ['Life patterns'],
+        );
 
         # Life patterns
         $self->addLabel($grid, '<b>Life patterns</b>',
@@ -31560,7 +32660,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page 13', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page 13',
+            ['Passing out patterns'],
+        );
 
         # Passing out patterns
         $self->addLabel($grid, '<b>Passing out patterns</b>',
@@ -31610,7 +32714,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page 14', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page 14',
+            ['Sleep patterns'],
+        );
 
         # Sleep patterns
         $self->addLabel($grid, '<b>Sleep patterns</b>',
@@ -31661,7 +32769,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('Inventor_y', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, 'Inventor_y');
 
         # Add tabs to the inner notebook
         $self->inventory1Tab($innerNotebook);
@@ -31695,7 +32803,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Inventory collection mode'],
+        );
 
         # Inventory collection mode
         $self->addLabel($grid, '<b>Inventory collection mode</b>',
@@ -31769,7 +32881,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _2', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _2',
+            ['Inventory task patterns'],
+        );
 
         # Inventory task patterns
         $self->addLabel($grid, '<b>Inventory task patterns</b>',
@@ -31895,7 +33011,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _3', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _3',
+            ['Inventory task ignore patterns'],
+        );
 
         # Inventory task ignore patterns
         $self->addLabel($grid, '<b>Inventory task ignore patterns</b>',
@@ -31993,7 +33113,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _4', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _4',
+            ['Inventory discard patterns', 'Inventory split patterns'],
+        );
 
         # Inventory discard patterns
         $self->addLabel($grid, '<b>Inventory discard patterns</b>',
@@ -32052,7 +33176,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _5', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _5',
+            ['Condition task patterns'],
+        );
 
         # Condition task patterns
         $self->addLabel($grid, '<b>Condition task patterns</b>',
@@ -32158,7 +33286,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _6', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _6',
+            ['Condition task ignore patterns'],
+        );
 
         # Condition task ignore patterns
         $self->addLabel($grid, '<b>Condition task ignore patterns</b>',
@@ -32203,7 +33335,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _7', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _7',
+            ['Inventory commands'],
+        );
 
         # Inventory commands
         $self->addLabel($grid, '<b>Inventory commands</b>',
@@ -32291,7 +33427,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('C_hannels', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, 'C_hannels');
 
         # Add tabs to the inner notebook
         $self->channels1Tab($innerNotebook);
@@ -32323,7 +33459,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Channel patterns'],
+        );
 
         # Channel patterns
         $self->addLabel($grid, '<b>Channel patterns</b>',
@@ -32477,7 +33617,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _2', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _2',
+            ['Channel ignore patterns'],
+        );
 
         # Channel ignore patterns
         $self->addLabel($grid, '<b>Channel ignore patterns</b>',
@@ -32522,7 +33666,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('Attac_k', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, 'Attac_k');
 
         # Add tabs to the inner notebook
         $self->attack1Tab($innerNotebook);
@@ -32556,7 +33700,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Target leaves patterns'],
+        );
 
         # Target leaves patterns
         $self->addLabel($grid, '<b>Target leaves patterns</b>',
@@ -32655,7 +33803,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _2', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _2',
+            ['Target arrives patterns'],
+        );
 
         # Target arrives patterns
         $self->addLabel($grid, '<b>Target arrives patterns</b>',
@@ -32756,7 +33908,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _3', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _3',
+            ['Target leaves ignore patterns', 'Target arrives ignore patterns'],
+        );
 
         # Target leaves ignore patterns
         $self->addLabel($grid, '<b>Target leaves ignore patterns</b>',
@@ -32776,7 +33932,7 @@
             TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
         );
 
-        # Target arrives patterns
+        # Target arrives ignore patterns
         $self->addLabel($grid, '<b>Target arrives ignore patterns</b>',
             0, 12, 6, 8);
         $self->addLabel($grid,
@@ -32811,7 +33967,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _4', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _4',
+            ['No fights room patterns', 'No interactions room patterns'],
+        );
 
         # No fights room patterns
         $self->addLabel($grid, '<b>No fights room patterns</b>',
@@ -32869,7 +34029,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('_Fight', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, '_Fight');
 
         # Add tabs to the inner notebook
         $self->worldFight1Tab($innerNotebook);
@@ -32908,7 +34068,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Fight started patterns'],
+        );
 
         # Fight started patterns
         $self->addLabel($grid, '<b>Fight started patterns</b>',
@@ -33000,7 +34164,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _2', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _2',
+            ['Cannot find target patterns'],
+        );
 
         # Cannot find target patterns
         $self->addLabel($grid, '<b>Cannot find target patterns</b>',
@@ -33095,7 +34263,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _3', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _3',
+            ['Fight started ignore patterns', 'Target not found ignore patterns'],
+        );
 
         # Fight started ignore patterns
         $self->addLabel($grid, '<b>Fight started ignore patterns</b>',
@@ -33152,7 +34324,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _4', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _4',
+            ['Target already dead patterns'],
+        );
 
         # Target already dead patterns
         $self->addLabel($grid, '<b>Target already dead patterns</b>',
@@ -33250,7 +34426,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _5', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _5',
+            ['Target killed patterns'],
+        );
 
         # Target killed patterns
         $self->addLabel($grid, '<b>Target killed patterns</b>',
@@ -33340,7 +34520,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _6', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _6',
+            ['Target already dead ignore patterns', 'Target killed ignore patterns'],
+        );
 
         # Target already dead ignore patterns
         $self->addLabel($grid, '<b>Target already dead ignore patterns</b>',
@@ -33396,7 +34580,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _7', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _7',
+            ['Target defeat patterns'],
+        );
 
         # Target defeat patterns
         $self->addLabel($grid, '<b>Target defeat patterns</b>',
@@ -33495,9 +34683,13 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _8', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _8',
+            ['Remote wimpy engaged patterns'],
+        );
 
-        # Target killed patterns
+        # Remote wimpy engaged patterns
         $self->addLabel($grid, '<b>Remote wimpy engaged patterns</b>',
             0, 12, 0, 1);
         $self->addLabel(
@@ -33587,7 +34779,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _9', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _9',
+            ['Target defeat ignore patterns', 'Remote wimpy engaged ignore patterns'],
+        );
 
         # Target defeat ignore patterns
         $self->addLabel($grid, '<b>Target defeat ignore patterns</b>',
@@ -33641,7 +34837,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('Int_eraction', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, 'Int_eraction');
 
         # Add tabs to the inner notebook
         $self->worldInteraction1Tab($innerNotebook);
@@ -33680,7 +34876,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Interaction started patterns'],
+        );
 
         # Interaction started patterns
         $self->addLabel($grid, '<b>Interaction started patterns</b>',
@@ -33776,7 +34976,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _2', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _2',
+            ['Cannot interact patterns'],
+        );
 
         # Cannot interact patterns
         $self->addLabel($grid, '<b>Cannot interact patterns</b>',
@@ -33871,7 +35075,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _3', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _3',
+            ['Interaction started ignore patterns', 'Cannot interact ignore patterns'],
+        );
 
         # Interaction started ignore patterns
         $self->addLabel($grid, '<b>Interaction started ignore patterns</b>',
@@ -33929,7 +35137,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _4', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _4',
+            ['Interaction success patterns'],
+        );
 
         # Interaction success patterns
         $self->addLabel($grid, '<b>Interaction success patterns</b>',
@@ -34026,7 +35238,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _5', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _5',
+            ['Interaction fail patterns'],
+        );
 
         # Interaction fail patterns
         $self->addLabel($grid, '<b>Interaction fail patterns</b>',
@@ -34119,7 +35335,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _6', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _6',
+            ['Interaction success ignore patterns', 'Interaction fail ignore patterns'],
+        );
 
         # Interaction success ignore patterns
         $self->addLabel($grid, '<b>Interaction success ignore patterns</b>',
@@ -34177,7 +35397,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _7', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _7',
+            ['Interaction conversion patterns'],
+        );
 
         # Interaction conversion patterns
         $self->addLabel($grid, '<b>Interaction conversion patterns</b>',
@@ -34274,7 +35498,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _8', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _8',
+            ['Interaction disaster patterns'],
+        );
 
         # Interaction disaster patterns
         $self->addLabel($grid, '<b>Interaction disaster patterns</b>',
@@ -34369,7 +35597,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _9', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _9',
+            ['Interaction conversion ignore patterns', 'Interaction disaster ignore patterns'],
+        );
 
         # Interaction conversion ignore patterns
         $self->addLabel($grid, '<b>Interaction conversion ignore patterns</b>',
@@ -34425,7 +35657,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('_Commands', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, '_Commands');
 
         # Add tabs to the inner notebook
         $self->worldCommands1Tab($innerNotebook);
@@ -34458,7 +35690,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Get success patterns', 'Get heavy patterns'],
+        );
 
         # Get success patterns
         $self->addLabel($grid, '<b>Get success patterns</b>',
@@ -34514,7 +35750,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _2', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _2',
+            ['Get fail patterns', 'Drop success patterns'],
+        );
 
         # Get fail patterns
         $self->addLabel($grid, '<b>Get fail patterns</b>',
@@ -34570,7 +35810,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _3', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _3',
+            ['Drop forbid patterns', 'Drop fail patterns'],
+        );
 
         # Drop forbid patterns
         $self->addLabel($grid, '<b>Drop forbid patterns</b>',
@@ -34627,7 +35871,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _4', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _4',
+            ['Buy success patterns', 'Buy partial success patterns'],
+        );
 
         # Buy success patterns
         $self->addLabel($grid, '<b>Buy success patterns</b>',
@@ -34683,7 +35931,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _5', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _5',
+            ['Buy fail patterns', 'Sell success patterns'],
+        );
 
         # Buy fail patterns
         $self->addLabel($grid, '<b>Buy fail patterns</b>',
@@ -34739,7 +35991,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _6', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _6',
+            ['Sell partial success patterns', 'Sell fail patterns'],
+        );
 
         # Sell partial success patterns
         $self->addLabel($grid, '<b>Sell partial success patterns</b>',
@@ -34796,7 +36052,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Advance', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Advance',
+            ['Advance success patterns', 'Advance fail patterns'],
+        );
 
         # Advance success patterns
         $self->addLabel($grid, '<b>Advance success patterns</b>',
@@ -34853,7 +36113,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('C_urrency', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            'C_urrency',
+            ['Currency conversion chart'],
+        );
 
         # Currency conversion chart
         $self->addLabel($grid, '<b>Currency conversion chart</b>',
@@ -34948,7 +36212,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Missions', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Missions',
+            ['Missions list'],
+        );
 
         # Missions list
         $self->addLabel($grid, '<b>Missions list</b>',
@@ -35223,7 +36491,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Quests', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Quests',
+            ['Quest list'],
+        );
 
         # Quest list
         $self->addLabel($grid, '<b>Quest list</b>',
@@ -35541,7 +36813,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('_Stats', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, '_Stats');
 
         # Add tabs to the inner notebook
         $self->stats1Tab($innerNotebook);
@@ -35573,10 +36845,14 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Character stats (1/2)'],
+        );
 
-        # Character stats
-        $self->addLabel($grid, '<b>Character stats</b>',
+        # Character stats (1/2)
+        $self->addLabel($grid, '<b>Character stats (1/2)</b>',
             0, 12, 0, 1);
         $self->addLabel($grid,
             '<i>List of character stats for this world and their default values</i>',
@@ -35658,10 +36934,14 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _2', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _2',
+            ['Character stats (2/2)'],
+        );
 
-        # Character stats (2)
-        $self->addLabel($grid, '<b>Character stats (2)</b>',
+        # Character stats (2/2)
+        $self->addLabel($grid, '<b>Character stats (2/2)</b>',
             0, 12, 0, 2);
         $self->addLabel(
             $grid,
@@ -35740,7 +37020,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -35879,7 +37159,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('_Skills', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, '_Skills');
 
         # Add tabs to the inner notebook
         $self->skills1Tab($innerNotebook);
@@ -35911,7 +37191,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['List of guild skills'],
+        );
 
         # List of guild skills
         $self->addLabel($grid, '<b>List of guild skills</b>',
@@ -36061,7 +37345,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _2', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _2',
+            ['Skills advance list', 'Skills advance cycle'],
+        );
 
         # Skills advance list
         $self->addLabel($grid, '<b>Skills advance list</b>',
@@ -36083,6 +37371,7 @@
             TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
         );
 
+        # Default advance method
         $self->addLabel($grid, '<b>Default advance method</b>',
             6, 12, 0, 2);
         @comboList = ('order', 'cycle', 'combo');
@@ -36105,7 +37394,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -36233,7 +37522,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -36533,7 +37822,7 @@
                 $self->editObj->doModify('saveChanges');
             }
 
-            # Update the current session's object viewer window, if it is open
+            # Update the current session's data viewer window, if it is open
             if ($self->session->viewerWin) {
 
                 $self->session->viewerWin->updateNotebook();
@@ -36566,7 +37855,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('_Settings', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, '_Settings');
 
         # Add tabs to the inner notebook
         $self->settings1Tab($innerNotebook);
@@ -36601,7 +37890,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Character settings', 'Character nickname'],
+        );
 
         # Prepare lists of guilds and races
         foreach my $profObj ($self->session->ivValues('profHash')) {
@@ -36667,6 +37960,28 @@
         $self->addEntryWithButton($grid, 'alignment', TRUE,
             9, 12, 5, 6);
 
+        # Bottom section
+        $self->addLabel($grid, '<b>Character nickname</b>',
+            0, 12, 7, 8);
+        $self->addLabel(
+            $grid,
+            '<i>Used in automatic logins. Can include any text, e.g. \'Gandalf the Great\'</i>',
+            0, 12, 8, 9);
+        my $entry = $self->addEntryWithIcon($grid, 'nickname', 'string', 1, undef,
+            0, 10, 9, 10);
+        my $button = $self->addButton(
+            $grid,
+            'Reset',
+            'Reset the character\'s nickname',
+            undef,
+            10, 12, 9, 10,
+        );
+        $button->signal_connect('clicked' => sub {
+
+            $self->ivAdd('editHash', 'nickname', $self->editObj->name);
+            $entry->set_text($self->editObj->name);
+        });
+
         # Tab complete
         return 1;
     }
@@ -36691,9 +38006,13 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _2', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _2',
+            ['Points - health, magic, energy, guild and social points'],
+        );
 
-        # Points
+        # Points - health, magic, energy, guild and social points
         $self->addLabel(
             $grid,
             '<b>Points - health, magic, energy, guild and social points</b>',
@@ -36767,9 +38086,13 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _3', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _3',
+            ['Points - eXperience Points, Quest Points and Other Points'],
+        );
 
-        # Points
+        # Points - eXperience Points, Quest Points and Other Points
         $self->addLabel(
             $grid,
             '<b>Points - eXperience Points, Quest Points and Other Points</b>',
@@ -36843,7 +38166,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _4', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _4',
+            ['Wimpy settings'],
+        );
 
         # Import the current world
         $worldObj = $self->session->currentWorld;
@@ -36900,7 +38227,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _5', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _5',
+            ['Custom profile hash'],
+        );
 
         # Custom profile hash
         $self->addLabel($grid, '<b>Custom profile hash</b>',
@@ -37008,7 +38339,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Quests', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Quests',
+            ['Character quests', 'World quests', 'Solved quests', 'Unsolved quests'],
+        );
 
         # Character quests
         $self->addLabel($grid, '<b>Character quests</b>',
@@ -37354,7 +38689,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('S_kills', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, 'S_kills');
 
         # Add tabs to the inner notebook
         $self->skills1Tab($innerNotebook);
@@ -37388,7 +38723,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Character skills'],
+        );
 
         # Character skills
         $self->addLabel($grid, '<b>Character skills</b>',
@@ -37607,7 +38946,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _2', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _2',
+            ['Character skill history'],
+        );
 
         # Character skill history
         $self->addLabel($grid, '<b>Character skill history</b>',
@@ -37688,7 +39031,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _3', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _3',
+            ['Advance skills - ordered list'],
+        );
 
         # Advance skills - ordered list
         $self->addLabel($grid, '<b>Advance skills - ordered list</b>',
@@ -37766,7 +39113,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _4', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _4',
+            ['Advance skills - cycle list'],
+        );
 
         # Advance skills - cycle list
         $self->addLabel($grid, '<b>Advance skills - cycle list</b>',
@@ -37845,7 +39196,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('_Attacks', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, '_Attacks');
 
         # Add tabs to the inner notebook
         $self->attacks1Tab($innerNotebook);
@@ -37877,7 +39228,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Fight statistics', 'Interaction statistics', 'Coward statistics'],
+        );
 
         # Fight statistics
         $self->addLabel($grid, '<b>Fight statistics</b>',
@@ -37962,10 +39317,14 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _2', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _2',
+            ['Fight history (1/2)'],
+        );
 
-        # Character stats
-        $self->addLabel($grid, '<b>Fight history</b>',
+        # Fight history (1/2)
+        $self->addLabel($grid, '<b>Fight history (1/2)</b>',
             0, 12, 0, 1);
         $self->addLabel($grid,
             '<i>Record of things killed (sorted by main noun - not updated by the Attack task)</i>',
@@ -38047,10 +39406,14 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _3', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _3',
+            ['Fight history (2/2)'],
+        );
 
-        # Character stats
-        $self->addLabel($grid, '<b>Fight history</b>',
+        # Fight history (2/2)
+        $self->addLabel($grid, '<b>Fight history (2/2)</b>',
             0, 12, 0, 1);
         $self->addLabel($grid,
             '<i>Record of things killed (sorted by base string)</i>',
@@ -38137,10 +39500,14 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _4', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _4',
+            ['Interaction history (1/2)'],
+        );
 
-        # Character stats
-        $self->addLabel($grid, '<b>Interaction history</b>',
+        # Interaction history (1/2)
+        $self->addLabel($grid, '<b>Interaction history (1/2)</b>',
             0, 12, 0, 1);
         $self->addLabel($grid,
             '<i>Record of successful interactions (sorted by main noun - not updated by the Attack'
@@ -38228,10 +39595,14 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _5', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _5',
+            ['Interaction history (2/2)'],
+        );
 
-        # Character stats
-        $self->addLabel($grid, '<b>Interaction history</b>',
+        # Interaction history (2/2)
+        $self->addLabel($grid, '<b>Interaction history (2/2)</b>',
             0, 12, 0, 1);
         $self->addLabel($grid,
             '<i>Record of successful interactions (sorted by base string)</i>',
@@ -38325,9 +39696,13 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('A_ffects', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            'A_ffects',
+            ['Character affects'],
+        );
 
-        # Character
+        # Character affects
         $self->addLabel($grid, '<b>Character affects</b>',
             0, 12, 0, 1);
         $self->addLabel($grid, '<i>List of spells (etc) that currently affect this character</i>',
@@ -38409,7 +39784,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('S_tats', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            'S_tats',
+            ['Character stats'],
+        );
 
         # Character stats
         $self->addLabel($grid, '<b>Character stats</b>',
@@ -38493,7 +39872,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Stat_us', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            'Stat_us',
+            ['Status commands'],
+        );
 
         # Status commands
         $self->addLabel($grid, '<b>Status commands</b>',
@@ -38584,7 +39967,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('In_ventory', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            'In_ventory',
+            ['Inventory commands'],
+        );
 
         # Inventory commands
         $self->addLabel($grid, '<b>Inventory commands</b>',
@@ -38671,7 +40058,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('O_bjects', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, 'O_bjects');
 
         # Add tabs to the inner notebook
         $self->objects1Tab($innerNotebook); # Inherited from GA::Generic::EditWin
@@ -38691,7 +40078,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -38781,7 +40168,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Category', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Category',
+            ['Profile template category'],
+        );
 
         # Profile template category
         $self->addLabel($grid, '<b>Profile template category</b>',
@@ -39033,7 +40424,7 @@
                 $self->editObj->doModify('saveChanges');
             }
 
-            # Update the current session's object viewer window, if it is open
+            # Update the current session's data viewer window, if it is open
             if ($self->session->viewerWin) {
 
                 $self->session->viewerWin->updateNotebook();
@@ -39064,8 +40455,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->categoryTab', @_);
         }
 
-#       # Tab setup (already created by the calling function)
-#       my $grid = $self->addTab('_Category', $self->notebook);
+        # Tab setup (already created by the calling function)
 
         # Fixed? (No more changes permitted)
         $self->addLabel($grid, '<b>Fixed? (No more changes permitted)</b>',
@@ -39106,7 +40496,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('P_roperties', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            'P_roperties',
+            ['Profile template properties'],
+        );
 
         # Profile template properties
         $self->addLabel($grid, '<b>Profile template properties</b>',
@@ -39518,7 +40912,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -39659,7 +41053,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Properties', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Properties',
+            ['Custom properties'],
+        );
 
         # Custom properties
         $self->addLabel($grid, '<b>Custom properties</b>',
@@ -39894,7 +41292,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -39989,7 +41387,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Nouns', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Nouns',
+            ['Nouns', 'Categories'],
+        );
 
         # Set up the rest of the tab
         $self->nounsTab($grid);
@@ -40053,8 +41455,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->nounsTab', @_);
         }
 
-#       # Tab setup (already created by the calling function)
-#       my $grid = $self->addTab('_Nouns', $self->notebook);
+        # Tab setup (already created by the calling function)
 
         # Nouns
         $self->addLabel($grid, '<b>Nouns</b>',
@@ -40184,7 +41585,8 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Adjectives', $self->notebook);
+        # N.B. No sub-headings
+        my $grid = $self->addTab($self->notebook, '_Adjectives');
 
         # Adjectives
         $self->addLabel($grid, '<b>Adjectives</b>',
@@ -40228,7 +41630,8 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Unknowns', $self->notebook);
+        # N.B. No sub-headings
+        my $grid = $self->addTab($self->notebook, '_Unknowns');
 
         # Unknowns
         $self->addLabel($grid, '<b>Unknowns</b>',
@@ -40256,7 +41659,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -40324,7 +41727,43 @@
 
 #   sub enableSingleButton {}   # Inherited from GA::Generic::ConfigWin
 
-#   sub setupNotebook {}        # Inherited from GA::Generic::ConfigWin
+    sub setupNotebook {
+
+        # Called by $self->winEnable
+        # Creates the first tab for the notebook. The remaining tabs are created by
+        #   $self->expandNotebook
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->setupNotebook', @_);
+        }
+
+        # Tab setup, using the standard grid size
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Name',
+            ['Name', 'Points'],
+        );
+
+        # Set up the rest of the tab
+        $self->nameTab($grid);
+
+        # Set up the remaining tabs
+        $self->expandNotebook();
+
+        # Tab complete
+        return 1;
+    }
 
     sub expandNotebook {
 
@@ -40400,7 +41839,7 @@
             # Update the quest counts in the current world profile and all of its character profiles
             $self->session->currentWorld->updateQuestStats($self->session);
 
-            # Update the current session's object viewer window, if it is open
+            # Update the current session's data viewer window, if it is open
             if ($self->session->viewerWin) {
 
                 $self->session->viewerWin->updateNotebook();
@@ -40434,10 +41873,9 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->nameTab', @_);
         }
 
-#       # Tab setup (already created by the calling function)
-#       my $grid = $self->addTab('_Name', $self->notebook);
+        # Tab setup (already created by the calling function)
 
-        # Names
+        # Name
         $self->addLabel($grid, '<b>Name</b>',
             0, 6, 0, 1);
         $self->addLabel($grid, 'Name',
@@ -40491,7 +41929,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Solution', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Solution',
+            ['Quest solutions'],
+        );
 
         # Quest solutions
         $self->addLabel($grid, '<b>Quest solutions</b>',
@@ -40528,7 +41970,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Comments', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Comments',
+            ['Quest comments'],
+        );
 
         # Quest comments
         $self->addLabel($grid, '<b>Quest comments</b>',
@@ -40555,7 +42001,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -40623,7 +42069,43 @@
 
 #   sub enableSingleButton {}   # Inherited from GA::Generic::ConfigWin
 
-#   sub setupNotebook {}        # Inherited from GA::Generic::ConfigWin
+    sub setupNotebook {
+
+        # Called by $self->winEnable
+        # Creates the first tab for the notebook. The remaining tabs are created by
+        #   $self->expandNotebook
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->setupNotebook', @_);
+        }
+
+        # Tab setup, using the standard grid size
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Name',
+            ['General properties'],
+        );
+
+        # Set up the rest of the tab
+        $self->nameTab($grid);
+
+        # Set up the remaining tabs
+        $self->expandNotebook();
+
+        # Tab complete
+        return 1;
+    }
 
     sub expandNotebook {
 
@@ -40749,7 +42231,7 @@
                 $self->editObj->doModify('saveChanges');
             }
 
-            # Update the current session's object viewer window, if it is open
+            # Update the current session's data viewer window, if it is open
             if ($self->session->viewerWin) {
 
                 $self->session->viewerWin->updateNotebook();
@@ -40846,8 +42328,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->nameTab', @_);
         }
 
-#       # Tab setup (already created by the calling function)
-#       my $grid = $self->addTab('_Name', $self->notebook);
+        # Tab setup (already created by the calling function)
 
         # General properties
         $self->addLabel($grid, '<b>General properties</b>',
@@ -40963,12 +42444,16 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Sizes', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Sizes',
+            ['Current sizes'],
+        );
 
         # Import the session's GA::Obj::WorldModel
         $wmObj = $self->session->worldModelObj;
 
-        # Default sizes
+        # Current sizes
         $self->addLabel($grid, '<b>Current sizes</b>',
             0, 12, 0, 1);
         $self->addLabel(
@@ -41131,7 +42616,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('_Objects', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, '_Objects');
 
         # Add tabs to the inner notebook
         $self->objects1Tab($innerNotebook);
@@ -41167,8 +42652,10 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Rooms', $innerNotebook);
+        # N.B. No sub-headings
+        my $grid = $self->addTab($innerNotebook, '_Rooms');
 
+        # Rooms
         $self->addLabel($grid, '<b>Rooms</b>',
             0, 12, 0, 1);
         $self->addLabel(
@@ -41324,8 +42811,10 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Room _tags', $innerNotebook);
+        # N.B. No sub-headings
+        my $grid = $self->addTab($innerNotebook, 'Room _tags');
 
+        # Room tags
         $self->addLabel($grid, '<b>Room tags</b>',
             0, 12, 0, 1);
         $self->addLabel($grid, '<i>List of room tags drawn in this regionmap</i>',
@@ -41441,8 +42930,10 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Room _guilds', $innerNotebook);
+        # N.B. No sub-headings
+        my $grid = $self->addTab($innerNotebook, 'Room _guilds');
 
+        # Room guilds
         $self->addLabel($grid, '<b>Room guilds</b>',
             0, 12, 0, 1);
         $self->addLabel($grid, '<i>List of room guilds drawn in this regionmap</i>',
@@ -41558,8 +43049,10 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Exits', $innerNotebook);
+        # N.B. No sub-headings
+        my $grid = $self->addTab($innerNotebook, '_Exits');
 
+        # Exits
         $self->addLabel($grid, '<b>Exits</b>',
             0, 12, 0, 1);
         $self->addLabel(
@@ -41728,8 +43221,10 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Exit t_ags', $innerNotebook);
+        # N.B. No sub-headings
+        my $grid = $self->addTab($innerNotebook, 'Exit t_ags');
 
+        # Exit tags
         $self->addLabel($grid, '<b>Exit tags</b>',
             0, 12, 0, 1);
         $self->addLabel(
@@ -41839,8 +43334,10 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Labels', $innerNotebook);
+        # N.B. No sub-headings
+        my $grid = $self->addTab($innerNotebook, '_Labels');
 
+        # Labels
         $self->addLabel($grid, '<b>Labels</b>',
             0, 12, 0, 1);
         $self->addLabel($grid, '<i>List of map labels drawn in this regionmap</i>',
@@ -41954,9 +43451,13 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Counts', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Counts',
+            ['Living/non-living counts'],
+        );
 
-        # Default sizes
+        # Living/non-living counts
         $self->addLabel($grid, '<b>Living/non-living counts</b>',
             0, 12, 0, 1);
         $self->addLabel(
@@ -42064,7 +43565,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('_Region paths', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, '_Region paths');
 
         # Add tabs to the inner notebook
         $self->boundaries1Tab($innerNotebook);
@@ -42098,8 +43599,13 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Region exits'],
+        );
 
+        # Region exits
         $self->addLabel($grid, '<b>Region exits</b>',
             0, 12, 0, 1);
         $self->addLabel(
@@ -42452,8 +43958,13 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _2', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _2',
+            ['Super-region exits'],
+        );
 
+        # Super-region exits
         $self->addLabel($grid, '<b>Super-region exits</b>',
             0, 12, 0, 1);
         $self->addLabel(
@@ -42509,8 +44020,13 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _3', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _3',
+            ['Region paths'],
+        );
 
+        # Region paths
         $self->addLabel($grid, '<b>Region paths</b>',
             0, 12, 0, 1);
         $self->addLabel(
@@ -42700,8 +44216,13 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _4', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _4',
+            ['Region safe paths'],
+        );
 
+        # Region safe paths
         $self->addLabel($grid, '<b>Region safe paths</b>',
             0, 12, 0, 1);
         $self->addLabel(
@@ -42908,7 +44429,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -42976,7 +44497,43 @@
 
 #   sub enableSingleButton {}   # Inherited from GA::Generic::ConfigWin
 
-#   sub setupNotebook {}        # Inherited from GA::Generic::ConfigWin
+    sub setupNotebook {
+
+        # Called by $self->winEnable
+        # Creates the first tab for the notebook. The remaining tabs are created by
+        #   $self->expandNotebook
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->setupNotebook', @_);
+        }
+
+        # Tab setup, using the standard grid size
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Name',
+            ['Region scolour scheme settings'],
+        );
+
+        # Set up the rest of the tab
+        $self->nameTab($grid);
+
+        # Set up the remaining tabs
+        $self->expandNotebook();
+
+        # Tab complete
+        return 1;
+    }
 
     sub expandNotebook {
 
@@ -43041,7 +44598,7 @@
                 $self->editObj->doModify('saveChanges');
             }
 
-            # Update the current session's object viewer window, if it is open
+            # Update the current session's data viewer window, if it is open
             if ($self->session->viewerWin) {
 
                 $self->session->viewerWin->updateNotebook();
@@ -43091,10 +44648,9 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->nameTab', @_);
         }
 
-#       # Tab setup (already created by the calling function)
-#       my $grid = $self->addTab('_Name', $self->notebook);
+        # Tab setup (already created by the calling function)
 
-        # Region colour scheme
+        # Region colour scheme settings
         $self->addLabel($grid, '<b>Region colour scheme settings</b>',
             0, 12, 0, 1);
         $self->addLabel($grid, 'Name',
@@ -43245,7 +44801,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('_Colours', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, '_Colours');
 
         # Add tabs to the inner notebook
         $self->colours1Tab($innerNotebook);
@@ -43278,9 +44834,14 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Map colours (1/6)'],
+        );
 
-        $self->addLabel($grid, '<b>Map colours</b>',
+        # Map colours (1/6)
+        $self->addLabel($grid, '<b>Map colours (1/6)</b>',
             0, 12, 0, 1);
         $self->addLabel($grid, '<i>Colours used by the map to draw these region(s)</i>',
             1, 12, 1, 2);
@@ -43429,9 +44990,14 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _2', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _2',
+            ['Map colours (2/6)'],
+        );
 
-        $self->addLabel($grid, '<b>Map colours (cont.)</b>',
+        # Map colours (2/6)
+        $self->addLabel($grid, '<b>Map colours (2/6)</b>',
             0, 12, 0, 1);
         $self->addLabel(
             $grid,
@@ -43520,9 +45086,14 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _3', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _3',
+            ['Map colours (3/6)'],
+        );
 
-        $self->addLabel($grid, '<b>Map colours (cont.)</b>',
+        # Map colours (3/6)
+        $self->addLabel($grid, '<b>Map colours (3/6)</b>',
             0, 12, 0, 1);
         $self->addLabel(
             $grid,
@@ -43595,9 +45166,14 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _4', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _4',
+            ['Map colours (4/6)'],
+        );
 
-        $self->addLabel($grid, '<b>Map colours (cont.)</b>',
+        # Map colours (4/6)
+        $self->addLabel($grid, '<b>Map colours (4/6)</b>',
             0, 12, 0, 1);
         $self->addLabel(
             $grid,
@@ -43676,9 +45252,14 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _5', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _5',
+            ['Map colours (5/6)'],
+        );
 
-        $self->addLabel($grid, '<b>Map colours (cont.)</b>',
+        # Map colours (5/6)
+        $self->addLabel($grid, '<b>Map colours (5/6)</b>',
             0, 12, 0, 1);
         $self->addLabel(
             $grid,
@@ -43733,9 +45314,14 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _6', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _6',
+            ['Map colours (6/6)'],
+        );
 
-        $self->addLabel($grid, '<b>Map colours (cont.)</b>',
+        # Map colours (6/6)
+        $self->addLabel($grid, '<b>Map colours (6/6)</b>',
             0, 12, 0, 1);
         $self->addLabel(
             $grid,
@@ -43823,7 +45409,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -43912,8 +45498,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->setupNotebook', @_);
         }
 
-#       # Tab setup
-#       my $grid = $self->addTab('_Route', $self->notebook);
+        # Tab setup (already created by the calling function)
 
         # Set up the rest of the first tab (all of it, in this case)
         $self->routeTab();
@@ -43954,9 +45539,15 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Route', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Route',
+            ['General properties', 'Route'],
+        );
 
         # Left column
+
+        # General properties
         $self->addLabel($grid, '<b>General properties</b>',
             0, 12, 0, 1);
         $self->addLabel($grid, 'Route type',
@@ -43976,6 +45567,7 @@
         $self->addEntry($grid, 'circuitName', FALSE,
             3, 6, 4, 5);
 
+        # Route
         $self->addLabel($grid, '<b>Route</b>',
             0, 12, 5, 6);
         my $entry = $self->addEntryWithIcon($grid, undef, 'string', 1, undef,
@@ -44071,7 +45663,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -44187,8 +45779,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->setupNotebook', @_);
         }
 
-#       # Tab setup
-#       my $grid = $self->addTab('_Number', $self->notebook);
+        # Tab setup (already created by the calling function)
 
         # Set up the rest of the first tab (all of it, in this case)
         $self->numberTab();
@@ -44253,7 +45844,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Number', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Number',
+            ['Strip object settings'],
+        );
 
         # Left column
         $self->addLabel($grid, '<b>Strip object settings</b>',
@@ -44337,7 +45932,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Settings', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Settings',
+            ['Initial settings'],
+        );
 
         # Initial settings
         $self->addLabel($grid, '<b>Initial settings</b>',
@@ -44370,7 +45969,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -44486,8 +46085,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->setupNotebook', @_);
         }
 
-#       # Tab setup
-#       my $grid = $self->addTab('_Number', $self->notebook);
+        # Tab setup (already created by the calling function)
 
         # Set up the rest of the first tab (all of it, in this case)
         $self->numberTab();
@@ -44552,7 +46150,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Number', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Number',
+            ['Table object settings'],
+        );
 
         # Left column
         $self->addLabel($grid, '<b>Table object settings</b>',
@@ -44649,7 +46251,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Settings', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Settings',
+            ['Initial settings'],
+        );
 
         # Initial settings
         $self->addLabel($grid, '<b>Initial settings</b>',
@@ -44682,7 +46288,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -44750,7 +46356,43 @@
 
 #   sub enableSingleButton {}   # Inherited from GA::Generic::ConfigWin
 
-#   sub setupNotebook {}        # Inherited from GA::Generic::ConfigWin
+    sub setupNotebook {
+
+        # Called by $self->winEnable
+        # Creates the first tab for the notebook. The remaining tabs are created by
+        #   $self->expandNotebook
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->setupNotebook', @_);
+        }
+
+        # Tab setup, using the standard grid size
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Name',
+            ['Names', 'Description and task help'],
+        );
+
+        # Set up the rest of the tab
+        $self->nameTab($grid);
+
+        # Set up the remaining tabs
+        $self->expandNotebook();
+
+        # Tab complete
+        return 1;
+    }
 
     sub expandNotebook {
 
@@ -44842,7 +46484,7 @@
                 $self->editObj->doModify('saveChanges');
             }
 
-            # Update the current session's object viewer window, if it is open
+            # Update the current session's data viewer window, if it is open
             if ($self->session->viewerWin) {
 
                 $self->session->viewerWin->updateNotebook();
@@ -44897,8 +46539,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->nameTab', @_);
         }
 
-#       # Tab setup (already created by the calling function)
-#       my $grid = $self->addTab('_Name', $self->notebook);
+        # Tab setup (already created by the calling function)
 
         # Names
         $self->addLabel($grid, '<b>Names</b>',
@@ -44933,7 +46574,7 @@
                 9, 12, 2, 3);
         }
 
-        # Description
+        # Description and task help
         $self->addLabel($grid, '<b>Description and task help</b>',
             0, 12, 4, 5);
         $self->addLabel($grid, '<i>' . $self->editObj->descrip . '</i>',
@@ -44979,7 +46620,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('_Settings', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, '_Settings');
 
         # Add tabs to the inner notebook
         $self->settings1Tab($innerNotebook);
@@ -45017,7 +46658,17 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            [
+                'General settings',
+                'Status settings',
+                'Start/stop settings',
+                'Task loop settings',
+                'Text-to-speech settings',
+            ],
+        );
 
         # Flag set to FALSE for current tasks, TRUE otherwise
         $editFlag = $self->ivShow('editConfigHash', 'edit_flag');
@@ -45182,7 +46833,16 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _2', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _2',
+            [
+                'Flags',
+                'Window settings - startup',
+                'Window settings - general',
+                'Window settings - colour',
+            ],
+        );
 
         # Flag set to FALSE for current tasks, TRUE otherwise
         $editFlag = $self->ivShow('editConfigHash', 'edit_flag');
@@ -45295,7 +46955,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _3', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _3',
+            ['Text-to-speech attributes'],
+        );
 
         # Text-to-speech attributes
         $self->addLabel($grid, '<b>Text-to-speech attributes</b>',
@@ -45486,7 +47150,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _4', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _4',
+            ['Text-to-speech flag attributes'],
+        );
 
         # Text-to-speech flag attributes
         $self->addLabel($grid, '<b>Text-to-speech flag attributes</b>',
@@ -45599,7 +47267,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _5', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _5',
+            ['Text-to-speech alert attributes'],
+        );
 
         # Text-to-speech alert attributes
         $self->addLabel($grid, '<b>Text-to-speech alert attributes</b>',
@@ -45743,7 +47415,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('_Parameters', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, '_Parameters');
 
         # Add tabs to the inner notebook
         if ($self->editObj->name eq 'attack_task') {
@@ -45830,7 +47502,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            [$self->editObj->prettyName . ' task parameters'],
+        );
 
         # Status task actions
         $self->addLabel($grid, '<b>' . $self->editObj->prettyName . ' task parameters</b>',
@@ -45862,9 +47538,13 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Fight success commands', 'Interaction success commands'],
+        );
 
-        # Door patterns
+        # Fight success commands
         $self->addLabel($grid, '<b>Fight success commands</b>',
             0, 12, 0, 2);
         $self->addLabel(
@@ -45876,7 +47556,7 @@
             TRUE, TRUE, FALSE, FALSE,   # Treat as list, remove empty lines, don't remove whitespace
         );
 
-        # Locked door patterns
+        # Interaction success commands
         $self->addLabel($grid, '<b>Interaction success commands</b>',
             0, 12, 6, 8);
         $self->addLabel(
@@ -45912,7 +47592,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _2', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _2',
+            ['Announcements'],
+        );
 
         # Announcements
         $self->addLabel($grid, '<b>Announcements</b>',
@@ -45949,7 +47633,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Summary tab', 'Display options'],
+        );
 
         # Summary tab
         $self->addLabel($grid, '<b>Summary tab</b>',
@@ -46030,7 +47718,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _2', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _2',
+            ['Initial channel list', 'Ignore channel list'],
+        );
 
         # Initial channel list
         $self->addLabel($grid, '<b>Initial channel list</b>',
@@ -46083,7 +47775,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _3', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _3',
+            ['Sound effects'],
+        );
 
         # Sound effects
         $self->addLabel($grid, '<b>Sound effects</b>',
@@ -46174,7 +47870,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _4', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _4',
+            ['Urgency hints'],
+        );
 
         # Urgency hints
         $self->addLabel($grid, '<b>Urgency hints</b>',
@@ -46271,7 +47971,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Keypad commands'],
+        );
 
         # Keypad commands
         $self->addLabel($grid, '<b>Keypad commands</b>',
@@ -46391,7 +48095,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Object sensitivity', 'Check parameters'],
+        );
 
         # Object sensitivity
         $self->addLabel($grid, '<b>Object sensitivity</b>',
@@ -46480,7 +48188,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Task parameters'],
+        );
 
         # Task parameters
         $self->addLabel($grid, '<b>Task parameters</b>',
@@ -46559,7 +48271,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Background colour parameters (1/2)'],
+        );
 
         # Import a list of standard colour tags, putting bold colours first
         @comboList = ($axmud::CLIENT->constBoldColourTagList, $axmud::CLIENT->constColourTagList);
@@ -46709,7 +48425,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _2', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _2',
+            ['Background colour parameters (2/2)'],
+        );
 
         # Import a list of standard colour tags, putting bold colours first
         @comboList = ($axmud::CLIENT->constBoldColourTagList, $axmud::CLIENT->constColourTagList);
@@ -46773,7 +48493,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Object sensitivity'],
+        );
 
         # Object sensitivity
         $self->addLabel($grid, '<b>Object sensitivity</b>',
@@ -46819,7 +48543,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Task window', 'Manual resets'],
+        );
 
         # Task window
         $self->addLabel($grid, '<b>Task window</b>',
@@ -46842,6 +48570,7 @@
             $grid, 'When listing objects, show nouns first', 'showParsedFlag', TRUE,
             1, 12, 4, 5);
 
+        # Manual resets
         $self->addLabel($grid, '<b>Manual resets</b>',
             0, 12, 5, 6);
 
@@ -46895,7 +48624,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Task window'],
+        );
 
         # Task window
         $self->addLabel($grid, '<b>Task window</b>',
@@ -46938,7 +48671,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Background colour parameters', 'Data display'],
+        );
 
         # (Import a list of standard colour tags, putting bold colours first)
         @comboList = ($axmud::CLIENT->constColourTagList, $axmud::CLIENT->constBoldColourTagList);
@@ -47023,7 +48760,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _2', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _2',
+            ['Status task commands'],
+        );
 
         # Status task commands
         $self->addLabel($grid, '<b>Status task commands</b>',
@@ -47104,7 +48845,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['System message display modes'],
+        );
 
         # System message display modes
         $self->addLabel($grid, '<b>System message display modes</b>',
@@ -47253,7 +48998,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _2', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _2',
+            ['System message colours'],
+        );
 
         # System message colours
         $self->addLabel($grid, '<b>System message colours</b>',
@@ -47289,7 +49038,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Background colour parameters'],
+        );
 
         # (Import a list of standard colour tags, putting bold colours first)
         @comboList = ($axmud::CLIENT->constBoldColourTagList, $axmud::CLIENT->constColourTagList);
@@ -47361,7 +49114,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('_Actions', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, '_Actions');
 
         # Add tabs to the inner notebook
         if ($self->editObj->name eq 'channels_task') {
@@ -47427,7 +49180,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            [$self->editObj->prettyName . ' task actions'],
+        );
 
         # Status task actions
         $self->addLabel($grid, '<b>' . $self->editObj->prettyName . ' task actions</b>',
@@ -47459,7 +49216,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Channels task actions'],
+        );
 
         # Channels task actions
         $self->addLabel($grid, '<b>Channels task actions</b>',
@@ -47520,7 +49281,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Compass task actions'],
+        );
 
         # Compass task actions
         $self->addLabel($grid, '<b>Compass task actions</b>',
@@ -47674,7 +49439,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Divert task actions'],
+        );
 
         # Divert task actions
         $self->addLabel($grid, '<b>Divert task actions</b>',
@@ -47732,7 +49501,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Inventory/Condition task actions'],
+        );
 
         # Inventory/Condition task actions
         $self->addLabel($grid, '<b>Inventory/Condition task actions</b>',
@@ -47845,7 +49618,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _2', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _2',
+            ['Current inventory'],
+        );
 
         # Current inventory
         $self->addLabel($grid, '<b>Current inventory</b>',
@@ -48176,10 +49953,14 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Locator task actions (1/2)'],
+        );
 
-        # Locator task actions
-        $self->addLabel($grid, '<b>Locator task actions</b>',
+        # Locator task actions (1/2)
+        $self->addLabel($grid, '<b>Locator task actions (1/2)</b>',
             0, 12, 0, 1);
 
         $self->addLabel($grid, '<i>Resets</i>',
@@ -48282,10 +50063,14 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _2', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _2',
+            ['Locator task actions (2/2)'],
+        );
 
-        # Locator task actions
-        $self->addLabel($grid, '<b>Locator task actions (2)</b>',
+        # Locator task actions (2/2)
+        $self->addLabel($grid, '<b>Locator task actions (2/2)</b>',
             0, 12, 0, 1);
 
         $self->addLabel($grid, '<i>Unknown words</i>',
@@ -48383,7 +50168,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Status task actions'],
+        );
 
         # Status task actions
         $self->addLabel($grid, '<b>Status task actions</b>',
@@ -48534,7 +50323,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Watch task actions'],
+        );
 
         # Watch task actions
         $self->addLabel($grid, '<b>Watch task actions</b>',
@@ -48566,7 +50359,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -48634,7 +50427,43 @@
 
 #   sub enableSingleButton {}   # Inherited from GA::Generic::ConfigWin
 
-#   sub setupNotebook {}        # Inherited from GA::Generic::ConfigWin
+    sub setupNotebook {
+
+        # Called by $self->winEnable
+        # Creates the first tab for the notebook. The remaining tabs are created by
+        #   $self->expandNotebook
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->setupNotebook', @_);
+        }
+
+        # Tab setup, using the standard grid size
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Name',
+            ['Toolbar button properties'],
+        );
+
+        # Set up the rest of the tab
+        $self->nameTab($grid);
+
+        # Set up the remaining tabs
+        $self->expandNotebook();
+
+        # Tab complete
+        return 1;
+    }
 
 #   sub expandNotebook {}       # Inherited from GA::Generic::ConfigWin
 
@@ -48664,8 +50493,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->nameTab', @_);
         }
 
-#       # Tab setup (already created by the calling function)
-#       my $grid = $self->addTab('_Name', $self->notebook);
+        # Tab setup (already created by the calling function)
 
         # Toolbar button properties
         $self->addLabel($grid, '<b>Toolbar button properties</b>',
@@ -48762,7 +50590,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -48830,7 +50658,43 @@
 
 #   sub enableSingleButton {}   # Inherited from GA::Generic::ConfigWin
 
-#   sub setupNotebook {}        # Inherited from GA::Generic::ConfigWin
+    sub setupNotebook {
+
+        # Called by $self->winEnable
+        # Creates the first tab for the notebook. The remaining tabs are created by
+        #   $self->expandNotebook
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   1 otherwise
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->setupNotebook', @_);
+        }
+
+        # Tab setup, using the standard grid size
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Name',
+            ['Text-to-speech configuration'],
+        );
+
+        # Set up the rest of the tab
+        $self->nameTab($grid);
+
+        # Set up the remaining tabs
+        $self->expandNotebook();
+
+        # Tab complete
+        return 1;
+    }
 
     sub expandNotebook {
 
@@ -48883,8 +50747,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->nameTab', @_);
         }
 
-#       # Tab setup (already created by the calling function)
-#       my $grid = $self->addTab('_Name', $self->notebook);
+        # Tab setup (already created by the calling function)
 
         # Text-to-speech configuration
         $self->addLabel($grid, '<b>Text-to-speech configuration</b>',
@@ -49361,10 +51224,14 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Patterns', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Patterns',
+            ['Text-to-speech patterns'],
+        );
 
-        # Text-to-speech (TTS) (cont.)
-        $self->addLabel($grid, '<b>Text-to-speech (TTS) (cont.)</b>',
+        # Text-to-speech patterns
+        $self->addLabel($grid, '<b>Text-to-speech patterns</b>',
             0, 10, 0, 1);
         $self->addRegexButton($grid,
             [
@@ -49416,7 +51283,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -49532,8 +51399,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->setupNotebook', @_);
         }
 
-#       # Tab setup
-#       my $grid = $self->addTab('_Number', $self->notebook);
+        # Tab setup (already created by the calling function)
 
         # Set up the rest of the first tab (all of it, in this case)
         $self->numberTab();
@@ -49611,7 +51477,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Number', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Number',
+            ['Standard window object settings'],
+        );
 
         # Left column
         $self->addLabel($grid, '<b>Standard window object settings</b>',
@@ -49717,7 +51587,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Grid', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Grid',
+            ['\'Grid\' window settings'],
+        );
 
         # Left column
         $self->addLabel($grid, '<b>\'Grid\' window settings</b>',
@@ -49886,7 +51760,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Free', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Free',
+            ['\'Free\' window settings'],
+        );
 
         # Left column
         $self->addLabel($grid, '<b>\'Free\' window settings</b>',
@@ -49947,7 +51825,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('_Internal', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, '_Internal');
 
         # Add tabs to the inner notebook
         $self->internal1Tab($innerNotebook);
@@ -49979,10 +51857,14 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['\'Internal\' window settings (1/2)'],
+        );
 
-        # 'Internal' window settings
-        $self->addLabel($grid, '<b>\'Internal\' window settings</b>',
+        # 'Internal' window settings (1/2)
+        $self->addLabel($grid, '<b>\'Internal\' window settings (1/2)</b>',
             1, 12, 0, 1);
         $self->addLabel($grid, '<i>Strip objects</i>',
             1, 12, 1, 2);
@@ -50116,10 +51998,14 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _2', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _2',
+            ['\'Internal\' window settings (2/2)'],
+        );
 
-        # 'Internal' window settings
-        $self->addLabel($grid, '<b>\'Internal\' window settings (2)</b>',
+        # 'Internal' window settings (2/2)
+        $self->addLabel($grid, '<b>\'Internal\' window settings (2/2)</b>',
             1, 12, 0, 1);
         $self->addLabel($grid, '<i>Table objects</i>',
             1, 12, 1, 2);
@@ -50246,7 +52132,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -50336,7 +52222,11 @@
         }
 
         # Tab setup, using the standard grid size
-        my $grid = $self->addTab('_Name', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Name',
+            ['Winmap settings'],
+        );
 
         # Winmap 'edit' windows have some non-standard IVs used to store the widgets created in
         #   $self->winzonesTab, so that several ->winzonesTab_XXX functions can retrieve them
@@ -50442,8 +52332,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->nameTab', @_);
         }
 
-#       # Tab setup (already created by the calling function)
-#       my $grid = $self->addTab('_Name', $self->notebook);
+        # Tab setup (already created by the calling function)
 
         # Winmap settings
         $self->addLabel($grid, '<b>Winmap settings</b>',
@@ -50611,7 +52500,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Strips', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Strips',
+            ['Strip objects'],
+        );
 
         # Initialise variables
         $noStripString = '(no strip selected)';
@@ -51724,7 +53617,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('_Winzones', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, '_Winzones');
 
         # Add tabs to the inner notebook
         $self->winzones1Tab($innerNotebook);
@@ -51760,7 +53653,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Add a new winzone'],
+        );
 
         # Import IVs (for convenience)
         %packageHash = reverse ($axmud::CLIENT->customTableHash);
@@ -52719,9 +54616,13 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _2', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _2',
+            ['Zone size settings'],
+        );
 
-        # Resize
+        # Zone size settings
         $self->addLabel($grid, '<b>Zone size settings</b>',
             0, 12, 0, 1);
         $self->addLabel(
@@ -52824,7 +54725,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -52913,8 +54814,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->setupNotebook', @_);
         }
 
-#       # Tab setup
-#       my $grid = $self->addTab('_Number', $self->notebook);
+        # Tab setup (already created by the calling function)
 
         # Set up the rest of the first tab (all of it, in this case)
         $self->numberTab();
@@ -52978,7 +54878,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Number', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Number',
+            ['Winzone settings'],
+        );
 
         # Left column
         $self->addLabel($grid, '<b>Winzone settings</b>',
@@ -53069,7 +54973,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Initialisation', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Initialisation',
+            ['Initialisation settings'],
+        );
 
         # Create a temporary table object so we can access its IVs
         $package = $self->editObj->packageName;
@@ -53078,7 +54986,7 @@
             $tempObj = $package->new(-1, 'temp', 'temp', 'temp');
         }
 
-        # Client file objects
+        # Initialisation settings
         $self->addLabel($grid, '<b>Initialisation settings</b>',
             0, 12, 0, 1);
         $self->addLabel($grid,
@@ -53365,7 +55273,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -53481,8 +55389,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->setupNotebook', @_);
         }
 
-#       # Tab setup
-#       my $grid = $self->addTab('_Number', $self->notebook);
+        # Tab setup (already created by the calling function)
 
         # Set up the rest of the first tab (all of it, in this case)
         $self->numberTab();
@@ -53546,7 +55453,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Number', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Number',
+            ['Workspace object'],
+        );
 
         # Left column
         $self->addLabel($grid, '<b>Workspace object</b>',
@@ -53644,10 +55555,14 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Grids', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Grids',
+            ['Workspace grids'],
+        );
 
-        # Workspaces
-        $self->addLabel($grid, '<b>Workspaces grids</b>',
+        # Workspace grids
+        $self->addLabel($grid, '<b>Workspace grids</b>',
             0, 12, 0, 1);
         $self->addLabel($grid,
             '<i>List of workspace grids on this workspace</i>',
@@ -53828,7 +55743,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -53944,8 +55859,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->setupNotebook', @_);
         }
 
-#       # Tab setup
-#       my $grid = $self->addTab('_Number', $self->notebook);
+        # Tab setup (already created by the calling function)
 
         # Set up the rest of the first tab (all of it, in this case)
         $self->numberTab();
@@ -54010,7 +55924,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Number', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Number',
+            ['Workspace grid'],
+        );
 
         # Left column
         $self->addLabel($grid, '<b>Workspace grid</b>',
@@ -54101,7 +56019,8 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Zones', $self->notebook);
+        # N.B. No sub-headings
+        my $grid = $self->addTab($self->notebook, '_Zones');
 
         # Zones
         $self->addLabel($grid, '<b>Zones</b>',
@@ -54233,7 +56152,8 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Windows', $self->notebook);
+        # N.B. No sub-headings
+        my $grid = $self->addTab($self->notebook, '_Windows');
 
         # Windows
         $self->addLabel($grid, '<b>Windows</b>',
@@ -54375,7 +56295,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -54464,8 +56384,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->setupNotebook', @_);
         }
 
-#       # Tab setup
-#       my $grid = $self->addTab('_General', $self->notebook);
+        # Tab setup (already created by the calling function)
 
         # Set up the rest of the first tab (all of it, in this case)
         $self->generalTab();
@@ -54802,7 +56721,7 @@
                 $self->editObj->doModify('saveChanges');
             }
 
-            # Update the current session's object viewer window, if it is open
+            # Update the current session's data viewer window, if it is open
             if ($self->session->viewerWin) {
 
                 $self->session->viewerWin->updateNotebook();
@@ -54851,7 +56770,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_General', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_General',
+            ['General properties'],
+        );
 
         # General properties
         $self->addLabel($grid, '<b>General properties</b>',
@@ -54937,7 +56860,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Sizes', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Sizes',
+            ['Default sizes'],
+        );
 
         # Default sizes
         $self->addLabel($grid, '<b>Default sizes</b>',
@@ -55097,7 +57024,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('_Model', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, '_Model');
 
         # Add tabs to the inner notebook
         $self->model1Tab($innerNotebook);
@@ -55130,7 +57057,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Objects'],
+        );
 
         # Objects
         $self->addLabel($grid, '<b>Objects</b>',
@@ -55195,7 +57126,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _2', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _2',
+            ['List of regionmaps'],
+        );
 
         # List of regionmaps
         $self->addLabel($grid, '<b>List of regionmaps</b>',
@@ -55379,9 +57314,13 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _3', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _3',
+            ['List of character model objects'],
+        );
 
-        # Default sizes
+        # List of character model objects
         $self->addLabel($grid, '<b>List of character model objects</b>',
             0, 12, 0, 1);
         $self->addLabel(
@@ -55527,9 +57466,13 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _4', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _4',
+            ['List of minion strings'],
+        );
 
-        # Default sizes
+        # List of minion strings
         $self->addLabel($grid, '<b>List of minion strings</b>',
             0, 12, 0, 1);
         $self->addLabel(
@@ -55780,9 +57723,13 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _5', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _5',
+            ['List of room tags'],
+        );
 
-        # Default sizes
+        # List of room tags
         $self->addLabel($grid, '<b>List of room tags</b>',
             0, 12, 0, 1);
         $self->addLabel(
@@ -55943,9 +57890,13 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _6', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _6',
+            ['List of teleport destinations'],
+        );
 
-        # Default sizes
+        # List of teleport destinations
         $self->addLabel($grid, '<b>List of teleport destinations</b>',
             0, 12, 0, 1);
         $self->addLabel(
@@ -56034,7 +57985,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('S_ettings', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, 'S_ettings');
 
         # Add tabs to the inner notebook
         $self->settings1Tab($innerNotebook);
@@ -56069,10 +58020,22 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            [
+                'Window components',
+                'Label alignment',
+                'Painter',
+                'Show \'Working...\' dialogue',
+                'Map font',
+                'Tracking',
+                'Synchronise grid coordinates',
+            ],
+        );
 
-        # Settings
-        $self->addLabel($grid, '<b>Settings</b>',
+        # Settings (1/8)
+        $self->addLabel($grid, '<b>Settings (1/8)</b>',
             0, 12, 0, 1);
 
         # Left column
@@ -56132,7 +58095,10 @@
             10, 12, 5, 6);
         $button->signal_connect('clicked' => sub {
 
-            my $newFont = $self->showFontSelectionDialogue('Automapper window font');
+            my $newFont = $self->showFontSelectionDialogue(
+                'Automapper window font',
+                $self->getEditHash_scalarIV('mapFont'),
+            );
 
             if (defined $newFont) {
 
@@ -56196,7 +58162,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _2', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _2',
+            ['Drawing modes', 'Pre-drawing of maps', 'Exits', 'Obscured exits'],
+        );
 
         # Set up some hashes, so that entry boxes in this tab can display explanatory text
         %currentModeHash = (
@@ -56232,8 +58202,8 @@
             'vnum'          => '\'vnum\' - Room vnum',
         );
 
-        # Settings (cont.)
-        $self->addLabel($grid, '<b>Settings (cont.)</b>',
+        # Settings (2/8)
+        $self->addLabel($grid, '<b>Settings (2/8)</b>',
             0, 12, 0, 1);
 
         # Left column
@@ -56332,10 +58302,14 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _3', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _3',
+            ['Room matching', 'Room updating'],
+        );
 
-        # Settings (cont.)
-        $self->addLabel($grid, '<b>Settings (cont.)</b>',
+        # Settings (3/8)
+        $self->addLabel($grid, '<b>Settings (3/8)</b>',
             0, 12, 0, 1);
 
         # Left column
@@ -56402,10 +58376,14 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _4', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _4',
+            ['Auto-compare mode', 'Auto-slide mode', 'Auto-rescue mode'],
+        );
 
-        # Settings (cont.)
-        $self->addLabel($grid, '<b>Settings (cont.)</b>',
+        # Settings (4/8)
+        $self->addLabel($grid, '<b>Settings (4/8)</b>',
             0, 12, 0, 1);
 
         # Auto-compare mode
@@ -56544,10 +58522,14 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _5', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _5',
+            ['Axbasic scripts'],
+        );
 
-        # Settings (cont.)
-        $self->addLabel($grid, '<b>Settings (cont.)</b>',
+        # Settings (5/8)
+        $self->addLabel($grid, '<b>Settings (5/8)</b>',
             0, 12, 0, 1);
 
         # Left column
@@ -56608,10 +58590,20 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _6', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _6',
+            [
+                'Searches',
+                'Locate room',
+                'Locate room after random exit',
+                'Pathfinding',
+                'Simple pathfinding',
+            ],
+        );
 
-        # Settings (cont.)
-        $self->addLabel($grid, '<b>Settings (cont.)</b>',
+        # Settings (6/8)
+        $self->addLabel($grid, '<b>Settings (6/8)</b>',
             0, 12, 0, 1);
 
         # Left column
@@ -56704,10 +58696,20 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _7', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _7',
+            [
+                'Assisted moves',
+                'Protected moves',
+                'Crafty moves',
+                'Exit lengths',
+                'Checked directions',
+            ],
+        );
 
-        # Settings (cont.)
-        $self->addLabel($grid, '<b>Settings (cont.)</b>',
+        # Settings (7/8)
+        $self->addLabel($grid, '<b>Settings (7/8)</b>',
             0, 12, 0, 1);
 
         # Left column
@@ -56882,10 +58884,14 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _8', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _8',
+            ['Miscellaneous flags'],
+        );
 
-        # Settings (cont.)
-        $self->addLabel($grid, '<b>Settings (cont.)</b>',
+        # Settings (8/8)
+        $self->addLabel($grid, '<b>Settings (8/8)</b>',
             0, 12, 0, 1);
 
         # Left column
@@ -56961,7 +58967,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Colours', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Colours',
+            ['Region colour schemes'],
+        );
 
         # Region colour schemes
         $self->addLabel($grid, '<b>Region colour schemes</b>',
@@ -57233,7 +59243,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Label styles', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Label styles',
+            ['Label styles'],
+        );
 
         # Label styles
         $self->addLabel($grid, '<b>Label styles</b>',
@@ -57460,7 +59474,7 @@
 
         # Tab setup
         # Create a notebook within the main one, so that we have two rows of tabs
-        my $innerNotebook = $self->addInnerNotebookTab('_Room flags', $self->notebook);
+        my $innerNotebook = $self->addInnerNotebookTabs($self->notebook, '_Room flags');
 
         # Add tabs to the inner notebook
         $self->roomFlags1Tab($innerNotebook);
@@ -57469,45 +59483,45 @@
         $self->roomFlags3Tab(
             $innerNotebook,
            3,
-            '<b>Painting by room titles</b>',
-            '<i>List of patterns matching a room\'s title, and the corresponding room flag used'
-            . ' when the painter is on</i>',
+            'Painting by room titles',
+            'List of patterns matching a room\'s title, and the corresponding room flag used'
+            . ' when the painter is on',
             'paintFromTitleHash',
         );
 
         $self->roomFlags3Tab(
             $innerNotebook,
             4,
-            '<b>Painting by room descriptions</b>',
-            '<i>List of patterns matching a room\'s description, and the corresponding room flag'
-            . ' used when the painter is on</i>',
+            'Painting by room descriptions',
+            'List of patterns matching a room\'s description, and the corresponding room flag'
+            . ' used when the painter is on',
             'paintFromDescripHash',
         );
 
         $self->roomFlags3Tab(
             $innerNotebook,
             5,
-            '<b>Painting by room exits</b>',
-            '<i>List of patterns matching one of the room\'s exits, and the corresponding room flag'
-            . ' used when the painter is on</i>',
+            'Painting by room exits',
+            'List of patterns matching one of the room\'s exits, and the corresponding room flag'
+            . ' used when the painter is on',
             'paintFromExitHash',
         );
 
         $self->roomFlags3Tab(
             $innerNotebook,
             6,
-            '<b>Painting by room contents</b>',
-            '<i>List of patterns matching an object in a room, and the corresponding room flag used'
-            . ' when the painter is on</i>',
+            'Painting by room contents',
+            'List of patterns matching an object in a room, and the corresponding room flag used'
+            . ' when the painter is on',
             'paintFromObjHash',
         );
 
         $self->roomFlags3Tab(
             $innerNotebook,
             7,
-            '<b>Painting by room commands</b>',
-            '<i>List of patterns matching a room command, and the corresponding room flag used when'
-            . ' the painter is on</i>',
+            'Painting by room commands',
+            'List of patterns matching a room command, and the corresponding room flag used when'
+            . ' the painter is on',
             'paintFromRoomCmdHash',
         );
 
@@ -57541,7 +59555,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _1', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _1',
+            ['Room flags'],
+        );
 
         # Room flags
         $self->addLabel($grid, '<b>Room flags</b>',
@@ -58190,7 +60208,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _2', $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _2',
+            ['MSDP terrain types'],
+        );
 
         # MSDP terrain types
         $self->addLabel($grid, '<b>MSDP terrain types</b>',
@@ -58380,12 +60402,16 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('Page _' . $number, $innerNotebook);
+        my $grid = $self->addTab(
+            $innerNotebook,
+            'Page _' . $number,
+            [$title],
+        );
 
         # Painting by room titles
-        $self->addLabel($grid, $title,
+        $self->addLabel($grid, '<b>' . $title . '</b>',
             0, 12, 0, 1);
-        $self->addLabel($grid, $descrip,
+        $self->addLabel($grid, '<i>' . $descrip . '</i>',
             1, 12, 1, 2,
         );
 
@@ -58542,10 +60568,14 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('L_ight', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            'L_ight',
+            ['Light status list'],
+        );
 
         # Light status list
-        $self->addLabel($grid, '<b>Ligt status list</b>',
+        $self->addLabel($grid, '<b>Light status list</b>',
             0, 12, 0, 1);
         $self->addLabel(
             $grid,
@@ -58766,7 +60796,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -58883,7 +60913,11 @@
         }
 
         # Tab setup, using the standard grid size
-        my $grid = $self->addTab('_Name', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Name',
+            ['Zonemap settings'],
+        );
 
         # Zonemap 'edit' windows have some non-standard IVs used to store the widgets created in
         #   $self->zoneModelsTab, so that several ->zoneModelsTab_XXX functions can retrieve them
@@ -58984,8 +61018,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->nameTab', @_);
         }
 
-#       # Tab setup (already created by the calling function)
-#       my $grid = $self->addTab('_Name', $self->notebook);
+        # Tab setup (already created by the calling function)
 
         # Left column
         $self->addLabel($grid, '<b>Zonemap settings</b>',
@@ -59031,7 +61064,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Zone models', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Zone models',
+            ['Add a new zone model', 'Zone model actions'],
+        );
 
         # We're going to use a GooCanvas2::Canvas to draw a grid containing squares in various
         #   colours
@@ -59237,11 +61274,6 @@
             7, 9, 9, 10);
         my $button6 = $self->addButton($grid, 'Refresh grid', 'Refresh the zonemap grid', undef,
             9, 12, 9, 10);
-
-        # (This empty label reduces the size of the simple canvas, so that the whole frame is filled
-        #   by a single colour)
-        $self->addLabel($grid, '',
-            9, 12, 10, 11);
 
         # Save the buttons as IVs, so that it can be sensitised/desensitised (starts desensitised.
         #   Don't need to save or desensitise the 'dump' button)
@@ -60063,7 +62095,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -60183,8 +62215,7 @@
             return $axmud::CLIENT->writeImproper($self->_objClass . '->setupNotebook', @_);
         }
 
-#       # Tab setup
-#       my $grid = $self->addTab('_Number', $self->notebook);
+        # Tab setup (already created by the calling function)
 
         # Set up the rest of the first tab (all of it, in this case)
         $self->numberTab();
@@ -60251,7 +62282,11 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Number', $self->notebook);
+        my $grid = $self->addTab(
+            $self->notebook,
+            '_Number',
+            ['Zone model settings'],
+        );
 
         # Can't edit zone models in use
         if ($axmud::CLIENT->checkCurrentZonemap($self->editObj->zonemapObj->name)) {
@@ -60420,7 +62455,8 @@
         }
 
         # Tab setup
-        my $grid = $self->addTab('_Reserved windows', $self->notebook);
+        # N.B. No sub-headings
+        my $grid = $self->addTab($self->notebook, '_Reserved windows');
 
         # Set a combo title now so we don't accidentally use it
         $comboTitle = 'Select a task:';

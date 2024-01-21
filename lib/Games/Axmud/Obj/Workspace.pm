@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2022 A S Lewis
+# Copyright (C) 2011-2024 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -19,7 +19,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -947,6 +947,17 @@
 
             # Test successful
 
+            # DEBUG v2.0
+            # MS Windows adds extra pixels to the window width and height (for unknown reasons);
+            #   compensate for that, if required
+            if ($^O eq 'MSWin32' && $axmud::CLIENT->mswinWinPosnTweakFlag) {
+
+                # N.B. The $top value is OK
+                $left = 0;
+                $right = 0;
+                $bottom = 0;
+            }
+
             # Store the detected sizes unless GA::Client->customControlsLeftSize (etc) are set, as
             #   those values take precedence
             if (defined $axmud::CLIENT->customControlsLeftSize) {
@@ -1372,6 +1383,14 @@
             # $winObj->winWidget is occasionally set to 'undef' just before this line. It's a very
             #   difficult error to reproduce, so I'm not sure what the cause is
             if ($winObj->winWidget && defined $xPosPixels) {
+
+                # DEBUG v2.0
+                # MS Windows adds extra pixels to the X position (for unknown reasons); compensate
+                #   for that, if required
+                if ($^O eq 'MSWin32' && $axmud::CLIENT->mswinWinPosnTweakFlag) {
+
+                    $xPosPixels -= 7;
+                }
 
                 $winObj->winWidget->move($xPosPixels, $yPosPixels);
             }

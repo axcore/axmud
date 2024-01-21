@@ -6,21 +6,21 @@ PEEKINDEX ARRAY variable-name = axmud-object-property, expression
          the expression
 
    Notes:
-      PEEK gives Axbasic scripts access to most of Axmud's internal data (see 
+      PEEK gives Axbasic scripts access to most of Axmud's internal data (see
          the help for the PEEK statement for a full explanation).
-      PEEKINDEX can only be used with list properties such as 
-         "world.current.doorPatternList". It cannot be used with a scalar 
-         property such as "world.current.name", a hash property such as 
+      PEEKINDEX can only be used with list properties such as
+         "world.current.doorPatternList". It cannot be used with a scalar
+         property such as "world.current.name", a hash property such as
          "world.current.currencyHash" or a Perl object such as "world.current".
-      'variable-name' is set to the value of the list property element whose 
-         index matches the expression. Perl lists have 0 as their first index, 
-         so in a list of ten elements, 'expression' must evaluate to an integer 
-         between 0 and 9. If you use an index that is bigger than the list 
-         itself - 15, for example - then a string variable will be set to an 
-         empty string and a numeric variable will be set to 0. If the value of 
-         the matching index is the Perl special value 'undef', a string variable 
+      'variable-name' is set to the value of the list property element whose
+         index matches the expression. Perl lists have 0 as their first index,
+         so in a list of ten elements, 'expression' must evaluate to an integer
+         between 0 and 9. If you use an index that is bigger than the list
+         itself - 15, for example - then a string variable will be set to an
+         empty string and a numeric variable will be set to 0. If the value of
+         the matching index is the Perl special value 'undef', a string variable
          will be set to "<<undef>>" and a numeric variable will be set to 0.
-      Normally you will use a PEEKNUMBER or PEEKLAST statement before a 
+      Normally you will use a PEEKNUMBER or PEEKLAST statement before a
          PEEKINDEX statement, to check that index actually exists in the list.
 
    Examples:
@@ -36,7 +36,7 @@ PEEKINDEX ARRAY variable-name = axmud-object-property, expression
 
       ! Store the second pattern in an Axbasic global array
       PEEKINDEX ARRAY patterns$ = "world.current.doorPatternList", 2
- 
+
       ! Store the second pattern in an Axbasic local scalar variable
       LOCAL pattern$
       PEEKINDEX pattern$ = "world.current.doorPatternList", 2

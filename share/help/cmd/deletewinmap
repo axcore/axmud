@@ -1,16 +1,16 @@
 dwm / deletewinmap            Deletes a winmap
- 
+
    Format:
       ;dwm <name>             Deletes the winmap <name>
- 
+
    Notes:
-      Winmaps are a plan for arranging the layout of 'internal' windows 
-         (consisting of all 'main' windows, 'protocol' windows such as those 
+      Winmaps are a plan for arranging the layout of 'internal' windows
+         (consisting of all 'main' windows, 'protocol' windows such as those
          created by MXP, and 'custom' windows such as task windows).
       See the help for ';addwinmap' for more information about winmaps.
 
       Axmud provides a number of standard winmaps which can't be modified or
          deleted.
- 
+
    User commands:
       dwm / delwm / deletewm / deletewinmap

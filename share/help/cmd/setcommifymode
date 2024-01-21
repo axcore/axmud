@@ -1,5 +1,5 @@
 scf / setcommifymode          Customises conversion of long numbers
- 
+
    Format:
       ;scf                    Show current commify mode setting
       ;scf -c                 Add commas
@@ -7,7 +7,7 @@ scf / setcommifymode          Customises conversion of long numbers
       ;scf -b                 Add British-style spaces
       ;scf -u                 Add underlines/underscores
       ;scf -n                 Add nothing
-      
+
    Notes:
       Commify mode sets how certain parts of the Axmud code convert long numbers
          like 1000000 into something more readable, like 1,000,000.

@@ -5,13 +5,13 @@ RELAY expression [ , expression ]
 
    Notes:
       Axmud attempts to work out which world commands are movement commands, and
-         which are not. RELAY statements specify that the command is definitely 
+         which are not. RELAY statements specify that the command is definitely
          not a movement command.
       The first expression is the command to send.
-      If you want to send a password to the world, but don't want it displayed 
-         in the 'main' window (or saved in the command buffers), you can specify 
-         the second expression, which should be a substring of the first. That 
-         part of the command is obscured. To obscure the whole command, both 
+      If you want to send a password to the world, but don't want it displayed
+         in the 'main' window (or saved in the command buffers), you can specify
+         the second expression, which should be a substring of the first. That
+         part of the command is obscured. To obscure the whole command, both
          expressions should be identical.
       See also the help for MOVE and SEND.
 

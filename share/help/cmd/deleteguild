@@ -1,13 +1,13 @@
 dg / deleteguild              Deletes a guild profile
- 
+
    Format:
       ;dg <name>              Deletes the guild profile <name>
- 
+
    Notes:
-      This operation deletes the guild and all its associated cages, including 
+      This operation deletes the guild and all its associated cages, including
          all the interfaces stored in the cages.
       If <name> is the current guild profile, there will be no current guild
          profile after using this command.
- 
+
    User commands:
       dg / delguild / deleteguild

@@ -1,11 +1,11 @@
 Setroomnum ()
 Setroomnum (number)
-        
+
    Synopsis:
       Sets the automapper's current room
 
    Notes:
-      'number' is the world model number of a room, such as 99. If 'number' 
+      'number' is the world model number of a room, such as 99. If 'number'
          isn't specified, the current room (if any) is unset.
       Returns 1 if the specified room is set as the current room, or if the
          current room is unset when no room is specified. Returns 0 if 'number'

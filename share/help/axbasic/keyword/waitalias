@@ -19,7 +19,7 @@ WAITALIAS expression [ , expression ]
       If the script is not being run as a task, the WAITALIAS statement is
          ignored (and no error message is generated). Execution continues with
          the next statement.
-         
+
    Examples:
       WAITALIAS "^continue$"
       WAITTRIG "^continue$", 60

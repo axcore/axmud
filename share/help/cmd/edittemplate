@@ -1,7 +1,7 @@
 etm / edittemplate            Opens an 'edit' window for a profile template
- 
+
    Format:
       ;etm <category>         Edits the profile template called <category>
-  
+
    User commands:
       etm / edittm / edittemplate

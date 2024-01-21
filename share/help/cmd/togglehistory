@@ -1,14 +1,14 @@
 tgh / togglehistory           Toggles collection of a world's connection history
- 
+
    Format:
       ;tgh                    Toggles history collection
- 
+
    Notes:
-      Axmud is able to store basic details about past connection to a world. 
+      Axmud is able to store basic details about past connection to a world.
       This command turns the collection of connection histories for all worlds
          on and off. Only future connections are affected; Axmud will continue
          collecting (or not collecting) information about existing connections.
       See also the help for ';showhistory' and 'clearhistory'.
-       
+
    User commands:
       tgh / toghis / togglehistory

@@ -1,7 +1,0 @@
-oov / openobjectviewer        Opens the object viewer window
- 
-   Format:
-      ;oov                    Opens the window
-
-   User commands:
-      oov / viewer / openviewer / openobjectviewer

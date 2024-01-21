@@ -5,21 +5,21 @@ POKEPUSH axmud-object-property
       Adds a value to the end of an Axmud internal list property
 
    Notes:
-      POKE gives Axbasic scripts access to some of Axmud's internal data (see 
-         the help for the POKE statement for a full explanation). 
+      POKE gives Axbasic scripts access to some of Axmud's internal data (see
+         the help for the POKE statement for a full explanation).
       POKEPUSH is similar to POKE, but it only modifies list properties such as
          "world.current.doorPatternList". It cannot be used to modify a scalar
          property such as "world.current.longName", a hash property such as
          "world.current.currencyHash" or a Perl object such as "world.current".
       POKEPUSH adds the value of the expression to the end of the list. If you
-         don't specify an expression, the Perl special value 'undef' is added 
+         don't specify an expression, the Perl special value 'undef' is added
          to the end of the list.
       Much of Axmud's internal data is read-only, and cannot be modified with
          POKE or with this statement. If you try to modify a read-only property
          you will get an 'operation failure' error.
 
-   Warning: 
-      Do not try to modify Axmud's internal data unless you know what you are 
+   Warning:
+      Do not try to modify Axmud's internal data unless you know what you are
          doing. Read the Axmud manual before you try to POKE anything. (The
          examples below are safe, but backup your data first.)
 

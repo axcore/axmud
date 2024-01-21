@@ -2,10 +2,10 @@ SEND expression [ , expression [ , expression ... ] ]
 
    Synopsis:
       Sends an interpolated world command
-      
+
    Notes:
-      Axmud has the ability to auto-interpolate commands so that a single 
-         Axbasic script (as well as any tasks you write) can be designed to work 
+      Axmud has the ability to auto-interpolate commands so that a single
+         Axbasic script (as well as any tasks you write) can be designed to work
          at more than one world.
       The first expression can be one of the standard commands specified by the
          command cages (such as "go", "throw_dir" or "wave_victim"). If so, it

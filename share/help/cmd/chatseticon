@@ -1,10 +1,10 @@
 csi / chatseticon             Sets the icon used in chat sessions
- 
+
    Format:
       ;csi <file>             Sets the icon used to <file>
       ;csi -d                 Use the default chat icon
       ;csi                    Choose an icon to use
- 
+
    Notes:
       The Chat task is used to chat with other players directly via telnet.
          Calls can be placed (or accepted) with any user whose MUD client uses
@@ -13,9 +13,9 @@ csi / chatseticon             Sets the icon used in chat sessions
          your partner's icon, and they can see yours).
       <file> is the full path to the file, e.g. '/home/myname/myfiles/pic.bmp'.
          If you don't specify a <file> you will be prompted to choose one.
-      All icons must be in Windows bitmap (.bmp) format. Axmud comes with a 
+      All icons must be in Windows bitmap (.bmp) format. Axmud comes with a
          large selection of icons from which to choose. You'll find them in the
          /icons/chat directory.
- 
+
    User commands:
       csi / chatseticon

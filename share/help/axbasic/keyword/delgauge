@@ -1,19 +1,19 @@
 DELGAUGE expression
-    
+
    Synopsis:
       Deletes a 'main' window gauge
-    
+
    Notes:
       Deletes a gauge that was added to the 'main' window with an ADDGAUGE or
          ADDCONGAUGE statement.
       The expression is the gauge's unique number. If the gauge doesn't exist,
-         the DELGAUGE statement is ignored, but the number isn't an integer, 0 
+         the DELGAUGE statement is ignored, but the number isn't an integer, 0
          or above, you'll see an error message.
 
    Requires:
       If the script is not being run as a task, the DELGAUGE statement is
          ignored (and no error message is generated). Execution continues with
          the next statement.
-         
+
    Examples:
       DELGAUGE 1

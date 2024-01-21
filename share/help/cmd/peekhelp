@@ -1,5 +1,5 @@
 pkh / peekhelp                Shows strings for ';peek' and ';poke' operations
- 
+
    Format:
       ;pkh                    Shows peek/poke help
 
@@ -13,6 +13,6 @@ pkh / peekhelp                Shows strings for ';peek' and ';poke' operations
          window, which you can open with
 
             ;openaboutwindow -p
-         
+
    User commands:
       pkh / pokehelp / peekhelp

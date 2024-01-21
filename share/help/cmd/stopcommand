@@ -1,14 +1,14 @@
 stop / stopcommand            Stops all repeating / excess commands
- 
+
    Format:
       ;stop                   Stops sending commands
- 
+
    Notes:
-      Cancels all repeating commands created with ';repeat' and 
+      Cancels all repeating commands created with ';repeat' and
          ';intervalrepeat'.
       If the current world profile specifies a maximum number of world commands
          per second, this command also cancels any that haven't yet been sent.
          (See the help for ';slowwalk').
- 
+
    User commands:
       stop / stopcmd / stopcommand

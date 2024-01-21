@@ -92,6 +92,8 @@ When it's time for the user to type a command, some worlds send a command prompt
 
 If you need to use the cursor keys for something else temporarily - or indeed any of the other keys mentioned in this section - you can use the **;freekeys** command to stop Axmud hijacking them. Type the same command again to restore the old functionality.
 
+Normally, Axmud users use the up and down keys to quickly select commands they typed previously. You can do the same by holding your SHIFT key while you press up and down.
+
 If you don't want to use the cursor keys, you can use client commands instead. Use **;skip**, **;unskip**, **;first** and **;last** instead of the cursor keys. Use **;skip more** or **;unskip more** instead of the page up/page down keys. Use **;split** instead of the home key, **;prompt** instead of the end key, **;resume** instead of the tab key and **;shutup** instead of the escape key.
 
 ###16.4.1 Sentence smoothing
@@ -132,7 +134,9 @@ You can use the client command **;speech** to change what is read out, and what 
 
 For example, **;speech system off** will stop Axmud system messages from being read out. **;speech system on** will tell Axmud to start reading them again.
 
-**;speech error off** will stop system error messages from being read out.
+**;speech error off** will stop system error and warning messages from being read out.
+
+**;speech verbose on** will tell you when Axmud switches between displaying commands, system messages and received text. This can be a little annoying, so it's disabled by default.
 
 **;speech command off** will stop every world command you type from being read out.
 

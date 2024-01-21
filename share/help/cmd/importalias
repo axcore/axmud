@@ -1,0 +1,36 @@
+ial / importalias             Imports alias(es) from the interface clipboard
+
+   Format:
+      ;ial <name> <switches>  Imports the alias called <name>
+      ;ial <switches>         Imports all clipboard aliases
+
+   Notes:
+      Aliases are one of five types of Axmud interface (the others being
+         triggers, macros, timers and hooks).
+      Aliases allow you to define shortcuts for world commands and to have those
+         commands modified before being sent to the world.
+      This command provides a simple way to copy aliases from one profile/cage
+         to another (perhaps even in a different world, in a different session).
+         Having 'exported' the alias to Axmud's interface clipboard using the
+         ';importalias' command, that alias can then be 'imported'.
+      Note that the contents of the clipboard are not saved. Note also that the
+         alias's attributes might change while stored in the clipboard. In other
+         words, it's up to you to perform the export, then the import, before
+         doing anything else.
+      If an active alias was exported, an inactive alias is imported. The
+         imported alias will not replace an existing alias with the same name.
+
+      <switches> allows you to specify which profile's alias cage should
+         receive the imported aliases. One of the following (group 1) switches
+         may be specified:
+         (no switch)   - Imports alias(es) to the current world
+         -w            - Imports alias(es) to the current world
+         -r            - Imports alias(es) to the current race
+         -g            - Imports alias(es) to the current guild
+         -c            - Imports alias(es) to the current char
+         -x <category> - Imports alias(es) to the current custom profile
+                            <category>
+         -d <prof>     - Imports alias(es) to the profile named <prof>
+
+   User commands:
+      ial / impal / impalias / importal / importalias

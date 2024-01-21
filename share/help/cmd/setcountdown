@@ -1,12 +1,12 @@
 scd / setcountdown            Sets a countdown
- 
+
    Format:
       ;scd                    Starts the Countdown task
       ;scd <num>              Counts down <num> seconds
       ;scd -s <num>           Counts down <num> seconds
       ;scd -m <num>           Counts down <num> minutes
       ;scd -h <num>           Counts down <num> hours
-      
+
    Notes:
       This commands starts the Countdown task, or uses an existing one (if one
          is running, and is not already counting down or up).
@@ -16,12 +16,12 @@ scd / setcountdown            Sets a countdown
          ;scd 60
          ;scd -s 60
          ;scd 60 -s
-         
+
       The maximum time allowed is 99, 59 minutes and 59 seconds. If you
          specify a longer time, the maximum is used instead.
       If you don't specify a time and no Countdown task is running, one is
          started. You can use the task window to start the clock as soon as
-         you're ready.         
+         you're ready.
       See also the help for ';setcountup', which counts updwards from zero.
 
    User commands:

@@ -1,182 +1,182 @@
 spw / speedwalk               Interprets a speedwalk string
- 
+
    Format:
       ;spw <string>           Interprets the string
-      
+
    Notes:
       Speedwalking is a method of moving from one location in the world to
          another with a minimum of typing.
       Speedwalk commands can be typed in the 'main' window's command entry box.
          These commands start with the speedwalk sigil, a full stop/period
          character:
-      
+
          .3nw2s
-   
+
       ...which is the equivalent of typing 'north;north;north;west;south;south'.
-      
+
       Speedwalk sigils are turned off by default (use ';togglesigil -w' to turn
          them on again). However, this client command is always available, and
          you don't need to type the sigil:
-         
+
          ;speedwalk 3nw2s
 
-      The simplest speedwalk <string> is made up one or more speedwalk 
-         characters, always a lower-case letter. Each speedwalk character 
+      The simplest speedwalk <string> is made up one or more speedwalk
+         characters, always a lower-case letter. Each speedwalk character
          represents a single movement command:
-         
+
          n                    > north
          ns                   > north;south
          nssse                > north;south;south;south;east
-         
+
       The current dictionary usually specifies abbreviations for these primary
          directions, in which case the actual output will be more like this:
-         
+
          nssse                > n;s;s;s;e
-         
-      If the current dictionary specifies different primary directions (for 
+
+      If the current dictionary specifies different primary directions (for
          example, if you're using a French-language dictionary), the movement
          commands are automatically converted.
-      Many worlds use directions like 'northwest'. If you use 'nw' in a 
+      Many worlds use directions like 'northwest'. If you use 'nw' in a
          speedwalk string, it will be interpreted as two movement commands:
-                  
+
          nw                   > north;west
-         
+
       However, Axmud dictionaries provide a larger set of speedwalk characters
          by default:
-      
-         u > up, d > down, l > look, 
+
+         u > up, d > down, l > look,
          t > northwest, y > northeast, g > southwest, h > southeast
-      
+
       If that's not convenient, you have two options. The first is to use
          customised speedwalk characters (see the help for ';addspeedwalk').
       The second is to enclose the movement command in brackets:
-      
+
          n(sw)e               > north;southwest;east
-         
+
       The '(sw)' component is treated exactly the same as a speedwalk character,
          which means you can put a number in front of it:
-         
+
          n2(sw)e              > north;southwest;southwest;east
-         
-      By the way, any number between 1-999 is acceptable. If you specify a 
+
+      By the way, any number between 1-999 is acceptable. If you specify a
          larger number like 12345, only the last three digits (345) are used. If
          you specify the number 0, the command immediately after it is not
          processed:
-         
+
          n2we                 > north;west;west;east
          n0we                 > north;east
-         
-      If you type a very large number of characters, you can use a comment to 
+
+      If you type a very large number of characters, you can use a comment to
          help keep your place. Comments are enclosed within square brackets
          {...}, and are ignored. For example:
-         
+
          3nw2n5ws{the city gates are here}5sw{the guild is here}nwn
                               > n;n;n;w;n;n;w;w;w;w;w;s;s;s;s;s;s;s;w;n;w;n
-                              
+
       If you want to retrace your steps, add a full stop (period) character to
          the beginning of the speedwalk <string>. This reverses the list of
          commands:
-         
+
          3nw2e                > north;north;north;west;east;east
          .3nw2e               > west;west;east;south;south;south
-         
-      However, that won't work if you use longer movement commands inside 
+
+      However, that won't work if you use longer movement commands inside
          brackets:
-               
+
          n(sw)e               > north;southwest;east
          .n(sw)e              > west;southwest;south
-         
+
       Commands inside brackets are not reversed; you have to specify your own
          reverse command like this:
-         
+
          (sw/ne)              > southwest
-         .(sw/ne)             > northeast 
-         
+         .(sw/ne)             > northeast
+
       Of course, if you were typing in the 'main' window's command entry box,
          a speedwalk command already begins with a full stop character, so to
          reverse the path you'd have to type two of them.
-         
+
       A speedwalk character like 'n' or a longer movement command in brackets
-         like '(sw)' can be preceded by a modifier. A modifier converts a 
+         like '(sw)' can be preceded by a modifier. A modifier converts a
          simple direction like 'north' into a command like 'open north door',
          'sail north' and so on.
-      A modifier can be a single character which is always an upper-case letter. 
+      A modifier can be a single character which is always an upper-case letter.
          Axmud dictionaries provide the following speedwalk modifier characters:
-         
+
          G   > go <dir>     S   > sail <dir>      O   > open <dir> door
          N   > run <dir>    I   > ride <dir>      C   > close <dir> door
          A   > walk <dir>   D   > drive <dir>     K   > unlock <dir> door
          F   > fly <dir>    R   > creep <dir>     L   > lock <dir> door
          W   > swim <dir>   E   > sneak <dir>     P   > pick <dir> door
          V   > dive <dir>   Q   > squeeze <dir>   B   > break <dir> door
-         
+
       The modifier character is used immediately before the movement command:
-      
+
          n                    > north
          On                   > open north door
-         
+
          (sw)                 > southwest
          S(sw)                > sail southwest
-         
+
       If you use a number, it goes before the modifier:
-      
-         3S(sw)               > sail southwest;sail southwest;sail southwest   
-         
+
+         3S(sw)               > sail southwest;sail southwest;sail southwest
+
       If that's not convenient, you again have two options. The first is to use
-         customised speedwalk modifier characters (see the help for 
+         customised speedwalk modifier characters (see the help for
          ';addmodifierchar').
       The second is to specify the full modifier command yourself, inside a pair
          of square brackets [...]. The following two strings are equivalent:
-         
+
          Sn                   > sail north
          [sail]n              > sail north
-         
-      If the command is different when you retrace your steps, you can use a 
+
+      If the command is different when you retrace your steps, you can use a
          modifier containing two commands:
-         
+
          [sail/fly]n          > sail north
          .[sail/fly]n         > fly south
-         
-      In some situations, you might need to provide two modifiers and two 
+
+      In some situations, you might need to provide two modifiers and two
          movement commands together:
-         
+
          [sail/fly](sw/ne)    > sail southwest
          .[sail/fly](sw/ne)   > fly northeast
-         
-      If you go through a door, and then reverse the path, you might find that 
+
+      If you go through a door, and then reverse the path, you might find that
          the 'open door' command is now in the wrong place:
-         
+
          Oww                  > open west door;west
          .Oww                 > east;open east door
-         
-      One solution is to put the 'open' command both and after the movement 
+
+      One solution is to put the 'open' command both and after the movement
          command, so that the speedwalk string works in both directions:
-         
+
          OwwOw                > open west door;west;open west door
          .OwwOw               > open east door;east;open east door
-         
+
       Of course, you might see a message like 'there is no door here', but at
          least your character will be where you intended them to be.
-                 
-      The modifier characters use Axmud command cages to get a world command in 
+
+      The modifier characters use Axmud command cages to get a world command in
          the correct format for each world. (For example, at some worlds the
          correct command will be 'open west door', but at others it might be
          'open west' or even 'open door', with no direction possible.)
-      If you modify the current world's command cages, the equivalent world 
+      If you modify the current world's command cages, the equivalent world
          commands for each modifier will change.
-      If you modify them so that the replacement command doesn't include a 
+      If you modify them so that the replacement command doesn't include a
          direction (e.g. replace 'open direction door' with 'open door'), the
          direction you specify isn't used:
-         
+
          Oww                  > open door;west
          Onw                  > open door;west
-         
-      Speedwalk <string>s can include any number of spaces, so both of the 
+
+      Speedwalk <string>s can include any number of spaces, so both of the
          following are acceptable:
-         
+
          3nw2s                > north;north;north;west;south;south
          3 nw 2 s             > north;north;north;west;south;south
-         
+
       Enclosing the speedwalk string in diamond brackets <...> will not make any
          difference to the outcome.
 

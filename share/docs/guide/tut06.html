@@ -1,0 +1,329 @@
+<!doctype html>
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<style type="text/css">
+td, th { border: 1px solid #c3c3c3; padding: 0 3px 0 3px; }
+table { border-collapse: collapse; }
+img { max-width: 100%; }
+</style>
+<meta name="generator" content="ReText 7.2.3">
+<title>tut06</title>
+<style type="text/css">
+</style>
+</head>
+<body>
+<p><a href="tut05.html">Previous</a> <a href="index.html">Index</a> <a href="tut07.html">Next</a></p>
+<hr>
+<h1>Tutorial 6: Pre-Configured Worlds 2: Setting up the Status task</h1>
+<h4>Table of Contents</h4>
+<ul>
+<li><a href="#6.1">6.1 Introduction</a></li>
+<li><a href="#6.2">6.2 Gathering data</a></li>
+<li><a href="#6.3">6.3 Gathering data - simple patterns</a></li>
+<li><a href="#6.4">6.4 Gathering data - longer patterns</a></li>
+<li><a href="#6.5">6.5 Better patterns</a></li>
+<li><a href="#6.6">6.6 Configuring the Status task window</a></li>
+<li><a href="#6.7">6.7 Configuring main window gauges</a></li>
+<li><a href="#6.8">6.8 Status task variables (1)</a></li>
+<li><a href="#6.9">6.9 Status task variables (2)</a></li>
+<li><a href="#6.10">6.10 Custom variables</a></li>
+<li><a href="#6.11">6.11 MSDP/MXP variables</a></li>
+<li><a href="#6.12">6.12 Bar patterns</a></li>
+<li><a href="#6.13">6.13 Life and death</a></li>
+</ul>
+<hr>
+<h2><a name="6.1">6.1 Introduction</a></h2>
+<p>This is the second of a four-part tutorial, showing you how Axmud's pre-configured worlds were created. In this part we'll discuss the Status task, which keeps track of your character's XP, health points and so on. See <a href="ch11.html">Section 11</a> for some essential information on using this task.</p>
+<p>Configuring the Status task is optional; many users decide to configure only the automapper, as discussed in the previous Section. However, the time spent in configurating the task may be literally life-saving, so it is often worth the effort.</p>
+<p>Once again, you <em>must</em> be familiar with regular expressions/regexes/patterns (we use these terms interchangeably). <a href="ch06.html">Section 6</a> of the Axmud Guide tells you everything you need to know, so read that first, if necessary. </p>
+<h2><a name="6.2">6.2 Gathering data</a></h2>
+<p>The Status task collects information about your character in several ways.</p>
+<p>In most worlds, you can type a command like <strong>score</strong> or <strong>sc</strong>, which may produce a response like this:</p>
+<pre><code>    You are Bilbo the unaccomplished.
+    You have 90/100 HP, 40/50 MP and 5/99 SP.
+    You have 1000 XP. You need 200 XP for the next level.
+    You have 15 QP.
+    You are feeling brave.
+</code></pre>
+<p>At many worlds, the command prompt contains a useful summary of this information:</p>
+<pre><code>    hp: 90/100  mp: 40/50  sp: 5/99 &gt;
+</code></pre>
+<p>In case you don't know, HP means health points. Your character loses HP in a fight, and will probably die when the points reach zero. </p>
+<p>MP means movement (energy) points. At some worlds, movement between rooms is much slower (or becomes impossible) when your character's movement points are too low. SP means social points. At some worlds, communicating over public channels consumes social points, which prevents gregarious players from shouting too much.</p>
+<p>XP are experience points, awarded when your character kills enemies or completes tasks. QP are quest points, awarded when pre-scripted adventures are completed.</p>
+<p>Most worlds use at least a few of these values, though not necessarily with the same names. If the world tracks your health with <strong>flibbles</strong> and rewards you, when you kill a monster, with <strong>flubbles</strong>, we can handle those values as if they were HP and XP.</p>
+<p>Indeed, the Status task is not limited to collecting HP, MP, SP, XP and QP. We can design patterns that will collect any kind of data, and we can display that data in the task window and in the coloured gauges at the bottom of the main window.</p>
+<h2><a name="6.3">6.3 Gathering data - simple patterns</a></h2>
+<p>Let's start by writing some patterns that match the output of the <strong>score</strong> command. </p>
+<pre><code>    You are Bilbo the unaccomplished.
+    You have 90/100 HP, 40/50 MP and 5/99 SP.
+    You have 1000 XP. You need 200 XP for the next level.
+    You have 15 QP.
+    You are feeling brave.
+</code></pre>
+<p>The first and last lines are irrelevant; we can ignore them. </p>
+<p>The fourth line contains a single value, so let's start with that one. The following pattern matches it:</p>
+<pre><code>    ^You have .* QP\.
+</code></pre>
+<p>As a quick reminder: the <strong>^</strong> character means that this pattern matches the start of a line. The <strong>.</strong> character means 'any character', so we must <em>escape</em> it with a backslash; <strong>\.</strong> means 'a literal full stop/period'.</p>
+<p><strong>.*</strong> means 'any number of characters, including none at all'.  It will capture the <strong>15</strong> in <strong>15 QP</strong>.</p>
+<p>We need to tell the Status task <em>which</em> part of the line is the important part, and for that we use groups. Everything inside a pair of brackets is a group.</p>
+<pre><code>    ^You have (.*) QP\.
+</code></pre>
+<p>So now we have a pattern that matches the line <strong>You have 15 QP.</strong>, and which has a single group matching the number we actually want, <strong>15</strong>. Here's how to add it to the Status task.</p>
+<ul>
+<li>In the main window, click <strong>Edit &gt; Edit current world</strong></li>
+<li>In the new edit window, click <strong>Status &gt; Page 6</strong></li>
+<li>In the <strong>Pattern</strong> box, add the pattern <strong>^You have (.*) QP.</strong></li>
+<li>In the <strong>Substring #</strong> box, add the group number, <strong>1</strong></li>
+<li>In the <strong>Status task variable</strong> box, select <strong>qp_current</strong> (which means 'your character's current QP')</li>
+<li>Click the <strong>Save</strong> button at the bottom of the window to apply your changes</li>
+<li>Reset the task by typing <strong>;resettask status</strong></li>
+</ul>
+<p>From now on, whenever you type <strong>score</strong>, the Status task's window should be updated.</p>
+<h2><a name="6.4">6.4 Gathering data - longer patterns</a></h2>
+<p>Continuing with the example above, in the third line there are two numbers we'd like to collect.</p>
+<pre><code>    You have 1000 XP. You need 200 XP for the next level.
+</code></pre>
+<p>Therefore we need a pattern that contains two groups. the first one capturing the <strong>1000</strong>, the second one capturing the <strong>200</strong>.</p>
+<pre><code>    ^You have (.*) XP\. You need (.*) XP for the next level\.
+</code></pre>
+<p>This pattern must be added in the edit window <em>twice</em>. For the first group:</p>
+<ul>
+<li>In the <strong>Pattern</strong> box, add the pattern</li>
+<li>In the <strong>Substring #</strong> box, add the group number, <strong>1</strong></li>
+<li>In the <strong>Status task variable</strong> box, select <strong>xp_current</strong> </li>
+<li>Click the <strong>Add</strong> button</li>
+</ul>
+<p>For the second group:</p>
+<ul>
+<li>In the <strong>Pattern</strong> box, add the same pattern</li>
+<li>In the <strong>Substring #</strong> box, add the group number, <strong>2</strong></li>
+<li>In the <strong>Status task variable</strong> box, select <strong>xp_next_level</strong></li>
+<li>Click the <strong>Add</strong> button</li>
+</ul>
+<p>The second line contains six pieces of data, so we need a pattern with six groups! Let's add them two at a time.</p>
+<pre><code>    You have 90/100 HP,
+</code></pre>
+<p>The line contains a forward slash character. In your pattern, this character <em>must</em> be escaped: use <strong>\/</strong>.</p>
+<pre><code>    ^You have (.*)\/(.*) HP,
+</code></pre>
+<p>Now we can add the middle section:</p>
+<pre><code>    40/50 MP
+</code></pre>
+<p>Which matches the pattern:</p>
+<pre><code>    (.*)\/(.*) MP
+</code></pre>
+<p>Finally the end section:</p>
+<pre><code>     and 5/99 SP.
+</code></pre>
+<p>Which matches the pattern:</p>
+<pre><code>     and (.*)\/(.*) SP\.
+</code></pre>
+<p>Putting them all together, we get this pattern:</p>
+<pre><code>    ^You have (.*)\/(.*) HP, (.*)\/(.*) MP and (.*)\/(.*) SP\.
+</code></pre>
+<p>Which matches the whole line, using six groups:</p>
+<pre><code>    You have 90/100 HP, 40/50 MP and 5/99 SP.
+</code></pre>
+<p>The complete pattern must be added six times, once for each group. In the <strong>Status task variable</strong> box, use the following items:</p>
+<ul>
+<li>Group 1 - health_points</li>
+<li>Group 2 - health_points_max</li>
+<li>Group 3 - energy_points</li>
+<li>Group 4 - energy_points_max</li>
+<li>Group 5 - social_points</li>
+<li>Group 6 - social_points_max</li>
+</ul>
+<h2><a name="6.5">6.5 Better patterns</a></h2>
+<p>By the way, although <strong>(.*)</strong> is adequate to capture the <strong>1000</strong> in <strong>You have 1000 XP</strong>, there is a better way.</p>
+<p>In regular expressions (patterns), <strong>\d</strong> means 'any digit', so <strong>\d+</strong> means 'any sequence of digits (but at least one of them)'. <strong>\d+</strong> will capture the numbers <strong>5</strong>, <strong>50</strong> and <strong>5000</strong>, but it won't capture a number written using any other characters, for example <strong>1,000,000</strong> or <strong>3.14</strong>.</p>
+<p>When you are capturing values like health points or movement points, you should probably use <strong>(\d+)</strong> instead of <strong>(.*)</strong>.</p>
+<pre><code>    ^You have (\d+)\/(\d+) HP, (\d+)\/(\d+) MP and (\d+)\/(\d+) SP\.
+</code></pre>
+<h2><a name="6.6">6.6 Configuring the Status task window</a></h2>
+<p>Now we'll discuss how to display that data in the Status task's window.</p>
+<ul>
+<li>In the main window, click <strong>Edit &gt; Edit current world</strong></li>
+<li>In the new edit window, click <strong>Status &gt; Page 2</strong></li>
+</ul>
+<p>The window can contain <em>any text you like</em>. For example, you could clear the contents of the box, and then insert this:</p>
+<pre><code>    Mary had a little lamb, its fleece was white as snow.
+</code></pre>
+<p>Click the <strong>Save</strong> button at the bottom of the window, then type <strong>;resettask status</strong>.</p>
+<p><img alt="A simple Status task window" src="img/tut06/status_task_1.png"></p>
+<p>Status task variables such as <strong>xp_current</strong> should be enclosed by the characters <strong>@...@</strong>, for example:</p>
+<pre><code>    @xp_current@
+    @health_points@
+    @health_points_max@
+</code></pre>
+<p>If you forget the <strong>@...@</strong> characters, then you will see the words <strong>xp_current</strong> themselves.</p>
+<p>The other variables used in the example above were <strong>energy_points</strong>, <strong>energy_points_max</strong>, <strong>social_points</strong>, <strong>social_points_max</strong>, <strong>qp_current</strong> and <strong>xp_next_level</strong>.</p>
+<p>You can use these variables in any order, accompanied by any text you like. For example:</p>
+<pre><code>    My current xp is @xp_current@.
+    I have @health_points@ HP.
+    My maximum HP are @health_points_max@.
+</code></pre>
+<p><img alt="A more complex Status task window" src="img/tut06/status_task_2.png"></p>
+<p>Most people will prefer to use less text, with several variables on the same line. Perhaps something like this:</p>
+<pre><code>    HP: @health_points@ / @health_points_max@
+    XP: @xp_current@, @xp_next_level@
+</code></pre>
+<h2><a name="6.7">6.7 Configuring main window gauges</a></h2>
+<p>We can also customise the coloured gauges at the bottom of the Status task window.</p>
+<ul>
+<li>In the main window, click <strong>Edit &gt; Edit current world</strong></li>
+<li>In the new edit window, click <strong>Status &gt; Page 3</strong></li>
+</ul>
+<p>Gauges are normally made up of two values, a 'current' and a 'maximum'. For example, let's create a gauge showing current and maximum health points:</p>
+<ul>
+<li>In the <strong>Variable</strong> box, select <strong>health points</strong></li>
+<li>In the <strong>Maximum var</strong> box, select <strong>health_points_max</strong></li>
+<li>In the other boxes, select any colours you like</li>
+<li>Click the <strong>Add</strong> button</li>
+<li>Click the <strong>Save</strong> button at the bottom of the window to apply your changes</li>
+<li>Reset the task (and the gauges) by typing <strong>;resettask status</strong></li>
+</ul>
+<h2><a name="6.8">6.8 Status task variables (1)</a></h2>
+<p>Axmud provides a number of Status task variables. Here's a quick summary of the most useful ones. In most cases, their meanings should be obvious.</p>
+<p>Don't forget that you can use these variables for <em>any purpose you like</em>. If your favourite world doesn't have magic points, but does have wibble points, then you could assign wibble points to magic points (if that's convenient for you.)</p>
+<p>First, your character's health points and so on.</p>
+<pre><code>    health_points, health_points_max
+    magic_points, magic_points_max
+    energy_points, energy_points_max
+    guild_points, guild_points_max
+    social_points, social_points_max
+</code></pre>
+<p>For XP, most worlds have a 'current' value. Some worlds also have a value representing 'additional XP needed for the next level' value, or a value representing 'total XP earned' value.</p>
+<p>There following variables display XP, quest points and so-called 'Other points (OP)', in case you need a third set of values that behave in the same way.</p>
+<pre><code>    xp_current, xp_next_level, xp_total
+    qp_current, qp_next_level, qp_total
+    op_current, op_next_level, op_total
+</code></pre>
+<p>Your character's level, age, number of lives and alignment (usually a word like 'good' or 'evil').</p>
+<pre><code>    level, age, life_count, life_max, alignment
+</code></pre>
+<p>Your character's wealth: the number of coins in their purse (or pockets), and their bank balance.</p>
+<pre><code>    purse_contents, bank_balance
+</code></pre>
+<p>Your character's so-called 'wimpy' setting. Typically, a setting of 20 will mean your character automatically runs away when their health points drop below 20%. </p>
+<p>There are two values, the 'remote' value is the one used by the game itself, and the 'local' value is used only by Axmud and its scripts. (Note that <strong>local_wimpy_max</strong> is a fixed value, always 100.)</p>
+<pre><code>    remote_wimpy, remote_wimpy_max
+    local_wimpy, local_wimpy_max
+</code></pre>
+<h2><a name="6.9">6.9 Status task variables (2)</a></h2>
+<p>The Status task variables listed above are not collected automatically - you must first design patterns to capture the data you want, then add those patterns to the current world profile, and then display the data in the task window and/or the gauges.</p>
+<p>The remainining Status task variables are generated by other tasks, or by the core Axmud code itself. For example, the Attack task, when running, will keep count of the number of fights your character has fought, the number of kills, and the number of times wimpy mode was engaged.</p>
+<pre><code>    fight_count, kill_count, wimpy_count, fight_defeat_count
+    interact_count, interact_success_count, interact_fail_count, 
+        interact_fight_count, interact_disaster_count
+    flee_count, escape_count
+    death_count, life_status
+</code></pre>
+<p>Several of these values can be combined into single strings, using these variables:</p>
+<pre><code>    fight_string, interact_string, coward_string
+</code></pre>
+<p>If available (at most worlds, they are not), you can capture details about the opponent you're fighting.</p>
+<pre><code>    opp_name, opp_level, opp_health, opp_health_max, opp_strength
+</code></pre>
+<p>(Note that you must design patterns so the Attack task can recognise these events; see <a href="tut08.html">Tutorial 8</a>).</p>
+<p>You can show the names of current profiles:</p>
+<pre><code>    world, guild, race, char
+</code></pre>
+<p>A summary of your character's affects and stats (which are configured in the same edit window, in the tabs <strong>Page 8</strong> and <strong>Page 9</strong>):</p>
+<pre><code>    affects, stats
+</code></pre>
+<p>An age unit (e.g. <strong>day</strong>) is stored in Page 11, it could be used next to the variable <strong>age</strong>.</p>
+<pre><code>    age_unit
+</code></pre>
+<p>The variable <strong>money_count</strong> combines <strong>purse_contents</strong> and <strong>bank_balance</strong> in a single value. The variable <strong>coward_count</strong> combines <strong>flee_count</strong> and <strong>escape_count</strong> in a single value.</p>
+<pre><code>    money_count, coward_count
+</code></pre>
+<p>You can display a list of tasks that are currently running, and whether the Status task is active, or not.</p>
+<pre><code>    task, task_active
+</code></pre>
+<p>You can show the (real) time, and how long you have been connected to the world.</p>
+<pre><code>    local_time, session_time
+</code></pre>
+<p>You can display the fictional and real time, according to the world.</p>
+<pre><code>    time, remote_time
+</code></pre>
+<p>The Status task can keep a temporary count of things that have happened: for example, the number of fights your character has had since lunchtime. The counts are reset by typing <strong>;resetcounter</strong>.</p>
+<p>The available Status task variables are:</p>
+<pre><code>    temp_fight_count, temp_kill_count, temp_wimpy_count, temp_fight_defeat_count
+    temp_interact_count, temp_interact_success_count, temp_interact_fail_count,
+        temp_interact_fight_count, temp_interact_disaster_count
+    temp_escape_count, temp_flee_count
+    temp_xp_count, temp_quest_count, temp_bank_count, temp_purse_count
+    temp_xp_average, temp_money_count, temp_timer
+    temp_fight_string, temp_interact_string, temp_coward_string
+</code></pre>
+<h2><a name="6.10">6.10 Custom variables</a></h2>
+<p>If you don't want to use one of the standard variables, then you can create as many custom variables as you like.</p>
+<ul>
+<li>In the main window, click <strong>Edit &gt; Edit current world</strong></li>
+<li>In the new edit window, click <strong>Status &gt; Page 6</strong></li>
+<li>Add a <strong>Pattern</strong> and <strong>Substring #</strong>, as described above</li>
+<li>In the drop-down box, make sure <strong>Use a custom variable</strong> is selected</li>
+<li>Enter a variable name that hasn't been used above, for example <strong>myvariable</strong></li>
+<li>Click the <strong>Add</strong> button</li>
+</ul>
+<p>Now you add the custom variable to the task window, as described above. Don't forget that it must be enclosed by <strong>@</strong> characters, e.g. <strong>@myvariable@</strong>.</p>
+<h2><a name="6.11">6.11 MSDP/MXP variables</a></h2>
+<p>Some worlds send information about the game directly to the client. This information is not visible in the main wnidow; it's up to each client to decide how to display it. Axmud uses the information to update the Status task window and the gauges at the bottom of the main window.</p>
+<p>The first step is to find out what kind of information is being received, if any.</p>
+<ul>
+<li>In the main window, click <strong>Edit &gt; Session preferences</strong></li>
+<li>In the new window, click <strong>MSDP &gt; Page 7</strong></li>
+<li>Some values may be listed in the <strong>Variable</strong> and <strong>Value</strong> columns</li>
+<li>Now click the <strong>MXP</strong> tab</li>
+<li>Some values may be listed in the <strong>Entity name</strong> and <strong>Value</strong> columns</li>
+</ul>
+<p>If data is available, you can tell the Status task to use it. For example, to use MXP data:</p>
+<ul>
+<li>In the main window, click <strong>Edit &gt; Edit current world</strong></li>
+<li>In the new edit window, click <strong>Status &gt; Page 5</strong></li>
+<li>In the <strong>MXP entity</strong> box, enter the entity name</li>
+<li>In the <strong>Status task variable</strong> box, enter a 'standard' variable like <strong>health_points_max</strong> or a custom variable like <strong>myvariable</strong></li>
+<li>Click the <strong>Add</strong> button</li>
+</ul>
+<p>You can now update the Status task window and/or the gauges in the normal way.</p>
+<h2><a name="6.12">6.12 Bar patterns</a></h2>
+<p>A few worlds display your character's health points not as a number, but as a bar of characters. For example, the lines below might represent maximum health points and 20% health points, respectively.</p>
+<pre><code>    HP: ==========
+    HP: ==
+</code></pre>
+<p>This is how to configure the Status task to capture that data. As always, we'll need a pattern that matches the lines. The pattern should not include the <strong>=</strong> characters themselves, because otherwise it won't match a line like this, in which your character has almost no health points:</p>
+<pre><code>    HP:
+</code></pre>
+<p>Here is a suitable pattern containing a single group. The group should match all of the <strong>=</strong> characters.</p>
+<pre><code>    ^HP: (.*)
+</code></pre>
+<p>Now we can add this pattern:</p>
+<ul>
+<li>In the main window, click <strong>Edit &gt; Edit current world</strong></li>
+<li>In the new edit window, click <strong>Status &gt; Page 7</strong></li>
+<li>In the <strong>Pattern</strong> box, enter a pattern like the one above</li>
+<li>In the <strong>Unit</strong> box, enter the <strong>=</strong> character</li>
+<li>In the <strong>Max units</strong> box, enter the number <strong>10</strong> (or however many <strong>=</strong> characters represent the maximum)</li>
+<li>In the <strong>Data type</strong> box, select <strong>health</strong></li>
+<li>Click the <strong>Add</strong> button</li>
+<li>Click the <strong>Save</strong> button at the bottom of the window to apply your changes</li>
+<li>Reset the task (and the gauges) by typing <strong>;resettask status</strong></li>
+</ul>
+<p>Note that, in this case, the <strong>Data type</strong> box only includes a few Status task variables; you can't use any of the others (or a custom variable.)</p>
+<h2><a name="6.13">6.13 Life and death</a></h2>
+<p>When configuring a world, the final step is usually to detect when your character has died, fallen asleep or passed out. When these events are detected, the background colour of the Status task window changes (just in case your attention is elsewhere).</p>
+<p>This should be quite simple. Just design some patterns that match lines like <strong>YOU ARE DEAD!</strong>, and add them to the current world profile.</p>
+<ul>
+<li>In the main window, click <strong>Edit &gt; Edit current world</strong></li>
+<li>In the new edit window, click <strong>Status &gt; Page 12 / 13 / 14</strong></li>
+<li>Enter the pattern(s)</li>
+<li>Click the <strong>Save</strong> button at the bottom of the window to apply your changes</li>
+</ul>
+<hr>
+<p><a href="tut05.html">Previous</a> <a href="index.html">Index</a> <a href="tut07.html">Next</a></p>
+
+</body>
+</html>

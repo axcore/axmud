@@ -2,7 +2,7 @@ RANDOMIZE
 
    Synopsis:
       Pseudo-statement for compatibility
-      
+
    Notes:
       In older dialects of BASIC, a script produced the same sequence of random
          numbers whenever it was run, unless the script included a RANDOMIZE

@@ -4,5 +4,5 @@ Scriptname$ ()
       Returns the script's name
 
    Examples:
-      If the script was loaded from a file called 'wumpus.bas', the value 
+      If the script was loaded from a file called 'wumpus.bas', the value
          returned is "wumpus".

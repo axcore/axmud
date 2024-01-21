@@ -7,7 +7,7 @@ td, th { border: 1px solid #c3c3c3; padding: 0 3px 0 3px; }
 table { border-collapse: collapse; }
 img { max-width: 100%; }
 </style>
-<meta name="generator" content="ReText 7.1.0">
+<meta name="generator" content="ReText 7.2.3">
 <title>ch07</title>
 <style type="text/css">
 </style>
@@ -63,11 +63,12 @@ img { max-width: 100%; }
 </ul>
 </li>
 <li><a href="#7.6">7.6 Active and inactive interfaces</a></li>
+<li><a href="#7.7">7.7 Exporting/importing interfaces</a></li>
 </ul>
 <hr>
 <p>The quickest way to create a trigger, alias, macro, timer or hook is from the main window menu.</p>
 <h2><a name="7.1">7.1 Triggers</a></h2>
-<p>We'll start with triggers. Click on <strong>Edit &gt; World triggers</strong> and this window will appear.</p>
+<p>We'll start with triggers. Click on <strong>Interfaces &gt; Triggers &gt; World triggers</strong> and this window will appear.</p>
 <p><img alt="Edit triggers window" src="img/ch07/edit_triggers.png"></p>
 <p>All interfaces have a <em>stimulus</em> and a <em>response</em>.</p>
 <p>A trigger uses a pattern as a stimulus. When Axmud receives a line of text that matches the pattern, we say that the trigger <em>fires</em>. After the trigger fires, it can send a world command in response.</p>
@@ -142,7 +143,7 @@ img { max-width: 100%; }
 <p>You can also apply italics, strikethrough, blinking text and underlines (underscores). If you apply the <strong>link</strong> style, the text will be a clickable link which Axmud will try to open in a web browser.</p>
 <p>Axmud triggers have a <em>stimulus</em> and a <em>response</em>. If you just want to apply the style and do nothing else, you can tell Axmud to ignore this trigger's response.</p>
 <ul>
-<li>From the main window menu, click <strong>Edit &gt; World triggers</strong></li>
+<li>From the main window menu, click <strong>Interfaces &gt; Triggers &gt; World triggers</strong></li>
 <li>In the <strong>Trigger stimulus</strong> box, enter <strong>The orc drops its treasure</strong></li>
 <li>In the <strong>Trigger response</strong> box, enter anything you like<ul>
 <li>There must be a response, even though it's ignored</li>
@@ -160,7 +161,7 @@ img { max-width: 100%; }
 <p>For rewriter triggers, the text matching the pattern is <em>substituted</em> for the text of the response.</p>
 <p>Rewriter triggers are often used to filter out coarse and injudicious language, so we'll use that as an example.</p>
 <ul>
-<li>From the main window menu, click <strong>Edit &gt; World triggers</strong></li>
+<li>From the main window menu, click <strong>Interfaces &gt; Triggers &gt; World triggers</strong></li>
 <li>In the <strong>Trigger stimulus</strong> box, enter a rude word as a pattern</li>
 <li>In the <strong>Trigger response</strong> box, enter the text <strong>****</strong></li>
 <li>In the <strong>Name</strong> box, enter the name <strong>sweartrigger</strong></li>
@@ -247,7 +248,7 @@ img { max-width: 100%; }
 <h3><a name="7.1.8">7.1.8 Simple splitter triggers</a></h3>
 <p>All triggers have a <em>stimulus</em> and a <em>response</em>. For splitter triggers, both of these are patterns. The simplest splitter triggers use the same pattern for both.</p>
 <ul>
-<li>From the main window menu, click <strong>Edit &gt; World triggers</strong></li>
+<li>From the main window menu, click <strong>Interfaces &gt; Triggers &gt; World triggers</strong></li>
 <li>In the <strong>Trigger stimulus</strong> box, enter <strong>You see a single exit leading</strong></li>
 <li>In the <strong>Trigger response</strong> box, enter the same pattern again</li>
 <li>In the <strong>Name</strong> box, enter the name <strong>exittrigger</strong></li>
@@ -336,7 +337,7 @@ img { max-width: 100%; }
 <p>Like all interfaces, Axmud aliases have a <em>stimulus</em> and a <em>response</em>.  The stimulus is a pattern. When you type a world command that matches the pattern, we say that the alias <em>fires</em>.</p>
 <p>The response is some text. When the alias fires, the response is <em>substituted</em> for part of the original command (or replaces all of it).</p>
 <ul>
-<li>From the main window menu, click <strong>Edit &gt; World aliases</strong></li>
+<li>From the main window menu, click <strong>Interfaces &gt; Aliases &gt; World aliases</strong></li>
 <li>In the <strong>Alias stimulus</strong> box, enter the pattern <strong>arc</strong></li>
 <li>In the <strong>Alias response</strong> box, enter the text <strong>amazing red crown</strong></li>
 <li>In the <strong>Name</strong> box, enter the name <strong>myalias</strong><ul>
@@ -449,7 +450,7 @@ img { max-width: 100%; }
 <p>Note that, for technical reasons, Axmud cannot use SHIFT or ALT-GR in macros (although ALT + SHIFT + some other key is acceptable). Therefore, if you try to add a macro that fires when you press SHIFT + F1, it won't work.</p>
 <h3><a name="7.3.2">7.3.2 Adding macros</a></h3>
 <ul>
-<li>From the main window menu, click <strong>Edit &gt; World macros</strong></li>
+<li>From the main window menu, click <strong>Interfaces &gt; Macros &gt; World macros</strong></li>
 <li>In the <strong>Macro stimulus</strong> box, enter the keycode <strong>f1</strong><ul>
 <li>Axmud standard keycodes are always in lower-case characters</li>
 </ul>
@@ -478,7 +479,7 @@ img { max-width: 100%; }
 <h3><a name="7.4.1">7.4.1 Adding timers</a></h3>
 <p>Let's create a timer which will <em>fire</em> every 60 seconds, and which sends the world command <strong>score</strong> each time it fires.</p>
 <ul>
-<li>From the main window menu, click <strong>Edit &gt; World timers</strong></li>
+<li>From the main window menu, click <strong>Interfaces &gt; Timers &gt; World timers</strong></li>
 <li>In the <strong>Timer stimulus</strong> box, enter the time interval <strong>60</strong></li>
 <li>In the <strong>Timer response</strong> box, enter the command <strong>score</strong></li>
 <li>In the <strong>Name</strong> box, enter the name <strong>mytimer</strong></li>
@@ -568,7 +569,7 @@ img { max-width: 100%; }
 </code></pre>
 <p>Now you can create the hook.</p>
 <ul>
-<li>From the main window menu, click <strong>Edit &gt; World hooks</strong></li>
+<li>From the main window menu, click <strong>Interfaces &gt; Hooks &gt; World hooks</strong></li>
 <li>In the <strong>Hook stimulus</strong> combo (drop-down) box, select <strong>send_cmd</strong><ul>
 <li>Don't select <strong>sending_cmd</strong> by mistake!</li>
 </ul>
@@ -600,7 +601,7 @@ img { max-width: 100%; }
 <p>The mini-programme's job is to convert the hook data - a string of text - into a modified string of text. The modified string is the programme's 'return value'. The return value is sent as a world command.</p>
 <p>Now you're ready to create the hook.</p>
 <ul>
-<li>From the main window menu, click <strong>Edit &gt; World hooks</strong></li>
+<li>From the main window menu, click <strong>Interfaces &gt; Hooks &gt; World hooks</strong></li>
 <li>In the <strong>Hook stimulus</strong> combo (drop-down) box, select <strong>sending_cmd</strong><ul>
 <li>Don't select <strong>send_cmd</strong> by mistake!</li>
 </ul>
@@ -627,19 +628,35 @@ img { max-width: 100%; }
 </code></pre>
 <h2><a name="7.6">7.6 Active and inactive interfaces</a></h2>
 <p>As explained in detail in <a href="ch05.html">Section 5</a>, Axmud interfaces (trigger, aliases, macros, timers and hooks) are either <em>active</em> or <em>inactive</em>.</p>
-<p>You can create several triggers called <strong>mytrigger</strong>, each belonging to a different profile, but only one of them is active (actually in use). The others are inactive.</p>
+<p>You can create several triggers called <strong>mytrigger</strong>, each belonging to a different profile, but only one of them is <em>active</em> (actually in use). The others are <em>inactive</em>.</p>
 <p>Actually, when an interface becomes active, Axmud makes a copy of it. The copy, not the original, is the <em>active</em> interface.</p>
-<p>You can see a current list of active interfaces from the main window menu (click on <strong>Edit &gt; Active interfaces</strong>). If the Status task is running, the list will look like this:</p>
+<p>You can see a current list of active interfaces from the main window menu (click on <strong>Interfaces &gt; Active interfaces</strong>). If the Status task is running, the list will look like this:</p>
 <p><img alt="Status task interfaces" src="img/ch07/status_interfaces.png"></p>
 <p>There is one more important thing to explain.</p>
 <p>If you modify the original (inactive interface), the corresponding copy (active interface) is automatically updated.</p>
 <ul>
-<li>From the main window menu, click on <strong>Edit &gt; World triggers</strong></li>
+<li>From the main window menu, click on <strong>Interfaces &gt; Triggers &gt; World triggers</strong></li>
 <li>Enable (or disable) one of the triggers you created earlier</li>
-<li>Now, from the main window menu, click on <strong>Edit &gt; Active interfaces</strong></li>
+<li>Now, from the main window menu, click on <strong>Interfaces &gt; Active interfaces</strong></li>
 <li>Find the corresponding trigger in the list. It will also be enabled (or disabled)</li>
 </ul>
 <p>However, if you modify the copy (the active interface), <em>no changes are made to the original</em> (the inactive interface). Any changes are therefore <em>temporary</em> and will disappear at the end of the session.</p>
+<h2><a name="7.7">7.7 Exporting/importing interfaces</a></h2>
+<p>Everyone reading his guide will be familiar with copying and pasting.</p>
+<p>In a text editor, you can highlight some text and press CTRL + C, before pressing CTRL + V to copy it to somewhere else. In between, the text is stored in some secret place in the computer's memory.</p>
+<p>Axmud interfaces can also be copied from one profile to another, or even from one world to another. Axmud has a not-so secret <em>clipboard</em> which stores the interfaces waiting to be copied. This single clipboard is available to any session that's open at the moment.</p>
+<p>Instead of copying and pasting, we talk about <em>exporting</em> to the clipboard and <em>importing</em> from it.</p>
+<ul>
+<li>Connect to two worlds (in online or offline mode)</li>
+<li>Click on the first world's tab, to make it visible</li>
+<li>From the main window menu, click on <strong>Interfaces &gt; Triggers &gt; World triggers</strong></li>
+<li>Create a trigger with a memorable name</li>
+<li>Click on the trigger to select it, then click the <strong>Export</strong> button</li>
+<li>Now click the second world's tab to make it visible</li>
+<li>From the main window menu, click on <strong>Interfaces &gt; Triggers &gt; World triggers</strong></li>
+<li>Click the <strong>Import button</strong></li>
+<li>The second world receives a copy of the first world's trigger</li>
+</ul>
 <hr>
 <p><a href="ch06.html">Previous</a> <a href="index.html">Index</a> <a href="ch08.html">Next</a></p>
 

@@ -1,24 +1,24 @@
 acs / addcolourscheme         Adds a colour scheme
- 
+
    Format:
       ;acs <name>             Adds a colour scheme with default settings
       ;acs <name> <switches>  Adds a colour scheme with custom settings
- 
+
    Notes:
       A textview is a scrolling area of a window where text is displayed. A
          colour scheme determines the colours and font used in the textview.
       Axmud provides a standard set of colour schemes, one for each window type.
-         These colour schemes can be modified (with ';modifycolourscheme'), but 
+         These colour schemes can be modified (with ';modifycolourscheme'), but
          not deleted (with ';deletecolourscheme').
       You can also create your own colour schemes using this command. The colour
-         schemes used in windows normally depends on the winmap, so you should 
+         schemes used in windows normally depends on the winmap, so you should
          see the help for ';addwinmap' too.
-  
+
       The colour scheme's <name> must be no longer than 16 characters, contain
          only A-Z, a-z, underlines and 0-9 (not the first character) and not be
          one of Axmud's reserved names (see the ';listreserved' command).
          Non-Latin alphabets are acceptable.
-      <switches> are optional, and can be any of the following switch options, 
+      <switches> are optional, and can be any of the following switch options,
          in any order:
 
          -t <text>        - Sets the text colour, must be an Axmud colour tag
@@ -51,6 +51,6 @@ acs / addcolourscheme         Adds a colour scheme
       The <underlay> colour, if specified, is ignored by task windows which
          operate in so-called monochrome mode, such as the Status and Divert
          tasks (but not the Locator task.)
-         
+
    User commands:
       acs / addscheme / addcolorscheme / addcolourscheme

@@ -1,20 +1,20 @@
 apl / applycolourscheme       Applies a colour scheme to 'internal' windows
- 
+
    Format:
       ;apl <name>             Applies a colour scheme <name>
       ;apl <name> <switches>  Applies the colour scheme to certain windows
- 
+
    Notes:
       A textview is a scrolling area of a window where text is displayed. A
          colour scheme determines the colours and font used in the textview.
       The colour scheme used in windows normally depends on the winmap (see the
-         help for ';addwinmap'). The winmap is applied when a window is created, 
-         but then ignored. If you modify an existing colour scheme, the changes 
+         help for ';addwinmap'). The winmap is applied when a window is created,
+         but then ignored. If you modify an existing colour scheme, the changes
          won't be applied to all windows automatically.
 
       You can use this command to apply a colour scheme to 'internal' windows,
          replacing the colour scheme they're currently using. ('Internal'
-         windows include 'main' windows, all 'protocol' windows such as those 
+         windows include 'main' windows, all 'protocol' windows such as those
          created by MXP and all 'custom' windows such as task windows).
       Other types of window are not affected by this command. In addition, some
          'internal' windows (such as the Status task window) operate in
@@ -23,18 +23,18 @@ apl / applycolourscheme       Applies a colour scheme to 'internal' windows
          modified, use the ';updatecolourscheme' command.
 
       If specified, <switches> consists of one or more switch options:
-  
+
          -m             - Apply to 'main' windows
          -p             - Apply to 'protocol' windows
          -c             - Apply to 'custom' windows
-         -s             - Apply to this session's 'internal' windows 
+         -s             - Apply to this session's 'internal' windows
          -w <number>    - Apply to 'grid' window <number>
 
       If you don't specify any <switches>, the colour scheme is applied to all
          'internal' windows.
-      The confirmation messages shows how many windows were potentially 
-         affected. This number depends on how many windows existed and which 
-         <switches> were specified; it doesn't show how many textviews had their 
+      The confirmation messages shows how many windows were potentially
+         affected. This number depends on how many windows existed and which
+         <switches> were specified; it doesn't show how many textviews had their
          colours/fonts updated.
 
    User commands:

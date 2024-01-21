@@ -1,19 +1,19 @@
 submit / chatsubmit           Allows chat contacts to send remote commands
- 
+
    Format:
       ;submit -n <name>       Allows commands from chat contacts called <name>
       ;submit -g <group>      Allows commands from everyone in the <group>
       ;submit                 Allows commands from everyone
- 
+
    Notes:
       The Chat task is used to chat with other players directly via telnet.
          Calls can be placed (or accepted) with any user whose MUD client uses
          the zChat or MudMaster protocols.
       This command is the equivalent of typing ';submit' in the relevant Chat
          task windows. Note that remote commands can only be sent in chat
-         sessions using the zChat protocol. You'll get an error message if you 
+         sessions using the zChat protocol. You'll get an error message if you
          try to send them in a MudMaster session.
       The switches -n and -g can't be combined.
- 
+
    User commands:
       submit / chatsubmit

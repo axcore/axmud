@@ -1,17 +1,17 @@
 mssp / mssp                   Shows MSSP data collected from the current world
- 
+
    Format:
       ;mssp                   Shows collected data
       ;mssp -e                Empties collected data
 
    Notes:
-      Some MUDs use protocols to exchange (negotiate) information which the 
-         client that can be used to improve the gaming experience. Axmud 
-         supports several protocols, including MSSP (Mud Server Status 
+      Some MUDs use protocols to exchange (negotiate) information which the
+         client that can be used to improve the gaming experience. Axmud
+         supports several protocols, including MSSP (Mud Server Status
          Protocol).
       MSSP sends information about the world's status, such as how many players
          are currently connected. This data is also available for your scripts
          and can be viewed with this command.
- 
+
    User commands:
       mssp

@@ -1,8 +1,8 @@
 dlw / deleteword              Deletes words or terms from the current dictionary
- 
+
    Format:
       ;dlw <switches>         Deletes words or terms
- 
+
    Notes:
       Dictionaries help Axmud to interpret the text it receives from the world.
       An Axmud dictionary stores groups of words. It contains a group of weapon
@@ -13,20 +13,20 @@ dlw / deleteword              Deletes words or terms from the current dictionary
 
       This command deletes words and terms from the current dictionary.
         <switches> should be one or more of the following switch options:
- 
-      -g <guild>         - Deletes a guild word (e.g. 'assassin')      
+
+      -g <guild>         - Deletes a guild word (e.g. 'assassin')
       -r <race>          - Deletes a race (species) word (e.g. 'orc')
       -w <weapon>        - Deletes a weapon word (e.g. 'club')
       -a <armour>        - Deletes a armour word (e.g. 'helmet')
       -e <garment>       - Deletes a garment word (e.g. 'jacket')
       -s <being>         - Deletes a sentient being word (e.g. 'guard')
       -k <creature>      - Deletes a creature word (e.g. 'tiger')
- 
+
       -p <portable>      - Deletes a portable word (e.g. 'bucket')
       -d <decoration>    - Deletes a decoration word (e.g. 'fence')
       -l <plural>        - Deletes a plural word (e.g. 'stadia')
       -x <pseudo_noun>   - Deletes a pseudo-noun (e.g. 'remains of a corpse')
- 
+
       -j <adjective>     - Deletes an adjective word (e.g. 'big')
       -c <declined_form> - Deletes a declined adjective (e.g. 'vieille')
                               (not used in English dictionaries)
@@ -35,7 +35,7 @@ dlw / deleteword              Deletes words or terms from the current dictionary
                               (e.g. 'He-man, Master of the Universe')
       -i <ignore_word>   - Deletes a word that's not a noun or adjective
                               (e.g. 'in', 'on', 'quickly', 'the')
- 
+
       -n <number_word>   - Deletes a number word (e.g. 'a dozen')
       -b <time_of_day>   - Deletes a time of day (e.g. 'in the morning')
       -f <hour>          - Deletes a clock hour phrase (e.g. 'twelve')
@@ -45,10 +45,10 @@ dlw / deleteword              Deletes words or terms from the current dictionary
          like 'quite stupendously big' - should be enclosed with diamond
          brackets <...>
       Switch options can be combined in a single command:
-      
+
          e.g. ';deleteword -r orc -r troll -w sword -k butterfly'
-         
+
       Standard time words (added with ';addword -t <...>') cannot be deleted.
- 
+
    User commands:
       dlw / delword / deleteword

@@ -1,0 +1,20 @@
+qm / quickmacro               Creates a macro using the previous command
+
+   Format:
+      ;qm <keycode>           Creates a macro
+
+   Notes:
+      Macros are one of five types of Axmud interface (the others being
+         triggers, aliases, timers and hooks).
+      Macros allow you to specify instructions to be executed automatically when
+         a certain key (or combination of keys) is pressed.
+
+      This command behaves much like the ';addmacro' command, remembering
+         whichever command you typed just before this one.
+      You only need to specify which combination of keys causes the macro to
+         'fire', executing that same command again.
+      See the help ';addmacro', which gives some examples of a valid <keycode>,
+         such as 'f5' or 'shift up'.
+
+   User commands:
+      qm / qmacro / quickmacro

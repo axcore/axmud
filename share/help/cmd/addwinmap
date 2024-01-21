@@ -1,50 +1,50 @@
 awm / addwinmap               Adds a new winmap
- 
+
    Format:
       ;awm <name>             Adds a new winmap
- 
+
    Notes:
-      Winmaps are a plan for arranging the layout of 'internal' windows 
-         (consisting of all 'main' windows, 'protocol' windows such as those 
+      Winmaps are a plan for arranging the layout of 'internal' windows
+         (consisting of all 'main' windows, 'protocol' windows such as those
          created by MXP, and 'custom' windows such as task windows).
       The winmap consists of two parts: a list of strip objects, and a list of
          table objects.
 
       Strip objects are areas of the window such as the menu bar, the toolbar,
-         the command entry box and so on, arranged in strips, one above the 
-         other (by default). 
-      'main' windows have a familiar layout, but in fact this layout can be 
+         the command entry box and so on, arranged in strips, one above the
+         other (by default).
+      'main' windows have a familiar layout, but in fact this layout can be
          changed: each strip can be moved up, or down; new strips can be added
          and other strips can be removed.
 
-      In most cases, the largest strip is the one in the middle; in 'main' 
+      In most cases, the largest strip is the one in the middle; in 'main'
          windows it's where text received from the world is displayed; in the
          'Compass' task it's the only strip, and it's where all the buttons are
          arranged.
-      The contents of this strip can be modified. For example, in 'main' 
-         windows, the strip can contain several areas for displaying text 
+      The contents of this strip can be modified. For example, in 'main'
+         windows, the strip can contain several areas for displaying text
          (called 'panes'), instead of just one.
       Each area of this strip is handled by a table object. Table objects are
          arranged on a table (usually a 60x60 grid). Each table object handles a
          single button, or a single pane, and so on.
 
-      When windows are arranged on a workspace grid (see the help for 
-         ';activategrid'), they are arranged according to a plan called a 
+      When windows are arranged on a workspace grid (see the help for
+         ';activategrid'), they are arranged according to a plan called a
          zonemap (see the help for ';addzonemap'). Zones within the zonemap are
          able to specify which winmaps should be used for windows opened in that
-         zone. If not, you can use the ';setdefaultwinmap' command to set a 
-         default winmap for 'main' windows and other 'internal' windows. 
+         zone. If not, you can use the ';setdefaultwinmap' command to set a
+         default winmap for 'main' windows and other 'internal' windows.
 
       Axmud provides a number of standard winmaps which can't be modified or
          deleted. (This guarantees, for example, that task windows which want a
          uniform layout can have one).
-      You can use this command to create new winmaps. <name> must be no longer 
-         than 16 characters, and contain only A-Z, a-z, underlines and 0-9 (not 
+      You can use this command to create new winmaps. <name> must be no longer
+         than 16 characters, and contain only A-Z, a-z, underlines and 0-9 (not
          the first character). Non-Latin alphabets are acceptable.
       Use the ';modifywinmap' command to modify the winmap's strip objects. (See
          also the help for ';clonewinmap').
       Use the ';addwinzone', ';modifywinzone' and ';resetwinmap' commands to
          modify the winmap's table objects.
- 
+
    User commands:
       awm / addwm / addwinmap

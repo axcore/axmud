@@ -1,12 +1,12 @@
 izmp / inputzmp               Sends pre-formatted text via ZMP
- 
+
    Format:
       ;izmp <line> <line>...  Sends multi-line world command
-      
+
    Notes:
-      The world can use the ZMP protocol to send extra information about the 
-         game state (see the help for ';zmp'). 
-      The client can also use ZMP to send information back to the world, 
+      The world can use the ZMP protocol to send extra information about the
+         game state (see the help for ';zmp').
+      The client can also use ZMP to send information back to the world,
          typically to request more data.
 
       This client command uses the ZMP 'zmp.input' command, which is intended
@@ -23,8 +23,8 @@ izmp / inputzmp               Sends pre-formatted text via ZMP
          ;izmp Hello world
 
       This command sends a single line a ZMP command:
-         
+
          ;izmp <Hello world>
-        
+
    User commands:
       izmp / inputzmp

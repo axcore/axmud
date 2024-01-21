@@ -1,0 +1,278 @@
+[Previous](tut07.html) [Index](index.html)
+
+---
+
+#Tutorial 8: Pre-Configured Worlds 4: Miscellaneous configuration
+
+####Table of Contents
+
+* [8.1 Introduction](#8.1)
+* [8.2 Automatic logins](#8.2)
+* [8.2.1 LP/Diku/AberMUD/TinyMUD/telnet logins](#8.2.1)
+* [8.2.2 Logins with a sequence of world commands](#8.2.2)
+* [8.2.3 Logins with Axbasic scripts](#8.2.3)
+* [8.2.4 Logins with missions](#8.2.4)
+* [8.2.5 Advanced login missions](#8.2.5)
+* [8.3 Configuring the Attack task](#8.3)
+* [8.4 Recognising prompts](#8.4)
+* [8.5 Getting and dropping, buying and selling](#8.5)
+* [8.6 The Divert and Channels tasks](#8.6)
+
+---
+
+##<a name="8.1">8.1 Introduction</a>
+
+This is the final part of a four-part tutorial, showing you how Axmud's pre-configured worlds were created. In this part we'll cover a number of things, some of which will be useful at your favourite worlds, and some of which won't. As always, you can configure the things you want, and ignore everything else.
+
+##<a name="8.2">8.2 Automatic logins</a>
+
+If you don't want to remember all your passwords, and don't want to type them every time you connect to a world, then automatic logins are for you!
+
+Most people set their characters and passwords before connecting, when the **Connections** window is open. If not, you can add them directly:
+
+* In the main window, click **Edit > Edit current world**
+* In the new edit window, click **Settings > Page 8**
+* Click a character's name to select it
+* Click the **Edit password** button, and set the new password
+
+If the character isn't visible there, you can create it in the normal way (for example, with the **;addcharacter** command).
+
+There a number of different types of automatic login covering all possible situations.
+
+* In the main window, click **Edit > Edit current world**
+* In the new edit window, click **Settings > Page 4**
+* Choose one of the options in the list
+* Some of the options are covered in more detail below
+
+##<a name="8.2.1">8.2.1 LP/Diku/AberMUD/TinyMUD/telnet logins</a>
+
+The most common login is the one favoured by **LP**, Diku and AberMUD worlds. The server will send you some text, followed by two prompts. At the first prompt, Axmud sends the character's name. At the second prompt, it sends the password.
+
+Note that Axmud doesn't examine the text of the prompts themselves; any prompt wll do.
+
+On the other hand, if you choose the **telnet** option, Axmud *will* examine the text of the prompts, expecting the first one to be **login:** and the second to be **password:**.
+
+**Tiny**MUD-style logins send a single prompt, and expect you to send a single command in the form **connect <NAME\> <PASSWORD\>**. In the **Page 5** tab you can specify a pattern that matches a line sent when the world is ready to receive this command.
+
+For all of these options, on **Page 5** you should specify a pattern that matches a line like **You have connected!**, signifying success. When a matching line is received, Axmud marks the character as logged in.
+
+##<a name="8.2.2">8.2.2 Logins with a sequence of world commands</a>
+
+The **world_cmd** option might be useful for a public server that doesn't require passwords. When Axmud receives the first prompt, it sends back one or more commands. For example, it might be possible to 'log in' with the character name **guest** and password **guest**, in which case you would add these commands to the box in **Page 5**
+
+        guest
+        guest
+
+Alternatively, you might want to automatically navigate through several menus to reach your favourite one, in which you could just send the numbers of the successive menu items:
+
+        1
+        2
+        5
+
+You *could* send a real name and password this way, if you really wanted to, but that is only feasible if you have a single character at the world.
+
+        gandalf
+        mysecretpassword
+
+##<a name="8.2.3">8.2.3 Logins with Axbasic scripts</a>
+
+The **script** (and **script_task**) options execute an Axbasic script which handles the login. (The **task** option executes an Axbasic task; writing your own tasks is outside the scope of this Section.)
+
+On **Page 5** you can specify the *name* of the Axbasic script to run. 
+
+If you haven't already, you should read the Axbasic tutorial, which will teach you everything you need to know about programming in Axbasic. A good login script should contain the LOGIN statement just before the END.
+
+        REM My login script
+
+        PEEK name$ = "char.current.name"
+        PEEKSHOW pass$ = "world.current.passwordHash", name$
+
+        WAITTRIG "What is your name"
+        SEND name$
+        WAITTRIG "What is your password"
+        SEND pass$
+        WAITTRIG "You have connected"
+        LOGIN
+        END
+
+##<a name="8.2.4">8.2.4 Logins with missions</a>
+
+Missions are extremely simple scripts that require no programming knowledge. They are described in [Section 9](ch09.html)
+
+Missions are useful at worlds where logging in is more complicated than typing a password. Some worlds, for example, might want you to navigate a series of menus.
+
+Here is a simpler example from *Aardwolf*, that asks you to type a name and password, and then press RETURN separately (for the third time).
+
+        t What be thy name, adventurer
+        n       
+        t Password
+        w
+        t Press Return to continue
+        > x
+        ;login
+
+To create such a mission, first think of a suitable name. Missions are available in all worlds, so the name should probably include the name of the world.
+
+* Type **;addmission deathmud_login**
+* Type **;editmission deathmud_login**
+* In the new edit window, click the **Contents** tab
+* Enter the text above
+* Press the **OK** button to apply your changes
+
+Taking each line in sequence:
+
+* Line 1: Creates a trigger matching the line **What be thy name, adventurer**, and then waits for the trigger to fire
+* Line 2: Sends the current character's name
+* Line 3: Creates a trigger matching the line **Password**, and then waits for the trigger to fire
+* Line 4: Sends the current character's password
+* Line 5: Creates a trigger matching the line **Press Return to continue**, and then waits for the trigger to fire
+* Line 6: Missions can't send an empty command to a world, but luckily *DeathMUD* will accept any command, so we just send the command **x**
+* Line 7: Tells Axmud to mark the character as logged in
+
+When you have finished, set up automatic logins to use this mission.
+
+* In the main window, click **Edit > Edit current world**
+* In the new edit window, click **Settings > Page 4**
+* Select the option **mission**
+* Now open the tab **Page 5**
+* In the **Task/script/mission to start** box, enter the name of the mission, **deathmud_login**
+* Click **OK** to apply your changes
+
+##<a name="8.2.5">8.2.5 Advanced login missions</a>
+
+Axmud can easily handle the situation imagined above, in which the player must login by navigating a sequence of menus. Consider this example, in which the player must choose a character by typing a number:
+
+        Choose a character
+        1. Gandalf
+        2. Bilbo
+        3. Sauron 
+
+These three lines would all match the following pattern. The pattern has a single group which matches the number (1, 2 or 3). The sequence **\w+**, if you didn't know, means 'one or more letters', so it would match **Gandalf**, **Bilbo** and **Sauron**.
+
+        ^(\d+)\. \w+
+
+Now, while the mission is running, Axmud looks for lines containing the current character's name and which *also* match the pattern. Let's add that check now.
+
+* In the main window, click **Edit > Edit current world**
+* In the new edit window, click **Settings > Page 6**
+* In the **Pattern** box, add the pattern **^(\d+)\. \w+**
+* In the **Substring #** box, add the group number. In this case there is only one group, so add **1**
+* In the **World command** box, add the world command to send in response.
+
+In most cases, the world command to send is just the number, in which case you should add **$1**. You probably already know that the sequence **$1** means 'the part of the line that matches the first group', which in this case is the number 1, 2 or 3.
+
+If you were required to send a command like **select 1**, then the world command would be **select $1**. For the second or third menu item, you could use **$2** or **select $3**.
+
+Now we can write the login mission itself. Let's assume that the player must enter their account name and their account password, then choose one of their registered characters from a list. Here is the mission that does that.
+
+        t Your account
+        a
+        t Password
+        w
+        t Welcome back to DeathMUD
+        ;login
+
+Taking each line in sequence:
+
+* Line 1: Creates a trigger matching the line **Your account**, and then waits for the trigger to fire
+* Line 2: Sends the current character's account name
+* Line 3: Creates a trigger matching the line **Password**, and then waits for the trigger to fire
+* Line 4: Sends the current character's password
+* Line 5: Creates a trigger matching the line **Welcome back to DeathMUD**, and then waits for the trigger to fire
+* Line 6: Tells Axmud to mark the character as logged in
+
+Now, while we are waiting for the **Welcome back** trigger to fire, Axmud is navigating the menu as described above, finding the correct character and sending the corresponding command. As soon as the world receives the choice, it sends us the **Welcome back** line, the trigger fires, and the mission can complete itself.
+
+##<a name="8.3">8.3 Configuring the Attack task</a>
+
+The Attack task, when running, keeps track of your character's fights and interactions, updating the values stored in the current character profile. These values are often visible in the Status task window.
+
+In Axmud terminology, a *fight* is a fight to the death. An *interaction* is some other kind of confrontation. Imagine, for example, a world where peace-loving bards gain experience not by fighting their victims, but by singing to them. These interactions can have a successful conclusion or can end in failure (just like a fight to the death).
+
+* In the main window, click **Edit > Edit current world**
+* See the **Attack**, **Fight** and **Interaction** tabs
+
+These tabs specify patterns a large number of patterns. Most of the patterns don't do anything until you write a script. For example, the **Fight > Page 1** tab specifies patterns that match a line such as **You attack the troll!** occuring at the start of a fight. It would be possible to write a script that uses all the patterns in this tab, creating a trigger for each one.
+
+A few of the tabs specify patterns that are used directly by the Attack task. When you're setting up your world, you only need to add some of these patterns (and then again, only if you want to use the Attack task.)
+
+* Fight > Page 5, patterns matching lines like **You kill the troll!**
+* Interaction > Page 4, patterns matching lines like **You enchant the troll with your song!**
+* Interaction > Page 5, patterns matching lines like **The troll hates your song, and leaves!**
+* Interaction > Page 7, patterns matching lines like **The troll hates your song, and attacks you!**, meaning that the interaction is over, and a fight has started
+* Interaction > Page 8, patterns matching lines like **The troll hates your song, and kills you!**, meaning that the interaction is over, and urgent action is required
+
+##<a name="8.4">8.4 Recognising prompts</a>
+
+A prompt is a line that doesn't end with an instruction to start writing a new line. Typically, a prompt requires the player to type something, for example **What is your name?**
+
+It might be surprising to learn that, at many worlds, there is *no way to reliably detect a prompt*; Axmud doesn't know whether it has received an actual prompt, or the first half of a line whose second half hasn't arrived yet. In that case, Axmud tries to use its best judgement to guess when a prompt has been received.
+
+The presence (or absence) of a prompt might be important in a few situations. For example, you can create hooks that fire when a prompt is received.
+
+You can reduce the amount of guessing Axmud is obliged to do by specifying patterns that match the prompts the world sends. Many worlds use prompts that include the character's current health, for example.
+
+        hp: 90/100  mp: 40/50  sp: 5/99 >
+
+The pattern matching this line is
+
+        hp:\s+(.*)/(.*)\s+mp:\s+(.*)/(.*)\s+sp:\s+(.*)/(.*)\s+>\s
+
+If you have already created a pattern to match this line (for use with the Status task), then you can simply re-use it.
+
+* In the main window, click **Edit > Edit current world**
+* In the new edit window, click **Settings > Page 11**
+* In the **Command prompt patterns** box, add the pattern **hp:\s+(.*)/(.*)\s+mp:\s+(.*)/(.*)\s+sp:\s+(.*)/(.*)\s+>\s**
+* Click the **OK** button to save your changes
+
+If you don't want to use complicated patterns, then a simple one like this is much better than nothing:
+
+        \>\s$
+
+This pattern represents a line ending with the **>** character followed by a single space.
+
+##<a name="8.5">8.5 Getting and dropping, buying and selling</a>
+
+Some of the patterns specified by the world definition aren't actually used by any built-in task or script. If you think that you might want to write a script to be used in several different worlds, then you could add some of these patterns.
+
+For example, imagine a script that detects when someone drops something, so your character can automatically pick it up. You would need a pattern that match lines like **Gandalf drops the ring**. You would also need patterns that match lines like **You take the ring** and **The ring is too heavy**, so that your script would know whether the opportunistic theft was successful, or not.
+
+* In the main window, click **Edit > Edit current world**
+* In the new edit window, click **Commands > Page 1 - 2**
+
+The tabs inside the main **Commands** tab are self-explanatory, and none of them are required; add patterns there only if you need them.
+
+##<a name="8.6">8.6 The Divert and Channels tasks</a>
+
+The Divert and Channels tasks 'divert' messages from the main window into a separate task window. Typically, this is where all the player chat goes:
+
+        Gandalf tells you, "Hello!"
+        You tell Gandalf, "Hello to you, too!"
+
+However, you can divert any text you like, especially if it's something important that you don't want to miss.
+
+        There is an enormous pile of coins here.
+
+Adding new patterns is simple enough; this is how to add a pattern matching the line just above.
+
+* In the main window, click **Edit > Edit current world**
+* In the new edit window, click **Channels > Page 1**
+* In the **Pattern** box, add **There is an enormous pile of coins here**
+* In the **Channel name** box, add **custom**
+* If you don't want the line to be visible in the main window, click **Only in the task window?** to select it
+* Click the **Add button**
+* Click the **Save** button to apply your changes
+* Reset the Divert or Channels task, if they are open
+
+        ;resettask divert
+        ;rtt divert
+
+        ;resettask channels
+        ;rtt channels
+
+There are standard three types of **Channel name**: **tell** for direct communications between two players, **social** for communications that many players can see, and **custom** for everything else. It doesn't really matter which type you choose, but note that the Divert task uses that choice to choose a background colour, and the Channels task has a different tab for each type.
+
+---
+
+[Previous](tut07.html) [Index](index.html)
+

@@ -1,9 +1,9 @@
 lcs / listcolourscheme        Lists colour schemes
- 
+
    Format:
       ;lcs                    Lists all colour schemes
       ;lcs <name>             Lists the colour scheme <name>
- 
+
    Notes:
       A textview is a scrolling area of a window where text is displayed. A
          colour scheme determines the colours and font used in the textview.

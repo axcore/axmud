@@ -10,7 +10,7 @@ HELP expression
       If no expression is specified, a list of Axbasic keywords and functions is
          displayed instead.
       The following Axbasic statements are therefore interchangeable:
-      
+
          HELP "print"
          CLIENT "axbasichelp print"
 

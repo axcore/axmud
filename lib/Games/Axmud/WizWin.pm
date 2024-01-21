@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2022 A S Lewis
+# Copyright (C) 2011-2024 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -19,7 +19,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -1123,7 +1123,7 @@
 
         # Add a simple list
         @columnList = (
-            'Remove', 'bool',
+            'Remove', 'bool_editable',
             'Profile', 'text',
             'Pre-configured world', 'text',
             'Host', 'text',
@@ -1143,7 +1143,7 @@
             );
         }
 
-        my $slWidget = $self->addSimpleList($self->grid, \@columnList, \@dataList, TRUE,
+        my $slWidget = $self->addSimpleList($self->grid, \@columnList, \@dataList,
             1, 12, 2, 11);
 
         my $button = $self->addButton(
@@ -1871,7 +1871,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -2165,9 +2165,10 @@
             analysisType                => 'verbose',
             # How many recently-received lines to analyse, by default
             analysisLength              => 9,
-            # The minimum and maximum number of recently-received lines to analyse
+            # The minimum and maximum number of recently-received lines to analyse (the maximum
+            #   length of a GA::Obj::Component is 256 lines)
             analysisMinLength           => 6,
-            analysisMaxLength           => 15,
+            analysisMaxLength           => 256,
             # How many lines to increase/decrease this number at a time
             analysisInc                 => 3,
             # A hash containing an analysis of ->bufferObjList, compiled by
@@ -3240,7 +3241,13 @@
             $self->ivPoke('analysisLength', $self->analysisLength + $self->analysisInc);
 
             # Prevent the user from setting more lines than the maximum by desensitising the button
-            if ($self->analysisLength >= $self->analysisMaxLength) {
+            if (
+                $self->analysisLength >= $self->analysisMaxLength
+                || (
+                    $self->analysisLength > $self->analysisMinLength
+                    && $self->analysisLength >= $self->session->displayBufferCount
+                )
+            ) {
                 $button2->set_sensitive(FALSE);
             } else {
                 $button2->set_sensitive(TRUE);
@@ -3491,9 +3498,6 @@
                 # Don't look before the first line in the buffer
                 $startLine = $self->session->displayBufferFirst;
             }
-        }
-
-        if ($startLine && $stopLine) {
 
             $count = -1;
 

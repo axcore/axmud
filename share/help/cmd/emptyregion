@@ -1,15 +1,15 @@
 ern / emptyregion             Empties a world model region
- 
+
    Format:
       ;ern <number>           Empties the region <number>
       ;ern <name>             Empties the region <name>
- 
+
    Notes:
       The world model stores information about the regions, rooms, characters
-         and objects in the game world. The automapper window uses the 
+         and objects in the game world. The automapper window uses the
          information stored in the world model to draw its maps.
-      This command empties all the rooms (and other child objects) in the 
-         specified region. Any labels on the regionmap are also removed. 
+      This command empties all the rooms (and other child objects) in the
+         specified region. Any labels on the regionmap are also removed.
          However, any child regions are not deleted.
 
    User commands:

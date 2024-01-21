@@ -6,7 +6,7 @@ WHILE expression
 
    Notes:
       Every WHILE statement must have a corresponding LOOP statement.
-      The loop continues until the condition is evaluated as 'false'. The 
+      The loop continues until the condition is evaluated as 'false'. The
          contents of the loop won't be executed at all if the condition is
          evaluated as 'false' the first time it is checked.
       In contrast, a DO..UNTIL loop is guaranteed to be executed at least once.
@@ -32,4 +32,4 @@ WHILE expression
       ! This loop doesn't run once
       WHILE 0
          PRINT "Hello, world!"
-      LOOP     
+      LOOP

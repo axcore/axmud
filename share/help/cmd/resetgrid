@@ -1,39 +1,39 @@
 rgr / resetgrid               Resets workspace grids
- 
+
    Format:
       ;rgr <num>              Resets workspace grid <num>
       ;rgr <num> <zonemap>    Resets workspace grid <num> using <zonemap>
 
       ;rgr -s                 Resets workspace grids for this session
       ;rgr -s <zonemap>       Resets this session's grids using <zonemap>
- 
+
       ;rgr -w <num>           Resets grids on workspace <num>
       ;rgr -w <num> <zonemap> Resets grids on workspace <num> using <zonemap>
 
    Notes:
       The workspace grid is an invisible grid, spanning the whole available
-         workspace, on which Axmud tries to arrange its windows so that they 
-         don't overlap (as far as possible). The grid is divided into zones 
-         within which one or more windows are arranged. The 'blueprint' for 
-         zones on a desktop is called a 'zonemap'. 
-      Only 'grid' windows (including the 'main' window, task windows and the 
+         workspace, on which Axmud tries to arrange its windows so that they
+         don't overlap (as far as possible). The grid is divided into zones
+         within which one or more windows are arranged. The 'blueprint' for
+         zones on a desktop is called a 'zonemap'.
+      Only 'grid' windows (including the 'main' window, task windows and the
          automapper window) are arranged on the workspace grid. Temporary
-         windows, including the object viewer window and all edit, preference,
+         windows, including the data viewer window and all edit, preference,
          wizard and dialogue windows, are not affected.
 
-      This command is generally used to apply a new <zonemap> to a workspace 
+      This command is generally used to apply a new <zonemap> to a workspace
          grid. If you don't specify a zonemap, the grid is reset using its
-         existing zonemap; if you've manually moved or resized any 'grid' 
+         existing zonemap; if you've manually moved or resized any 'grid'
          windows, they will be restored to their original size and position.
       Use ';listworkspace' to get a list of workspace numbers, and use
          ';listworkspacegrid' to get a list of workspace grid numbers.
-      This command can't be used with temporary zonemaps (such as those created 
+      This command can't be used with temporary zonemaps (such as those created
          by MXP).
 
       The ';toggleshare' command sets whether sessions should share a single
          'main' window, or not. When they don't share a single 'main' window,
          they instead share a single workspace grid. In that case, if you use
          the -s switch, all workspace grids are reset.
- 
+
    User commands:
       rgr / resetgrid

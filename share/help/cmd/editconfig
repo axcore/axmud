@@ -1,7 +1,7 @@
 ecf / editconfig              Edits a text-to-speech configuration
- 
+
    Format:
       ;ecf <name>             Edit the configuration <name>
- 
+
    User commands:
       ecf / editcf / editconfig

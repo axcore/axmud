@@ -7,7 +7,7 @@ td, th { border: 1px solid #c3c3c3; padding: 0 3px 0 3px; }
 table { border-collapse: collapse; }
 img { max-width: 100%; }
 </style>
-<meta name="generator" content="ReText 7.1.0">
+<meta name="generator" content="ReText 7.2.3">
 <title>ch15</title>
 <style type="text/css">
 </style>
@@ -100,23 +100,24 @@ img { max-width: 100%; }
 <li><a href="#15.29.3">15.29.3 Auto-slide mode</a></li>
 </ul>
 </li>
-<li><a href="#15.29">15.30 Backing up maps</a><ul>
-<li><a href="#15.29.1">15.30.1 Sharing maps</a></li>
+<li><a href="#15.30">15.30 Backing up maps</a><ul>
+<li><a href="#15.30.1">15.30.1 Sharing maps</a></li>
 </ul>
 </li>
-<li><a href="#15.30">15.31 Miscellaneous features</a><ul>
-<li><a href="#15.30.1">15.31.1 Opening the automapper window automatically</a></li>
-<li><a href="#15.30.2">15.31.2 Creating temporary regions</a></li>
-<li><a href="#15.30.3">15.31.3 Organising regions</a></li>
-<li><a href="#15.30.4">15.31.4 Favourite regions</a></li>
-<li><a href="#15.30.5">15.31.5 Running scripts</a></li>
-<li><a href="#15.30.6">15.31.6 Tooltips</a></li>
-<li><a href="#15.30.7">15.31.7 Using the automapper without a window</a></li>
-<li><a href="#15.30.8">15.31.8 Using unusual exits</a></li>
-<li><a href="#15.30.9">15.31.9 Primary directions in other languages</a></li>
-<li><a href="#15.30.10">15.31.10 Secondary directions</a></li>
-<li><a href="#15.30.11">15.31.11 Secondary directions in Cryosphere</a></li>
-<li><a href="#15.30.12">15.31.12 Relative directions</a></li>
+<li><a href="#15.31">15.31 Miscellaneous features</a><ul>
+<li><a href="#15.31.1">15.31.1 Opening the automapper window automatically</a></li>
+<li><a href="#15.31.2">15.31.2 Creating temporary regions</a></li>
+<li><a href="#15.31.3">15.31.3 Finished regions</a></li>
+<li><a href="#15.31.4">15.31.4 Organising regions</a></li>
+<li><a href="#15.31.5">15.31.5 Favourite regions</a></li>
+<li><a href="#15.31.6">15.31.6 Running scripts</a></li>
+<li><a href="#15.31.7">15.31.7 Tooltips</a></li>
+<li><a href="#15.31.8">15.31.8 Using the automapper without a window</a></li>
+<li><a href="#15.31.9">15.31.9 Using unusual exits</a></li>
+<li><a href="#15.31.10">15.31.10 Primary directions in other languages</a></li>
+<li><a href="#15.31.11">15.31.11 Secondary directions</a></li>
+<li><a href="#15.31.12">15.31.12 Secondary directions in Cryosphere</a></li>
+<li><a href="#15.31.13">15.31.13 Relative directions</a></li>
 </ul>
 </li>
 </ul>
@@ -1069,7 +1070,13 @@ A few worlds (such as <em>LambdaMoo</em> and <em>MUD1</em>) don't use exit lists
 <ul>
 <li>From the automapper menu, click <strong>Regions &gt; Delete temporary regions</strong></li>
 </ul>
-<h3><a name="15.31.3">15.31.3 Organising regions</a></h3>
+<h3><a name="15.31.3">15.31.3 Finished regions</a></h3>
+<p>For your own convenience, you can mark a region as <em>finished</em>, meaning that you have finished exploring it.</p>
+<ul>
+<li>From the automapper menu, click <strong>Regions &gt; Current region &gt; Set finished region</strong></li>
+</ul>
+<p>In the list of regions on the left of the window, a <em>finished</em> region is underlined (whereas a temporary region is shown in italics).</p>
+<h3><a name="15.31.4">15.31.4 Organising regions</a></h3>
 <p>If your map has a lot of regions it's possible to organise them into groups.</p>
 <p><img alt="Region list" src="img/ch15/region_list_1.png"></p>
 <p>For example, at <em>Dead Souls</em> the cave region is next to the much bigger town region, so we can make the town the <em>parent region</em>.</p>
@@ -1085,20 +1092,20 @@ A few worlds (such as <em>LambdaMoo</em> and <em>MUD1</em>) don't use exit lists
 <li>Click on the minus ( - ) sign, next to <strong>town</strong>, to hide its child regions</li>
 <li>Click on the new plus ( + ) to reveal its child regions</li>
 </ul>
-<h2><a name="15.31.4">15.31.4 Favourite regions</a></h2>
+<h2><a name="15.31.5">15.31.5 Favourite regions</a></h2>
 <p>The region list is normally in alphabetical order. If one region is at the centre of the world, or if you spend most of your time in a particular region, you can move it to the top of the list.</p>
 <ul>
 <li>In the region list, double-click on <strong>town</strong> to make it the current region</li>
 <li>From the automapper window, click <strong>View &gt; Window components &gt; Move current region to top</strong></li>
 </ul>
-<h2><a name="15.31.5">15.31.5 Running scripts</a></h2>
+<h2><a name="15.31.6">15.31.6 Running scripts</a></h2>
 <p>You can specify an Axbasic script that should be run, every time your character enters a particular room.</p>
 <ul>
 <li>Right-click the room and choose <strong>Edit room...</strong></li>
 <li>When the edit window is open, click on <strong>Room &gt; Page 1</strong></li>
 <li>Enter the name of one or more Axbasic scripts in the box at the bottom of the window</li>
 </ul>
-<h3><a name="15.31.6">15.31.6 Tooltips</a></h3>
+<h3><a name="15.31.7">15.31.7 Tooltips</a></h3>
 <p>If you want to find out more about a room, one method is to open its edit window. Exits also have their own edit windows. (Those edit windows can be opened from the automapper window's menus.)</p>
 <p>A move convenient method is to let your mouse hover above the room (or exit). After a moment, Axmud will display tooltips for the object.</p>
 <p><img alt="Room tooltips" src="img/ch15/room_tooltip.png"></p>
@@ -1112,7 +1119,7 @@ A few worlds (such as <em>LambdaMoo</em> and <em>MUD1</em>) don't use exit lists
 <li>When the edit window is open, click on the <strong>Notes</strong> tab</li>
 <li>Enter any notes you like, then cick the <strong>OK</strong> button</li>
 </ul>
-<h3><a name="15.31.7">15.31.7 Using the automapper without a window</a></h3>
+<h3><a name="15.31.8">15.31.8 Using the automapper without a window</a></h3>
 <p>The automapper actually consists of three separate components - the <em>automapper object</em>, which tracks the character's current position, the <em>world model</em>, which stores the data, and the automapper window itself, which draws rooms, exits and labels.</p>
 <p>As a result, the automapper <em>object</em> can track your character's position, even when the automapper <em>window</em> is closed.</p>
 <ul>
@@ -1147,7 +1154,7 @@ A few worlds (such as <em>LambdaMoo</em> and <em>MUD1</em>) don't use exit lists
 <pre><code>    ;resetroom
     ;rrm
 </code></pre>
-<h3><a name="15.31.8">15.31.8 Using unusual exits</a></h3>
+<h3><a name="15.31.9">15.31.9 Using unusual exits</a></h3>
 <p>Cryosphere, which is one of Axmud's pre-configured worlds, uses the standard north-south west-east directions, but some zones in the game use a fore-aft port-starboard system. In addition, areas of the game set on a radial space station use a hubwards-rimwards anticlockwise-clockwise system.</p>
 <p>If you're using the pre-configured world profile, exploring this game with the Axmud automapper should be easy. You can move your character through a <strong>port</strong> exit using any of the following commands:</p>
 <pre><code>    west
@@ -1181,7 +1188,7 @@ A few worlds (such as <em>LambdaMoo</em> and <em>MUD1</em>) don't use exit lists
 <li>In this window, you can click the checkbutton near the top of the window (<strong>Show all intercardinal directions</strong>)</li>
 <li>In the automapper window, click on the menu item <strong>Mode &gt; Other flags &gt; Show all directions in dialogues</strong>. This setting will apply to most automapper dialogue windows</li>
 </ul>
-<h3><a name="15.31.9">15.31.9 Primary directions in other languages</a></h3>
+<h3><a name="15.31.10">15.31.10 Primary directions in other languages</a></h3>
 <p>Axmud knows how to set custom primary directions for about a dozen languages.</p>
 <ul>
 <li>In the edit window you just opened, click the <strong>Name</strong> tab</li>
@@ -1203,7 +1210,7 @@ A few worlds (such as <em>LambdaMoo</em> and <em>MUD1</em>) don't use exit lists
 <li>When you're finished, click the <strong>Save'</strong>button at the bottom of the window</li>
 </ul>
 <p>By the way, Axmud continues to use a set of <em>standard</em> primary directions - the English words 'north', 'southeast', 'up' and so on - internally, regardless of which <em>custom</em> primary directions you set. (You will probably only notice this if you start poking around deep inside Axmud's edit windows.)</p>
-<h3><a name="15.31.10">15.31.10 Secondary directions</a></h3>
+<h3><a name="15.31.11">15.31.11 Secondary directions</a></h3>
 <p>Axmud uses exactly eighteen primary directions - the ones described in <a href="#15.30.8">Section 15.30.8</a> - but it also uses a set of 'secondary' directions.</p>
 <p>Secondary directions help Axmud to distinguish between things that are exits and things which aren't exits. The default set of secondary directions are:</p>
 <pre><code>    in / out
@@ -1218,7 +1225,7 @@ A few worlds (such as <em>LambdaMoo</em> and <em>MUD1</em>) don't use exit lists
 <p>You can modify the list of secondary directions in any way you please. (The only rule is that you can't add a word that's already being used as a primary direction.)</p>
 <p>It's not necessary to add <em>every possible word</em> to your list of secondary directions. If Axmud encounters an exit called <em>cupboard</em>, this exit will be (temporarily) drawn in the first available direction (see <a href="#15.14">Section 15.14</a>). In fact, most users will never need to modify any of the secondary directions.</p>
 <p>(The previous Section demonstrated how you could change Axmud's custom primary directions, which are English words, into a set of French words at the click of a button. Doing so will not affect this list of secondary directions, which must be modified separately.)</p>
-<h3><a name="15.31.11">15.31.11 Secondary directions in Cryosphere</a></h3>
+<h3><a name="15.31.12">15.31.12 Secondary directions in Cryosphere</a></h3>
 <p>To set custom secondary directions, first open the current dictionary's edit window:</p>
 <pre><code>    ;editdictionary
     ;edy
@@ -1237,7 +1244,7 @@ A few worlds (such as <em>LambdaMoo</em> and <em>MUD1</em>) don't use exit lists
 <li>When you're finished, click the <strong>Save</strong> button at the bottom of the window</li>
 </ul>
 <p>Some zones of <em>Cryosphere</em> use <em>rimwards</em> (north), <em>hubwards</em> (south), <em>anticlockwise</em> (west) and <em>clockwise</em> (east). These can be added in the same way. Remember that the game abbreviates both <em>aft</em> and <em>anticlockwise</em> with <em>a</em>, so you'll need to decide which direction you want to abbreviate. (The pre-configured world profile abbreviates <em>anticlockwise</em>, not <em>aft</em>, as <em>a</em>.)</p>
-<h3><a name="15.31.12">15.31.12 Relative directions</a></h3>
+<h3><a name="15.31.13">15.31.13 Relative directions</a></h3>
 <p>Relative directions are used by a handful of worlds in which a room's exits change depending on the direction in which the character is facing (which usually means the direction from which the character arrived).</p>
 <p>One such world is <em>Discworld MUD</em>. For a character that's facing north, the world uses the following relative directions:</p>
 <table>

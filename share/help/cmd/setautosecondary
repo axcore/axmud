@@ -1,9 +1,9 @@
 sas / setautosecondary        Sets preferred way to draw secondary directions
- 
+
    Format:
       ;sas <custom> <standard>
                               Tend to draw <custom> direction as <standard>
-                              
+
    Notes:
       Axmud provides eighteen 'standard' primary directions - the sixteen
          compass directions (including 'north', 'northeast' and
@@ -14,7 +14,7 @@ sas / setautosecondary        Sets preferred way to draw secondary directions
          directions such as 'out' and 'in', this set can contain as many or as
          few directions as you want.
       For a list of primary and secondary directions stored in the current
-         dictionary, use the 'listdirection' command.               
+         dictionary, use the 'listdirection' command.
 
       When the automapper creates a room with a secondary direction like 'out'
          or 'in', normally you have to tell it which direction it should be
@@ -27,6 +27,6 @@ sas / setautosecondary        Sets preferred way to draw secondary directions
 
          ;sas out north
          ;sas in south
- 
+
    User commands:
       sas / setsecond / setautosecond / setautosecondary

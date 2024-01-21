@@ -1,8 +1,8 @@
 els / editlabelstyle          Opens an 'edit' window for a map label style
- 
+
    Format:
       ;els <name>             Edits the style
- 
+
    Notes:
       Map labels are drawn in the automapper window. It's possible to customise
          labels individually, but most labels are drawn using a map label style
@@ -10,6 +10,6 @@ els / editlabelstyle          Opens an 'edit' window for a map label style
          redrawn automatically).
       <name> is the name of the style to edit. If it contains spaces, you should
          enclose the name in diamond brackets <...>.
- 
+
    User commands:
       els / editstyle / editlabelstyle

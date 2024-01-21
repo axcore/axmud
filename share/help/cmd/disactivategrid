@@ -1,18 +1,18 @@
 dgr / disactivategrid         Disactivates (turns off) workspace grids
- 
+
    Format:
       ;dgr                    Disactivates workspace grids generally
       ;dgr <num>              Disactivates grids on workspace <num>
- 
+
    Notes:
       The workspace grid is an invisible grid, spanning the whole available
-         workspace, on which Axmud tries to arrange its windows so that they 
-         don't overlap (as far as possible). The grid is divided into zones 
-         within which one or more windows are arranged. The 'blueprint' for 
-         zones on a desktop is called a 'zonemap'. 
-      Only 'grid' windows (including the 'main' window, task windows and the 
+         workspace, on which Axmud tries to arrange its windows so that they
+         don't overlap (as far as possible). The grid is divided into zones
+         within which one or more windows are arranged. The 'blueprint' for
+         zones on a desktop is called a 'zonemap'.
+      Only 'grid' windows (including the 'main' window, task windows and the
          automapper window) are arranged on the workspace grid. Temporary
-         windows, including the object viewer window and all edit, preference,
+         windows, including the data viewer window and all edit, preference,
          wizard and dialogue windows, are not affected.
 
       If a workspace <num>ber is specified, workspace grids are turned off for
@@ -21,13 +21,13 @@ dgr / disactivategrid         Disactivates (turns off) workspace grids
          immediately moved or resized, so you won't notice any changes straight
          away. New 'grid' windows on the workspace will be opened using a
          default size and position.
-      Otherwise, workspace grids are turned off for all workspaces, and this 
+      Otherwise, workspace grids are turned off for all workspaces, and this
          setting is also applied the next time Axmud starts.
 
       In certain circumstances (such as when the desktop is too small, and also
          on MS Windows), Axmud is unable to create workspace grids at all, in
          which case this command can't be used.
       In that situation, you should read the help for ';togglewindowstorage'.
- 
+
    User commands:
       dgr / disactgrid / disactivategrid

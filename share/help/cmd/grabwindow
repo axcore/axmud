@@ -1,25 +1,25 @@
 gwn / grabwindow              Grabs an 'external' window onto a workspace grid
- 
+
    Format:
-      ;gwn <pattern>          
+      ;gwn <pattern>
                Incorporates a window matching <pattern>
-      ;gwn <pattern> -w <workspace>         
+      ;gwn <pattern> -w <workspace>
                Incorporates a window matching <pattern> onto the <workspace>
 
-      ;gwn <pattern> -a       
+      ;gwn <pattern> -a
                Incorporates all windows matching <pattern>
-      ;gwn <pattern> -a -w <workspace>     
+      ;gwn <pattern> -a -w <workspace>
                Incorporates all windows matching <pattern> onto the <workspace>
- 
+
    Notes:
       The workspace grid is an invisible grid, spanning the whole available
-         workspace, on which Axmud tries to arrange its windows so that they 
-         don't overlap (as far as possible). The grid is divided into zones 
-         within which one or more windows are arranged. The 'blueprint' for 
-         zones on a desktop is called a 'zonemap'. 
-      Only 'grid' windows (including the 'main' window, task windows and the 
+         workspace, on which Axmud tries to arrange its windows so that they
+         don't overlap (as far as possible). The grid is divided into zones
+         within which one or more windows are arranged. The 'blueprint' for
+         zones on a desktop is called a 'zonemap'.
+      Only 'grid' windows (including the 'main' window, task windows and the
          automapper window) are arranged on the workspace grid. Temporary
-         windows, including the object viewer window and all edit, preference,
+         windows, including the data viewer window and all edit, preference,
          wizard and dialogue windows, are not affected.
 
       'external' windows are any window not created by Axmud. Sometimes it's
@@ -28,14 +28,14 @@ gwn / grabwindow              Grabs an 'external' window onto a workspace grid
          Use the ';banishwindow' command to remove it from the grid and restore
          it to its original size and position.
 
-      <pattern> is a regex (Perl regular expression). It is used in a 
+      <pattern> is a regex (Perl regular expression). It is used in a
          case-insensitive pattern match (so both 'notepade' and 'Notepad' will
-         grab the same window). If <pattern> contains spaces, it should be 
+         grab the same window). If <pattern> contains spaces, it should be
          enclosed by diamond brackets <...>, e.g.
-         
+
             ';gwn <my window>'
-            
-      If <workspace> is not specified, the 'external' window is grabbed onto 
+
+      If <workspace> is not specified, the 'external' window is grabbed onto
          the same workspace grid used by this session's 'main' window. A list of
          workspace numbers can be obtained with the ';listworkspace' command.
 

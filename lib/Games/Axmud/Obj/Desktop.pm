@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2022 A S Lewis
+# Copyright (C) 2011-2024 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -20,7 +20,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -1071,7 +1071,7 @@
         my ($self, $scheme, $textView, $check) = @_;
 
         # Local variables
-        my ($schemeObj, $theming);
+        my ($schemeObj, $provider, $display, $screen, $theming, $context);
 
         # Check for improper arguments
         if (! defined $scheme || ! defined $textView || defined $check) {
@@ -1088,9 +1088,9 @@
         }
 
         # Prepare the theming data to use
-        my $provider = Gtk3::CssProvider->new();
-        my $display = Gtk3::Gdk::Display::get_default();
-        my $screen = Gtk3::Gdk::Display::get_default_screen($display);
+        $provider = Gtk3::CssProvider->new();
+        $display = Gtk3::Gdk::Display::get_default();
+        $screen = Gtk3::Gdk::Display::get_default_screen($display);
         Gtk3::StyleContext::add_provider_for_screen($screen, $provider, 600);
 
         $theming = "#css_text_id_" . $scheme . ", textview text {\n"
@@ -1120,7 +1120,7 @@
 
         $provider->load_from_data ([map ord, split //, $theming]);
 
-        my $context = $textView->get_style_context();
+        $context = $textView->get_style_context();
         $context->add_provider($provider, 600);
 
         return 1;
@@ -1154,7 +1154,7 @@
         my ($self, $number, $fgColour, $bgColour, $font, $fontSize, @tvList) = @_;
 
         # Local variables
-        my ($style, $theming);
+        my ($provider, $display, $screen, $theming);
 
         # Check for improper arguments
         if (! defined $number) {
@@ -1183,9 +1183,9 @@
         }
 
         # Prepare the theming data to use
-        my $provider = Gtk3::CssProvider->new();
-        my $display = Gtk3::Gdk::Display::get_default();
-        my $screen = Gtk3::Gdk::Display::get_default_screen($display);
+        $provider = Gtk3::CssProvider->new();
+        $display = Gtk3::Gdk::Display::get_default();
+        $screen = Gtk3::Gdk::Display::get_default_screen($display);
         Gtk3::StyleContext::add_provider_for_screen($screen, $provider, 600);
 
         $theming = "#css_tvobj_text_id_" . $number . ", textview text {\n"

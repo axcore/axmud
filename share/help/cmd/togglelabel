@@ -1,8 +1,8 @@
 tlb / togglelabel             Toggles toolbar button labels
- 
+
    Format:
       ;tlb                    Toggles labels
-      
+
    Notes:
       Toolbar buttons are drawn (by default) near the top of 'main' windows and
          in automapper windows. These buttons also have labels.
@@ -13,6 +13,6 @@ tlb / togglelabel             Toggles toolbar button labels
          enough room for more than a few icons. Axmud tries to guess whether
          labels should be drawn, or not; you can use this command to switch
          between the two settings, if you need to.
-         
+
    User commands:
       tlb / togglelabel

@@ -1,19 +1,19 @@
 sr / setrace                  Sets the current race
- 
+
    Format:
       ;sr <name>              Sets the current race profile to <name>
- 
+
    Notes:
       This command sets the current race profile for this session.
       If a profile named <name> doesn't already exist, it is created. If the
          profile already exists, it is made the current guild profile.
       The current character profile will also be informed of the change.
-      Profile names must be no longer than 16 characters, contain only A-Z, a-z, 
-         underlines and 0-9 (not the first character) and not be one of Axmud's 
+      Profile names must be no longer than 16 characters, contain only A-Z, a-z,
+         underlines and 0-9 (not the first character) and not be one of Axmud's
          reserved names (see the ';listreserved' command). Non-Latin alphabets
          are acceptable.
       The operation will fail if <name> is invalid or if there is no current
          character (use the ';setchar' command to set one first).
- 
+
    User commands:
       sr / setrace

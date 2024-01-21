@@ -1,0 +1,14 @@
+Sethiddenexit (number)
+
+   Synopsis:
+      Toggles a hidden exit
+
+   Notes:
+      'Hidden' exits exist in the world, but are not always visible in the room
+         description. A hidden exit is always visible in Axmud's automapper
+         window.
+
+      This function converts a non-hidden exit into a hidden exit, or vice-
+        versa.
+      'number' is the number of the exit in the exit model.
+      Returns 1 on success, 0 on failure.

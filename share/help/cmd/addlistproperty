@@ -1,22 +1,22 @@
 alp / addlistproperty         Adds a new list property to a template
- 
+
    Format:
       ;alp <template> <property> <list>
                Gives the <template> a list <property> set to <list>
       ;alp <template> <property>
                Gives the <template> a list <property> set to an empty list
- 
+
    Notes:
-      The blueprint for a new category of profile is called a profile template. 
+      The blueprint for a new category of profile is called a profile template.
          Several custom profiles can be based on a single template.
       This command adds a property to the blueprint (a property can be used
          interchangeably with the terms 'instance variable' and 'IV'). When a
-         new custom profile is created, the property is copied from the template 
+         new custom profile is created, the property is copied from the template
          to the profile.
       The operation will fail if a property named <property> already exists, or
          if <property> is one of a small number of reserved property names.
       (See the help for ';listprofile' for more information about
          profiles.)
- 
+
    User commands:
       alp / addlist / addlistprop / addlistproperty

@@ -1,17 +1,17 @@
 rtt / resettask               Resets a task
- 
+
    Format:
       ;rtt <task>             Resets <task>
       ;rtt -a                 Resets all active or paused current tasks
- 
+
    Notes:
-      <task> can be any Axmud built-in or external task that's currently 
+      <task> can be any Axmud built-in or external task that's currently
          running.
       <task> can be in the form of a task's label (e.g. 'stat, 'status'), its
-         formal name (e.g. 'status_task') or the task's unique name (e.g. 
+         formal name (e.g. 'status_task') or the task's unique name (e.g.
          'status_task_4').
       (Use the ';listtasklabel' command to list all task labels.)
       If there is more than one task matching <task>, they will all be reset.
- 
+
    User commands:
       rtt / resettask

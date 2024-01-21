@@ -1,13 +1,13 @@
 dr / deleterace               Deletes a race profile
- 
+
    Format:
       ;dr <name>              Deletes the race profile <name>
- 
+
    Notes:
-      This operation deletes the race and all its associated cages, including 
+      This operation deletes the race and all its associated cages, including
          all the interfaces stored in the cages.
       If <name> is the current race profile, there will be no current race
          profile after using this command.
- 
+
    User commands:
       dr / delrace / deleterace

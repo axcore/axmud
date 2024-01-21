@@ -1,11 +1,11 @@
 lrc / listrecording           Lists contents of the current recording
- 
+
    Format:
       ;lrc                    Lists the recording
- 
+
    Notes:
       See the help for the ';record' command for more information about
          recordings.
- 
+
    User commands:
       lrc / listrc / listrecord / listrecording

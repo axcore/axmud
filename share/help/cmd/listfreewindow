@@ -1,17 +1,17 @@
 lfw / listfreewindow          Lists 'free' windows
- 
+
    Format:
       ;lfw                    Lists all 'free' windows
       ;lfw -s                 Lists this session's 'free' windows
- 
+
    Notes:
       'Free' windows are temporary windows that are never arranged on Axmud's
-         workspace grids. 'Free' windows include the object viewer window, the
+         workspace grids. 'Free' windows include the data viewer window, the
          Connections window, the About window, and all edit, preference, wizard
          and dialogue windows.
-      This command lists all 'free' windows (except 'dialogue' windows) across 
-         all sessions or (if -s is specified) for this session only. 
+      This command lists all 'free' windows (except 'dialogue' windows) across
+         all sessions or (if -s is specified) for this session only.
       Use the ';listwindow' command to list 'grid' windows.
- 
+
    User commands:
       lfw / listfree / listfreewin / listfreewindow

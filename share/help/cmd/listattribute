@@ -1,24 +1,24 @@
 lat / listattribute           Lists text-to-speech attributes
- 
+
    Format:
       ;lat                    Lists all attributes
- 
+
    Notes:
       Tasks have various text-to-speech (TTS) capabilities, but some tasks don't
-         use TTS at all. 
+         use TTS at all.
       Commands like ';read' and ';permswitch' allow you to interact with the TTS
          capabilities of tasks. When using these commands, you specify a TTS
-         attribute - for example, the attribute 'title' in ';read title' 
+         attribute - for example, the attribute 'title' in ';read title'
          instructs the current Locator task to read the current room's title.
       There are three separate sets of TTS attributes - one for ';read' and
-         ';permread'; one for ';switch' and ';permswitch', and another for 
-         ';alert' and ';permalert'. 
+         ';permread'; one for ';switch' and ';permswitch', and another for
+         ';alert' and ';permalert'.
       This command is used to list all three sets of attributes. Visually-
-         impaired users might prefer to use ';read' and so on (without 
+         impaired users might prefer to use ';read' and so on (without
          specifying an attribute) to get a simpler list of attributes used with
          that command.
-      Note that some attributes, such as 'health up', are stored as single 
-         words; you can use either 'health up' or 'healthup' with the ';alert' 
+      Note that some attributes, such as 'health up', are stored as single
+         words; you can use either 'health up' or 'healthup' with the ';alert'
          command.
 
    User commands:

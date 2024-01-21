@@ -2,16 +2,16 @@ SPEED expression
 
    Synopsis:
       Executes a speedwalk command
-      
+
    Notes:
       This is the equivalent of a speedwalk command typed in the 'main' window's
          command entry box.
       Speedwalking is a method of moving from one location in the world to
-         another with a minimum of typing. 
-      The expression should be a string like "n" or "3nw2s". If the string 
+         another with a minimum of typing.
+      The expression should be a string like "n" or "3nw2s". If the string
          starts with a full stop (period) character, the path is reversed.
-         
-      Extensive help for speedwalk commands is available by typing 
+
+      Extensive help for speedwalk commands is available by typing
          ';help speedwalk'.
       See also the help for PERL, MULTI and BYPASS.
 
@@ -19,7 +19,7 @@ SPEED expression
       ! Move north once; these commands are equivalent
       MOVE "north"
       SPEED "n"
-      
+
       ! Move several times; this group of commands...
       SEND "north"
       SEND "north"
@@ -29,6 +29,6 @@ SPEED expression
       SEND "south"
       ! ...is the equivalent of this one
       SPEED "3nw2s"
-      
+
       ! Go back to where you started
       SPEED ".3nw2s"

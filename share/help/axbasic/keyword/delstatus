@@ -1,14 +1,19 @@
 DELSTATUS expression
-    
+
    Synopsis:
       Deletes a 'main' window status bar
-    
+
    Notes:
       Deletes a status bar that was added to the 'main' window with an ADDSTATUS
          or ADDCONSTATUS statement.
       The expression is the status bar's unique number. If the status bar
          doesn't exist, the DELSTATUS statement is ignored, but the number isn't
          an integer, 0 or above, you'll see an error message.
+
+   Requires:
+      If the script is not being run as a task, the DELSTATUS statement is
+         ignored (and no error message is generated). Execution continues with
+         the next statement.
 
    Examples:
       DELSTATUS 1

@@ -4,8 +4,8 @@ CLOSE #channel
       Closes a file channel
 
    Notes:
-      Closes a file channel created with an earlier OPEN statement. When the 
-         Axbasic script halts, all file channels are automatically closed, but 
+      Closes a file channel created with an earlier OPEN statement. When the
+         Axbasic script halts, all file channels are automatically closed, but
          it's good practice to close a channel as soon as you no longer need it.
 
    Examples:

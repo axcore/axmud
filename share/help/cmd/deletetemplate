@@ -1,20 +1,20 @@
 dtm / deletetemplate          Deletes a profile template
- 
+
    Format:
       ;dtm <category>         Deletes the profile template <category>
- 
+
    Notes:
-      The blueprint for a new category of profile is called a profile template. 
+      The blueprint for a new category of profile is called a profile template.
          Several custom profiles can be based on a single template.
       Standard profiles have the category 'world', 'guild', 'race' or 'char'.
          Custom profiles have the category of the template on which they're
-         based. This command removes an existing template from which any number 
+         based. This command removes an existing template from which any number
          of profiles with the same <category> could have been created.
-      The operation will fail if any custom profiles based on the template still 
-         exist (you will need to delete the custom profiles before you try to 
+      The operation will fail if any custom profiles based on the template still
+         exist (you will need to delete the custom profiles before you try to
          delete the template on which they're based.)
-      Category names must be no longer than 16 characters, contain only A-Z, 
-         a-z, underlines and 0-9 (not the first character) and not be one of 
+      Category names must be no longer than 16 characters, contain only A-Z,
+         a-z, underlines and 0-9 (not the first character) and not be one of
          Axmud's reserved names (see the ';listreserved' command). Non-Latin
          alphabets are acceptable.
       (See the help for ';listprofile' for more information about profiles.)

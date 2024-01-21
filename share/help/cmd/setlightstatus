@@ -1,18 +1,18 @@
 sls / setlightstatus          Sets the current light status
- 
+
    Format:
       ;sls <status>           Sets the current light status to <status>
       ;sls                    Shows the current light status
- 
+
    Notes:
       Worlds will often present different verbose room descriptions, depending
          on the time of day in the game world and how much light is illuminating
          the character's location.
-      Axmud represents current conditions with a 'light status' (stored in the 
+      Axmud represents current conditions with a 'light status' (stored in the
          world model). This command sets the current light status.
       <status> must be one of the world model's recognised light status values
          (use the ';setlightlist' command to see them). The default light status
          is 'day'.
- 
+
    User commands:
       sls / setlight / setlightstatus

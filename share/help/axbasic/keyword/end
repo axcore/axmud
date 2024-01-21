@@ -10,7 +10,7 @@ END SELECT
       END SELECT terminates the current SELECT CASE code block
 
    Notes:
-      All Axbasic scripts must have one, and only one, END statement (but you 
+      All Axbasic scripts must have one, and only one, END statement (but you
          can use as many STOP statements as you like).
       See the help for IF, SUB and SELECT for a full explanation of how to use
          END IF, END SUB and END SELECT statements.

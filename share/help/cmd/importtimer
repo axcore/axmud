@@ -1,0 +1,36 @@
+iti / importtimer             Imports timer(s) from the interface clipboard
+
+   Format:
+      ;iti <name> <switches>  Imports the timer called <name>
+      ;iti <switches>         Imports all clipboard timers
+
+   Notes:
+      Timers are one of five types of Axmud interface (the others being
+         triggers, aliases, macros and hooks).
+      Timers allow you to execute an instruction repeatedly at fixed intervals,
+         and also to specify an instruction to be executed later.
+      This command provides a simple way to copy macros from one profile/cage
+         to another (perhaps even in a different world, in a different session).
+         Having 'exported' the macro to Axmud's interface clipboard using the
+         ';importmacro' command, that macro can then be 'imported'.
+      Note that the contents of the clipboard are not saved. Note also that the
+         timer's attributes might change while stored in the clipboard. In other
+         words, it's up to you to perform the export, then the import, before
+         doing anything else.
+      If an active timer was exported, an inactive timer is imported. The
+         imported timer will not replace an existing timer with the same name.
+
+      <switches> allows you to specify which profile's timer cage should
+         receive the imported timers. One of the following (group 1) switches
+         may be specified:
+         (no switch)   - Imports timer(s) to the current world
+         -w            - Imports timer(s) to the current world
+         -r            - Imports timer(s) to the current race
+         -g            - Imports timer(s) to the current guild
+         -c            - Imports timer(s) to the current char
+         -x <category> - Imports timer(s) to the current custom profile
+                            <category>
+         -d <prof>     - Imports timer(s) to the profile named <prof>
+
+   User commands:
+      iti / impti / imptimer / importti / importtimer

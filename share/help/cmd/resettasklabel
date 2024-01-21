@@ -1,16 +1,16 @@
 rtl / resettasklabel          Resets task labels to default values
- 
+
    Format:
       ;rtl <task>             Resets <task>'s list of labels to default values
       ;rtl                    Resets all task labels to default values
- 
+
    Notes:
       Axmud tasks have formal names like 'status_task' and 'locator_task'. Task
-         labels are a convenient way of referring to tasks without having to 
+         labels are a convenient way of referring to tasks without having to
          type the whole name. For example, the Status task has the task labels
          'stat' and 'status' by default.
       Using ';resettasklabel' will mean that only Axmud's built-in tasks will
          have task labels.
- 
+
    User commands:
       rtl / resettl / resetlabel / resettasklabel

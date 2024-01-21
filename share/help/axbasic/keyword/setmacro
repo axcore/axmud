@@ -6,11 +6,11 @@ SETMACRO expression [ , expression ]
    Notes:
       A convenient way to create a macro that launches another Axbasic script
          (or notifies this script's parent task) whenever it fires.
-         
+
       The first expression is the stimulus (a keycode string). When the user
          presses the key(s) matching the keycode string, the macro fires.
       (Axmud automatically assigns its own name to dependent macros.)
-      
+
       If the second expression is specified, it should be the name of an Axbasic
          script to run immediately (without a parent task) when the macro
          fires.
@@ -25,10 +25,10 @@ SETMACRO expression [ , expression ]
          second expression (specifying another script to run) is ignored (and no
          error message is generated). Execution continues with the next
          statement.
-         
+
    Compatibility:
       Since Axbasic v1.4
-      
+
    Examples:
       SETMACRO "ctrl f1"
       SETMACRO "ctrl f1", "cross_bridge"

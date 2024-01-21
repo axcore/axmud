@@ -4,16 +4,16 @@ SUB subroutine-name
 SUB subroutine-name ( [ parameter-list ] )
 SUB STRING subroutine-name
 SUB STRING subroutine-name ( [ parameter-list ] )
-    
+
    Synopsis:
       Declares a subroutine with a numeric or string return value
 
    Notes:
       A subroutine is called with a CALL statement. Execution moves to the first
          line after the SUB statement.
-      The parameter list, if it is specified, contains a list of one or more 
-         scalar variables, which are used as local variables within the scope of 
-         the subroutine. More local variables in the same scope can be created 
+      The parameter list, if it is specified, contains a list of one or more
+         scalar variables, which are used as local variables within the scope of
+         the subroutine. More local variables in the same scope can be created
          with LOCAL or DIM LOCAL statements.
       When the subroutine is called, the variables in its parameter list are set
          to the values specified in the CALL statement's argument list. Both
@@ -22,7 +22,7 @@ SUB STRING subroutine-name ( [ parameter-list ] )
          the argument list must also be numeric. If a value in the parameter
          list is a string, the corresponding value in the argument list must
          also be a string.
-         
+
       All subroutines have a return value. The CALL statement can use that value
          or ignore it, as required.
       Subroutines declared with SUB NUMERIC return a numeric value and those

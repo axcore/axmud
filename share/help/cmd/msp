@@ -1,5 +1,5 @@
 msp / msp                     Manages the Mud Sound Protocol (MSP)
- 
+
    Format:
       ;msp                    Shows MSP status for this session
       ;msp on                 Turns on MSP for this session (only)
@@ -11,7 +11,7 @@ msp / msp                     Manages the Mud Sound Protocol (MSP)
       ;msp -m                 Enable/disable playing multiple sounds together
       ;msp -a                 Enable/disable auto-downloading sound files
       ;msp -f                 Enable/disable flexible MSP tag placement
- 
+
    Notes:
       The Mud Sound Protocol (MSP) allows a world to offer its own unique set of
          sounds, and to request that the client plays those sounds in response
@@ -20,7 +20,7 @@ msp / msp                     Manages the Mud Sound Protocol (MSP)
          that), but in most cases the whole sound set should be downloaded in
          one go, and then saved in Axmud's main data directory/folder. For
          example, sound files from DeathMUD might be saved to
- 
+
             /home/yourname/axmud-data/msp/deathmud/
 
       Some worlds offer a soundpack - a collection of sound files for use with
@@ -38,23 +38,23 @@ msp / msp                     Manages the Mud Sound Protocol (MSP)
          (use ';setmudprotocol -y' to turn it back on).
 
       Sound requests from the world to the client are invisible to the player.
-         For most worlds, MSP sounds will start playing automatically, every 
+         For most worlds, MSP sounds will start playing automatically, every
          time you connect to the world. However, a few worlds don't follow the
-         usual rules, and expect you to turn on MSP sound manually. If you 
+         usual rules, and expect you to turn on MSP sound manually. If you
          start seeing messages like these:
 
             !!SOUND(...)
             !!MUSIC(...)
 
       ...you can turn on/off MSP for this session only by typing ';msp on' or
-         ';msp off'. 
-      
+         ';msp off'.
+
       Use the -l switch to get a list of downloaded sounds for the current
          world. Use the -t switch to play any of those sounds.
-      
+
       MSP makes a distinction between 'sound' files (which respond to events in
          the world), and 'music' files (which often play continuously in the
-         background). Only one 'music' file can play concurrently, but any 
+         background). Only one 'music' file can play concurrently, but any
          number of 'sound' files can play concurrently. To turn this on or off,
          use the -m switch.
       Some worlds will invite Axmud to download sound files before playing them
@@ -64,6 +64,6 @@ msp / msp                     Manages the Mud Sound Protocol (MSP)
          of a line, rather than at the beginning. This is officially
          discouraged, but if you want Axmud to recognise MSP tags in the middle
          of a line, you can use the -f switch.
- 
+
    User commands:
       msp

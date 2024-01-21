@@ -1,12 +1,12 @@
 km / killmall                 Attacks all NPC target(s) in the current room
- 
+
    Format:
       ;km                     Attacks all NPCs
- 
+
    Notes:
       ';killmall' has the same effect as ';kill mall' (or whatever the word for
          'mall' is in the current world).
       See also the help for ';kill'.
- 
+
    User commands:
       km / killmall

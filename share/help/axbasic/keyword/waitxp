@@ -13,14 +13,14 @@ WAITXP expression [ , expression ]
          the Status task is not running (or if it doesn't know anything about
          the character's XP), the Axbasic script pauses briefly and resumes
          execution on the next task loop.
-      See also the help for WAITEP, WAITGP, WAITHP, WAITMP, WAITSP and for 
+      See also the help for WAITEP, WAITGP, WAITHP, WAITMP, WAITSP and for
          WAITNEXTXP and WAITTOTALXP.
 
    Requires:
       If the script is not being run as a task, the WAITXP statement is ignored
          (and no error message is generated). Execution continues with the next
          statement.
-         
+
    Examples:
       ! Wait for XP to reach 50000
       WAITXP 50000

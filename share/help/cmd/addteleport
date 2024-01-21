@@ -1,21 +1,21 @@
 adt / addteleport             Adds a teleport destination to the world model
- 
+
    Format:
       ;adt <room> <cmd>       Adds a teleport destination
- 
+
    Notes:
       The ';teleport' command is a convenient way of jumping around any world
-         which implements some kind of teleportation system (in which you can 
-         jump to a destination room from many different departure rooms). 
+         which implements some kind of teleportation system (in which you can
+         jump to a destination room from many different departure rooms).
       The advantage of using that client command, rather than typing a world
          command like 'portal tower', is that the automapper won't get lost when
          you use ';teleport'.
 
-      The ';addteleport' command is used to add a teleport destination to 
-         Axmud's world model. 
-      <room> is a name for the destination room, which is often the same as a 
-         room tag in the world model, or the same as the unique model number of 
-         a room in the world model. <cmd> is the world command actually used to 
+      The ';addteleport' command is used to add a teleport destination to
+         Axmud's world model.
+      <room> is a name for the destination room, which is often the same as a
+         room tag in the world model, or the same as the unique model number of
+         a room in the world model. <cmd> is the world command actually used to
          reach this room.
       A full explanation of how this works can be found in the help for the
          ';teleport' command. See also the help for ';deleteteleport' and

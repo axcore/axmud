@@ -961,7 +961,7 @@ The strings specified below return the following kinds of value in a peek/poke o
     o race.NAME
          Race profile called 'NAME' (from GA::Session->profHash)
 
-
+                  
     F recording.active
          Recording currently in progress (GA::Session->recordingFlag)
     F recording.paused
@@ -978,6 +978,16 @@ The strings specified below return the following kinds of value in a peek/poke o
          Regex matching short web links (GA::Client->constShortUrlRegex)
     S regex.email
          Regex matching valid email addresses (GA::Client->constEmailRegex)
+
+
+    o room.map
+         Shortcut to the automapper's current room (GA::Session->mapObj->currentRoom)
+    o room.last
+         Shortcut to the automapper's last known room (GA::Session->mapObj->lastKnownRoom)
+    o room.ghost
+         Shortcut to the automapper's ghost room (GA::Session->mapObj->ghostRoom)
+    o room.locator
+         Shortcut to the Locator task's room (GA::Session->locatorTask->roomObj)
 
 
     L script.init.list
@@ -1159,7 +1169,8 @@ The strings specified below return the following kinds of value in a peek/poke o
          Convert 'dialogue' windows (GA::Client->ttsDialogueFlag)
     F tts.enable.task
          Convert (some) task window text (GA::Client->ttsTaskFlag)
-
+    F tts.enable.verbose
+         Verbose TTS output (GA::Client->ttsVerboseFlag)
 
     F window.main.share
          Share 'main' windows (GA::Client->shareMainWinFlag)

@@ -1,0 +1,46 @@
+xti / exporttimer             Exports a timer to the interface clipboard
+
+   Format:
+      ;xti <switches>         Exports a timer
+
+   Notes:
+      Timers are one of five types of Axmud interface (the others being
+         triggers, aliases, macros and hooks).
+      Timers allow you to execute an instruction repeatedly at fixed intervals,
+         and also to specify an instruction to be executed later.
+      This command provides a simple way to copy timers from one profile/cage
+         to another (perhaps even in a different world, in a different session).
+         It 'exports' the timer to Axmud's interface clipboard, from where it
+         can be 'imported'.
+      Note that the contents of the clipboard are not saved, when Axmud saves
+         its files. Note also that the timer's attributes might change while
+         stored in the clipboard. In other words, it's up to you to perform the
+         export, then the import, before doing anything else.
+      You can repeat this command as often as you like, to add multiple timers
+         to the clipboard, before importing them all together with
+         ';importtimer'. Use ';emptyclipboard' when you want to start afresh.
+         Note that 'Export' buttons in preference/edit windows empty the
+         clipboard, before adding one or interfaces to it.
+      Both active and inactive timers can be exported.
+
+      <switches> allows you to define which timer (and which of its attributes)
+         should be exported.
+
+      To export an active timer directly, one of the following (group 0) switch
+         options must be used:
+         -i <name>            - Exports the active timer <name>
+         -i <number>          - Exports the active timer <number>
+      However, to export an inactive timer, one of the following (group 1)
+         switch options must be used instead:
+         <name>               - Exports timer belonging to the current world
+         <name> -w            - Exports timer belonging to the current world
+         <name> -r            - Exports timer belonging to the current race
+         <name> -g            - Exports timer belonging to the current guild
+         <name> -c            - Exports timer belonging to the current char
+         <name> -x <category> - Exports timer belonging to the current custom
+                                   profile <category>
+         <name> -d <prof>     - Exports timer belonging to the profile named
+                                   <prof>
+
+   User commands:
+      xti / expti / exptimer / exportti / exporttimer

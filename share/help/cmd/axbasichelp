@@ -1,25 +1,25 @@
 abh / axbasichelp             Shows help for Axbasic scripts
- 
+
    Format:
       ;abh                    Show general Axbasic help
       ;abh -x                 Show extended Axbasic help
       ;abh <topic>            Show Axbasic help on a specific <topic>
- 
+
    Notes:
       Axbasic is Axmud's own scripting language, based on the original Dartmouth
          BASIC and the later implementation by the same authors, True BASIC.
       As well as standard BASIC keywords and intrinsic (built-in) functions,
          Axbasic provides a number of keywords and functions especially designed
-         to interact with the world and with Axmud's stored data. Use the 
+         to interact with the world and with Axmud's stored data. Use the
          ';axbasichelp' command for a list of keywords and functions.
 
       <topic> can be any Axbasic keyword or intrinsic function. For a list of
          available topics, simply omit <topic>.
       If you specify a keyword that can't begin a statement - a so-called 'weak'
-         keyword like STEP and RADIANS - help for the corresponding (strong) 
-         keyword will be shown. 
+         keyword like STEP and RADIANS - help for the corresponding (strong)
+         keyword will be shown.
       Intrinsic functions that return a string value, like CHR$, can be typed as
          either CHR$ or CHR.
- 
+
    User commands:
       abh / abhelp / axbasichelp

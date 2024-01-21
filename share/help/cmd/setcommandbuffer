@@ -1,19 +1,19 @@
 scb / setcommandbuffer        Sets the size of world command buffers
- 
+
    Format:
       ;scb <size>             Sets the buffer <size>
       ;scb                    Sets the buffer size to 1000
- 
+
    Notes:
       World command buffers are Axmud's records of individual commands sent to
          the world (see the help for ';commandbuffer').
-      Every session has its own world command buffer, storing world commands 
+      Every session has its own world command buffer, storing world commands
          sent by that session. There is also a combined world command buffer
          storing world commands sent by all sessions.
 
-      All world command buffers have the same size, which can be changed with 
-         this command. If specified, <size> must be an integer in the range 
+      All world command buffers have the same size, which can be changed with
+         this command. If specified, <size> must be an integer in the range
          10-1000000.
- 
+
    User commands:
       scb / setcmdbuff / setcommandbuffer

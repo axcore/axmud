@@ -1,8 +1,8 @@
 dls / deletelabelstyle        Deletes a map label style
- 
+
    Format:
       ;dls <name>             Deletes the style
- 
+
    Notes:
       Map labels are drawn in the automapper window. It's possible to customise
          labels individually, but most labels are drawn using a map label style
@@ -12,6 +12,6 @@ dls / deletelabelstyle        Deletes a map label style
          should enclose the name in diamond brackets <...>.
       Any labels using the deleted style become customised labels, with their
          attributes set to default values.
- 
+
    User commands:
       dls / delstyle / deletestyle / deletelabelstyle

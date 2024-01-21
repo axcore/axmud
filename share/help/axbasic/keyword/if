@@ -1,6 +1,6 @@
-IF condition THEN statement [ : statement ... ] 
+IF condition THEN statement [ : statement ... ]
    [ ELSE statement [ : statement ... ]]
-IF condition THEN statement [ : statement ... ] 
+IF condition THEN statement [ : statement ... ]
    [ ELSEIF condition [ : statement ... ]]
 IF condition THEN expression [ ELSE expression ]
 
@@ -30,8 +30,8 @@ END IF
       In scripts with line numbers, these statements are interchangeable:
          10 IF number > 1 THEN GOTO 100
          10 IF number > 1 THEN 100
-      If non-conditional expressions are used, they must evaluate to line 
-         numbers or an error will occur. Complex expressions like '(x + 10) / 2' 
+      If non-conditional expressions are used, they must evaluate to line
+         numbers or an error will occur. Complex expressions like '(x + 10) / 2'
          can be used as well as simple line numbers like 100.
       ELSE IF behaves exactly like ELSEIF.
 

@@ -1,16 +1,16 @@
 tpn / testpanel               Detects sizes of workspace panels (taskbars)
- 
+
    Format:
       ;tpn                    Tests panels on the default workspace
       ;tpn <num>              Tests panels on workspace <num>
- 
+
    Notes:
       Panels are the areas at the edge of the desktop (workspace) that aren't
          available to any window. Often, at least one panel has some kind of
          'start' menu, a list of windows and several other icons, such as one
          displaying the date and time.
       This command tries to detect the size and position of panels. If a
-         workspace <number> isn't specified, the test is performed on the 
+         workspace <number> isn't specified, the test is performed on the
          default workspace (the one in which Axmud opened - use ';listworkspace'
          to get a list of workspaces).
       If the test is successful, those details are used when positioning windows
@@ -24,6 +24,6 @@ tpn / testpanel               Detects sizes of workspace panels (taskbars)
          you'll probably only need to use this command if you change your
          desktop theme (or if you use the ;setpanel' command).
       See also the help for ';listpanel'.
- 
+
    User commands:
       tpn / testpn / testpanel

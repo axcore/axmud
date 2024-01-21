@@ -7,7 +7,7 @@ package mapextract;
 # This file is in the public domain
 
 use strict;
-use diagnostics;
+#use diagnostics;
 use warnings;
 
 use Glib qw(TRUE FALSE);

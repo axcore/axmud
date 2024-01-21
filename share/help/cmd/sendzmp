@@ -1,20 +1,20 @@
 szmp / sendzmp                Sends a ZMP command to the world
- 
+
    Format:
       ;szmp <cmd>             Sends a ZMP command
       ;szmp <cmd> <params>    Sends a ZMP command with optional parameters
- 
+
    Notes:
-      The world can use the ZMP protocol to send extra information about the 
-         game state (see the help for ';zmp'). 
-      The client can also use ZMP to send information back to the world, 
+      The world can use the ZMP protocol to send extra information about the
+         game state (see the help for ';zmp').
+      The client can also use ZMP to send information back to the world,
          typically to request more data. A ZMP <cmd> is usually in the form
          form:
-            
+
          Package[.SubPackages].Command [parameter] [parameter]...
-         
+
       Consult the world's own documentation for details of which ZMP commands it
         accepts.
-        
+
    User commands:
       szmp / sendzmp

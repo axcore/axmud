@@ -1,5 +1,5 @@
 rll / resetlightlist          Resets the list of recognised light status values
- 
+
    Format:
       ;rll                    Resets the list
 
@@ -7,11 +7,11 @@ rll / resetlightlist          Resets the list of recognised light status values
       Worlds will often present different verbose room descriptions, depending
          on the time of day in the game world and how much light is illuminating
          the character's location.
-      Axmud represents current conditions with a 'light status' (stored in the 
+      Axmud represents current conditions with a 'light status' (stored in the
          world model). There are three standard values for the light status
-         ('day', 'night' and 'dark'). New values can be added with the 
+         ('day', 'night' and 'dark'). New values can be added with the
          ';setlightlist' command; this command reset the list to its default
          values.
- 
+
    User commands:
       rll / resetlightlist

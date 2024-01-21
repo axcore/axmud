@@ -4,21 +4,21 @@ POKEMINUS axmud-object-property, expression
       Subtracts a number from the value of an Axmud internal scalar property
 
    Notes:
-      POKE gives Axbasic scripts access to some of Axmud's internal data (see 
-         the help for the POKE statement for a full explanation). 
-      POKEMINUS is similar to POKE, but it only sets the value of scalar 
+      POKE gives Axbasic scripts access to some of Axmud's internal data (see
+         the help for the POKE statement for a full explanation).
+      POKEMINUS is similar to POKE, but it only sets the value of scalar
          properties such as "world.current.longName". It cannot be used to set a
          list property such as "world.current.doorPatternList", a hash property
          such as "world.current.currencyHash" or a Perl object such as
          "world.current".
-      POKEMINUS modifies the value of the scalar property by subtracting the 
+      POKEMINUS modifies the value of the scalar property by subtracting the
          value of the expression. Both values must be numeric.
       Much of Axmud's internal data is read-only, and cannot be modified with
          POKE or with this statement. If you try to modify a read-only property
          you will get an 'operation failure' error.
 
-   Warning: 
-      Do not try to modify Axmud's internal data unless you know what you are 
+   Warning:
+      Do not try to modify Axmud's internal data unless you know what you are
          doing. Read the Axmud manual before you try to POKE anything. (The
          examples below are safe, but backup your data first.)
 
@@ -27,6 +27,6 @@ POKEMINUS axmud-object-property, expression
       POKEMINUS "world.current.suppressEmptyLineCount", 2
       ! The value must not fall below zero!
       PEEK number = "world.current.suppressEmptyLineCount"
-      IF number < 0 THEN 
+      IF number < 0 THEN
          POKESET "world.current.suppressEmptyLineCount", 0
       END IF

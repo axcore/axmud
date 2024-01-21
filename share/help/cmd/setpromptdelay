@@ -1,27 +1,27 @@
 spd / setpromptdelay          Sets a system prompt delay time
- 
+
    Format:
       ;spd -p <interval>      Sets the system prompt delay (in seconds)
       ;spd -p                 Resets the system prompt delay
 
       ;spd -l <interval>      Sets the login warning delay (in seconds)
       ;spd -l                 Resets the login warning delay
- 
+
    Notes:
       Sometimes the client receives text that doesn't end in a newline character
-         (an invisible character that instructs the client to start a new line). 
-         This may be because only half a line has been received (and that the 
+         (an invisible character that instructs the client to start a new line).
+         This may be because only half a line has been received (and that the
          rest is on its way), or it may be that the world has sent a prompt like
          'Enter your name'.
-      The system prompt delay specifies how long Axmud should wait, before 
-         treating such a line as a prompt. The default value is 0.5 seconds. 
+      The system prompt delay specifies how long Axmud should wait, before
+         treating such a line as a prompt. The default value is 0.5 seconds.
          <interval> must be in the range 0.1 - 5.
 
-      After connecting to a world, the login warning delay specifies how long 
-         Axmud should wait, before warning the user that they have not yet 
-         logged in. (Many Axmud processes, including many tasks, can only start 
+      After connecting to a world, the login warning delay specifies how long
+         Axmud should wait, before warning the user that they have not yet
+         logged in. (Many Axmud processes, including many tasks, can only start
          once the login process is complete.)
       The default value is 30 seconds. If <interval> is 0, no warning is shown.
- 
+
    User commands:
       spd / setdelay / setpromptdelay

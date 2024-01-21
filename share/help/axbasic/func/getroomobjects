@@ -5,7 +5,7 @@ Getroomobjects (string)
       Returns the number of objects in the Locator task's current location
 
    Notes:
-      If 'string' is specified, only the number of matching objects is returned. 
+      If 'string' is specified, only the number of matching objects is returned.
          'string' can be any category of world model object that a room can
          contain: "weapon", "armour", "garment", "char" (for characters),
          "minion", "sentient", "creature", "portable", "decoration" or
@@ -15,4 +15,4 @@ Getroomobjects (string)
          case the number of non-living things is returned).
       If the Locator task isn't running, if it doesn't know the current
          location, if the location seems to be empty or if an unrecognised
-         'string' is specified, returns 0.  
+         'string' is specified, returns 0.

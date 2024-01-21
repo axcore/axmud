@@ -1,5 +1,5 @@
 Getobjecttype$ (number)
-        
+
    Synopsis:
       Returns the type of an object in the Locator task's current room
 

@@ -6,7 +6,7 @@ Ip (x)
    Notes:
       It is always true that Ip (x) + Fp (x) = x.
       Note that the Ip$ () function is not related to Ip ().
-      
+
    Examples:
       Ip (4.3)   >> 4
       Ip (-7.2)  >> -7

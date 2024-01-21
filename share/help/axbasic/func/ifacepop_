@@ -2,8 +2,8 @@ Ifacepop$ ()
 
    Synopsis:
       Removes and returns the last item of additional data provided by the
-         interface when it fired   
-      
+         interface when it fired
+
    Notes:
       The interface notification list contains all the notifications received,
          and not yet processed, as the result of an earlier SETTRIG, SETALIAS,

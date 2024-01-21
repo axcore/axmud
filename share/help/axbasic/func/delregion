@@ -1,5 +1,5 @@
 Delregion (string)
-       
+
    Synopsis:
       Deletes the world model region whose name is 'string'
 

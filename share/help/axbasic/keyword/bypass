@@ -2,17 +2,17 @@ BYPASS expression
 
    Synopsis:
       Executes a bypass command, bypassing any queued world commands
-      
+
    Notes:
       This is the equivalent of a bypass command typed in the 'main' window's
          command entry box.
       The expression is executed as a world command immediately, bypassing any
-         world commands which have been queued (because of the current world 
+         world commands which have been queued (because of the current world
          profile's slowwalking settings or because crawl mode is on).
-      If the bypass command produces any kind of error, the Axbasic script 
+      If the bypass command produces any kind of error, the Axbasic script
          continues as normal. No Axbasic error message is generated.
       See also the help for PERL, MULTI and SPEED.
-   
+
    Examples:
       ! Execute a world command, bypassing any queued world commands
       BYPASS "drink water"

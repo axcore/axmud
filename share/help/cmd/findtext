@@ -1,10 +1,10 @@
 find / findtext               Finds matching text in a textview
- 
+
    Format:
       ;find <switches> <pattern>
       ;find <pattern> <switches>
                               Finds matching text
-                              
+
    Notes:
       This command finds text matching the pattern/regular expression <pattern>.
          By default, the current session's default textview (where text received
@@ -23,6 +23,6 @@ find / findtext               Finds matching text in a textview
          use this command again and again until you find the right line.
       To make Axmud forget this position - so that the next search will start
          from the bottom of the textview - use the ';findreset' command.
- 
+
    User commands:
       find / findtext

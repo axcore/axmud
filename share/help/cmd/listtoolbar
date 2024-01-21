@@ -1,5 +1,5 @@
 ltb / listtoolbar             Lists toolbar buttons used in 'internal' windows
- 
+
    Format:
       ;ltb                    Lists toolbar buttons
 
@@ -10,6 +10,6 @@ ltb / listtoolbar             Lists toolbar buttons used in 'internal' windows
          ';edittoolbar' command to view settings for a particular button.
       Toolbar buttons can be added, deleted and modified in the client's
          preference window (use the ';editclient' command).
-  
+
    User commands:
       ltb / listtool / listtoolbar

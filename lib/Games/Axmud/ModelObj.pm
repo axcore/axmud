@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2022 A S Lewis
+# Copyright (C) 2011-2024 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -19,7 +19,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -95,6 +95,10 @@
         #   everything it contains) at the end of the current session, or if that's not possible, at
         #   the beginning of the next one
         $self->{tempRegionFlag}     = FALSE;
+        # Flag set to TRUE if he user has marked this region as 'finished'. Note that temporary
+        #   regions can't be marked as finished
+        $self->{finishedFlag}       = FALSE;
+
 
         # Bless the object into existence
         bless $self, $class;
@@ -801,6 +805,35 @@
         return ($exitCount, $checkedCount, $checkableCount);
     }
 
+    sub toggleFinished {
+
+        # Can be called by anything
+        # Toggles this region's 'finished' status
+        #
+        # Expected arguments
+        #   (none besides $self)
+        #
+        # Return values
+        #   'undef' on improper arguments
+        #   Otherwise returns the new value of $self->finishedFlag
+
+        my ($self, $check) = @_;
+
+        # Check for improper arguments
+        if (defined $check) {
+
+            return $axmud::CLIENT->writeImproper($self->_objClass . '->toggleFinished', @_);
+        }
+
+        if (! $self->finishedFlag) {
+            $self->ivPoke('finishedFlag', TRUE);
+        } else {
+            $self->ivPoke('finishedFlag', FALSE);
+        }
+
+        return $self->finishedFlag
+    }
+
     ##################
     # Accessors - set
 
@@ -810,13 +843,15 @@
     # Group 5 IVs
     sub tempRegionFlag
         { $_[0]->{tempRegionFlag} }
+    sub finishedFlag
+        { $_[0]->{finishedFlag} }
 }
 
 { package Games::Axmud::ModelObj::Room;
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -1674,7 +1709,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -1770,7 +1805,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -1866,7 +1901,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -1962,7 +1997,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -2139,7 +2174,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -2282,7 +2317,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -2466,7 +2501,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -2642,7 +2677,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -2744,7 +2779,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -2846,7 +2881,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 

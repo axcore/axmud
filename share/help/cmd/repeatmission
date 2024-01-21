@@ -1,9 +1,9 @@
 rmn / repeatmission           Repeats commands from the current mission
- 
+
    Format:
       ;rmn                    Repeats the previous command
       ;rmn <number>           Repeats the previous <number> commands
- 
+
    Notes:
       If <number> is specified, the previous commands are repeated in the same
          order they were sent.
@@ -11,6 +11,6 @@ rmn / repeatmission           Repeats commands from the current mission
          login details are ignored (but they still count towards the total
          number of commands repeated, <number>).
       See the help for ';startmission' for more information about missions.
- 
+
    User commands:
       rmn / repmn / repeatmn / repeatmission

@@ -10,16 +10,16 @@ CALL subroutine-name ( [ expression [ , expression ... ] ] )
 
       All Axbasic subroutines have a return value, the default value being 0. In
          the following statement, the return value is discarded:
-         
+
          CALL MySub
 
       If you want to test the return value, you can use a LET statement to
-         capture it:         
-      
+         capture it:
+
          LET result = CALL MySub (...)
-         
+
       Note that CALL is a statement, not a function, so it cannot be used thus:
-      
+
          PRINT 10 * (CALL MySub (...))
 
    Availability:

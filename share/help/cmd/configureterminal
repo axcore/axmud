@@ -36,6 +36,6 @@ ctl / configureterminal       Configures terminal settings
          entry box. This icon tells whether you're typing a world command
          (that's being sent to the world, one character at a time) or some
          other type of command (such as a client command) executed by Axmud.
-         
+
    User commands:
       ctl / configterm / configureterminal

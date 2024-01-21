@@ -1,16 +1,16 @@
 dip / deleteinitialplugin     Deletes an initial plugin
- 
+
    Format:
       ;dip <path>             Deletes the initial plugin with the file <path>
       ;dip                    Deletes an initial plugin
- 
+
    Notes:
-      Axmud plugins are Perl modules which allow you to extend Axmud's core 
-         functionality with new tasks, client commands, cages, 'edit' windows 
-         and menu items, all of them integrating seemlessly with the existing 
+      Axmud plugins are Perl modules which allow you to extend Axmud's core
+         functionality with new tasks, client commands, cages, 'edit' windows
+         and menu items, all of them integrating seemlessly with the existing
          Axmud code.
 
-      This command deletes a plugin from the list of plugins that are 
+      This command deletes a plugin from the list of plugins that are
          automatically loaded when Axmud starts.
       If you specify <path>, it should be the full file path to the plugin.
          Otherwise, you will be prompted to choose a plugin to load.
@@ -18,9 +18,9 @@ dip / deleteinitialplugin     Deletes an initial plugin
          switch you'll see the directory (folder) where standard plugins are
          stored. Otherwise you'll see the directory where plugins you write
          youself can be stored.
-         
-      See the help for ';loadinitialplugin' for more information about Axmud 
-         plugins.  
+
+      See the help for ';loadinitialplugin' for more information about Axmud
+         plugins.
 
    User commands:
       dip / delplugin / deleteinitialplugin

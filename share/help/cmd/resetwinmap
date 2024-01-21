@@ -1,22 +1,22 @@
 rwm / resetwinmap             Resets a winmap
- 
+
    Format:
       ;rwm <name>             Resets the winmap <name>
- 
+
    Notes:
-      Winmaps are a plan for arranging the layout of 'internal' windows 
-         (consisting of all 'main' windows, 'protocol' windows such as those 
+      Winmaps are a plan for arranging the layout of 'internal' windows
+         (consisting of all 'main' windows, 'protocol' windows such as those
          created by MXP, and 'custom' windows such as task windows).
       See the help for ';addwinmap' for more information about winmaps.
 
       The winmap consists of two parts: a list of strip objects, and a list of
-         table objects. 
+         table objects.
       This command only empties the list of table objects. (Actually, it empties
-         the list of winzones. Each winzone is an area available to be occupied 
+         the list of winzones. Each winzone is an area available to be occupied
          by a single table object).
-      To modify the list of strip objects or to modify other winmap properties, 
+      To modify the list of strip objects or to modify other winmap properties,
          use the ';modifywinmap' command. To manipulate winzones directly, see
          the help for ';addwinzone'.
- 
+
    User commands:
       rwm / resetwm / resetwinmap

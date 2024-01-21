@@ -1,8 +1,8 @@
 qaw / quickaddword            Opens a window to add words to the dictionary
- 
+
    Format:
       ;qaw                    Adds words or terms
- 
+
    Notes:
       Dictionaries help Axmud to interpret the text it receives from the world.
       An Axmud dictionary stores groups of words. It contains a group of weapon
@@ -12,8 +12,8 @@ qaw / quickaddword            Opens a window to add words to the dictionary
          day.
 
       This command opens a window from which you can add new words and terms to
-         the current dictionary. 
-      If the ';collectunknownwords' command has been used to turn word 
+         the current dictionary.
+      If the ';collectunknownwords' command has been used to turn word
          collection on, those words are also listed in the window.
       See also the help for ';addword'.
 

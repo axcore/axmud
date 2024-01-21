@@ -1,14 +1,14 @@
 ews / editworkspace           Opens an 'edit' window for a workspace object
- 
+
    Format:
       ;ews <number>           Edits workspace object <number>
 
    Notes:
       Axmud supports multiple desktops or 'workspaces'. Workspaces can be both
          real and virtual. If you have multiple physical monitors, each one is a
-         workspace. If your computer has a workspace switcher, allowing you to 
+         workspace. If your computer has a workspace switcher, allowing you to
          switch between virtual desktops, each one is a workspace too.
       For a list of workspace object numbers, use the ';listworkspace' command.
- 
+
    User commands:
       ews / editws / editworkspace

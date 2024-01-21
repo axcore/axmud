@@ -5,38 +5,38 @@ POKEPOP ARRAY variable-name = axmud-object-property
       Removes a value from the end of an Axmud internal list property
 
    Notes:
-      PEEK gives Axbasic scripts access to most of Axmud's internal data (see 
+      PEEK gives Axbasic scripts access to most of Axmud's internal data (see
          the help for the PEEK statement for a full explanation).
-      POKEPOP can only be used with list properties such as 
-         "world.current.doorPatternList". It cannot be used with a scalar 
-         property such as "world.current.name", a hash property such as 
+      POKEPOP can only be used with list properties such as
+         "world.current.doorPatternList". It cannot be used with a scalar
+         property such as "world.current.name", a hash property such as
          "world.current.currencyHash" or a Perl object such as "world.current".
-      'variable-name' is set to the last value of the list property. In 
+      'variable-name' is set to the last value of the list property. In
          addition, that value is removed from the list property. If the list
          property is empty, a string variable is set to  "<<undef>>" and a
          numeric variable is set to 0.
       Much of Axmud's internal data is read-only, and cannot be modified with
-         this statement. If you try to modify a read-only property you will get 
+         this statement. If you try to modify a read-only property you will get
          an 'operation failure' error.
 
-   Warning: 
-      Do not try to modify Axmud's internal data unless you know what you are 
+   Warning:
+      Do not try to modify Axmud's internal data unless you know what you are
          doing. Read the Axmud manual before you try to POKEPOP anything. (The
          examples below are safe, but backup your data first.)
 
    Compatibility:
       Before Axbasic v1.002, POKEPOP was PEEKPOP.
-      
+
    Examples:
       ! Remove the last value from a list property and store it in an Axbasic
       ! global scalar variable
       POKEPOP pattern$ = "world.current.doorPatternList"
 
-      ! Remove the last value from a list property and store it in an Axbasic 
+      ! Remove the last value from a list property and store it in an Axbasic
       ! global array
       POKEPOP ARRAY patterns$ = "world.current.doorPatternList"
- 
-      ! Remove the last value from a list property and store it in an Axbasic 
+
+      ! Remove the last value from a list property and store it in an Axbasic
       ! local scalar variable
       LOCAL pattern$
       POKEPOP pattern$ = "world.current.doorPatternList"

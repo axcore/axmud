@@ -1,5 +1,5 @@
 uws / useworkspace            Makes a workspace available for Axmud to use
- 
+
    Format:
       ;uws                    Uses the next available workspace
       ;uws <number>           Uses the workspace with the system <number>
@@ -9,21 +9,21 @@ uws / useworkspace            Makes a workspace available for Axmud to use
    Notes:
       Axmud supports multiple desktops or 'workspaces'. Workspaces can be both
          real and virtual. If you have multiple physical monitors, each one is a
-         workspace. If your computer has a workspace switcher, allowing you to 
+         workspace. If your computer has a workspace switcher, allowing you to
          switch between virtual desktops, each one is a workspace too.
-      This command adds one of your system's workspaces to the list of 
-         workspaces Axmud is using. Axmud uses its own numbering system for 
+      This command adds one of your system's workspaces to the list of
+         workspaces Axmud is using. Axmud uses its own numbering system for
          workspaces, which might not match the computer's numbering system. Use
          ';listworkspace' to get a list of available workspaces.
       If you don't specify a <number>, Axmud will use the first available
          workspace. The way in which Axmud selects the first available workspace
          can be modified with the ';setworkspacedirection' command.
       If you specify a <zonemap>, that zonemap is used as the default zonemap
-         for the workspace. If you don't specify one, Axmud will choose a 
+         for the workspace. If you don't specify one, Axmud will choose a
          default zonemap.
 
       To modify which workspaces Axmud uses when it starts, see the help for
          ';addinitialworkspace'.
- 
+
    User commands:
       uws / usews / useworkspace

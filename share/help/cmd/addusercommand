@@ -1,27 +1,27 @@
 auc / addusercommand          Adds a new user command
- 
+
    Format:
-      ;auc <standard_command> <user_command> 
+      ;auc <standard_command> <user_command>
                Adds a new user command corresponding to a client command
- 
+
    Notes:
       All client commands have a single standard form (for example, this
          command's standard form is 'addusercommand').
       Some of the standard forms for client commands are quite long, so Axmud
          allows the user to create abbreviated versions called 'user commands'.
       Each client command already has one or more user commands by default. The
-         user commands for this command are listed below. One of them is 
+         user commands for this command are listed below. One of them is
          identical to the standard form of the client command.
 
-      Now, whenever you type a client command in the 'main' window, what you're 
-          actually typing is a user command. Axmud translates this into the 
+      Now, whenever you type a client command in the 'main' window, what you're
+          actually typing is a user command. Axmud translates this into the
           standard form of the corresponding client command before executing it.
-      User commands must be no longer than 32 characters, contain only A-Z, a-z, 
-         underlines and 0-9 (not the first character) and not be one of Axmud's 
+      User commands must be no longer than 32 characters, contain only A-Z, a-z,
+         underlines and 0-9 (not the first character) and not be one of Axmud's
          reserved names (see the ';listreserved' command). Non-Latin alphabets
          are acceptable.
       You can't add a user command which is already in use by another standard
          command.
- 
+
    User commands:
       auc / adduc / addusercmd / addusercommand

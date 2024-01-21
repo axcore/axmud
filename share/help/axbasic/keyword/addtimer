@@ -9,16 +9,16 @@ ADDTIMER expression , expression [ , expression ]
          third expression is specified, it is used as the timer name; otherwise
          Axmud assigns a name to the timer.
       The following Axbasic statements are therefore interchangeable:
-      
+
          ADDTIMER "stimulus", "response", "name"
          CLIENT "addtimer -s stimulus -p response -n name"
-         
+
       If Axmud can't create the new timer, execution of the Axbasic script
          continues as normal. No error message is generated.
-      All timers created by this statement are 'inactive' timers, and are 
-         assigned to a cage belonging to the current world (unless an earlier 
-         PROFILE statement specified a different profile). If there are no 
-         higher-priority timers with the same name, the corresponding 'active' 
+      All timers created by this statement are 'inactive' timers, and are
+         assigned to a cage belonging to the current world (unless an earlier
+         PROFILE statement specified a different profile). If there are no
+         higher-priority timers with the same name, the corresponding 'active'
          timer will be created automatically.
       Timers created with this statement are automatically deleted when the
          script terminates (unless you use an OPTION PERSIST statement somewhere

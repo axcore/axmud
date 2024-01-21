@@ -1,15 +1,15 @@
 dtp / deletetaskpackage       Deletes a task package name
- 
+
    Format:
       ;dtp <task_name>        Deletes the task package name for <task_name>
- 
+
    Notes:
-      A task package name is the name of the Perl package that handles a task, 
+      A task package name is the name of the Perl package that handles a task,
          e.g. 'Axmud::Task::Status' for the Status task.
       <task_name> matches the task's formal name, e.g. 'status_task',
          'locator_task', etc.
       Using this command will prevent Axmud from calling the task.
       The operation will fail if the specified task is currently running.
- 
+
    User commands:
       dtp / deltp / deletetp / deletetaskpackage

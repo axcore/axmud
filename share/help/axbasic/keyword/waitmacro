@@ -19,7 +19,7 @@ WAITMACRO expression [ , expression ]
       If the script is not being run as a task, the WAITMACRO statement is
          ignored (and no error message is generated). Execution continues with
          the next statement.
-         
+
    Examples:
       WAITMACRO "f1"
       WAITMACRO "f1", 60

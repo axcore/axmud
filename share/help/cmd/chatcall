@@ -1,8 +1,8 @@
 call / chatcall               Calls one of your contacts
- 
+
    Format:
       ;call <name>            Calls <name>
- 
+
    Notes:
       The Chat task is used to chat with other players directly via telnet.
          Calls can be placed (or accepted) with any user whose MUD client uses
@@ -12,6 +12,6 @@ call / chatcall               Calls one of your contacts
       You can add people to your contacts list with the ';addcontact' command.
       To call someone who's not on your contacts list, use the ';chatmcall' and
          ';chatzcall' commands.
- 
+
    User commands:
       call / chatcall

@@ -7,39 +7,39 @@ lpr / listprofile             Lists profiles
 
    Notes:
       Profiles are collections of data about worlds, guilds, races, characters
-         and so on. Every Axmud session (every open tab in the 'main' window) 
+         and so on. Every Axmud session (every open tab in the 'main' window)
          always uses at least one profile - the 'current' world profile.
       Profiles are also essential for Axmud's advanced handling of interfaces
          (triggers, aliases, macros, timers and hooks).
       All interfaces can have an associated profile - a trigger can be attached
-         to a particular race, a macro attached to a particular character, and 
-         so on. Profiles have a priority order, so that if there are two 
-         triggers with the same name, the one associated with the character 
-         profile trumps the one associated with the race profile. (The priority 
+         to a particular race, a macro attached to a particular character, and
+         so on. Profiles have a priority order, so that if there are two
+         triggers with the same name, the one associated with the character
+         profile trumps the one associated with the race profile. (The priority
          order can be changed, if this isn't what you want.)
       Besides the four categories of profile mentioned above, you can create
-         customised profiles based on the unique features of the worlds you 
+         customised profiles based on the unique features of the worlds you
          play - for example, for a MUD where players are divided into factions,
-         you might create 'faction' profiles. The blueprint for a new category 
-         of profile is called a profile template. Once you have finished 
+         you might create 'faction' profiles. The blueprint for a new category
+         of profile is called a profile template. Once you have finished
          creating the template, you can add any number of profiles based on it.
-      Every world profile has a unique name. When Axmud starts, all world 
+      Every world profile has a unique name. When Axmud starts, all world
          profiles are loaded into memory from file and ';ld -m' lists them all.
       Each session knows about the guild, race, character and custom profiles
          associated with the current world profile for that session. Each of
          them have a unique name within the session (which might possibly be the
-         same as a different world profile, but that doesn't matter). When the 
-         session starts, they are loaded into memory from file, and (usually) 
+         same as a different world profile, but that doesn't matter). When the
+         session starts, they are loaded into memory from file, and (usually)
          saved back to file at the end of the session.
-      You can mark one profile in each category as being a 'current' profile. 
-         You should definitely have a current character, and it's desirable to 
-         set the current guild and race, too. Axmud only pays attention to the 
+      You can mark one profile in each category as being a 'current' profile.
+         You should definitely have a current character, and it's desirable to
+         set the current guild and race, too. Axmud only pays attention to the
          current profile of each category (if any).
-      Marking a profile as current activates the interfaces for that profile 
-         (disactivating other interfaces with the same name, if they're 
-         associated with profiles lower on the priority list). Marking a 
-         different profile as current disables those interfaces again. 
-      Profiles can be added, deleted or marked as current with commands like 
+      Marking a profile as current activates the interfaces for that profile
+         (disactivating other interfaces with the same name, if they're
+         associated with profiles lower on the priority list). Marking a
+         different profile as current disables those interfaces again.
+      Profiles can be added, deleted or marked as current with commands like
          ';addworld', ';cloneworld', ';setguild', ';unsetguild', ';deleterace'
          and so on.
 

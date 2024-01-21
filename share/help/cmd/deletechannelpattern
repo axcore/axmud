@@ -3,7 +3,7 @@ dchp / deletechannelpattern   Deletes Channels/Divert task patterns
    Format:
       ;dchp <number>          Deletes the channel pattern <number>
       ;dchp -e <number>       Deletes the exception pattern <number>
- 
+
    Notes:
       The Channels and Divert tasks intercept text received from the world and
          divert that text into their own task window. Sometimes the text is
@@ -19,6 +19,6 @@ dchp / deletechannelpattern   Deletes Channels/Divert task patterns
          want to delete.
       If you want to delete an exception pattern, you must specify the '-e'
          switch, and you must first use ';listchannelpattern -e'.
-         
+
    User commands:
       dchp / delchan / delchannel / deletechannelpattern

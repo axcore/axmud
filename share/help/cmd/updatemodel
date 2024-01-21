@@ -1,25 +1,25 @@
 umd / updatemodel             Updates the world model's lists of unknown words
- 
+
    Format:
       ;umd                    Updates the world model
       ;umd -t                 Updates the world model, truncating output
- 
+
    Notes:
       The world model stores information about the regions, rooms, characters
          and objects in the game world. The automapper window uses the model to
          display its maps.
-      When objects (not including regions and rooms) are added to the world 
-         model, words are extracted from their base descriptions and stored as 
-         nouns and adjectives. For example, from the object 'big hairy orc' we 
-         might be able to extract the noun 'orc' and the adjectives 'big' and 
+      When objects (not including regions and rooms) are added to the world
+         model, words are extracted from their base descriptions and stored as
+         nouns and adjectives. For example, from the object 'big hairy orc' we
+         might be able to extract the noun 'orc' and the adjectives 'big' and
          'hairy'.
       However, words which the current dictionary doesn't recognise are stored
          in each object as unknown words. As the dictionary is expanded, the
          unknown word lists stored in world model objects become out of date.
       This command checks the unknown words, re-classifying any that the current
          dictionary now recognises.
-      A list of re-classified words is displayed in the 'main' window. To hide 
+      A list of re-classified words is displayed in the 'main' window. To hide
          the list, use the '-t' switch.
- 
+
    User commands:
       umd / updatemd / updatemodel

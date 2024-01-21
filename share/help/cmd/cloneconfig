@@ -1,9 +1,9 @@
 ccf / cloneconfig             Clones an existing text-to-speech configuration
- 
+
    Format:
       ;ccf <original> <clone>
                Clones the configuration <original> into one called <copy>
- 
+
    Notes:
       If you have one or more of the text-to-speech engines installed on your
          system, Axmud can use them to convert text to speech.
@@ -12,16 +12,16 @@ ccf / cloneconfig             Clones an existing text-to-speech configuration
          espeak-ng, Flite, Festival and Swift.
       Axmud also uses a dummy engine, called 'none'. If Axmud tries to convert
          text to speech using the dummy engine, you'll hear nothing.
-         
-      Axmud stores a number of TTS configurations. Each configuration stores an 
-         engine, voice, speed and pitch setting, among others. Text received 
-         from the world uses one configuration, system messages use another, so 
-         it's easy to customise the configurations so that they read aloud in 
+
+      Axmud stores a number of TTS configurations. Each configuration stores an
+         engine, voice, speed and pitch setting, among others. Text received
+         from the world uses one configuration, system messages use another, so
+         it's easy to customise the configurations so that they read aloud in
          different voices.
-      You can use this command to create a new configuration, using the same 
-         engine, voice, word speed and word pitch as an existing configuration. 
-         The original configuration's exclusive and excluded patterns are also 
+      You can use this command to create a new configuration, using the same
+         engine, voice, word speed and word pitch as an existing configuration.
+         The original configuration's exclusive and excluded patterns are also
          cloned, if set.
- 
+
    User commands:
       ccf / clonecf / cloneconfig

@@ -25,7 +25,7 @@ mcf / modifyconfig            Modifies text-to-speech configurations
          configuration called <name>. You can then use the ';speak' command to
          test the new configuration, if you want. (See also the help for
          ';addconfig', ';cloneconfig', ';deleteconfig' and ';listconfig'. The
-         command ';editconfig' opens an object viewer window, from which you can
+         command ';editconfig' opens an data viewer window, from which you can
          also modify the configuration.)
       Note that the configurations called 'espeak', 'esng', 'flite', 'festival',
          'swift' and 'none' can't be modified (but other configurations using
@@ -58,7 +58,7 @@ mcf / modifyconfig            Modifies text-to-speech configurations
                                  Must be in the range 0-100
          speed                Resets the word speed (a default value is used)
 
-         rate <num>           Sets the word rate to <num> (Festival, and Swift 
+         rate <num>           Sets the word rate to <num> (Festival, and Swift
                                  on Linux only). Must be in the range 0-100
          rate                 Resets the word rate (a default value of is used)
 
@@ -96,7 +96,7 @@ mcf / modifyconfig            Modifies text-to-speech configurations
       This changes the TTS engine used by all configurations to the engine
          called <string>. This doesn't affect the configurations that can't be
          modified, namely 'espeak', 'esng', 'flite', 'festival', 'swift' and
-         'none'. 
-         
+         'none'.
+
    User commands:
       mcf / config / modconfig / modifyconfig

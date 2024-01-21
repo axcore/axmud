@@ -2,7 +2,7 @@ room / roomcommand            Executes a room command
 
    Format:
       ;room                   Executes the next room command
- 
+
    Notes:
       A few worlds (for example EmpireMUD) offer a series of commands in each
          room, which are specific to that room.
@@ -15,6 +15,6 @@ room / roomcommand            Executes a room command
 
       See also the help for ';ignoreroomcommand', ';noticeroomcommand' and
          ';listroomcommand'.
- 
+
    User commands:
       room / roomcmd / roomcommand

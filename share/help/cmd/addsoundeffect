@@ -1,27 +1,27 @@
 ase / addsoundeffect          Adds a new sound effect
- 
+
    Format:
       ;ase <name>             Adds (or replaces) an effect
       ;ase <name> -d          Adds (or replaces) an effect with no sound file
       ;ase -d <name>
- 
+
    Notes:
-      Axmud's sound effects bank contains a list of named sound effects, each of 
-         which corresponds to a sound file. 
+      Axmud's sound effects bank contains a list of named sound effects, each of
+         which corresponds to a sound file.
       This command adds a new sound effect to the bank (or replaces an existing
-         one). A dialogue window will open from which you can choose a sound 
+         one). A dialogue window will open from which you can choose a sound
          file (such as an .mp3 file). However, if you use the '-d' switch, the
-         sound effect will not be associated with a file; this will have the 
-         effect of disabling the sound effect until you specify a file at some 
+         sound effect will not be associated with a file; this will have the
+         effect of disabling the sound effect until you specify a file at some
          later date.
-      Sound effect names must be no longer than 16 characters, contain only A-Z, 
-         a-z, underlines and 0-9 (not the first character) and not be one of 
+      Sound effect names must be no longer than 16 characters, contain only A-Z,
+         a-z, underlines and 0-9 (not the first character) and not be one of
          Axmud's reserved names (see the ';listreserved' command). Non-Latin
          alphabets are acceptable.
       If a sound effect called <name> already exists, it will be replaced.
       You can use the ';resetsoundeffect' command to restore the default sound
          effects bank. See the help for ';sound' for more information about the
          default sound effects bank.
- 
+
    User commands:
       ase / addse / addsound / addsoundeffect

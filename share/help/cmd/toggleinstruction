@@ -1,23 +1,23 @@
 tin / toggleinstruction       Enables/disables various instruction settings
- 
+
    Format:
       ;tin                    Shows current instruction settings
-      
+
       ;tin -c                 Toggles confirmation of world commands
       ;tin -v                 Toggles conversion of world commands to lower case
       ;tin -w                 Toggles retention of world commands
       ;tin -o                 Toggles retention of other kinds of instruction
       ;tin -m                 Toggles sending multi commands to all sessions
-      
+
    Notes:
       Axmud offers several different kinds of instructions (see the help for
-         ';togglesigil' for a list of them). Instructions are usually typed in 
-         the 'main' window's command entry box, but any part of the Axmud code 
+         ';togglesigil' for a list of them). Instructions are usually typed in
+         the 'main' window's command entry box, but any part of the Axmud code
          can generate its own instructions.
       This command changes settings for how some of those instructions are
          handled.
-         
-      When world commands are sent, they are usually displayed in the 
+
+      When world commands are sent, they are usually displayed in the
          session's 'main' window, too (in green text by default). The '-c'
          switch enables/disables this behaviour.
       One-word world commands typed in capital letters can be auto-converted to
@@ -29,12 +29,12 @@ tin / toggleinstruction       Enables/disables various instruction settings
          the box, depending on what is more convenient.
       The '-w' switch enables/disables the retention of world commands, as well
          as multi command and speedwalk commands.
-      The '-o' switch enables/disables the retention of other instructions, 
+      The '-o' switch enables/disables the retention of other instructions,
          namely client, echo, Perl and script commands.
-         
-      Multi commands can execute a world command in all sessions, or only in 
+
+      Multi commands can execute a world command in all sessions, or only in
          sessions with the same current world as this one. The '-m' switch
          enables/disables this behaviour.
-      
+
    User commands:
       tin / toggleinstruct / toggleinstruction

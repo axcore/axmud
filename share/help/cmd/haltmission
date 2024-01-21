@@ -1,12 +1,12 @@
 hmn / haltmission             Halts (resets) the current mission
- 
+
    Format:
       ;hmn                    Halts the current mission
- 
+
    Notes:
       Once a mission is halted, it can only be restarted from the very
          beginning.
       See the help for ';startmission' for more information about missions.
- 
+
    User commands:
       hmn / haltmn / haltmission

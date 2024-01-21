@@ -7,7 +7,7 @@ td, th { border: 1px solid #c3c3c3; padding: 0 3px 0 3px; }
 table { border-collapse: collapse; }
 img { max-width: 100%; }
 </style>
-<meta name="generator" content="ReText 7.1.0">
+<meta name="generator" content="ReText 7.2.3">
 <title>ch13</title>
 <style type="text/css">
 </style>
@@ -21,10 +21,13 @@ img { max-width: 100%; }
 <li><a href="#13.1">13.1 Opening the automapper window</a></li>
 <li><a href="#13.2">13.2 Adding and deleting regions</a></li>
 <li><a href="#13.3">13.3 Adding rooms and labels</a></li>
-<li><a href="#13.4">13.4 Exits</a></li>
-<li><a href="#13.5">13.5 Retrieving room data</a></li>
-<li><a href="#13.6">13.6 Room contents</a></li>
-<li><a href="#13.7">13.7 Other automapper functions</a></li>
+<li><a href="#13.4">13.4 Adding exits</a></li>
+<li><a href="#13.5">13.5 Modifying exits</a></li>
+<li><a href="#13.6">13.6 Exit ornaments</a></li>
+<li><a href="#13.7">13.7 Retrieving exit data</a></li>
+<li><a href="#13.8">13.8 Retrieving room data</a></li>
+<li><a href="#13.9">13.9 Room contents</a></li>
+<li><a href="#13.10">13.10 Other automapper functions</a></li>
 </ul>
 <hr>
 <p>Axbasic provides a large set of functions for use with the automapper.</p>
@@ -55,13 +58,23 @@ img { max-width: 100%; }
 <p>The <strong>Deltempregions ()</strong> deletes all temporary regions. It returns 0 only if there are no temporary regions to delete.</p>
 <pre><code>    LET result = Deltempregions ()
 </code></pre>
+<p>You can test whether a region exists, or not, with the <strong>Isregion ()</strong> function. The function returns 1 if the named region exists, or 0 if it doesn't.</p>
+<pre><code>    LET result = Isregion ("Mordor")
+</code></pre>
+<p>Note that region names are case-sensitive, so <strong>mordor</strong> is not the same as <strong>Mordor</strong>.</p>
+<p>You can also test whether a region is temporary, or not. This function returns 1 only if the named region exists <em>and</em> is a temporary region.</p>
+<pre><code>    LET result = Istempregion ("Mordor")
+</code></pre>
+<p>The same applies to any region that you've marked, for your own convenience, as <em>finished</em>.</p>
+<pre><code>    LET result = Isfinished("Mordor")
+</code></pre>
 <p>By the way, you can set the visible region using the <strong>Setregion ()</strong> or <strong>Setregionnum ()</strong> functions.</p>
 <pre><code>    LET result = Setregion ("Mordor")
     LET result = Setregionnum (number)
 </code></pre>
 <p>If you want to know which region is the visible one, you can retrieve those same values using the <strong>Getregion$ ()</strong> and <strong>Getregionnum ()</strong> functions.</p>
 <h2><a name="13.3">13.3 Adding rooms and labels</a></h2>
-<p>Once your map has some regions, you can start adding rooms. The <strong>Addfirstroom ()</strong> draws a room in the middle of the map.</p>
+<p>Once your map has some regions, you can start adding rooms. The <strong>Addfirstroom ()</strong> function draws a room in the middle of the map.</p>
 <pre><code>    LET number = Addfirstroom ()
 </code></pre>
 <p>The next step is to mark that room as the current room.</p>
@@ -94,13 +107,89 @@ img { max-width: 100%; }
     LET result = Addlabel ("This is a label", 2, 2, 0)
 </code></pre>
 <p>There are no Axbasic functions for deleting rooms and labels. You'll have to do that manually.</p>
-<h2><a name="13.4">13.4 Exits</a></h2>
+<h2><a name="13.4">13.4 Adding Exits</a></h2>
 <p>By default, exits are automatically added to the map as your character moves around the world (if the current room is set, and if the automapper is in <strong>update mode</strong>).</p>
-<p>There is no Axbasic function which adds exits to a room, but there are plenty of functions for fetching information about the exits that have already been drawn.</p>
+<p>Axbasic v1.005 adds a number of functions to add or remove exits from a room, or to modify them. In general, you'll need to know the room <strong>number</strong>. In the examples below, we'll use a room numbered #100.</p>
+<p>The <strong>Addexit ()</strong> function adds a single exit to a room, returning the new exit's number.</p>
+<pre><code>    LET number = Addexit (100, "south")
+</code></pre>
+<p>If the exit isn't in one of one of Axmud's 'primary' directions (compass directions like 'north' and 'southwest', as well as 'up' and 'down'), then the automapper will draw the exit in the first available direction. For example, if this <strong>out</strong> exit is the room's first exit, it will be drawn in a northerly direction.</p>
+<pre><code>    LET number = Addexit (100, "out")
+</code></pre>
+<p>If you don't want to leave it to chance, you can specify the direction yourself. The direction must not be in use by some other exit.</p>
+<pre><code>    LET number = Addexit (100, "out", "west")
+</code></pre>
+<p>Having created the exit, we can connect it to a destination room...</p>
+<pre><code>    LET result = Connectexit (number, 101)
+</code></pre>
+<p>...and then disconnect it, leaving it with no destination room.</p>
+<pre><code>    LET result = Disconnectexit (number)
+</code></pre>
+<p>So-called 'twin' exits are a linked pair of exits, usually a two-way exit. A two-way exit might link rooms A and B together, with a "north" exit from room A leading to room B, and a "south" exit from room B leading to room A. </p>
+<p>Having created a single exit with a call to <strong>Addexit ()</strong>, we can convert it into a two-way exit with a call to <strong>Addtwinexit ()</strong>. 
+If an opposite exit already exists, it is used; otherwise a new exit is created.</p>
+<pre><code>    LET twin_number = Addtwinexit (number)
+</code></pre>
+<h2><a name="13.5">13.5 Modifying Exits</a></h2>
+<p>So-called 'hidden' exits exist in the world, but are not always visible in the room's description. </p>
+<p>After creating an exit, we can convert it into a 'hidden' exit.</p>
+<pre><code>    LET result = Sethiddenexit (number)
+</code></pre>
+<p>The same function converts a hidden exit back into a normal exit. Note that 'hidden' exits are always visible in the automapper window.</p>
+<p>You can test whether an exit is hidden, or not, with the <strong>Ishiddenexit ()</strong> function. The function returns 1 if the numbered exit is hidden, or 0 if it isn't.</p>
+<pre><code>    LET result = Ishiddenexit (number)
+</code></pre>
+<p>A 'random' exit is one that has more than one possible destination. The world may select a random destination, each time your character goes through the exit, or the destination may depend on the game state.</p>
+<p>After creating an exit, we can convert it into a 'random' exit. </p>
+<p>There are a few different types of 'random' exit. For example, the exit may lead to a room in the same region:</p>
+<pre><code>    LET result = Setrandomexit (number, "same")
+</code></pre>
+<p>Or, it may lead to a room in any region:</p>
+<pre><code>    LET result = Setrandomexit (number, "any")
+</code></pre>
+<p>In some worlds, travelling through the exit transports the character to a randomly-generated region, which is destroyed when the character leaves the area. In this situation, Axmud can create a temporary region that's deleted at the end of the session.</p>
+<pre><code>    LET result = Setrandomexit (number, "temp")
+</code></pre>
+<p>To convert a 'random' exit back to a normal exit, just omit the second argument.</p>
+<pre><code>    LET result = Setrandomexit (number)
+</code></pre>
+<p>Other values are not recognised; you must specify <strong>"same"</strong>, <strong>"any"</strong> or <strong>"temp"</strong>, if you specify a value at all.</p>
+<p>You can get the type of random exit with the <strong>Getrandomexit$ ()</strong> function. It returns one of the three values above, or <strong>"none"</strong> if the exit isn't random (or doesn't exist).</p>
+<pre><code>    LET type$ = Getrandomexit$ (number)
+</code></pre>
+<p>(It can also return the value <strong>"room"</strong>, if the exit has a designated list of destination rooms. This type of random exit can't be created by Axbasic, but it can be created manually in the automapper window.)</p>
+<h2><a name="13.6">13.6 Exit ornaments</a></h2>
+<p>Exit ornaments give more information about an exit, and are drawn in a different way by the automapper. You can use ornaments to distinguish between locked and unlocked doors, for example.</p>
+<p>To add an ornament to an exit, we can use the <strong>Setornament ()</strong> function. For example, to create an ordinary locked door:</p>
+<pre><code>    LET result = Setornament (number, "lock")
+</code></pre>
+<p>We could also create a door that can't be locked, but can be opened and closed.</p>
+<pre><code>    LET result = Setornament (number, "open")
+</code></pre>
+<p>Some locked doors can be opened with a lockpick, or broken down by brute strength:</p>
+<pre><code>    LET result = Setornament (number, "pick")
+
+    LET result = Setornament (number, "break")
+</code></pre>
+<p>Some exits are impassable: they are visible in the room's description, but the character cannot actually pass through them. </p>
+<pre><code>    LET result = Setornament (number, "impass")
+</code></pre>
+<p>A 'mystery' exit is one that is currently impassable, but might be open at some point the future.</p>
+<pre><code>    LET result = Setornament (number, "mystery")
+</code></pre>
+<p>To remove an exit ornament, just omit the second argument.</p>
+<pre><code>    LET result = Setornament (number)
+</code></pre>
+<p>Other values are not recognised; you must specify <strong>"lock"</strong>, <strong>"open"</strong>, <strong>"pick"</strong>, <strong>"break"</strong>, <strong>"impass"</strong> or <strong>"mystery"</strong>, if you specify a value at all.</p>
+<p>You can get the type of exit ornament with the <strong>Getornament$ ()</strong> function. It returns one of the six values above, or <strong>"none"</strong> if the exit doesn't have an ornament (or doesn't exist).</p>
+<pre><code>    LET type$ = Getornament$ (number)
+</code></pre>
+<h2><a name="13.7">13.7 Retrieving exit data</a></h2>
+<p>There are plenty of functions for fetching information about the exits that have already been drawn.</p>
 <p>The first step is to fetch the number of exits in the current room:</p>
 <pre><code>    LET count = Getroomexits ()
 </code></pre>
-<p>Once you have that number - and assuming that it isn't, meaning that the room has no exits - you can get the exits' directions. For example, if you know there are three exits in the current room, you can display their directions thus:</p>
+<p>Once you have that number - and assuming that it isn't 0, meaning that the room has no exits - you can get the exits' directions. For example, if you know there are three exits in the current room, you can display their directions thus:</p>
 <pre><code>    PRINT Getexit$ (1)
     PRINT Getexit$ (2)
     PRINT Getexit$ (3)
@@ -123,7 +212,13 @@ img { max-width: 100%; }
 <p>An exit in the direction <strong>portal</strong> might actually be drawn on the map as a <strong>north</strong> exit. An actual <strong>north</strong> exit is <em>definitely</em> drawn on the map as a <strong>north</strong> exit. To get the  direction in which an exit is actually drawn:</p>
 <pre><code>    LET dir$ = Getexitdrawn$ (exit_num)
 </code></pre>
-<h2><a name="13.5">13.5 Retrieving room data</a></h2>
+<p>You can test whether an exit still exists using the <strong>Isexit ()</strong> function. The function returns 1 if the numbered exit exists, or 0 if it doesn't.</p>
+<pre><code>    LET result = Isexit (exit_num)
+</code></pre>
+<p>Exits can be deleted, if necessary, with the <strong>Delexit ()</strong> function.</p>
+<pre><code>    LET result = Delexit (exit_num)
+</code></pre>
+<h2><a name="13.8">13.8 Retrieving room data</a></h2>
 <p>The following functions apply to the automapper's current room. To get the room's model number:</p>
 <pre><code>    LET number = Getroomnum ()
 </code></pre>
@@ -137,7 +232,13 @@ img { max-width: 100%; }
 <pre><code>    LET tag$ = Getroomtag$ ()
     LET guild$ = Getroomguild$ ()
 </code></pre>
-<h2><a name="13.6">13.6 Room contents</a></h2>
+<p>You can test whether a room still exists using the <strong>Isroom ()</strong> function. The function returns 1 if the numbered room exists, or 0 if it doesn't.</p>
+<pre><code>    LET result = Isroom (number)
+</code></pre>
+<p>Rooms can be deleted, if necessary, with the <strong>Delroom ()</strong> function.</p>
+<pre><code>    LET result = Delroom (number)
+</code></pre>
+<h2><a name="13.9">13.9 Room contents</a></h2>
 <p>The Locator task is capable of extracting a room's current contents. This doesn't work at most worlds, because few MUDs display the contents list in an unambiguous way. However, if the information is available to the Locator task, it's available to your Axbasic scripts.</p>
 <p>The <strong>Getroomobjects ()</strong> returns the number of objects in the current room.</p>
 <pre><code>    LET count = Getroomobjects ()
@@ -172,7 +273,7 @@ img { max-width: 100%; }
     ! which is 10
     PRINT Getobjectcount (1)
 </code></pre>
-<h2><a name="13.7">13.7 Other automapper functions</a></h2>
+<h2><a name="13.10">13.10 Other automapper functions</a></h2>
 <p>There are few more functions to cover.</p>
 <p>A direction like <strong>"north"</strong> can be abbreviated to <strong>"n"</strong> using the <strong>Abbrevdir$ ()</strong> function, and restored using the <strong>Unabbrevdir$ ()</strong> function.</p>
 <pre><code>    LET dir$ = "north"

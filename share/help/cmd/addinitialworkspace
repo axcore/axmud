@@ -1,5 +1,5 @@
 aiw / addinitialworkspace     Adds an initial workspace
- 
+
    Format:
       ;aiw                    Adds an initial workspace
       ;aiw <zonemap>          Adds an initial workspace using <zonemap>
@@ -7,10 +7,10 @@ aiw / addinitialworkspace     Adds an initial workspace
    Notes:
       Axmud supports multiple desktops or 'workspaces'. Workspaces can be both
          real and virtual. If you have multiple physical monitors, each one is a
-         workspace. If your computer has a workspace switcher, allowing you to 
+         workspace. If your computer has a workspace switcher, allowing you to
          switch between virtual desktops, each one is a workspace.
-      The workspace in which Axmud starts is its 'default workspace'. This 
-         command adds an additional workspace to the list of workspaces Axmud 
+      The workspace in which Axmud starts is its 'default workspace'. This
+         command adds an additional workspace to the list of workspaces Axmud
          uses when it starts.
       If you specify a <zonemap>, that zonemap is used as the default zonemap
          for the workspace. If not, Axmud selects a default zonemap.

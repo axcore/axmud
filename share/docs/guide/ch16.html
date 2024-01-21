@@ -7,7 +7,7 @@ td, th { border: 1px solid #c3c3c3; padding: 0 3px 0 3px; }
 table { border-collapse: collapse; }
 img { max-width: 100%; }
 </style>
-<meta name="generator" content="ReText 7.1.0">
+<meta name="generator" content="ReText 7.2.3">
 <title>ch16</title>
 <style type="text/css">
 </style>
@@ -60,6 +60,7 @@ img { max-width: 100%; }
 <p>Use the escape key to stop whatever text is being converted to speech right now. </p>
 <p>When it's time for the user to type a command, some worlds send a command prompt full of statistics (often containing your character's health points, for example). These prompts take a long time to read aloud so, by default, Axmud filters them out. Press the end key to hear the most recent prompt. (In general, this only works with pre-configured worlds whose prompts contain alphanumeric characters.)</p>
 <p>If you need to use the cursor keys for something else temporarily - or indeed any of the other keys mentioned in this section - you can use the <strong>;freekeys</strong> command to stop Axmud hijacking them. Type the same command again to restore the old functionality.</p>
+<p>Normally, Axmud users use the up and down keys to quickly select commands they typed previously. You can do the same by holding your SHIFT key while you press up and down.</p>
 <p>If you don't want to use the cursor keys, you can use client commands instead. Use <strong>;skip</strong>, <strong>;unskip</strong>, <strong>;first</strong> and <strong>;last</strong> instead of the cursor keys. Use <strong>;skip more</strong> or <strong>;unskip more</strong> instead of the page up/page down keys. Use <strong>;split</strong> instead of the home key, <strong>;prompt</strong> instead of the end key, <strong>;resume</strong> instead of the tab key and <strong>;shutup</strong> instead of the escape key.</p>
 <h3>16.4.1 Sentence smoothing</h3>
 <p>Axmud's main window displays lines of text. The definition of <em>a line of text</em> is not as simple as you might think. For one thing, some worlds send text that has already been split into lines just big enough to fit in Axmud's window. Other worlds might send a line of text hundreds of characters long, expecting Axmud to do all the formatting.</p>
@@ -80,7 +81,8 @@ img { max-width: 100%; }
 <h3>16.5.2 Disabling some speech</h3>
 <p>You can use the client command <strong>;speech</strong> to change what is read out, and what is not.</p>
 <p>For example, <strong>;speech system off</strong> will stop Axmud system messages from being read out. <strong>;speech system on</strong> will tell Axmud to start reading them again.</p>
-<p><strong>;speech error off</strong> will stop system error messages from being read out.</p>
+<p><strong>;speech error off</strong> will stop system error and warning messages from being read out.</p>
+<p><strong>;speech verbose on</strong> will tell you when Axmud switches between displaying commands, system messages and received text. This can be a little annoying, so it's disabled by default.</p>
 <p><strong>;speech command off</strong> will stop every world command you type from being read out.</p>
 <p><strong>;speech dialogue off</strong> will stop dialogue windows from being read out.  (This includes the dialogue windows you see when you start Axmud, asking for a world, character name and password, so you should probably turn them on again before you quit using Axmud.)</p>
 <p><strong>;speech receive off</strong> will stop text received from the world being read out.</p>

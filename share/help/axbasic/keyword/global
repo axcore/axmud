@@ -5,7 +5,7 @@ GLOBAL variable-name [ , variable-name ... ]
 
    Notes:
       Global variables are available to the whole Axbasic script, whereas local
-         variables (declared with a LOCAL statement) are only available within 
+         variables (declared with a LOCAL statement) are only available within
          the subroutine in which they are declared.
       Var-Names must be a scalar variable. Array variables can be declared as
          global within a DIM GLOBAL statement.

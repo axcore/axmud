@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2022 A S Lewis
+# Copyright (C) 2011-2024 A S Lewis
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU
 # General Public License as published by the Free Software Foundation, either version 3 of the
@@ -20,7 +20,7 @@
 
     use strict;
     use warnings;
-    use diagnostics;
+#   use diagnostics;
 
     use Glib qw(TRUE FALSE);
 
@@ -185,7 +185,7 @@
 
             if ($self->name eq 'viewer') {
 
-                # (Fit a little more help text into the object viewer window)
+                # (Fit a little more help text into the data viewer window)
                 $self->ivPoke('fontSize', ($axmud::CLIENT->constFontSize - 1));
 
             } else {

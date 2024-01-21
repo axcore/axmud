@@ -1,44 +1,44 @@
 prd / permread                Tells an initial task to read something aloud
- 
+
    Format:
       ;prd <attribute>
       ;prd <attribute> <value>
                               Tells a task to read something aloud
 
       ;prd                    Get a list of available <attribute>s
- 
+
    Notes:
       Tasks have various text-to-speech (TTS) capabilities, but some tasks don't
-         use TTS at all. The ';read', ';switch' and ';alert' commands allow you 
-         to interact with the TTS capabilities of currently-running tasks. 
-      The ';permread', ';permswitch' and ';permalert' commands allow you to 
+         use TTS at all. The ';read', ';switch' and ';alert' commands allow you
+         to interact with the TTS capabilities of currently-running tasks.
+      The ';permread', ';permswitch' and ';permalert' commands allow you to
          interact with the TTS capabilities of tasks in the global initial
-         tasklist - the tasks which start, every time you connect to a world - 
+         tasklist - the tasks which start, every time you connect to a world -
          as well as any currently-running tasks.
       To modify the way that tasks process speech in general, use the ';speech'
          and ';editconfig' commands. TTS for tasks is turned off, by default, so
-         you won't hear anything until you turn it on with the ';speech' 
+         you won't hear anything until you turn it on with the ';speech'
          command.
 
       The ';read' and ';permread' commands are both in the same format:
- 
+
          ;read <attribute> <value>
          ;permread <attribute> <value>
 
       For example, both ';read description 100' and ';permread description 100'
-         will instruct the current Locator task to read the first 100 
+         will instruct the current Locator task to read the first 100
          characters of the current room's description.
-      In some cases, a task might want to store the <value> you specify. ';read' 
-         will store the value in the current Locator task; ';permread' will 
+      In some cases, a task might want to store the <value> you specify. ';read'
+         will store the value in the current Locator task; ';permread' will
          store the value there, and in the Locator task stored in the global
          initial tasklist (if any). In other words, ';read' affects the current
          session, but ';permread' affects this and all future sessions.
-      
-      Note that none of Axmud's built-in tasks store the <value> from this 
+
+      Note that none of Axmud's built-in tasks store the <value> from this
          command. You will probably never use ';permread', but you might use
          ';permswitch' and ';permalert' a lot.
       If you don't specify an <attribute> at all, a list of available attributes
-         will be displayed. See the help for ';read' for a full list of 
+         will be displayed. See the help for ';read' for a full list of
          attributes used with Axmud's built-in tasks.
 
    User commands:

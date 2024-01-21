@@ -6,19 +6,19 @@ PEEKMATCH ARRAY variable-name = axmud-object-property, expression
          the regex expression
 
    Notes:
-      PEEK gives Axbasic scripts access to most of Axmud's internal data (see 
+      PEEK gives Axbasic scripts access to most of Axmud's internal data (see
          the help for the PEEK statement for a full explanation).
-      PEEKMATCH can only be used with list properties such as 
-         "world.current.doorPatternList". It cannot be used with a scalar 
-         property such as "world.current.name", a hash property such as 
+      PEEKMATCH can only be used with list properties such as
+         "world.current.doorPatternList". It cannot be used with a scalar
+         property such as "world.current.name", a hash property such as
          "world.current.currencyHash" or a Perl object such as "world.current".
-      'expression' is a Perl regex (regular expression). 'variable-name' is set 
-         to the index of the first element in the list property whose value 
+      'expression' is a Perl regex (regular expression). 'variable-name' is set
+         to the index of the first element in the list property whose value
          matches the regex. If none of the list's values match the regex, or if
-         the list is empty, the variable is set to -1. 
+         the list is empty, the variable is set to -1.
       PEEKMATCH cannot be used to search a list property for the Perl special
          value, 'undef'.
-         
+
    Examples:
       ! Store the index of the first matching value in an Axbasic global scalar
       ! variable
@@ -26,8 +26,8 @@ PEEKMATCH ARRAY variable-name = axmud-object-property, expression
 
       ! Store the index of the matching value in an Axbasic global array
       PEEKMATCH ARRAY index = "world.current.doorPatternList", "^You bump into"
- 
-      ! Store the index of the matching value in an Axbasic local scalar 
+
+      ! Store the index of the matching value in an Axbasic local scalar
       ! variable
       LOCAL index
       PEEKFIND index = "world.current.doorPatternList", "^You bump into"

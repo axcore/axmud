@@ -3,6 +3,6 @@ The Watch re-displays any text shown in all Channels, Chat and Divert tasks
    Watch task so that you don't miss something important in other sessions.
 The window usually changes colour for a few seconds to alert you that an
    update has been received.
- 
+
 Client commands used with this task are:
    ;emptywatchwindow          Empties the Watch task window

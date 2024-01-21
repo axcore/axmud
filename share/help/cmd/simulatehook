@@ -1,5 +1,5 @@
 shk / simulatehook            Simulates an Axmud hook event
- 
+
    Format:
       ;shk -c                 Simulates the 'connect' hook event
       ;shk -d                 Simulates the 'disconnect' hook event
@@ -45,11 +45,11 @@ shk / simulatehook            Simulates an Axmud hook event
       ;shk <event> <var>      Simulates the specified hook <event>
       ;shk <event> <var> <val>
                               Simulates the specified hook <event>
- 
+
    Notes:
       This command allows you to simulate a hook event, which causes any active
-         hook interfaces using that event to fire (happen). It's a convenient 
-         way to test tasks, Axbasic scripts, missions and hooks without 
+         hook interfaces using that event to fire (happen). It's a convenient
+         way to test tasks, Axbasic scripts, missions and hooks without
          interrupting the world itself.
 
       The 'connect' and 'disconnect' events fire whenever you connect to a
@@ -62,9 +62,9 @@ shk / simulatehook            Simulates an Axmud hook event
          text (consisting of one or more lines, the last one ending with a
          newline character). <prompt> and <text> specifies the simulated text
          that would have been received.
-      The 'sending_cmd' event occurs whenever Axmud wants to send a world 
-         command, but before any aliases are tested. The 'send_cmd' event occurs 
-         when the world command is about to be sent, after aliases have been 
+      The 'sending_cmd' event occurs whenever Axmud wants to send a world
+         command, but before any aliases are tested. The 'send_cmd' event occurs
+         when the world command is about to be sent, after aliases have been
          tested. <cmd> specifies the command that would have been sent.
       The 'system_text', 'system_error', 'system_warning', 'system_debug',
          'system_improper', 'system_all' and 'system_all_error'  events occur
@@ -81,24 +81,24 @@ shk / simulatehook            Simulates an Axmud hook event
          <pack> is the package name, in the form PACKAGE[.SUBPACKAGE][.MESSAGE].
       The 'mcp' event occurs when the world sends an MCP message. <msg> is the
          message name, e.g. 'mcp-negotiate-can'.
-      The 'current_session' event occurs when this session becomes the current 
-         session. 'not_current' occurs when this session is replaced as the 
-         current session; the new current session's number is <num>. 
-         'change_session' occurs in every session when the current session 
+      The 'current_session' event occurs when this session becomes the current
+         session. 'not_current' occurs when this session is replaced as the
+         current session; the new current session's number is <num>.
+         'change_session' occurs in every session when the current session
          changes, the new current session's number is <num>.
       The 'textview_resize' event occurs when a textview object is resized.
          Textview objects handle the areas inside 'grid' windows that display
          text; for example, the area inside the 'main' window that shows
          text received from the world, and the whole of the Status task window.
          Each textview object has a unique number, which is <num>
-      The 'user_idle' event occurs when the user has been idle for a certain 
+      The 'user_idle' event occurs when the user has been idle for a certain
          period of time. The 'world_idle' event occurs when no text has been
          received from the world for a certain period of time. Currently, both
          events fire after 60 seconds. <time> is the system time at which the
-         user last sent a world command, or text was last received from the 
-         world.  
+         user last sent a world command, or text was last received from the
+         world.
       The 'get_focus' event occurs when this session becomes the current session
-         and the 'lose_focus' event occurs when another session becomes the 
+         and the 'lose_focus' event occurs when another session becomes the
          current session.
       The 'map_room' event occurs when the automapper's current room is set.
       The 'map_no_room' and 'map_lost' hook events both occur when the
@@ -114,19 +114,19 @@ shk / simulatehook            Simulates an Axmud hook event
 
       Instead of specifying a switch, you can specify the hook event itself. The
          following commands are interchangeable:
-         
+
             ;simulatehook -s jump
             ;simulatehook send_cmd jump
-            
+
       Custom hook events, of course, must be specified (see the help for
          ;addhook):
-      
+
             ;simulatehook _myevent
-            
-      If <prompt>, <text>, <cmd>, <var>, <val>, <data> or <num> contain spaces, 
+
+      If <prompt>, <text>, <cmd>, <var>, <val>, <data> or <num> contain spaces,
          you must surround the with diamond brackets <...>, e.g.
-         
+
             ;simulatehook -s <kill orc>
- 
+
    User commands:
       shk / simhook / simulatehook

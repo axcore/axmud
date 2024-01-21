@@ -1,8 +1,8 @@
 resume / resume               Reads aloud the first unread line
- 
+
    Format:
       ;resume                 Reads aloud the first unread line
-      
+
    Notes:
       When Axmud is performing text-to-speech, you can use commands like ';skip'
          and ';first' to replay pieces of text.
@@ -12,7 +12,7 @@ resume / resume               Reads aloud the first unread line
          piece of text that hasn't been read yet.
       Type the command a second time to finish reading aloud new pieces of text,
          and to wait for more text to be received from the world.
-      When running the version of Axmud that's optimised for visually-impaired 
+      When running the version of Axmud that's optimised for visually-impaired
          users, the tab key can be used as a shortcut to this command (but only
          once Axmud is connected to a world, in online or offline mode.)
 

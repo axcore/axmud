@@ -1,10 +1,10 @@
 sps / splitscreen             Toggles split screen mode in the 'main' window
- 
+
    Format:
       ;sps                    Toggles split screen mode
- 
+
    Notes:
-      In split screen mode the 'main' window is split into two. When text is 
+      In split screen mode the 'main' window is split into two. When text is
          received from the world (or when a system message is displayed), only
          the lower section scrolls to the bottom.
       If you're trying to read a help file, it might be convenient to turn on
@@ -12,9 +12,9 @@ sps / splitscreen             Toggles split screen mode in the 'main' window
          happening in the world without losing your place.
 
       The 'main' window typically includes some buttons next to the command
-         entry box. The empty window button toggles split screen mode. If the 
-         window has multiple panes, the 'switch active pane' button next can 
-         switch between them; split screen mode is then toggled on the active 
+         entry box. The empty window button toggles split screen mode. If the
+         window has multiple panes, the 'switch active pane' button next can
+         switch between them; split screen mode is then toggled on the active
          pane.
       See also the help for the ';scrolllock' command.
 

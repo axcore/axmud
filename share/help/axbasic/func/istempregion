@@ -1,0 +1,11 @@
+Istempregion (string)
+
+   Synopsis:
+      Tests whether a temporary region exists
+
+   Notes:
+      Temporary regions are deleted when a session ends.
+
+      'string' is the name of a temporary region in the world model. Returns 1
+         if the named temporary region exists, or 0 if it doesn't exist (or if
+         it is not a temporary region).

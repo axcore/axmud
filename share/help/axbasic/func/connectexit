@@ -1,0 +1,13 @@
+Connectexit (number, number)
+
+   Synopsis:
+      Connects an exit to a room
+
+   Notes:
+      The first number is the number of the exit; the second is the number of
+         the room.
+      Returns 0 on failure (for example, if the exit is already connected to a
+         room). Returns 1 on success.
+
+   Examples:
+      Connectexit (1, 2)   >> Connects exit #1 to room #2

@@ -1,14 +1,14 @@
 chat / chat                   Sends a message to a chat contact
- 
+
    Format:
       ;chat <name> <text>     Sends the <text> to the contact <name>
- 
+
    Notes:
       The Chat task is used to chat with other players directly via telnet.
          Calls can be placed (or accepted) with any user whose MUD client uses
          the zChat or MudMaster protocols.
       This command is the equivalent of typing ';chat <text>' in every Chat task
          window that's connected to someone called <name>.
- 
+
    User commands:
       chat

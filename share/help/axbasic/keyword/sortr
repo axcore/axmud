@@ -4,9 +4,9 @@ SORTR variable-name
       Sorts the cells in an array variable in reverse order.
 
    Notes:
-      String arrays are sorted reverse-alphabetically. The sort operation is 
-         case-sensitive, so 'Aardvark' will come before 'zoo'. (Use the 
-         SORTCASER statement if you want a case-insensitive sort opertion.)      
+      String arrays are sorted reverse-alphabetically. The sort operation is
+         case-sensitive, so 'Aardvark' will come before 'zoo'. (Use the
+         SORTCASER statement if you want a case-insensitive sort opertion.)
        Numeric arrays are sorted in order of descending value.
       Only one-dimensional arrays can be sorted. SORTR assumes that the array
          starts at element #1.

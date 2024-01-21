@@ -1,8 +1,8 @@
 mn / mission                  Continues the current mission
- 
+
    Format:
       ;mn                     Continues the mission
- 
+
    Notes:
       Continues the current mission until a break is reached or the mission is
          completed. This command can be used when the mission is on a trigger,
@@ -10,6 +10,6 @@ mn / mission                  Continues the current mission
       The ';nudgemission' command can be used to perform the next command in the
          mission (and only that command).
       See the help for ';startmission' for more information about missions.
- 
+
    User commands:
       mn / mission

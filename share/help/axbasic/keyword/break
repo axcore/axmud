@@ -4,12 +4,12 @@ BREAK
       Pauses execution of the Axbasic script briefly
 
    Notes:
-      When the Axbasic script is being run from within an Axmud task, execution 
-         can be suspended with statements such as PAUSE, SLEEP, BREAK and 
+      When the Axbasic script is being run from within an Axmud task, execution
+         can be suspended with statements such as PAUSE, SLEEP, BREAK and
          WAITTRIG.
       BREAK causes execution of the script to halt until the next task loop (by
          default, the task loop spins ten times a second).
-      If the Axbasic script isn't being run from within an Axmud task, there is 
+      If the Axbasic script isn't being run from within an Axmud task, there is
          no pause (and no error message is generated). Execution continues
          immediately with the next statement.
 
@@ -17,7 +17,7 @@ BREAK
       If the script is not being run as a task, the BREAK statement is ignored
          (and no error message is generated). Execution continues with the next
          statement.
-         
+
    Examples:
       SEND "drop treasure"
       BREAK

@@ -1,54 +1,54 @@
 amc / addmodifierchar         Adds a speedwalk modifier character
- 
+
    Format:
       ;amc <char> <cmd>       Adds a modifier <char> for a standard <cmd>
-      
+
    Notes:
       Speedwalking is a method of moving from one location in the world to
          another with a minimum of typing.
       Speedwalk commands can be typed in the 'main' window's command entry box.
          These commands start with the speedwalk sigil, a full stop/period
          character:
-      
+
          .3ne2s
-   
+
       ...which is the equivalent of typing 'north;north;north;east;south;south'.
          See the help for ';speedwalk' for a full explanation of Axmud's
          speedwalking capabilities.
-         
+
       Modifier characters are upper-case characters which modify the lower-case
          movement command that follows them, for example:
 
-         .w             > west         
+         .w             > west
          .Ow            > open west door
-      
+
       <char> can be any letter in the range A-Z (the character is automatically
          converted to upper case for you). Non-Latin alphabets are acceptable.
-      
+
       <cmd> should be one of the standard commands used by Axmud's command
          cages.
-      In the example above, the modifier character 'O' corresponds to the 
+      In the example above, the modifier character 'O' corresponds to the
          standard command 'open_dir'.
       Standard commands are never modified. Each command cage stores the same
          set of standard commands, and a corresponding list of replacement
-         commands which can be modified. 
-      For example, the standard command 'open_dir' corresponds to the 
+         commands which can be modified.
+      For example, the standard command 'open_dir' corresponds to the
          replacement command 'open direction door' by default. When Axmud uses
          this standard command, it removes the word 'direction' and replaces it
          with direction it wants to use, for example 'open west door'.
       Any standard command can be used with this command, but the most useful
          ones - those whose replacement commands contain a 'direction' by
          default - are:
-         
+
          'go_dir', 'run', 'walk', 'fly', 'swim', 'dive', 'sail', 'ride',
          'drive', 'creep', 'sneak', 'squeeze'
-         
+
          'open_dir', 'close_dir', 'unlock', 'lock', 'pick', 'break'
 
       You can use the ';listmodifierchar' command to see a list of the current
          dictionary's speedwalk modifier characters, as well as their equivalent
          standard and replacement commands from the current highest-priority
          command cage.
- 
+
    User commands:
       amc / addmod / addmodchar / addmodifierchar

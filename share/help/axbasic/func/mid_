@@ -9,9 +9,9 @@ Mid$ (string, offset, length)
          beyond the end of string, or if length is omitted, the remaining length
          of the string is used. If offset is less than 1, or if length is less
          than 0, an error is generated.
-         
+
    Examples:
       ! Return everything in the string from the 6th character onwards
-      Mid$ ("Read my lips", 6)   
-      ! Return 2 characters in a string, starting from the 6th character     
-      Mid$ ("Read my lips", 6, 2) 
+      Mid$ ("Read my lips", 6)
+      ! Return 2 characters in a string, starting from the 6th character
+      Mid$ ("Read my lips", 6, 2)

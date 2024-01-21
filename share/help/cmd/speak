@@ -1,5 +1,5 @@
 spk / speak                   Uses a text-to-speech engine to read out a message
- 
+
    Format:
       ;spk                    Reads out a test message using default settings
       ;spk <config>           Reads out a test message using TTS <configuration>
@@ -16,24 +16,24 @@ spk / speak                   Uses a text-to-speech engine to read out a message
          espeak-ng, Flite, Festival and Swift.
       Axmud also uses a dummy engine, called 'none'. If Axmud tries to convert
          text to speech using the dummy engine, you'll hear nothing.
-            
-      Axmud stores a number of TTS configurations. Each configuration stores an 
-         engine, voice, word speed, word rate, word pitch and volume setting, 
-         among others. Text received from the world uses one configuration, 
-         system messages use another, so it's easy to customise the 
+
+      Axmud stores a number of TTS configurations. Each configuration stores an
+         engine, voice, word speed, word rate, word pitch and volume setting,
+         among others. Text received from the world uses one configuration,
+         system messages use another, so it's easy to customise the
          configurations so that they read aloud in different voices.
-      You can use this command to see what each configuration sounds like, or to 
+      You can use this command to see what each configuration sounds like, or to
          test new combinations of settings. Since this command works even when
-         text-to-speech is disabled, you can use it to test whether 
+         text-to-speech is disabled, you can use it to test whether
          text-to-speech is working is working at all on your system.
 
       If you don't specify some <text>, Axmud will read out a test message.
-         Alternatively, you can use ';speak <configuration>' to test a 
+         Alternatively, you can use ';speak <configuration>' to test a
          particular TTS configuration
 
-      You can use <options> to test different configurations, engines, voices, 
-         word speeds, word rates, word pitches and volumes. If you specify both  
-         a configuration and one or more other <options>, the settings for that 
+      You can use <options> to test different configurations, engines, voices,
+         word speeds, word rates, word pitches and volumes. If you specify both
+         a configuration and one or more other <options>, the settings for that
          configuration will be temporarily overridden.
       Unfortunately, some engines don't allow us to modify some <options> (for
          example, you can't use this command to change the word speed used with
@@ -41,12 +41,12 @@ spk / speak                   Uses a text-to-speech engine to read out a message
       If you specify an invalid <option>, it is ignored (and text-to-speech
          conversion happens using default values).
 
-      <text> and <options> can be specified in any order. <options> can be any 
+      <text> and <options> can be specified in any order. <options> can be any
          of the following:
 
-         -n <configuration>   Specifies which text-to-speech <configuration>  
+         -n <configuration>   Specifies which text-to-speech <configuration>
                                  name to use
-         -e <engine>          Specifies which engine to use. <engine> must be 
+         -e <engine>          Specifies which engine to use. <engine> must be
                                  one of the following: 'espeak', 'esng',
                                  'flite', 'festival', 'swift' or 'none'
          -v <voice>           Specifies which voice to use (eSpeak, espeak-ng,
@@ -74,8 +74,8 @@ spk / speak                   Uses a text-to-speech engine to read out a message
                                  Swift on Linux, must be in the range 0.33 - 6,
                                  default is 1. For Swift on MS Windows, must be
                                  in the range 0 - 100, default 100
- 
+
        See also the help for ';speech'.
- 
+
    User commands:
       spk / speak

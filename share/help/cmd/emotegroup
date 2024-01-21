@@ -1,14 +1,14 @@
 emoteg / emotegroup           Sends an emote to a group of chat contacts
- 
+
    Format:
       ;emoteg <group> <text>  Sends the emote <text> to the group <group>
- 
+
    Notes:
       The Chat task is used to chat with other players directly via telnet.
          Calls can be placed (or accepted) with any user whose MUD client uses
          the zChat or MudMaster protocols.
       This command is the equivalent of typing ';emotegroup <text>' in any Chat
          task window in the <group>.
- 
+
    User commands:
       emoteg / emotegroup

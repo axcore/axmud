@@ -1,0 +1,22 @@
+Getrandomexit$ (string)
+
+   Synopsis:
+      Gets the type of random exit
+
+   Notes:
+      'Random' exits have more than one possible destination. The world may
+         choose a random destination, each time your character goes through the
+         exit, or the destination may depend on the game state.
+
+      This function retrieves the type of a random exit, that was created by an
+         earlier call to Setrandomexit() (or that was created manually in the
+         automapper window).
+
+      Returns one of the values "same", "any", "temp", "room" or "none".
+      The values "same", "any" and "temp" correspond to the values used in calls
+         to Setrandomexit().
+      The value "room" specifies a list of room numbers, any of which might be
+         the exit's destination. This type of random exit can't be created by
+         Axbasic, but can be created manually in the automapper window.
+      The value "none" is returned if the exit is not a random exit, or if the
+         exit doesn't exist.

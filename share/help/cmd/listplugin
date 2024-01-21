@@ -1,16 +1,16 @@
 lpg / listplugin              Lists existing Axmud plugins
- 
+
    Format:
       ;lpg                    Lists plugins
- 
+
    Notes:
-      Axmud plugins are Perl modules which allow you to extend Axmud's core 
-         functionality with new tasks, client commands, cages, 'edit' windows 
-         and menu items, all of them integrating seemlessly with the existing 
+      Axmud plugins are Perl modules which allow you to extend Axmud's core
+         functionality with new tasks, client commands, cages, 'edit' windows
+         and menu items, all of them integrating seemlessly with the existing
          Axmud code.
       This command lists the Axmud plugins which have been loaded since Axmud
-         started.   
-      See the help for ';loadplugin' for more information about Axmud plugins.  
+         started.
+      See the help for ';loadplugin' for more information about Axmud plugins.
 
    User commands:
       lpg / listplugin

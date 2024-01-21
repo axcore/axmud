@@ -4,7 +4,7 @@ The Chat task is an instant messenger service. It allows you to chat with
 The task is almost feature-complete, but note that encryption in zChat
    sessions has not yet been implemented.
 The commands below can be entered in the 'main' window. A separate list of
-   commands can be used in the task's own window, once it is open. Type 
+   commands can be used in the task's own window, once it is open. Type
    ';help' in that window to get a list of commands available there.
 Some commands are available in MudMaster sessions or in zChat sessions, but
    not both. In general, zChat sessions offer a larger range of features.
@@ -14,7 +14,7 @@ If you experience problems connecting or receiving calls, you will probably
 The Chat task cannot be started with ';starttask' - instead, use one of the
    commands below (such as ';listen' or ';chatcall'). In addition, the Chat
    task can't be used as an initial or custom task.
- 
+
 Client commands used with this task are:
    ;getip                     Displays your IP address
    ;chatlisten                Listens out for incoming calls
@@ -46,5 +46,5 @@ Client commands used with this task are:
    ;chatset                   Sets various chat session settings
    ;chatsetname               Sets your chat nickname
    ;chatsetgroup              Sets the members of a chat group
-   ;chatsetemail              Sets your chat email 
+   ;chatsetemail              Sets your chat email
    ;chatseticon               Sets the icon used in chat sessions

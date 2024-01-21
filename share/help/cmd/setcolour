@@ -1,13 +1,13 @@
 sco / setcolour               Sets Axmud standard colour tags
- 
+
    Format:
       ;sco <tag> <colour>     Sets standard <tag> to <colour>
       ;sco <tag>              Resets standard <tag> to its default colour
- 
+
    Notes:
-      Axmud's standard colour tags are 'black', 'red', 'green', 'yellow', 
-         'blue', 'magenta', 'cyan' and 'white'. The equivalent bold colours are 
-         'BLACK', 'RED', 'GREEN', 'YELLOW', 'BLUE', 'MAGENTA', 'CYAN' and 
+      Axmud's standard colour tags are 'black', 'red', 'green', 'yellow',
+         'blue', 'magenta', 'cyan' and 'white'. The equivalent bold colours are
+         'BLACK', 'RED', 'GREEN', 'YELLOW', 'BLUE', 'MAGENTA', 'CYAN' and
          'WHITE'.
       This command can be used to modify the colour of a standard colour <tag>,
          namely one of the strings above.
@@ -15,18 +15,18 @@ sco / setcolour               Sets Axmud standard colour tags
          colour tag, an xterm colour tag (in the form 'xn', where n is a number
          in the range 0-255) or an RGB colour tag (in the form '#cccccc', where
          each c represents a character in the range 0-9 or A-F).
-      If <colour> is an underlay colour tag (like 'ul_red', 'ux99' or 
-         'u#FF0000', it is converted into a text colour tag (like 'red', 'x99' 
+      If <colour> is an underlay colour tag (like 'ul_red', 'ux99' or
+         'u#FF0000', it is converted into a text colour tag (like 'red', 'x99'
          or '#FF0000').
 
-      Use the 'listcolour' command to list standard colour tags (or use 
-         ';testcolour' to show different combinations of standard text and 
+      Use the 'listcolour' command to list standard colour tags (or use
+         ';testcolour' to show different combinations of standard text and
          underlay colours).
       Windows, especially 'internal' windows use colour schemes - see the help
          for ';addcolourscheme'.
 
    Examples:
-      ;setcolour GREEN BLUE   
+      ;setcolour GREEN BLUE
       ;setcolour GREEN x99
       ;setcolour GREEN #ABCDEF
 

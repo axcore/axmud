@@ -1,23 +1,23 @@
 crawl / crawl                 Enables/disables crawl mode
- 
+
    Format:
       ;crawl                  Enables/disables crawl mode
       ;crawl <num>            Enables crawl mode with a command limit of <num>
-      
+
    Notes:
       Slowwalking is Axmud's method of limiting the number of world commands
-         that can be sent at a time. This is useful for worlds that enforce a 
+         that can be sent at a time. This is useful for worlds that enforce a
          limit, sometimes ignoring any commands it receives above that limit.
       Slowwalking is perhaps a misleading term, because the limit is applied to
-         all world commands, not just movement commands.   
-         
+         all world commands, not just movement commands.
+
       Crawl mode is a temporary slowwalking mode which overrules the current
          world profile's slowwalking settings for a short time.
       If disabled, this command enables crawl mode. If <num> is not specified, a
          limit of 1 command per second is applied.
       If already enabled, this command resets crawl mode (if <num> is specified)
          or disables crawl mode (if <num> is not specified).
-         
+
       When crawl mode is enabled, Axmud applies a limit of <num> commands per
          second. <num>, when specified, must be a positive integer.
       If that limit is not reached within two minutes, crawl mode automatically
@@ -25,15 +25,15 @@ crawl / crawl                 Enables/disables crawl mode
       If the limit is reached, Axmud stores world commands temporarily, sending
          more every second until there are none left. At that point, crawl mode
          disables itself (regardless of how long it has taken).
-     
+
       Although it's called 'crawl' mode, you can actually use this command to
          speed things up. If the current world specifies a limit of one command
          per second, and you type
-     
+
          ;crawl 5
-     
+
       ...Axmud will start sending five world commands per second instead, for as
-         long as crawl mode is enabled. 
-     
+         long as crawl mode is enabled.
+
    User commands:
       crawl

@@ -1,0 +1,28 @@
+Addexit (number, string)
+Addexit (number, string, string)
+
+   Synopsis:
+      Adds a new exit to the exit model
+
+   Notes:
+      'room_num' is the number of the room, to which the exit will be added.
+      The two string arguments specify a direction. The first is the exit's
+         actual direction, such as "north", "up" or "out".
+      The second represents the primary direction in which the exit is drawn
+         on the map. For example, to add an "out" exit to room 2, drawn in the
+         northerly direction:
+
+         Addexit(2, "out", "north")
+
+      In this situation, if you don't specify a primary direction, Axbasic will
+         choose the first available one (which might be "north"):
+
+         Addexit(2, "out")
+
+      If the exit is actually a north exit, then you don't need to specify both
+         strings:
+
+         Addexit(2, "north")
+
+      If the operation is successful, the new exit's exit model number is
+         returned. If the operation fails, 0 is returned.

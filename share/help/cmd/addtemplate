@@ -1,22 +1,22 @@
 atm / addtemplate             Adds a new profile template
- 
+
    Format:
       ;atm <category>         Adds a template called <category>
- 
+
    Notes:
       The blueprint for a new category of profile is called a profile template.
          Several custom profiles can be based on a single template.
       Standard profiles have the category 'world', 'guild', 'race' or 'char'.
          Custom profiles have the category of the template on which they're
-         based. This command creates a new profile template from which any 
+         based. This command creates a new profile template from which any
          number of profiles with the same <category> can be created.
-      Category names must be no longer than 16 characters, contain only A-Z, 
-         a-z, underlines and 0-9 (not the first character) and not be one of 
+      Category names must be no longer than 16 characters, contain only A-Z,
+         a-z, underlines and 0-9 (not the first character) and not be one of
          Axmud's reserved names (see the ';listreserved' command). Non-Latin
          alphabets are acceptable.
-      You shouldn't use a <category> name that you might want to use as a 
+      You shouldn't use a <category> name that you might want to use as a
          profile name, some time in the future.
       (See the help for ';listprofile' for more information about profiles.)
- 
+
    User commands:
       atm / addtm / addtemplate

@@ -1,5 +1,5 @@
 Getroomsource$ ()
- 
+
    Synopsis:
       Returns the source code path of the automapper's current room
 
@@ -8,5 +8,5 @@ Getroomsource$ ()
          Axmud's world model can be linked to the corresponding file path in the
          world's mudlib.
       If the current room's 'virtual' area path is set, it is returned, but if
-         not, the source code path for the room is returned. If neither are set 
+         not, the source code path for the room is returned. If neither are set
          for the current room, an empty string is returned.

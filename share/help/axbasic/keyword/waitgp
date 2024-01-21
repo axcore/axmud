@@ -10,14 +10,14 @@ WAITGP expression [ , expression ]
          this range (e.g. 1000), Axbasic will use a default value of 100.
       The second expression is a timeout measured in seconds. If specified, the
          script gives up waiting after that period and resumes execution.
-      See also the help for WAITEP, WAITHP, WAITMP, WAITSP, WAITTOTALXP and 
+      See also the help for WAITEP, WAITHP, WAITMP, WAITSP, WAITTOTALXP and
          WAITXP.
 
    Requires:
       If the script is not being run as a task, the WAITGP statement is ignored
          (and no error message is generated). Execution continues with the next
          statement.
-         
+
    Examples:
       ! Wait for GP to recover to at least 50% of maximum
       WAITGP 50

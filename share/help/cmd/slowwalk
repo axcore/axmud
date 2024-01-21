@@ -1,30 +1,30 @@
 slw / slowwalk                Handles the current world's slowwalk settings
- 
+
    Format:
       ;slw                    Show current settings
 
       ;slw 0                  Turn off slowwalking
       ;slw off                Turn off slowwakling
-      
+
       ;slw <num>              Set maximum of <num> world commands per second
       ;slw on                 Set maximum of 1 world command per second
-      
-      ;slw <num> <delay>      Set maximum <num> commands per <delay> seconds      
-      
+
+      ;slw <num> <delay>      Set maximum <num> commands per <delay> seconds
+
    Notes:
       Slowwalking is Axmud's method of limiting the number of world commands
-         that can be sent at a time. This is useful for worlds that enforce a 
+         that can be sent at a time. This is useful for worlds that enforce a
          limit, sometimes ignoring any commands it receives above that limit.
       Slowwalking is perhaps a misleading term, because the limit is applied to
-         all world commands, not just movement commands.   
-                  
-      If <num> is specified, and is a positive integer, Axmud will send that 
+         all world commands, not just movement commands.
+
+      If <num> is specified, and is a positive integer, Axmud will send that
          many world commands at a time.
       <delay> can be any number, 0 or above. If 0, the system's minimum delay
-         time is used. If <delay> is not specified, a delay of one second is 
-         set. Axmud will then wait for <delay> seconds before sending any more 
+         time is used. If <delay> is not specified, a delay of one second is
+         set. Axmud will then wait for <delay> seconds before sending any more
          world commands.
-         
+
       See also the help for ';repeat', ';intervalrepeat', ';stop' and ';crawl'.
          For Axmud's speedwalking capabilities, see the help for ';speedwalk'.
 
