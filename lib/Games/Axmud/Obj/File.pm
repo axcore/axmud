@@ -13799,7 +13799,7 @@
         # Check for improper arguments
         if (! defined $readFlag || defined $check) {
 
-            return $axmud::CLIENT->writeImproper($self->_objClass . '->disableSaveLoad', @_);
+            return $axmud::CLIENT::writeImproper($self->_objClass . '->disableSaveLoad', @_);
         }
 
         # Set GA::Client flags
