@@ -60,7 +60,7 @@ Axmud does not yet have a comprehensive manual, but there is lots of information
 
 Latest version: **v2.0.0 (21 Jan 2024)** (see `recent changes <CHANGES>`__)
 
-Official packages (also available from the `Github release page <https://github.com/axcore/tartube/releases>`__):
+Official packages (also available from the `Github release page <https://github.com/axcore/axmud/releases>`__):
 
 - `MS Windows installer <https://sourceforge.net/projects/axmud/files/Axmud-2.0.0/install-axmud-2.0.0.exe/download>`__ from Sourceforge
 - `DEB package (for Debian-based distros, e.g. Ubuntu, Linux Mint) <https://sourceforge.net/projects/axmud/files/Axmud-2.0.0/libgames-axmud-perl_2.0.0.deb/download>`__ from Sourceforge
@@ -579,7 +579,7 @@ Axmud can be used with any world that supports telnet, SSH or SSL connections. T
 8 Contributing
 ==============
 
-- Report a bug: Use the Github `issues <https://github.com/axcore/tartube/issues>`__ page.
+- Report a bug: Use the Github `issues <https://github.com/axcore/axmud/issues>`__ page.
 
 9 Authors
 =========
